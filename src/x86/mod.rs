@@ -640,10 +640,12 @@ impl Simd for FmaAvx2 {
 
 #[derive(Copy, Clone)]
 #[repr(transparent)]
+#[cfg(feature = "nightly")]
 pub struct m32x16(pub __mmask16);
 
 #[derive(Copy, Clone)]
 #[repr(transparent)]
+#[cfg(feature = "nightly")]
 pub struct m64x8(pub __mmask8);
 
 impl Debug for m64x8 {
