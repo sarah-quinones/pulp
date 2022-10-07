@@ -186,15 +186,19 @@ impl Simd for Scalar {
 
 #[derive(Copy, Clone)]
 #[repr(transparent)]
+#[doc(hidden)]
 pub struct m8(u8);
 #[derive(Copy, Clone)]
 #[repr(transparent)]
+#[doc(hidden)]
 pub struct m16(u16);
 #[derive(Copy, Clone)]
 #[repr(transparent)]
+#[doc(hidden)]
 pub struct m32(u32);
 #[derive(Copy, Clone)]
 #[repr(transparent)]
+#[doc(hidden)]
 pub struct m64(u64);
 
 impl Debug for m8 {
@@ -288,79 +292,101 @@ impl m64 {
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+#[doc(hidden)]
 pub struct f32x4(f32, f32, f32, f32);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+#[doc(hidden)]
 pub struct f32x8(f32, f32, f32, f32, f32, f32, f32, f32);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 #[rustfmt::skip]
+#[doc(hidden)]
 pub struct f32x16(f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32);
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+#[doc(hidden)]
 pub struct i32x4(i32, i32, i32, i32);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+#[doc(hidden)]
 pub struct i32x8(i32, i32, i32, i32, i32, i32, i32, i32);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 #[rustfmt::skip]
+#[doc(hidden)]
 pub struct i32x16(i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32);
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+#[doc(hidden)]
 pub struct u32x4(u32, u32, u32, u32);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+#[doc(hidden)]
 pub struct u32x8(u32, u32, u32, u32, u32, u32, u32, u32);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 #[rustfmt::skip]
+#[doc(hidden)]
 pub struct u32x16(u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32);
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+#[doc(hidden)]
 pub struct m32x4(m32, m32, m32, m32);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+#[doc(hidden)]
 pub struct m32x8(m32, m32, m32, m32, m32, m32, m32, m32);
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+#[doc(hidden)]
 pub struct f64x2(f64, f64);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+#[doc(hidden)]
 pub struct f64x4(f64, f64, f64, f64);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+#[doc(hidden)]
 pub struct f64x8(f64, f64, f64, f64, f64, f64, f64, f64);
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+#[doc(hidden)]
 pub struct i64x2(i64, i64);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+#[doc(hidden)]
 pub struct i64x4(i64, i64, i64, i64);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+#[doc(hidden)]
 pub struct i64x8(i64, i64, i64, i64, i64, i64, i64, i64);
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+#[doc(hidden)]
 pub struct u64x2(u64, u64);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+#[doc(hidden)]
 pub struct u64x4(u64, u64, u64, u64);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+#[doc(hidden)]
 pub struct u64x8(u64, u64, u64, u64, u64, u64, u64, u64);
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+#[doc(hidden)]
 pub struct m64x2(m64, m64);
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+#[doc(hidden)]
 pub struct m64x4(m64, m64, m64, m64);
 
 unsafe impl Zeroable for f32x4 {}
