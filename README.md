@@ -1,0 +1,1 @@
+Safe generic SIMD wrapper.
