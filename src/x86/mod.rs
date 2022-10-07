@@ -684,6 +684,7 @@ impl Debug for m32x16 {
     }
 }
 
+#[cfg(feature = "nightly")]
 #[rustfmt::skip]
 impl Simd for Avx512f {
     type m32s = m32x16;
