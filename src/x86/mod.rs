@@ -161,7 +161,7 @@ impl Sse2 {
     }
 
     #[inline]
-    pub unsafe fn new_uncheched() -> Self {
+    pub unsafe fn new_unchecked() -> Self {
         Self { __private: () }
     }
 }
@@ -175,7 +175,7 @@ impl Sse41 {
         {
             Some(Self {
                 __private: (),
-                sse2: Sse2::try_new().unwrap(),
+                sse2: unsafe { Sse2::new_unchecked() },
             })
         } else {
             None
@@ -183,10 +183,10 @@ impl Sse41 {
     }
 
     #[inline]
-    pub unsafe fn new_uncheched() -> Self {
+    pub unsafe fn new_unchecked() -> Self {
         Self {
             __private: (),
-            sse2: Sse2::new_uncheched(),
+            sse2: Sse2::new_unchecked(),
         }
     }
 }
@@ -197,7 +197,7 @@ impl Avx {
         if x86_feature_detected!("avx") {
             Some(Self {
                 __private: (),
-                sse41: Sse41::try_new().unwrap(),
+                sse41: unsafe { Sse41::new_unchecked() },
             })
         } else {
             None
@@ -205,10 +205,10 @@ impl Avx {
     }
 
     #[inline]
-    pub unsafe fn new_uncheched() -> Self {
+    pub unsafe fn new_unchecked() -> Self {
         Self {
             __private: (),
-            sse41: Sse41::new_uncheched(),
+            sse41: Sse41::new_unchecked(),
         }
     }
 }
@@ -219,7 +219,7 @@ impl Avx2 {
         if x86_feature_detected!("avx2") {
             Some(Self {
                 __private: (),
-                avx: Avx::try_new().unwrap(),
+                avx: unsafe { Avx::new_unchecked() },
             })
         } else {
             None
@@ -227,10 +227,10 @@ impl Avx2 {
     }
 
     #[inline]
-    pub unsafe fn new_uncheched() -> Self {
+    pub unsafe fn new_unchecked() -> Self {
         Self {
             __private: (),
-            avx: Avx::new_uncheched(),
+            avx: Avx::new_unchecked(),
         }
     }
 }
@@ -241,7 +241,7 @@ impl FmaAvx2 {
         if x86_feature_detected!("fma") && x86_feature_detected!("avx2") {
             Some(Self {
                 __private: (),
-                avx2: Avx2::try_new().unwrap(),
+                avx2: unsafe { Avx2::new_unchecked() },
             })
         } else {
             None
@@ -249,10 +249,10 @@ impl FmaAvx2 {
     }
 
     #[inline]
-    pub unsafe fn new_uncheched() -> Self {
+    pub unsafe fn new_unchecked() -> Self {
         Self {
             __private: (),
-            avx2: Avx2::new_uncheched(),
+            avx2: Avx2::new_unchecked(),
         }
     }
 }
@@ -264,7 +264,7 @@ impl Avx512f {
         if x86_feature_detected!("avx512f") {
             Some(Self {
                 __private: (),
-                fma_avx2: FmaAvx2::try_new().unwrap(),
+                fma_avx2: unsafe { FmaAvx2::new_unchecked() },
             })
         } else {
             None
@@ -272,10 +272,10 @@ impl Avx512f {
     }
 
     #[inline]
-    pub unsafe fn new_uncheched() -> Self {
+    pub unsafe fn new_unchecked() -> Self {
         Self {
             __private: (),
-            fma_avx2: FmaAvx2::new_uncheched(),
+            fma_avx2: FmaAvx2::new_unchecked(),
         }
     }
 }
@@ -374,6 +374,15 @@ impl Simd for Sse2 {
             transmute(_mm_or_pd(_mm_and_pd(mask, if_true), _mm_andnot_pd(mask, if_false)))
         }
     }
+
+    #[inline]
+    fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
+        #[target_feature(enable = "sse2")]
+        unsafe fn vectorize<Op: WithSimd>(this: Sse2, op: Op) -> Op::Output {
+            op.with_simd(this)
+        }
+        unsafe { vectorize(self, op) }
+    }
 }
 
 #[rustfmt::skip]
@@ -450,6 +459,15 @@ impl Simd for Sse41 {
             transmute(_mm_blendv_pd(if_false, if_true, mask))
         }
     }
+
+    #[inline]
+    fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
+        #[target_feature(enable = "sse4.1")]
+        unsafe fn vectorize<Op: WithSimd>(this: Sse41, op: Op) -> Op::Output {
+            op.with_simd(this)
+        }
+        unsafe { vectorize(self, op) }
+    }
 }
 
 #[rustfmt::skip]
@@ -522,6 +540,15 @@ impl Simd for Avx {
             transmute(_mm256_blendv_pd(if_false, if_true, mask))
         }
     }
+
+    #[inline]
+    fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
+        #[target_feature(enable = "avx")]
+        unsafe fn vectorize<Op: WithSimd>(this: Avx, op: Op) -> Op::Output {
+            op.with_simd(this)
+        }
+        unsafe { vectorize(self, op) }
+    }
 }
 
 #[rustfmt::skip]
@@ -579,6 +606,15 @@ impl Simd for Avx2 {
         fn m32s_select_u32s(self, mask: Self::m32s, if_true: Self::u32s, if_false: Self::u32s) -> Self::u32s;
         fn m64s_select_u64s(self, mask: Self::m64s, if_true: Self::u64s, if_false: Self::u64s) -> Self::u64s;
     }
+
+    #[inline]
+    fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
+        #[target_feature(enable = "avx2")]
+        unsafe fn vectorize<Op: WithSimd>(this: Avx2, op: Op) -> Op::Output {
+            op.with_simd(this)
+        }
+        unsafe { vectorize(self, op) }
+    }
 }
 
 #[rustfmt::skip]
@@ -635,6 +671,15 @@ impl Simd for FmaAvx2 {
 
         fn m32s_select_u32s(self, mask: Self::m32s, if_true: Self::u32s, if_false: Self::u32s) -> Self::u32s;
         fn m64s_select_u64s(self, mask: Self::m64s, if_true: Self::u64s, if_false: Self::u64s) -> Self::u64s;
+    }
+
+    #[inline]
+    fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
+        #[target_feature(enable = "fma,avx2")]
+        unsafe fn vectorize<Op: WithSimd>(this: FmaAvx2, op: Op) -> Op::Output {
+            op.with_simd(this)
+        }
+        unsafe { vectorize(self, op) }
     }
 }
 
@@ -758,6 +803,113 @@ impl Simd for Avx512f {
             let if_false: __m512d = transmute(if_false);
 
             transmute(_mm512_mask_blend_pd(mask, if_false, if_true))
+        }
+    }
+
+    #[inline]
+    fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
+        #[target_feature(enable = "avx512f")]
+        unsafe fn vectorize<Op: WithSimd>(this: Avx512f, op: Op) -> Op::Output {
+            op.with_simd(this)
+        }
+        unsafe { vectorize(self, op) }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
+pub enum Arch {
+    Scalar(crate::Scalar),
+    Sse2(Sse2),
+    Sse41(Sse41),
+    Avx(Avx),
+    Avx2(Avx2),
+    FmaAvx2(FmaAvx2),
+    #[cfg(feature = "nightly")]
+    Avx512f(Avx512f),
+}
+
+impl Arch {
+    #[inline]
+    pub fn new() -> Self {
+        #[allow(unused_unsafe)]
+        unsafe {
+            #[cfg(feature = "nightly")]
+            {
+                if x86_feature_detected!("avx512f") {
+                    return Self::Avx512f(Avx512f::new_unchecked());
+                }
+            }
+
+            if x86_feature_detected!("fma") && x86_feature_detected!("avx2") {
+                Self::FmaAvx2(FmaAvx2::new_unchecked())
+            } else if x86_feature_detected!("avx") {
+                Self::Avx(Avx::new_unchecked())
+            } else if x86_feature_detected!("sse4.1") {
+                Self::Sse41(Sse41::new_unchecked())
+            } else if x86_feature_detected!("sse2") {
+                Self::Sse2(Sse2::new_unchecked())
+            } else {
+                Self::Scalar(crate::Scalar::new())
+            }
+        }
+    }
+
+    #[inline]
+    pub fn dispatch<Op: WithSimd>(self, op: Op) -> Op::Output {
+        match self {
+            Arch::Scalar(simd) => simd.vectorize(op),
+            Arch::Sse2(simd) => simd.vectorize(op),
+            Arch::Sse41(simd) => simd.vectorize(op),
+            Arch::Avx(simd) => simd.vectorize(op),
+            Arch::Avx2(simd) => simd.vectorize(op),
+            Arch::FmaAvx2(simd) => simd.vectorize(op),
+            #[cfg(feature = "nightly")]
+            Arch::Avx512f(simd) => simd.vectorize(op),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn times_two() {
+        let n = 1312;
+        let mut v = (0..n).map(|i| i as f64).collect::<Vec<_>>();
+        let arch = Arch::new();
+
+        struct TimesThree<'a>(&'a mut [f64]);
+        impl<'a> WithSimd for TimesThree<'a> {
+            type Output = ();
+
+            #[inline(always)]
+            fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
+                let v = self.0;
+                let (head, tail) = S::f64s_as_mut_simd(v);
+
+                let three = simd.f64s_splat(3.0);
+                for x in head {
+                    *x = simd.f64s_mul(three, *x);
+                }
+
+                for x in tail {
+                    *x = *x * 3.0;
+                }
+            }
+        }
+
+        arch.dispatch(|| {
+            for x in &mut v {
+                *x *= 2.0;
+            }
+        });
+
+        arch.dispatch(TimesThree(&mut v));
+
+        for (i, x) in v.into_iter().enumerate() {
+            assert_eq!(x, 6.0 * i as f64);
         }
     }
 }

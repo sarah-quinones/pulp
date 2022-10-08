@@ -1,5 +1,5 @@
 #![allow(non_camel_case_types)]
-#![cfg_attr(feature = "nightly", feature(stdsimd))]
+#![cfg_attr(feature = "nightly", feature(stdsimd), feature(avx512_target_feature))]
 
 use core::{
     fmt::Debug,
@@ -13,6 +13,21 @@ mod seal {
     pub trait Seal {}
 }
 
+pub trait WithSimd {
+    type Output;
+
+    fn with_simd<S: Simd>(self, simd: S) -> Self::Output;
+}
+
+impl<F: FnOnce()> WithSimd for F {
+    type Output = ();
+
+    fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
+        let _simd = &simd;
+        self()
+    }
+}
+
 #[rustfmt::skip]
 pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     type m32s: Debug + Copy + Send + Sync + 'static;
@@ -24,6 +39,8 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     type f64s: Debug + Copy + Send + Sync + 'static;
     type i64s: Debug + Copy + Send + Sync + 'static;
     type u64s: Debug + Copy + Send + Sync + 'static;
+
+    fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output;
 
     #[inline] fn f32s_as_simd(slice: &[f32]) -> (&[Self::f32s], &[f32]) { unsafe { split_slice(slice) } }
     #[inline] fn f32s_as_mut_simd(slice: &mut [f32]) -> (&mut [Self::f32s], &mut [f32]) { unsafe { split_mut_slice(slice) } }
@@ -182,6 +199,11 @@ impl Simd for Scalar {
 
     #[inline] fn m32s_select_u32s(self, mask: Self::m32s, if_true: Self::u32s, if_false: Self::u32s) -> Self::u32s { if mask { if_true } else { if_false } }
     #[inline] fn m64s_select_u64s(self, mask: Self::m64s, if_true: Self::u64s, if_false: Self::u64s) -> Self::u64s { if mask { if_true } else { if_false } }
+
+    #[inline]
+    fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
+        op.with_simd(self)
+    }
 }
 
 #[derive(Copy, Clone)]
@@ -476,3 +498,5 @@ unsafe fn transmute<T, U>(src: T) -> U {
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 pub mod x86;
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+pub use x86::Arch;
