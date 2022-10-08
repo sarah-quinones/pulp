@@ -496,6 +496,28 @@ unsafe fn transmute<T, U>(src: T) -> U {
     core::mem::transmute_copy(&src)
 }
 
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+#[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
+pub enum Arch {
+    Scalar(crate::Scalar),
+}
+
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+impl Arch {
+    #[inline]
+    pub fn new() -> Self {
+        Self::Scalar(crate::Scalar::new())
+    }
+
+    #[inline]
+    pub fn dispatch<Op: WithSimd>(self, op: Op) -> Op::Output {
+        match self {
+            Arch::Scalar(simd) => simd.vectorize(op),
+        }
+    }
+}
+
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 pub mod x86;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
