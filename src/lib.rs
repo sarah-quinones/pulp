@@ -79,6 +79,7 @@ pub trait WithSimd {
 impl<F: FnOnce()> WithSimd for F {
     type Output = ();
 
+    #[inline]
     fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
         let _simd = &simd;
         self()
