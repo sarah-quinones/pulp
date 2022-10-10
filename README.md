@@ -1,6 +1,9 @@
 `pulp` is a safe abstraction over SIMD instructions, that allows you to write a function once
 and dispatch to equivalent vectorized versions based on the features detected at runtime.
 
+[![Documentation](https://docs.rs/pulp/badge.svg)](https://docs.rs/pulp)
+[![Crate](https://img.shields.io/crates/v/pulp.svg)](https://crates.io/crates/pulp)
+
 # Autovectorization example
 
 ```rust
