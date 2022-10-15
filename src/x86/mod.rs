@@ -383,6 +383,11 @@ impl Simd for Sse2 {
         }
         unsafe { vectorize(self, op) }
     }
+
+    #[inline] fn f32s_min(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { unsafe { transmute(_mm_min_ps(a.as_vec(), b.as_vec())) } }
+    #[inline] fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { unsafe { transmute(_mm_max_ps(a.as_vec(), b.as_vec())) } }
+    #[inline] fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { unsafe { transmute(_mm_min_pd(a.as_vec(), b.as_vec())) } }
+    #[inline] fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { unsafe { transmute(_mm_max_pd(a.as_vec(), b.as_vec())) } }
 }
 
 #[rustfmt::skip]
@@ -437,6 +442,11 @@ impl Simd for Sse41 {
         fn f64s_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s;
         fn f64s_less_than(self, a: Self::f64s, b: Self::f64s) -> Self::m64s;
         fn f64s_less_than_or_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s;
+
+        fn f32s_min(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
+        fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
+        fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
+        fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
     }
 
     #[inline]
@@ -549,6 +559,11 @@ impl Simd for Avx {
         }
         unsafe { vectorize(self, op) }
     }
+
+    #[inline] fn f32s_min(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { unsafe { transmute(_mm256_min_ps(a.as_vec(), b.as_vec())) } }
+    #[inline] fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { unsafe { transmute(_mm256_max_ps(a.as_vec(), b.as_vec())) } }
+    #[inline] fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { unsafe { transmute(_mm256_min_pd(a.as_vec(), b.as_vec())) } }
+    #[inline] fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { unsafe { transmute(_mm256_max_pd(a.as_vec(), b.as_vec())) } }
 }
 
 #[rustfmt::skip]
@@ -605,6 +620,11 @@ impl Simd for Avx2 {
 
         fn m32s_select_u32s(self, mask: Self::m32s, if_true: Self::u32s, if_false: Self::u32s) -> Self::u32s;
         fn m64s_select_u64s(self, mask: Self::m64s, if_true: Self::u64s, if_false: Self::u64s) -> Self::u64s;
+
+        fn f32s_min(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
+        fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
+        fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
+        fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
     }
 
     #[inline]
@@ -671,6 +691,11 @@ impl Simd for FmaAvx2 {
 
         fn m32s_select_u32s(self, mask: Self::m32s, if_true: Self::u32s, if_false: Self::u32s) -> Self::u32s;
         fn m64s_select_u64s(self, mask: Self::m64s, if_true: Self::u64s, if_false: Self::u64s) -> Self::u64s;
+
+        fn f32s_min(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
+        fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
+        fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
+        fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
     }
 
     #[inline] fn f64s_mul_adde(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s { unsafe { transmute(_mm256_fmadd_pd(a.as_vec(), b.as_vec(), c.as_vec())) } }
@@ -820,6 +845,11 @@ impl Simd for Avx512f {
         }
         unsafe { vectorize(self, op) }
     }
+
+    #[inline] fn f32s_min(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { unsafe { transmute(_mm512_min_ps(a.as_vec(), b.as_vec())) } }
+    #[inline] fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { unsafe { transmute(_mm512_max_ps(a.as_vec(), b.as_vec())) } }
+    #[inline] fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { unsafe { transmute(_mm512_min_pd(a.as_vec(), b.as_vec())) } }
+    #[inline] fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { unsafe { transmute(_mm512_max_pd(a.as_vec(), b.as_vec())) } }
 }
 
 #[derive(Debug, Clone, Copy)]

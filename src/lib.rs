@@ -76,8 +76,8 @@ pub trait WithSimd {
     fn with_simd<S: Simd>(self, simd: S) -> Self::Output;
 }
 
-impl<F: FnOnce()> WithSimd for F {
-    type Output = ();
+impl<R, F: FnOnce() -> R> WithSimd for F {
+    type Output = R;
 
     #[inline]
     fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
@@ -154,6 +154,8 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     #[inline] fn m64s_select_f64s(self, mask: Self::m64s, if_true: Self::f64s, if_false: Self::f64s) -> Self::f64s { self.u64s_transmute_f64s(self.m64s_select_u64s(mask, self.f64s_transmute_u64s(if_true), self.f64s_transmute_u64s(if_false))) }
 
     fn f32s_splat(self, value: f32) -> Self::f32s;
+    #[inline] fn f32s_abs(self, a: Self::f32s) -> Self::f32s { self.f32s_and(self.f32s_not(self.f32s_splat(-0.0)), a) }
+    #[inline] fn f32s_neg(self, a: Self::f32s) -> Self::f32s { self.f32s_xor(self.f32s_splat(-0.0), a) }
     fn f32s_add(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
     fn f32s_sub(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
     fn f32s_mul(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
@@ -164,8 +166,12 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     fn f32s_less_than_or_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s;
     #[inline] fn f32s_greater_than(self, a: Self::f32s, b: Self::f32s) -> Self::m32s { self.f32s_less_than(b, a) }
     #[inline] fn f32s_greater_than_or_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s { self.f32s_less_than_or_equal(b, a) }
+    fn f32s_min(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
+    fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
 
     fn f64s_splat(self, value: f64) -> Self::f64s;
+    #[inline] fn f64s_abs(self, a: Self::f64s) -> Self::f64s { self.f64s_and(self.f64s_not(self.f64s_splat(-0.0)), a) }
+    #[inline] fn f64s_neg(self, a: Self::f64s) -> Self::f64s { self.f64s_xor(a, self.f64s_splat(-0.0)) }
     fn f64s_add(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
     fn f64s_sub(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
     fn f64s_mul(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
@@ -176,6 +182,8 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     fn f64s_less_than_or_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s;
     #[inline] fn f64s_greater_than(self, a: Self::f64s, b: Self::f64s) -> Self::m64s { self.f64s_less_than(b, a) }
     #[inline] fn f64s_greater_than_or_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s { self.f64s_less_than_or_equal(b, a) }
+    fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
+    fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
 
     #[inline] fn f32s_transmute_i32s(self, a: Self::f32s) -> Self::i32s { unsafe { transmute(a) } }
     #[inline] fn f32s_transmute_u32s(self, a: Self::f32s) -> Self::u32s { unsafe { transmute(a) } }
@@ -258,10 +266,13 @@ impl Simd for Scalar {
     #[inline] fn m32s_select_u32s(self, mask: Self::m32s, if_true: Self::u32s, if_false: Self::u32s) -> Self::u32s { if mask { if_true } else { if_false } }
     #[inline] fn m64s_select_u64s(self, mask: Self::m64s, if_true: Self::u64s, if_false: Self::u64s) -> Self::u64s { if mask { if_true } else { if_false } }
 
-    #[inline]
-    fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
-        op.with_simd(self)
-    }
+    #[inline] fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output { op.with_simd(self) }
+
+    #[inline] fn f32s_min(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { a.min(b) }
+    #[inline] fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { a.max(b) }
+
+    #[inline] fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { a.min(b) }
+    #[inline] fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { a.max(b) }
 }
 
 #[derive(Copy, Clone)]
