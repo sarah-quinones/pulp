@@ -58,10 +58,8 @@
 #![allow(non_camel_case_types)]
 #![cfg_attr(feature = "nightly", feature(stdsimd), feature(avx512_target_feature))]
 
-use core::{
-    fmt::Debug,
-    slice::{from_raw_parts, from_raw_parts_mut},
-};
+use core::fmt::Debug;
+use core::slice::{from_raw_parts, from_raw_parts_mut};
 
 use bytemuck::{NoUninit, Pod, Zeroable};
 use seal::Seal;
@@ -89,14 +87,14 @@ impl<R, F: FnOnce() -> R> WithSimd for F {
 #[rustfmt::skip]
 pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     type m32s: Debug + Copy + Send + Sync + 'static;
-    type f32s: Debug + Copy + Send + Sync + 'static;
-    type i32s: Debug + Copy + Send + Sync + 'static;
-    type u32s: Debug + Copy + Send + Sync + 'static;
+    type f32s: Debug + Copy + Send + Sync + Pod + 'static;
+    type i32s: Debug + Copy + Send + Sync + Pod + 'static;
+    type u32s: Debug + Copy + Send + Sync + Pod + 'static;
 
     type m64s: Debug + Copy + Send + Sync + 'static;
-    type f64s: Debug + Copy + Send + Sync + 'static;
-    type i64s: Debug + Copy + Send + Sync + 'static;
-    type u64s: Debug + Copy + Send + Sync + 'static;
+    type f64s: Debug + Copy + Send + Sync + Pod + 'static;
+    type i64s: Debug + Copy + Send + Sync + Pod + 'static;
+    type u64s: Debug + Copy + Send + Sync + Pod + 'static;
 
     fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output;
 
@@ -152,6 +150,22 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     #[inline] fn m32s_select_f32s(self, mask: Self::m32s, if_true: Self::f32s, if_false: Self::f32s) -> Self::f32s { self.u32s_transmute_f32s(self.m32s_select_u32s(mask, self.f32s_transmute_u32s(if_true), self.f32s_transmute_u32s(if_false))) }
     #[inline] fn m64s_select_i64s(self, mask: Self::m64s, if_true: Self::i64s, if_false: Self::i64s) -> Self::i64s { self.u64s_transmute_i64s(self.m64s_select_u64s(mask, self.i64s_transmute_u64s(if_true), self.i64s_transmute_u64s(if_false))) }
     #[inline] fn m64s_select_f64s(self, mask: Self::m64s, if_true: Self::f64s, if_false: Self::f64s) -> Self::f64s { self.u64s_transmute_f64s(self.m64s_select_u64s(mask, self.f64s_transmute_u64s(if_true), self.f64s_transmute_u64s(if_false))) }
+
+    fn u32s_splat(self, value: u32) -> Self::u32s;
+    fn u32s_add(self, a: Self::u32s, b: Self::u32s) -> Self::u32s;
+    fn u32s_sub(self, a: Self::u32s, b: Self::u32s) -> Self::u32s;
+
+    fn u64s_splat(self, value: u64) -> Self::u64s;
+    fn u64s_add(self, a: Self::u64s, b: Self::u64s) -> Self::u64s;
+    fn u64s_sub(self, a: Self::u64s, b: Self::u64s) -> Self::u64s;
+
+    #[inline] fn i32s_splat(self, value: i32) -> Self::i32s { self.u32s_transmute_i32s(self.u32s_splat(value as u32)) }
+    #[inline] fn i32s_add(self, a: Self::i32s, b: Self::i32s) -> Self::i32s { self.u32s_transmute_i32s(self.u32s_add(self.i32s_transmute_u32s(a), self.i32s_transmute_u32s(b))) }
+    #[inline] fn i32s_sub(self, a: Self::i32s, b: Self::i32s) -> Self::i32s { self.u32s_transmute_i32s(self.u32s_sub(self.i32s_transmute_u32s(a), self.i32s_transmute_u32s(b))) }
+
+    #[inline] fn i64s_splat(self, value: i64) -> Self::i64s { self.u64s_transmute_i64s(self.u64s_splat(value as u64)) }
+    #[inline] fn i64s_add(self, a: Self::i64s, b: Self::i64s) -> Self::i64s { self.u64s_transmute_i64s(self.u64s_add(self.i64s_transmute_u64s(a), self.i64s_transmute_u64s(b))) }
+    #[inline] fn i64s_sub(self, a: Self::i64s, b: Self::i64s) -> Self::i64s { self.u64s_transmute_i64s(self.u64s_sub(self.i64s_transmute_u64s(a), self.i64s_transmute_u64s(b))) }
 
     fn f32s_splat(self, value: f32) -> Self::f32s;
     #[inline] fn f32s_abs(self, a: Self::f32s) -> Self::f32s { self.f32s_and(self.f32s_not(self.f32s_splat(-0.0)), a) }
@@ -273,6 +287,14 @@ impl Simd for Scalar {
 
     #[inline] fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { a.min(b) }
     #[inline] fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { a.max(b) }
+
+    #[inline] fn u32s_add(self, a: Self::u32s, b: Self::u32s) -> Self::u32s { a.wrapping_add(b) }
+    #[inline] fn u32s_sub(self, a: Self::u32s, b: Self::u32s) -> Self::u32s { a.wrapping_sub(b) }
+    #[inline] fn u64s_add(self, a: Self::u64s, b: Self::u64s) -> Self::u64s { a.wrapping_add(b) }
+    #[inline] fn u64s_sub(self, a: Self::u64s, b: Self::u64s) -> Self::u64s { a.wrapping_sub(b) }
+
+    #[inline] fn u32s_splat(self, value: u32) -> Self::u32s { value }
+    #[inline] fn u64s_splat(self, value: u64) -> Self::u64s { value }
 }
 
 #[derive(Copy, Clone)]

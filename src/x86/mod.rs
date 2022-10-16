@@ -388,6 +388,14 @@ impl Simd for Sse2 {
     #[inline] fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { unsafe { transmute(_mm_max_ps(a.as_vec(), b.as_vec())) } }
     #[inline] fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { unsafe { transmute(_mm_min_pd(a.as_vec(), b.as_vec())) } }
     #[inline] fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { unsafe { transmute(_mm_max_pd(a.as_vec(), b.as_vec())) } }
+
+    #[inline] fn u32s_add(self, a: Self::u32s, b: Self::u32s) -> Self::u32s { unsafe { transmute(_mm_add_epi32(transmute(a), transmute(b))) } }
+    #[inline] fn u32s_sub(self, a: Self::u32s, b: Self::u32s) -> Self::u32s { unsafe { transmute(_mm_sub_epi32(transmute(a), transmute(b))) } }
+    #[inline] fn u64s_add(self, a: Self::u64s, b: Self::u64s) -> Self::u64s { unsafe { transmute(_mm_add_epi64(transmute(a), transmute(b))) } }
+    #[inline] fn u64s_sub(self, a: Self::u64s, b: Self::u64s) -> Self::u64s { unsafe { transmute(_mm_sub_epi64(transmute(a), transmute(b))) } }
+
+    #[inline] fn u32s_splat(self, value: u32) -> Self::u32s { unsafe { transmute(_mm_set1_epi32(value as i32)) } }
+    #[inline] fn u64s_splat(self, value: u64) -> Self::u64s { unsafe { transmute(_mm_set1_epi64x(value as i64)) } }
 }
 
 #[rustfmt::skip]
@@ -447,6 +455,14 @@ impl Simd for Sse41 {
         fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
         fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
         fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
+
+        fn u32s_splat(self, value: u32) -> Self::u32s;
+        fn u32s_add(self, a: Self::u32s, b: Self::u32s) -> Self::u32s;
+        fn u32s_sub(self, a: Self::u32s, b: Self::u32s) -> Self::u32s;
+
+        fn u64s_splat(self, value: u64) -> Self::u64s;
+        fn u64s_add(self, a: Self::u64s, b: Self::u64s) -> Self::u64s;
+        fn u64s_sub(self, a: Self::u64s, b: Self::u64s) -> Self::u64s;
     }
 
     #[inline]
@@ -564,6 +580,42 @@ impl Simd for Avx {
     #[inline] fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { unsafe { transmute(_mm256_max_ps(a.as_vec(), b.as_vec())) } }
     #[inline] fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { unsafe { transmute(_mm256_min_pd(a.as_vec(), b.as_vec())) } }
     #[inline] fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { unsafe { transmute(_mm256_max_pd(a.as_vec(), b.as_vec())) } }
+
+    #[inline] fn u32s_add(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+        unsafe {
+            let a: [__m128i; 2] = transmute(a);
+            let b: [__m128i; 2] = transmute(b);
+            let c: [__m128i; 2] = [_mm_add_epi32(a[0], b[0]), _mm_add_epi32(a[1], b[1])];
+            transmute(c)
+        }
+    }
+    #[inline] fn u32s_sub(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+        unsafe {
+            let a: [__m128i; 2] = transmute(a);
+            let b: [__m128i; 2] = transmute(b);
+            let c: [__m128i; 2] = [_mm_sub_epi32(a[0], b[0]), _mm_sub_epi32(a[1], b[1])];
+            transmute(c)
+        }
+    }
+    #[inline] fn u64s_add(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+        unsafe {
+            let a: [__m128i; 2] = transmute(a);
+            let b: [__m128i; 2] = transmute(b);
+            let c: [__m128i; 2] = [_mm_add_epi64(a[0], b[0]), _mm_add_epi64(a[1], b[1])];
+            transmute(c)
+        }
+    }
+    #[inline] fn u64s_sub(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+        unsafe {
+            let a: [__m128i; 2] = transmute(a);
+            let b: [__m128i; 2] = transmute(b);
+            let c: [__m128i; 2] = [_mm_sub_epi64(a[0], b[0]), _mm_sub_epi64(a[1], b[1])];
+            transmute(c)
+        }
+    }
+
+    #[inline] fn u32s_splat(self, value: u32) -> Self::u32s { unsafe { transmute(_mm256_set1_epi32(value as i32)) } }
+    #[inline] fn u64s_splat(self, value: u64) -> Self::u64s { unsafe { transmute(_mm256_set1_epi64x(value as i64)) } }
 }
 
 #[rustfmt::skip]
@@ -625,7 +677,15 @@ impl Simd for Avx2 {
         fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
         fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
         fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
+
+        fn u32s_splat(self, value: u32) -> Self::u32s;
+        fn u64s_splat(self, value: u64) -> Self::u64s;
     }
+
+    #[inline] fn u32s_add(self, a: Self::u32s, b: Self::u32s) -> Self::u32s { unsafe { transmute(_mm256_add_epi32(transmute(a), transmute(b))) } }
+    #[inline] fn u32s_sub(self, a: Self::u32s, b: Self::u32s) -> Self::u32s { unsafe { transmute(_mm256_sub_epi32(transmute(a), transmute(b))) } }
+    #[inline] fn u64s_add(self, a: Self::u64s, b: Self::u64s) -> Self::u64s { unsafe { transmute(_mm256_add_epi64(transmute(a), transmute(b))) } }
+    #[inline] fn u64s_sub(self, a: Self::u64s, b: Self::u64s) -> Self::u64s { unsafe { transmute(_mm256_sub_epi64(transmute(a), transmute(b))) } }
 
     #[inline]
     fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
@@ -696,6 +756,13 @@ impl Simd for FmaAvx2 {
         fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
         fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
         fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
+
+        fn u32s_add(self, a: Self::u32s, b: Self::u32s) -> Self::u32s;
+        fn u32s_sub(self, a: Self::u32s, b: Self::u32s) -> Self::u32s;
+        fn u64s_add(self, a: Self::u64s, b: Self::u64s) -> Self::u64s;
+        fn u64s_sub(self, a: Self::u64s, b: Self::u64s) -> Self::u64s;
+        fn u32s_splat(self, value: u32) -> Self::u32s;
+        fn u64s_splat(self, value: u64) -> Self::u64s;
     }
 
     #[inline] fn f64s_mul_adde(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s { unsafe { transmute(_mm256_fmadd_pd(a.as_vec(), b.as_vec(), c.as_vec())) } }
@@ -837,6 +904,16 @@ impl Simd for Avx512f {
         }
     }
 
+    #[inline] fn f32s_min(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { unsafe { transmute(_mm512_min_ps(a.as_vec(), b.as_vec())) } }
+    #[inline] fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { unsafe { transmute(_mm512_max_ps(a.as_vec(), b.as_vec())) } }
+    #[inline] fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { unsafe { transmute(_mm512_min_pd(a.as_vec(), b.as_vec())) } }
+    #[inline] fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { unsafe { transmute(_mm512_max_pd(a.as_vec(), b.as_vec())) } }
+
+    #[inline] fn u32s_add(self, a: Self::u32s, b: Self::u32s) -> Self::u32s { unsafe { transmute(_mm512_add_epi32(transmute(a), transmute(b))) } }
+    #[inline] fn u32s_sub(self, a: Self::u32s, b: Self::u32s) -> Self::u32s { unsafe { transmute(_mm512_sub_epi32(transmute(a), transmute(b))) } }
+    #[inline] fn u64s_add(self, a: Self::u64s, b: Self::u64s) -> Self::u64s { unsafe { transmute(_mm512_add_epi64(transmute(a), transmute(b))) } }
+    #[inline] fn u64s_sub(self, a: Self::u64s, b: Self::u64s) -> Self::u64s { unsafe { transmute(_mm512_sub_epi64(transmute(a), transmute(b))) } }
+
     #[inline]
     fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
         #[target_feature(enable = "avx512f")]
@@ -846,10 +923,8 @@ impl Simd for Avx512f {
         unsafe { vectorize(self, op) }
     }
 
-    #[inline] fn f32s_min(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { unsafe { transmute(_mm512_min_ps(a.as_vec(), b.as_vec())) } }
-    #[inline] fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { unsafe { transmute(_mm512_max_ps(a.as_vec(), b.as_vec())) } }
-    #[inline] fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { unsafe { transmute(_mm512_min_pd(a.as_vec(), b.as_vec())) } }
-    #[inline] fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { unsafe { transmute(_mm512_max_pd(a.as_vec(), b.as_vec())) } }
+    #[inline] fn u32s_splat(self, value: u32) -> Self::u32s { unsafe { transmute(_mm512_set1_epi32(value as i32)) } }
+    #[inline] fn u64s_splat(self, value: u64) -> Self::u64s { unsafe { transmute(_mm512_set1_epi64(value as i64)) } }
 }
 
 #[derive(Debug, Clone, Copy)]
