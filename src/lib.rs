@@ -59,9 +59,10 @@
 #![cfg_attr(feature = "nightly", feature(stdsimd), feature(avx512_target_feature))]
 
 use core::fmt::Debug;
+use core::marker::PhantomData;
 use core::slice::{from_raw_parts, from_raw_parts_mut};
 
-use bytemuck::{NoUninit, Pod, Zeroable};
+use bytemuck::{AnyBitPattern, NoUninit, Pod, Zeroable};
 use seal::Seal;
 
 mod seal {
@@ -77,7 +78,7 @@ pub trait WithSimd {
 impl<R, F: FnOnce() -> R> WithSimd for F {
     type Output = R;
 
-    #[inline]
+    #[inline(always)]
     fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
         let _simd = &simd;
         self()
@@ -199,19 +200,19 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
     fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
 
-    #[inline] fn f32s_transmute_i32s(self, a: Self::f32s) -> Self::i32s { unsafe { transmute(a) } }
-    #[inline] fn f32s_transmute_u32s(self, a: Self::f32s) -> Self::u32s { unsafe { transmute(a) } }
-    #[inline] fn i32s_transmute_f32s(self, a: Self::i32s) -> Self::f32s { unsafe { transmute(a) } }
-    #[inline] fn i32s_transmute_u32s(self, a: Self::i32s) -> Self::u32s { unsafe { transmute(a) } }
-    #[inline] fn u32s_transmute_f32s(self, a: Self::u32s) -> Self::f32s { unsafe { transmute(a) } }
-    #[inline] fn u32s_transmute_i32s(self, a: Self::u32s) -> Self::i32s { unsafe { transmute(a) } }
+    #[inline] fn f32s_transmute_i32s(self, a: Self::f32s) -> Self::i32s { cast(a) }
+    #[inline] fn f32s_transmute_u32s(self, a: Self::f32s) -> Self::u32s { cast(a) }
+    #[inline] fn i32s_transmute_f32s(self, a: Self::i32s) -> Self::f32s { cast(a) }
+    #[inline] fn i32s_transmute_u32s(self, a: Self::i32s) -> Self::u32s { cast(a) }
+    #[inline] fn u32s_transmute_f32s(self, a: Self::u32s) -> Self::f32s { cast(a) }
+    #[inline] fn u32s_transmute_i32s(self, a: Self::u32s) -> Self::i32s { cast(a) }
 
-    #[inline] fn f64s_transmute_i64s(self, a: Self::f64s) -> Self::i64s { unsafe { transmute(a) } }
-    #[inline] fn f64s_transmute_u64s(self, a: Self::f64s) -> Self::u64s { unsafe { transmute(a) } }
-    #[inline] fn i64s_transmute_f64s(self, a: Self::i64s) -> Self::f64s { unsafe { transmute(a) } }
-    #[inline] fn i64s_transmute_u64s(self, a: Self::i64s) -> Self::u64s { unsafe { transmute(a) } }
-    #[inline] fn u64s_transmute_f64s(self, a: Self::u64s) -> Self::f64s { unsafe { transmute(a) } }
-    #[inline] fn u64s_transmute_i64s(self, a: Self::u64s) -> Self::i64s { unsafe { transmute(a) } }
+    #[inline] fn f64s_transmute_i64s(self, a: Self::f64s) -> Self::i64s { cast(a) }
+    #[inline] fn f64s_transmute_u64s(self, a: Self::f64s) -> Self::u64s { cast(a) }
+    #[inline] fn i64s_transmute_f64s(self, a: Self::i64s) -> Self::f64s { cast(a) }
+    #[inline] fn i64s_transmute_u64s(self, a: Self::i64s) -> Self::u64s { cast(a) }
+    #[inline] fn u64s_transmute_f64s(self, a: Self::u64s) -> Self::f64s { cast(a) }
+    #[inline] fn u64s_transmute_i64s(self, a: Self::u64s) -> Self::i64s { cast(a) }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -581,27 +582,21 @@ unsafe fn split_mut_slice<T, U>(slice: &mut [T]) -> (&mut [U], &mut [T]) {
     )
 }
 
-#[inline]
-unsafe fn transmute<T, U>(src: T) -> U {
-    assert_eq!(core::mem::size_of::<T>(), core::mem::size_of::<U>());
-    core::mem::transmute_copy(&src)
-}
-
 #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
 #[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
-pub enum Arch {
+enum ArchInner {
     Scalar(crate::Scalar),
 }
 
 #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
-impl Arch {
+impl ArchInner {
     #[inline]
     pub fn new() -> Self {
         Self::Scalar(crate::Scalar::new())
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn dispatch<Op: WithSimd>(self, op: Op) -> Op::Output {
         match self {
             Arch::Scalar(simd) => simd.vectorize(op),
@@ -610,6 +605,50 @@ impl Arch {
 }
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-pub mod x86;
+mod x86;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-pub use x86::Arch;
+use x86::ArchInner;
+
+impl Arch {
+    #[inline]
+    pub fn new() -> Self {
+        Self {
+            inner: ArchInner::new(),
+        }
+    }
+    #[inline(always)]
+    pub fn dispatch<Op: WithSimd>(self, op: Op) -> Op::Output {
+        self.inner.dispatch(op)
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Arch {
+    inner: ArchInner,
+}
+
+#[doc(hidden)]
+pub struct CheckSameSize<T, U>(PhantomData<(T, U)>);
+impl<T, U> CheckSameSize<T, U> {
+    pub const VALID: () = {
+        assert!(core::mem::size_of::<T>() == core::mem::size_of::<U>());
+    };
+}
+
+#[macro_export]
+macro_rules! static_assert_same_size {
+    ($t: ty, $u: ty) => {
+        let _ = $crate::CheckSameSize::<$t, $u>::VALID;
+    };
+}
+
+#[inline(always)]
+pub fn cast<T: NoUninit, U: AnyBitPattern>(value: T) -> U {
+    static_assert_same_size!(T, U);
+    let value = core::mem::ManuallyDrop::new(value);
+    let ptr = &value as *const core::mem::ManuallyDrop<T> as *const U;
+    unsafe { ptr.read_unaligned() }
+}
+
+/// Platform dependent intrinsics.
+pub mod arch;

@@ -152,36 +152,12 @@ macro_rules! x86_feature_detected {
 
 impl Sse2 {
     #[inline]
-    pub fn try_new() -> Option<Self> {
-        if x86_feature_detected!("sse") && x86_feature_detected!("sse2") {
-            Some(Self { __private: () })
-        } else {
-            None
-        }
-    }
-
-    #[inline]
     pub unsafe fn new_unchecked() -> Self {
         Self { __private: () }
     }
 }
 
 impl Sse41 {
-    #[inline]
-    pub fn try_new() -> Option<Self> {
-        if x86_feature_detected!("sse3")
-            && x86_feature_detected!("ssse3")
-            && x86_feature_detected!("sse4.1")
-        {
-            Some(Self {
-                __private: (),
-                sse2: unsafe { Sse2::new_unchecked() },
-            })
-        } else {
-            None
-        }
-    }
-
     #[inline]
     pub unsafe fn new_unchecked() -> Self {
         Self {
@@ -193,18 +169,6 @@ impl Sse41 {
 
 impl Avx {
     #[inline]
-    pub fn try_new() -> Option<Self> {
-        if x86_feature_detected!("avx") {
-            Some(Self {
-                __private: (),
-                sse41: unsafe { Sse41::new_unchecked() },
-            })
-        } else {
-            None
-        }
-    }
-
-    #[inline]
     pub unsafe fn new_unchecked() -> Self {
         Self {
             __private: (),
@@ -214,18 +178,6 @@ impl Avx {
 }
 
 impl Avx2 {
-    #[inline]
-    pub fn try_new() -> Option<Self> {
-        if x86_feature_detected!("avx2") {
-            Some(Self {
-                __private: (),
-                avx: unsafe { Avx::new_unchecked() },
-            })
-        } else {
-            None
-        }
-    }
-
     #[inline]
     pub unsafe fn new_unchecked() -> Self {
         Self {
@@ -237,18 +189,6 @@ impl Avx2 {
 
 impl FmaAvx2 {
     #[inline]
-    pub fn try_new() -> Option<Self> {
-        if x86_feature_detected!("fma") && x86_feature_detected!("avx2") {
-            Some(Self {
-                __private: (),
-                avx2: unsafe { Avx2::new_unchecked() },
-            })
-        } else {
-            None
-        }
-    }
-
-    #[inline]
     pub unsafe fn new_unchecked() -> Self {
         Self {
             __private: (),
@@ -259,18 +199,6 @@ impl FmaAvx2 {
 
 #[cfg(feature = "nightly")]
 impl Avx512f {
-    #[inline]
-    pub fn try_new() -> Option<Self> {
-        if x86_feature_detected!("avx512f") {
-            Some(Self {
-                __private: (),
-                fma_avx2: unsafe { FmaAvx2::new_unchecked() },
-            })
-        } else {
-            None
-        }
-    }
-
     #[inline]
     pub unsafe fn new_unchecked() -> Self {
         Self {
@@ -929,18 +857,17 @@ impl Simd for Avx512f {
 
 #[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
-pub enum Arch {
+pub enum ArchInner {
     Scalar(crate::Scalar),
     Sse2(Sse2),
     Sse41(Sse41),
     Avx(Avx),
-    Avx2(Avx2),
     FmaAvx2(FmaAvx2),
     #[cfg(feature = "nightly")]
     Avx512f(Avx512f),
 }
 
-impl Arch {
+impl ArchInner {
     #[inline]
     pub fn new() -> Self {
         #[allow(unused_unsafe)]
@@ -951,7 +878,6 @@ impl Arch {
                     return Self::Avx512f(Avx512f::new_unchecked());
                 }
             }
-
             if x86_feature_detected!("fma") && x86_feature_detected!("avx2") {
                 Self::FmaAvx2(FmaAvx2::new_unchecked())
             } else if x86_feature_detected!("avx") {
@@ -966,17 +892,16 @@ impl Arch {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn dispatch<Op: WithSimd>(self, op: Op) -> Op::Output {
         match self {
-            Arch::Scalar(simd) => simd.vectorize(op),
-            Arch::Sse2(simd) => simd.vectorize(op),
-            Arch::Sse41(simd) => simd.vectorize(op),
-            Arch::Avx(simd) => simd.vectorize(op),
-            Arch::Avx2(simd) => simd.vectorize(op),
-            Arch::FmaAvx2(simd) => simd.vectorize(op),
+            ArchInner::Scalar(simd) => simd.vectorize(op),
+            ArchInner::Sse2(simd) => simd.vectorize(op),
+            ArchInner::Sse41(simd) => simd.vectorize(op),
+            ArchInner::Avx(simd) => simd.vectorize(op),
+            ArchInner::FmaAvx2(simd) => simd.vectorize(op),
             #[cfg(feature = "nightly")]
-            Arch::Avx512f(simd) => simd.vectorize(op),
+            ArchInner::Avx512f(simd) => simd.vectorize(op),
         }
     }
 }
