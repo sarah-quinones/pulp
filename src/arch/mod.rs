@@ -27,6 +27,24 @@ mod arch {
     pub use core::arch::x86_64::*;
 }
 
+macro_rules! delegate {
+    ($(
+        $(#[$attr: meta])*
+        $(unsafe $($placeholder: lifetime)?)?
+        fn $func: ident $(<$(const $generic: ident: $generic_ty: ty),* $(,)?>)?(
+            $($arg: ident: $ty: ty),* $(,)?
+        ) $(-> $ret: ty)?;
+    )*) => {
+        $(
+            $(#[$attr])*
+            #[inline(always)]
+            $(unsafe $($placeholder)?)? fn $func $(<$(const $generic: $generic_ty,)*>)?(self, $($arg: $ty,)*) $(-> $ret)? {
+                unsafe { arch::$func $(::<$($generic,)*>)?($($arg,)*) }
+            }
+        )*
+    };
+}
+
 #[cfg(target_arch = "x86")]
 pub mod x86;
 
