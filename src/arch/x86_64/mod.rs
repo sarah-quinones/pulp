@@ -1,4 +1,3 @@
-use super::arch;
 pub use super::x86::*;
 
 pub trait Sse41X64: Sse41 {}

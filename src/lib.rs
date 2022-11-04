@@ -230,6 +230,8 @@ impl Scalar {
 impl Seal for Scalar {}
 #[rustfmt::skip]
 impl Simd for Scalar {
+    #[inline] fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output { op.with_simd(self) }
+
     type m32s = bool;
     type f32s = f32;
     type i32s = i32;
@@ -281,8 +283,6 @@ impl Simd for Scalar {
     #[inline] fn m32s_select_u32s(self, mask: Self::m32s, if_true: Self::u32s, if_false: Self::u32s) -> Self::u32s { if mask { if_true } else { if_false } }
     #[inline] fn m64s_select_u64s(self, mask: Self::m64s, if_true: Self::u64s, if_false: Self::u64s) -> Self::u64s { if mask { if_true } else { if_false } }
 
-    #[inline] fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output { op.with_simd(self) }
-
     #[inline] fn f32s_min(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { a.min(b) }
     #[inline] fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { a.max(b) }
 
@@ -296,6 +296,87 @@ impl Simd for Scalar {
 
     #[inline] fn u32s_splat(self, value: u32) -> Self::u32s { value }
     #[inline] fn u64s_splat(self, value: u64) -> Self::u64s { value }
+}
+
+#[allow(unused_macros)]
+macro_rules! autovectorize_impl {
+    ($ty: ty, #[target_feature(enable = $tt: tt)]) => {
+        #[rustfmt::skip]
+        impl Simd for $ty {
+            #[inline] fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
+                #[target_feature(enable = $tt)]
+                unsafe fn vectorize<Op: WithSimd>(this: $ty, op: Op) -> Op::Output {
+                    op.with_simd(this)
+                }
+                unsafe { vectorize(self, op) }
+            }
+
+            type m32s = m32x4;
+            type f32s = f32x4;
+            type i32s = i32x4;
+            type u32s = u32x4;
+
+            type m64s = m64x2;
+            type f64s = f64x2;
+            type i64s = i64x2;
+            type u64s = u64x2;
+
+            #[inline] fn m32s_not(self, a: Self::m32s) -> Self::m32s { m32x4(a.0.flip(), a.1.flip(), a.2.flip(), a.3.flip()) }
+            #[inline] fn m32s_and(self, a: Self::m32s, b: Self::m32s) -> Self::m32s { m32x4(m32(a.0.0 & b.0.0), m32(a.1.0 & b.1.0), m32(a.2.0 & b.2.0), m32(a.3.0 & b.3.0)) }
+            #[inline] fn m32s_or(self, a: Self::m32s, b: Self::m32s) -> Self::m32s { m32x4(m32(a.0.0 | b.0.0), m32(a.1.0 | b.1.0), m32(a.2.0 | b.2.0), m32(a.3.0 | b.3.0)) }
+            #[inline] fn m32s_xor(self, a: Self::m32s, b: Self::m32s) -> Self::m32s { m32x4(m32(a.0.0 ^ b.0.0), m32(a.1.0 ^ b.1.0), m32(a.2.0 ^ b.2.0), m32(a.3.0 ^ b.3.0)) }
+
+            #[inline] fn f32s_splat(self, value: f32) -> Self::f32s { f32x4(value, value, value, value) }
+            #[inline] fn f32s_add(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { f32x4(a.0 + b.0, a.1 + b.1, a.2 + b.2, a.3 + b.3) }
+            #[inline] fn f32s_sub(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { f32x4(a.0 - b.0, a.1 - b.1, a.2 - b.2, a.3 - b.3) }
+            #[inline] fn f32s_mul(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { f32x4(a.0 * b.0, a.1 * b.1, a.2 * b.2, a.3 * b.3) }
+            #[inline] fn f32s_div(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { f32x4(a.0 / b.0, a.1 / b.1, a.2 / b.2, a.3 / b.3) }
+            #[inline] fn f32s_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s { m32x4(m32::new(a.0 == b.0), m32::new(a.1 == b.1), m32::new(a.2 == b.2), m32::new(a.3 == b.3)) }
+            #[inline] fn f32s_less_than(self, a: Self::f32s, b: Self::f32s) -> Self::m32s { m32x4(m32::new(a.0 < b.0), m32::new(a.1 < b.1), m32::new(a.2 < b.2), m32::new(a.3 < b.3)) }
+            #[inline] fn f32s_less_than_or_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s { m32x4(m32::new(a.0 <= b.0), m32::new(a.1 <= b.1), m32::new(a.2 <= b.2), m32::new(a.3 <= b.3)) }
+
+            #[inline] fn m64s_not(self, a: Self::m64s) -> Self::m64s { m64x2(a.0.flip(), a.1.flip()) }
+            #[inline] fn m64s_and(self, a: Self::m64s, b: Self::m64s) -> Self::m64s { m64x2(m64(a.0.0 & b.0.0), m64(a.1.0 & b.1.0)) }
+            #[inline] fn m64s_or(self, a: Self::m64s, b: Self::m64s) -> Self::m64s { m64x2(m64(a.0.0 | b.0.0), m64(a.1.0 | b.1.0)) }
+            #[inline] fn m64s_xor(self, a: Self::m64s, b: Self::m64s) -> Self::m64s { m64x2(m64(a.0.0 ^ b.0.0), m64(a.1.0 ^ b.1.0)) }
+
+            #[inline] fn f64s_splat(self, value: f64) -> Self::f64s { f64x2(value, value) }
+            #[inline] fn f64s_add(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { f64x2(a.0 + b.0, a.1 + b.1) }
+            #[inline] fn f64s_sub(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { f64x2(a.0 - b.0, a.1 - b.1) }
+            #[inline] fn f64s_mul(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { f64x2(a.0 * b.0, a.1 * b.1) }
+            #[inline] fn f64s_div(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { f64x2(a.0 / b.0, a.1 / b.1) }
+            #[inline] fn f64s_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s { m64x2(m64::new(a.0 == b.0), m64::new(a.1 == b.1)) }
+            #[inline] fn f64s_less_than(self, a: Self::f64s, b: Self::f64s) -> Self::m64s { m64x2(m64::new(a.0 < b.0), m64::new(a.1 < b.1)) }
+            #[inline] fn f64s_less_than_or_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s { m64x2(m64::new(a.0 <= b.0), m64::new(a.1 <= b.1)) }
+
+            #[inline] fn u32s_not(self, a: Self::u32s) -> Self::u32s { u32x4(!a.0, !a.1, !a.2, !a.3) }
+            #[inline] fn u32s_and(self, a: Self::u32s, b: Self::u32s) -> Self::u32s { u32x4(a.0 & b.0, a.1 & b.1, a.2 & b.2, a.3 & b.3) }
+            #[inline] fn u32s_or(self, a: Self::u32s, b: Self::u32s) -> Self::u32s { u32x4(a.0 | b.0, a.1 | b.1, a.2 | b.2, a.3 | b.3) }
+            #[inline] fn u32s_xor(self, a: Self::u32s, b: Self::u32s) -> Self::u32s { u32x4(a.0 ^ b.0, a.1 ^ b.1, a.2 ^ b.2, a.3 ^ b.3) }
+
+            #[inline] fn u64s_not(self, a: Self::u64s) -> Self::u64s { u64x2(!a.0, !a.1) }
+            #[inline] fn u64s_and(self, a: Self::u64s, b: Self::u64s) -> Self::u64s { u64x2(a.0 & b.0, a.1 & b.1) }
+            #[inline] fn u64s_or(self, a: Self::u64s, b: Self::u64s) -> Self::u64s { u64x2(a.0 | b.0, a.1 | b.1) }
+            #[inline] fn u64s_xor(self, a: Self::u64s, b: Self::u64s) -> Self::u64s { u64x2(a.0 ^ b.0, a.1 ^ b.1) }
+
+            #[inline] fn m32s_select_u32s(self, mask: Self::m32s, if_true: Self::u32s, if_false: Self::u32s) -> Self::u32s { let mask: u32x4 = unsafe { ::core::mem::transmute(mask) }; self.u32s_or(self.u32s_and(mask, if_true), self.u32s_and(self.u32s_not(mask), if_false)) }
+            #[inline] fn m64s_select_u64s(self, mask: Self::m64s, if_true: Self::u64s, if_false: Self::u64s) -> Self::u64s { let mask: u64x2 = unsafe { ::core::mem::transmute(mask) }; self.u64s_or(self.u64s_and(mask, if_true), self.u64s_and(self.u64s_not(mask), if_false)) }
+
+            #[inline] fn f32s_min(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { f32x4(a.0.min(b.0), a.1.min(b.1), a.2.min(b.2), a.3.min(b.3)) }
+            #[inline] fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { f32x4(a.0.max(b.0), a.1.max(b.1), a.2.max(b.2), a.3.max(b.3)) }
+
+            #[inline] fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { f64x2(a.0.min(b.0), a.1.min(b.1)) }
+            #[inline] fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { f64x2(a.0.max(b.0), a.1.max(b.1)) }
+
+            #[inline] fn u32s_add(self, a: Self::u32s, b: Self::u32s) -> Self::u32s { u32x4(a.0.wrapping_add(b.0), a.1.wrapping_add(b.1), a.2.wrapping_add(b.2), a.3.wrapping_add(b.3)) }
+            #[inline] fn u32s_sub(self, a: Self::u32s, b: Self::u32s) -> Self::u32s { u32x4(a.0.wrapping_sub(b.0), a.1.wrapping_sub(b.1), a.2.wrapping_sub(b.2), a.3.wrapping_sub(b.3)) }
+            #[inline] fn u64s_add(self, a: Self::u64s, b: Self::u64s) -> Self::u64s { u64x2(a.0.wrapping_add(b.0), a.1.wrapping_add(b.1)) }
+            #[inline] fn u64s_sub(self, a: Self::u64s, b: Self::u64s) -> Self::u64s { u64x2(a.0.wrapping_sub(b.0), a.1.wrapping_sub(b.1)) }
+
+            #[inline] fn u32s_splat(self, value: u32) -> Self::u32s { u32x4(value, value, value, value) }
+            #[inline] fn u64s_splat(self, value: u64) -> Self::u64s { u64x2(value, value) }
+        }
+    };
 }
 
 #[derive(Copy, Clone)]
@@ -582,14 +663,14 @@ unsafe fn split_mut_slice<T, U>(slice: &mut [T]) -> (&mut [U], &mut [T]) {
     )
 }
 
-#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")))]
 #[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
 enum ArchInner {
     Scalar(crate::Scalar),
 }
 
-#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")))]
 impl ArchInner {
     #[inline]
     pub fn new() -> Self {
@@ -608,6 +689,11 @@ impl ArchInner {
 mod x86;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use x86::ArchInner;
+
+#[cfg(target_arch = "aarch64")]
+mod aarch64;
+#[cfg(target_arch = "aarch64")]
+use aarch64::ArchInner;
 
 impl Arch {
     #[inline]

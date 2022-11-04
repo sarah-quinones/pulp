@@ -1,7 +1,6 @@
 use super::*;
 use core::fmt::Debug;
 use core::mem::transmute;
-use core::ops::Deref;
 
 #[cfg(target_arch = "x86")]
 use core::arch::x86::*;
@@ -62,78 +61,31 @@ pub struct Sse2 {
 #[repr(transparent)]
 pub struct Sse41 {
     __private: (),
-    pub sse2: Sse2,
-}
-
-impl Deref for Sse41 {
-    type Target = Sse2;
-
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        &self.sse2
-    }
+    sse2: Sse2,
 }
 
 #[derive(Debug, Copy, Clone)]
 pub struct Avx {
     __private: (),
-    pub sse41: Sse41,
-}
-
-impl Deref for Avx {
-    type Target = Sse41;
-
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        &self.sse41
-    }
 }
 
 #[derive(Debug, Copy, Clone)]
 pub struct Avx2 {
     __private: (),
-    pub avx: Avx,
-}
-
-impl Deref for Avx2 {
-    type Target = Avx;
-
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        &self.avx
-    }
+    avx: Avx,
 }
 
 #[derive(Debug, Copy, Clone)]
 pub struct FmaAvx2 {
     __private: (),
-    pub avx2: Avx2,
-}
-
-impl Deref for FmaAvx2 {
-    type Target = Avx2;
-
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        &self.avx2
-    }
+    avx2: Avx2,
 }
 
 #[cfg(feature = "nightly")]
 #[derive(Debug, Copy, Clone)]
 pub struct Avx512f {
     __private: (),
-    pub fma_avx2: FmaAvx2,
-}
-
-#[cfg(feature = "nightly")]
-impl Deref for Avx512f {
-    type Target = FmaAvx2;
-
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        &self.fma_avx2
-    }
+    fma_avx2: FmaAvx2,
 }
 
 #[cfg(feature = "std")]
@@ -170,10 +122,7 @@ impl Sse41 {
 impl Avx {
     #[inline]
     pub unsafe fn new_unchecked() -> Self {
-        Self {
-            __private: (),
-            sse41: Sse41::new_unchecked(),
-        }
+        Self { __private: () }
     }
 }
 
@@ -303,15 +252,6 @@ impl Simd for Sse2 {
         }
     }
 
-    #[inline]
-    fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
-        #[target_feature(enable = "sse2")]
-        unsafe fn vectorize<Op: WithSimd>(this: Sse2, op: Op) -> Op::Output {
-            op.with_simd(this)
-        }
-        unsafe { vectorize(self, op) }
-    }
-
     #[inline] fn f32s_min(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { unsafe { transmute(_mm_min_ps(a.as_vec(), b.as_vec())) } }
     #[inline] fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { unsafe { transmute(_mm_max_ps(a.as_vec(), b.as_vec())) } }
     #[inline] fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { unsafe { transmute(_mm_min_pd(a.as_vec(), b.as_vec())) } }
@@ -324,6 +264,15 @@ impl Simd for Sse2 {
 
     #[inline] fn u32s_splat(self, value: u32) -> Self::u32s { unsafe { transmute(_mm_set1_epi32(value as i32)) } }
     #[inline] fn u64s_splat(self, value: u64) -> Self::u64s { unsafe { transmute(_mm_set1_epi64x(value as i64)) } }
+
+    #[inline]
+    fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
+        #[target_feature(enable = "sse2")]
+        unsafe fn vectorize<Op: WithSimd>(this: Sse2, op: Op) -> Op::Output {
+            op.with_simd(this)
+        }
+        unsafe { vectorize(self, op) }
+    }
 }
 
 #[rustfmt::skip]
@@ -858,13 +807,13 @@ impl Simd for Avx512f {
 #[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
 pub enum ArchInner {
-    Scalar(crate::Scalar),
-    Sse2(Sse2),
-    Sse41(Sse41),
-    Avx(Avx),
-    FmaAvx2(FmaAvx2),
     #[cfg(feature = "nightly")]
     Avx512f(Avx512f),
+    FmaAvx2(FmaAvx2),
+    Avx(Avx),
+    Sse41(Sse41),
+    Sse2(Sse2),
+    Scalar(crate::Scalar),
 }
 
 impl ArchInner {
@@ -895,13 +844,13 @@ impl ArchInner {
     #[inline(always)]
     pub fn dispatch<Op: WithSimd>(self, op: Op) -> Op::Output {
         match self {
-            ArchInner::Scalar(simd) => simd.vectorize(op),
-            ArchInner::Sse2(simd) => simd.vectorize(op),
-            ArchInner::Sse41(simd) => simd.vectorize(op),
-            ArchInner::Avx(simd) => simd.vectorize(op),
-            ArchInner::FmaAvx2(simd) => simd.vectorize(op),
             #[cfg(feature = "nightly")]
             ArchInner::Avx512f(simd) => simd.vectorize(op),
+            ArchInner::FmaAvx2(simd) => simd.vectorize(op),
+            ArchInner::Avx(simd) => simd.vectorize(op),
+            ArchInner::Sse41(simd) => simd.vectorize(op),
+            ArchInner::Sse2(simd) => simd.vectorize(op),
+            ArchInner::Scalar(simd) => simd.vectorize(op),
         }
     }
 }

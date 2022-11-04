@@ -27,6 +27,7 @@ mod arch {
     pub use core::arch::x86_64::*;
 }
 
+#[allow(unused_macros)]
 macro_rules! delegate {
     ($(
         $(#[$attr: meta])*
