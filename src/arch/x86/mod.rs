@@ -39,3 +39,23 @@ pub unsafe trait Avx512vlToken: Copy {}
 mod avx512f;
 #[cfg(feature = "nightly")]
 pub use avx512f::*;
+
+#[cfg(feature = "nightly")]
+mod avx512bw;
+#[cfg(feature = "nightly")]
+pub use avx512bw::*;
+
+#[cfg(feature = "nightly")]
+mod avx512cd;
+#[cfg(feature = "nightly")]
+pub use avx512cd::*;
+
+#[cfg(feature = "nightly")]
+mod avx512ifma;
+#[cfg(feature = "nightly")]
+pub use avx512ifma::*;
+
+#[cfg(feature = "nightly")]
+mod avx512dq;
+#[cfg(feature = "nightly")]
+pub use avx512dq::*;

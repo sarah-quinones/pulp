@@ -73,7 +73,7 @@ macro_rules! feature_detected {
     };
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
 #[doc(hidden)]
 #[rustfmt::skip]
 #[macro_export]
@@ -87,8 +87,12 @@ macro_rules! __impl_simd {
     ($name: ident, "avx") => { unsafe impl $crate::arch::x86_64::AvxToken for $name {} };
     ($name: ident, "avx2") => { unsafe impl $crate::arch::x86_64::Avx2Token for $name {} };
     ($name: ident, "fma") => { unsafe impl $crate::arch::x86_64::FmaToken for $name {} };
-    ($name: ident, "avx512f") => { unsafe impl $crate::arch::x86_64::Avx512fToken for $name {} };
     ($name: ident, "avx512vl") => { unsafe impl $crate::arch::x86_64::Avx512vlToken for $name {} };
+    ($name: ident, "avx512f") => { unsafe impl $crate::arch::x86_64::Avx512fToken for $name {} };
+    ($name: ident, "avx512bw") => { unsafe impl $crate::arch::x86_64::Avx512bwToken for $name {} };
+    ($name: ident, "avx512cd") => { unsafe impl $crate::arch::x86_64::Avx512cdToken for $name {} };
+    ($name: ident, "avx512ifma") => { unsafe impl $crate::arch::x86_64::Avx512ifmaToken for $name {} };
+    ($name: ident, "avx512dq") => { unsafe impl $crate::arch::x86_64::Avx512dqToken for $name {} };
 }
 
 #[cfg(target_arch = "x86")]
@@ -105,8 +109,12 @@ macro_rules! __impl_simd {
     ($name: ident, "avx") => { unsafe impl $crate::arch::x86::AvxToken for $name {} };
     ($name: ident, "avx2") => { unsafe impl $crate::arch::x86::Avx2Token for $name {} };
     ($name: ident, "fma") => { unsafe impl $crate::arch::x86::FmaToken for $name {} };
-    ($name: ident, "avx512f") => { unsafe impl $crate::arch::x86::Avx512fToken for $name {} };
     ($name: ident, "avx512vl") => { unsafe impl $crate::arch::x86::Avx512vlToken for $name {} };
+    ($name: ident, "avx512f") => { unsafe impl $crate::arch::x86::Avx512fToken for $name {} };
+    ($name: ident, "avx512bw") => { unsafe impl $crate::arch::x86::Avx512bwToken for $name {} };
+    ($name: ident, "avx512cd") => { unsafe impl $crate::arch::x86::Avx512cdToken for $name {} };
+    ($name: ident, "avx512ifma") => { unsafe impl $crate::arch::x86::Avx512ifmaToken for $name {} };
+    ($name: ident, "avx512dq") => { unsafe impl $crate::arch::x86::Avx512dqToken for $name {} };
 }
 
 #[macro_export]
