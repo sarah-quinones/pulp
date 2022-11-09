@@ -1,6 +1,6 @@
 use super::*;
 
-pub unsafe trait AvxToken: Sse41Token {}
+pub unsafe trait AvxToken: Copy {}
 
 pub trait Avx: AvxToken {
     delegate! {

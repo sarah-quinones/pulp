@@ -1,6 +1,6 @@
 use super::*;
 
-pub unsafe trait Sse2Token: SseToken {}
+pub unsafe trait Sse2Token: Copy {}
 
 pub trait Sse2: Sse2Token {
     delegate! {

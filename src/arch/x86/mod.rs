@@ -1,11 +1,7 @@
 use super::arch;
 
 #[cfg(feature = "nightly")]
-pub use arch::__m512;
-#[cfg(feature = "nightly")]
-pub use arch::__m512d;
-#[cfg(feature = "nightly")]
-pub use arch::__m512i;
+pub use arch::{__m512, __m512d, __m512i, __mmask16, __mmask32, __mmask64, __mmask8};
 
 pub use arch::{__m128, __m128d, __m128i, __m256, __m256d, __m256i};
 
@@ -35,3 +31,11 @@ pub use avx2::*;
 
 mod fma;
 pub use fma::*;
+
+#[cfg(feature = "nightly")]
+pub unsafe trait Avx512vlToken: Copy {}
+
+#[cfg(feature = "nightly")]
+mod avx512f;
+#[cfg(feature = "nightly")]
+pub use avx512f::*;
