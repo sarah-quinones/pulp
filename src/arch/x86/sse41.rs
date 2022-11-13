@@ -1,6 +1,6 @@
 use super::*;
 
-pub trait Sse41: Sse41Token {
+pub trait Sse41: Sse4_1Token {
     delegate! {
         fn _mm_blendv_epi8(a: __m128i, b: __m128i, mask: __m128i) -> __m128i;
         fn _mm_blend_epi16<const IMM8: i32>(a: __m128i, b: __m128i) -> __m128i;
@@ -63,4 +63,4 @@ pub trait Sse41: Sse41Token {
     }
 }
 
-impl<T: Sse41Token> Sse41 for T {}
+impl<T: Sse4_1Token> Sse41 for T {}

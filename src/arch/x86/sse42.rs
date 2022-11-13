@@ -1,7 +1,7 @@
 use super::*;
 
 
-pub trait Sse42: Sse42Token {
+pub trait Sse42: Sse4_2Token {
     delegate! {
         fn _mm_cmpistrm<const IMM8: i32>(a: __m128i, b: __m128i) -> __m128i;
         fn _mm_cmpistri<const IMM8: i32>(a: __m128i, b: __m128i) -> i32;
@@ -24,4 +24,4 @@ pub trait Sse42: Sse42Token {
     }
 }
 
-impl<T: Sse42Token> Sse42 for T {}
+impl<T: Sse4_2Token> Sse42 for T {}
