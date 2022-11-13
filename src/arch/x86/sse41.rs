@@ -1,7 +1,5 @@
 use super::*;
 
-pub unsafe trait Sse41Token: Copy {}
-
 pub trait Sse41: Sse41Token {
     delegate! {
         fn _mm_blendv_epi8(a: __m128i, b: __m128i, mask: __m128i) -> __m128i;

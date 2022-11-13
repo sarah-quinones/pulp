@@ -1,7 +1,5 @@
 use super::*;
 
-pub unsafe trait FmaToken: Copy {}
-
 pub trait Fma: FmaToken {
     delegate! {
         fn _mm_fmadd_pd(a: __m128d, b: __m128d, c: __m128d) -> __m128d;

@@ -1,9 +1,32 @@
 use super::arch;
+use arch::*;
+use tokens::*;
+
+pub mod tokens {
+    pub unsafe trait SseToken: Copy {}
+    pub unsafe trait Sse2Token: Copy {}
+    pub unsafe trait Sse3Token: Copy {}
+    pub unsafe trait Ssse3Token: Copy {}
+    pub unsafe trait Sse41Token: Copy {}
+    pub unsafe trait Sse42Token: Copy {}
+    pub unsafe trait AvxToken: Copy {}
+    pub unsafe trait Avx2Token: Copy {}
+    pub unsafe trait FmaToken: Copy {}
+
+    #[cfg(feature = "nightly")]
+    pub use super::nightly_tokens::*;
+}
 
 #[cfg(feature = "nightly")]
-pub use arch::{__m512, __m512d, __m512i, __mmask16, __mmask32, __mmask64, __mmask8};
-
-pub use arch::{__m128, __m128d, __m128i, __m256, __m256d, __m256i};
+#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
+mod nightly_tokens {
+    pub unsafe trait Avx512vlToken: Copy {}
+    pub unsafe trait Avx512fToken: Copy {}
+    pub unsafe trait Avx512bwToken: Copy {}
+    pub unsafe trait Avx512cdToken: Copy {}
+    pub unsafe trait Avx512ifmaToken: Copy {}
+    pub unsafe trait Avx512dqToken: Copy {}
+}
 
 mod sse;
 pub use sse::*;
@@ -33,29 +56,31 @@ mod fma;
 pub use fma::*;
 
 #[cfg(feature = "nightly")]
-pub unsafe trait Avx512vlToken: Copy {}
-
-#[cfg(feature = "nightly")]
+#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 mod avx512f;
 #[cfg(feature = "nightly")]
 pub use avx512f::*;
 
 #[cfg(feature = "nightly")]
+#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 mod avx512bw;
 #[cfg(feature = "nightly")]
 pub use avx512bw::*;
 
 #[cfg(feature = "nightly")]
+#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 mod avx512cd;
 #[cfg(feature = "nightly")]
 pub use avx512cd::*;
 
 #[cfg(feature = "nightly")]
+#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 mod avx512ifma;
 #[cfg(feature = "nightly")]
 pub use avx512ifma::*;
 
 #[cfg(feature = "nightly")]
+#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 mod avx512dq;
 #[cfg(feature = "nightly")]
 pub use avx512dq::*;

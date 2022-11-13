@@ -1,5 +1,4 @@
 use super::*;
-pub unsafe trait Avx512bwToken: Copy {}
 
 pub trait Avx512bw: Avx512bwToken {
     delegate! {

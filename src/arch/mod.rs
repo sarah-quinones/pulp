@@ -78,28 +78,6 @@ macro_rules! feature_detected {
 #[rustfmt::skip]
 #[macro_export]
 macro_rules! __impl_simd {
-    ($name: ident, "sse") => { unsafe impl $crate::arch::x86_64::SseToken for $name {} };
-    ($name: ident, "sse2") => { unsafe impl $crate::arch::x86_64::Sse2Token for $name {} };
-    ($name: ident, "sse3") => { unsafe impl $crate::arch::x86_64::Sse3Token for $name {} };
-    ($name: ident, "ssse3") => { unsafe impl $crate::arch::x86_64::Ssse3Token for $name {} };
-    ($name: ident, "sse4.1") => { unsafe impl $crate::arch::x86_64::Sse41Token for $name {} };
-    ($name: ident, "sse4.2") => { unsafe impl $crate::arch::x86_64::Sse42Token for $name{} };
-    ($name: ident, "avx") => { unsafe impl $crate::arch::x86_64::AvxToken for $name {} };
-    ($name: ident, "avx2") => { unsafe impl $crate::arch::x86_64::Avx2Token for $name {} };
-    ($name: ident, "fma") => { unsafe impl $crate::arch::x86_64::FmaToken for $name {} };
-    ($name: ident, "avx512vl") => { unsafe impl $crate::arch::x86_64::Avx512vlToken for $name {} };
-    ($name: ident, "avx512f") => { unsafe impl $crate::arch::x86_64::Avx512fToken for $name {} };
-    ($name: ident, "avx512bw") => { unsafe impl $crate::arch::x86_64::Avx512bwToken for $name {} };
-    ($name: ident, "avx512cd") => { unsafe impl $crate::arch::x86_64::Avx512cdToken for $name {} };
-    ($name: ident, "avx512ifma") => { unsafe impl $crate::arch::x86_64::Avx512ifmaToken for $name {} };
-    ($name: ident, "avx512dq") => { unsafe impl $crate::arch::x86_64::Avx512dqToken for $name {} };
-}
-
-#[cfg(target_arch = "x86")]
-#[doc(hidden)]
-#[rustfmt::skip]
-#[macro_export]
-macro_rules! __impl_simd {
     ($name: ident, "sse") => { unsafe impl $crate::arch::x86::SseToken for $name {} };
     ($name: ident, "sse2") => { unsafe impl $crate::arch::x86::Sse2Token for $name {} };
     ($name: ident, "sse3") => { unsafe impl $crate::arch::x86::Sse3Token for $name {} };
@@ -176,11 +154,6 @@ macro_rules! simd_type {
     };
 }
 
-#[cfg(target_arch = "x86")]
+#[cfg(any(doc, target_arch = "x86", target_arch = "x86_64"))]
+#[cfg_attr(docsrs, doc(cfg(any(target_arch = "x86", target_arch = "x86_64"))))]
 pub mod x86;
-
-#[cfg(target_arch = "x86_64")]
-mod x86;
-
-#[cfg(target_arch = "x86_64")]
-pub mod x86_64;

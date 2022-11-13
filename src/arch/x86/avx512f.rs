@@ -1,8 +1,6 @@
 use super::arch::{_MM_CMPINT_ENUM, _MM_MANTISSA_NORM_ENUM, _MM_MANTISSA_SIGN_ENUM, _MM_PERM_ENUM};
 use super::*;
 
-pub unsafe trait Avx512fToken: Copy {}
-
 pub trait Avx512f: Avx512fToken {
     delegate! {
     fn _mm512_abs_epi32(a: __m512i) -> __m512i;

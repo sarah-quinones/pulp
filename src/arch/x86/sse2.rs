@@ -1,7 +1,5 @@
 use super::*;
 
-pub unsafe trait Sse2Token: Copy {}
-
 pub trait Sse2: Sse2Token {
     delegate! {
         fn _mm_pause();

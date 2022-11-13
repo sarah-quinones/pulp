@@ -57,6 +57,8 @@
 
 #![allow(non_camel_case_types)]
 #![cfg_attr(feature = "nightly", feature(stdsimd), feature(avx512_target_feature))]
+#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 use core::fmt::Debug;
 use core::marker::PhantomData;

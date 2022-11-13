@@ -1,7 +1,5 @@
 use super::*;
 
-pub unsafe trait SseToken: Copy {}
-
 pub trait Sse: SseToken {
     delegate! {
         fn _mm_add_ss(a: __m128, b: __m128) -> __m128;

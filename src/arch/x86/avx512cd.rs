@@ -1,7 +1,5 @@
 use super::*;
 
-pub unsafe trait Avx512cdToken: Copy {}
-
 pub trait Avx512cd: Avx512cdToken {
     delegate! {
     fn _mm512_broadcastmw_epi32(k: __mmask16) -> __m512i;

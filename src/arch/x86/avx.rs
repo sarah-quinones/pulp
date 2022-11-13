@@ -1,7 +1,5 @@
 use super::*;
 
-pub unsafe trait AvxToken: Copy {}
-
 pub trait Avx: AvxToken {
     delegate! {
         fn _mm256_add_pd(a: __m256d, b: __m256d) -> __m256d;

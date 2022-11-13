@@ -1,7 +1,5 @@
 use super::*;
 
-pub unsafe trait Avx2Token: Copy {}
-
 pub trait Avx2: Avx2Token {
     delegate! {
         fn _mm256_abs_epi32(a: __m256i) -> __m256i;
