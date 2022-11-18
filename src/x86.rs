@@ -159,6 +159,86 @@ impl Simd for Baseline {
     fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
         self.vectorize(#[inline(always)] || op.with_simd(self))
     }
+
+    #[inline(always)] fn f32s_reduce_sum(self, a: Self::f32s) -> f32 {
+        unsafe {
+            // a0 a1 a2 a3
+            let a: __m128 = transmute(a);
+            // a2 a3 a2 a3
+            let hi = _mm_movehl_ps(a, a);
+
+            // a0+a2 a1+a3 _ _
+            let r0 = _mm_add_ps(a, hi);
+            // a1+a3 a2+a1 _ _
+            let r0_shuffled = _mm_shuffle_ps::<0b0001>(r0, r0);
+
+            let r = _mm_add_ss(r0, r0_shuffled);
+
+            _mm_cvtss_f32(r)
+        }
+    }
+    #[inline(always)] fn f32s_reduce_product(self, a: Self::f32s) -> f32 {
+        unsafe {
+            let a: __m128 = transmute(a);
+            let hi = _mm_movehl_ps(a, a);
+            let r0 = _mm_mul_ps(a, hi);
+            let r0_shuffled = _mm_shuffle_ps::<0b0001>(r0, r0);
+            let r = _mm_mul_ss(r0, r0_shuffled);
+            _mm_cvtss_f32(r)
+        }
+    }
+    #[inline(always)] fn f32s_reduce_min(self, a: Self::f32s) -> f32 {
+        unsafe {
+            let a: __m128 = transmute(a);
+            let hi = _mm_movehl_ps(a, a);
+            let r0 = _mm_min_ps(a, hi);
+            let r0_shuffled = _mm_shuffle_ps::<0b0001>(r0, r0);
+            let r = _mm_min_ss(r0, r0_shuffled);
+            _mm_cvtss_f32(r)
+        }
+    }
+    #[inline(always)] fn f32s_reduce_max(self, a: Self::f32s) -> f32 {
+        unsafe {
+            let a: __m128 = transmute(a);
+            let hi = _mm_movehl_ps(a, a);
+            let r0 = _mm_max_ps(a, hi);
+            let r0_shuffled = _mm_shuffle_ps::<0b0001>(r0, r0);
+            let r = _mm_max_ss(r0, r0_shuffled);
+            _mm_cvtss_f32(r)
+        }
+    }
+    #[inline(always)] fn f64s_reduce_sum(self, a: Self::f64s) -> f64 {
+        unsafe {
+            let a: __m128d = transmute(a);
+            let hi = transmute(_mm_movehl_ps(transmute(a), transmute(a)));
+            let r = _mm_add_sd(a, hi);
+            _mm_cvtsd_f64(r)
+        }
+    }
+    #[inline(always)] fn f64s_reduce_product(self, a: Self::f64s) -> f64 {
+        unsafe {
+            let a: __m128d = transmute(a);
+            let hi = transmute(_mm_movehl_ps(transmute(a), transmute(a)));
+            let r = _mm_mul_sd(a, hi);
+            _mm_cvtsd_f64(r)
+        }
+    }
+    #[inline(always)] fn f64s_reduce_min(self, a: Self::f64s) -> f64 {
+        unsafe {
+            let a: __m128d = transmute(a);
+            let hi = transmute(_mm_movehl_ps(transmute(a), transmute(a)));
+            let r = _mm_min_sd(a, hi);
+            _mm_cvtsd_f64(r)
+        }
+    }
+    #[inline(always)] fn f64s_reduce_max(self, a: Self::f64s) -> f64 {
+        unsafe {
+            let a: __m128d = transmute(a);
+            let hi = transmute(_mm_movehl_ps(transmute(a), transmute(a)));
+            let r = _mm_max_sd(a, hi);
+            _mm_cvtsd_f64(r)
+        }
+    }
 }
 
 #[rustfmt::skip]
@@ -249,6 +329,15 @@ impl Simd for V2 {
     fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
         self.vectorize(#[inline(always)] || op.with_simd(self))
     }
+
+    #[inline(always)] fn f32s_reduce_sum(self, a: Self::f32s) -> f32 { unsafe { Baseline::f32s_reduce_sum(Baseline::new_unchecked(), a) } }
+    #[inline(always)] fn f32s_reduce_product(self, a: Self::f32s) -> f32 { unsafe { Baseline::f32s_reduce_product(Baseline::new_unchecked(), a) } }
+    #[inline(always)] fn f32s_reduce_min(self, a: Self::f32s) -> f32 { unsafe { Baseline::f32s_reduce_min(Baseline::new_unchecked(), a) } }
+    #[inline(always)] fn f32s_reduce_max(self, a: Self::f32s) -> f32 { unsafe { Baseline::f32s_reduce_max(Baseline::new_unchecked(), a) } }
+    #[inline(always)] fn f64s_reduce_sum(self, a: Self::f64s) -> f64 { unsafe { Baseline::f64s_reduce_sum(Baseline::new_unchecked(), a) } }
+    #[inline(always)] fn f64s_reduce_product(self, a: Self::f64s) -> f64 { unsafe { Baseline::f64s_reduce_product(Baseline::new_unchecked(), a) } }
+    #[inline(always)] fn f64s_reduce_min(self, a: Self::f64s) -> f64 { unsafe { Baseline::f64s_reduce_min(Baseline::new_unchecked(), a) } }
+    #[inline(always)] fn f64s_reduce_max(self, a: Self::f64s) -> f64 { unsafe { Baseline::f64s_reduce_max(Baseline::new_unchecked(), a) } }
 }
 
 #[rustfmt::skip]
@@ -340,6 +429,70 @@ impl Simd for V3 {
     #[inline]
     fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
         self.vectorize(#[inline(always)] || op.with_simd(self))
+    }
+
+    #[inline(always)] fn f32s_reduce_sum(self, a: Self::f32s) -> f32 {
+        unsafe {
+            let a: __m256 = transmute(a);
+            let r = _mm_add_ps(_mm256_castps256_ps128(a), _mm256_extractf128_ps::<1>(a));
+            V2::new_unchecked().f32s_reduce_sum(transmute(r))
+        }
+    }
+
+    #[inline(always)] fn f32s_reduce_product(self, a: Self::f32s) -> f32 {
+        unsafe {
+            let a: __m256 = transmute(a);
+            let r = _mm_mul_ps(_mm256_castps256_ps128(a), _mm256_extractf128_ps::<1>(a));
+            V2::new_unchecked().f32s_reduce_product(transmute(r))
+        }
+    }
+
+    #[inline(always)] fn f32s_reduce_min(self, a: Self::f32s) -> f32 {
+        unsafe {
+            let a: __m256 = transmute(a);
+            let r = _mm_min_ps(_mm256_castps256_ps128(a), _mm256_extractf128_ps::<1>(a));
+            V2::new_unchecked().f32s_reduce_min(transmute(r))
+        }
+    }
+
+    #[inline(always)] fn f32s_reduce_max(self, a: Self::f32s) -> f32 {
+        unsafe {
+            let a: __m256 = transmute(a);
+            let r = _mm_max_ps(_mm256_castps256_ps128(a), _mm256_extractf128_ps::<1>(a));
+            V2::new_unchecked().f32s_reduce_max(transmute(r))
+        }
+    }
+
+    #[inline(always)] fn f64s_reduce_sum(self, a: Self::f64s) -> f64 {
+        unsafe {
+            let a: __m256d = transmute(a);
+            let r = _mm_add_pd(_mm256_castpd256_pd128(a), _mm256_extractf128_pd::<1>(a));
+            V2::new_unchecked().f64s_reduce_sum(transmute(r))
+        }
+    }
+
+    #[inline(always)] fn f64s_reduce_product(self, a: Self::f64s) -> f64 {
+        unsafe {
+            let a: __m256d = transmute(a);
+            let r = _mm_mul_pd(_mm256_castpd256_pd128(a), _mm256_extractf128_pd::<1>(a));
+            V2::new_unchecked().f64s_reduce_product(transmute(r))
+        }
+    }
+
+    #[inline(always)] fn f64s_reduce_min(self, a: Self::f64s) -> f64 {
+        unsafe {
+            let a: __m256d = transmute(a);
+            let r = _mm_min_pd(_mm256_castpd256_pd128(a), _mm256_extractf128_pd::<1>(a));
+            V2::new_unchecked().f64s_reduce_min(transmute(r))
+        }
+    }
+
+    #[inline(always)] fn f64s_reduce_max(self, a: Self::f64s) -> f64 {
+        unsafe {
+            let a: __m256d = transmute(a);
+            let r = _mm_max_pd(_mm256_castpd256_pd128(a), _mm256_extractf128_pd::<1>(a));
+            V2::new_unchecked().f64s_reduce_max(transmute(r))
+        }
     }
 }
 
@@ -486,6 +639,70 @@ impl Simd for V4 {
 
     #[inline] fn u32s_splat(self, value: u32) -> Self::u32s { unsafe { transmute(_mm512_set1_epi32(value as i32)) } }
     #[inline] fn u64s_splat(self, value: u64) -> Self::u64s { unsafe { transmute(_mm512_set1_epi64(value as i64)) } }
+
+    #[inline(always)] fn f32s_reduce_sum(self, a: Self::f32s) -> f32 {
+        unsafe {
+            let a: __m512 = transmute(a);
+            let r = _mm256_add_ps(_mm512_castps512_ps256(a), transmute(_mm512_extractf64x4_pd::<1>(transmute(a))));
+            V3::new_unchecked().f32s_reduce_sum(transmute(r))
+        }
+    }
+
+    #[inline(always)] fn f32s_reduce_product(self, a: Self::f32s) -> f32 {
+        unsafe {
+            let a: __m512 = transmute(a);
+            let r = _mm256_mul_ps(_mm512_castps512_ps256(a), transmute(_mm512_extractf64x4_pd::<1>(transmute(a))));
+            V3::new_unchecked().f32s_reduce_product(transmute(r))
+        }
+    }
+
+    #[inline(always)] fn f32s_reduce_min(self, a: Self::f32s) -> f32 {
+        unsafe {
+            let a: __m512 = transmute(a);
+            let r = _mm256_min_ps(_mm512_castps512_ps256(a), transmute(_mm512_extractf64x4_pd::<1>(transmute(a))));
+            V3::new_unchecked().f32s_reduce_min(transmute(r))
+        }
+    }
+
+    #[inline(always)] fn f32s_reduce_max(self, a: Self::f32s) -> f32 {
+        unsafe {
+            let a: __m512 = transmute(a);
+            let r = _mm256_max_ps(_mm512_castps512_ps256(a), transmute(_mm512_extractf64x4_pd::<1>(transmute(a))));
+            V3::new_unchecked().f32s_reduce_max(transmute(r))
+        }
+    }
+
+    #[inline(always)] fn f64s_reduce_sum(self, a: Self::f64s) -> f64 {
+        unsafe {
+            let a: __m512d = transmute(a);
+            let r = _mm256_add_pd(_mm512_castpd512_pd256(a), _mm512_extractf64x4_pd::<1>(a));
+            V3::new_unchecked().f64s_reduce_sum(transmute(r))
+        }
+    }
+
+    #[inline(always)] fn f64s_reduce_product(self, a: Self::f64s) -> f64 {
+        unsafe {
+            let a: __m512d = transmute(a);
+            let r = _mm256_mul_pd(_mm512_castpd512_pd256(a), _mm512_extractf64x4_pd::<1>(a));
+            V3::new_unchecked().f64s_reduce_product(transmute(r))
+        }
+    }
+
+    #[inline(always)] fn f64s_reduce_min(self, a: Self::f64s) -> f64 {
+        unsafe {
+            let a: __m512d = transmute(a);
+            let r = _mm256_min_pd(_mm512_castpd512_pd256(a), _mm512_extractf64x4_pd::<1>(a));
+            V3::new_unchecked().f64s_reduce_min(transmute(r))
+        }
+    }
+
+    #[inline(always)] fn f64s_reduce_max(self, a: Self::f64s) -> f64 {
+        unsafe {
+            let a: __m512d = transmute(a);
+            let r = _mm256_max_pd(_mm512_castpd512_pd256(a), _mm512_extractf64x4_pd::<1>(a));
+            V3::new_unchecked().f64s_reduce_max(transmute(r))
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]

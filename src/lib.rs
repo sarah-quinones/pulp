@@ -185,6 +185,10 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     #[inline] fn f32s_greater_than_or_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s { self.f32s_less_than_or_equal(b, a) }
     fn f32s_min(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
     fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
+    fn f32s_reduce_sum(self, a: Self::f32s) -> f32;
+    fn f32s_reduce_product(self, a: Self::f32s) -> f32;
+    fn f32s_reduce_min(self, a: Self::f32s) -> f32;
+    fn f32s_reduce_max(self, a: Self::f32s) -> f32;
 
     fn f64s_splat(self, value: f64) -> Self::f64s;
     #[inline] fn f64s_abs(self, a: Self::f64s) -> Self::f64s { self.f64s_and(self.f64s_not(self.f64s_splat(-0.0)), a) }
@@ -201,6 +205,10 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     #[inline] fn f64s_greater_than_or_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s { self.f64s_less_than_or_equal(b, a) }
     fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
     fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
+    fn f64s_reduce_sum(self, a: Self::f64s) -> f64;
+    fn f64s_reduce_product(self, a: Self::f64s) -> f64;
+    fn f64s_reduce_min(self, a: Self::f64s) -> f64;
+    fn f64s_reduce_max(self, a: Self::f64s) -> f64;
 
     #[inline] fn f32s_transmute_i32s(self, a: Self::f32s) -> Self::i32s { cast(a) }
     #[inline] fn f32s_transmute_u32s(self, a: Self::f32s) -> Self::u32s { cast(a) }
@@ -298,6 +306,15 @@ impl Simd for Scalar {
 
     #[inline] fn u32s_splat(self, value: u32) -> Self::u32s { value }
     #[inline] fn u64s_splat(self, value: u64) -> Self::u64s { value }
+
+    #[inline] fn f32s_reduce_sum(self, a: Self::f32s) -> f32 { a }
+    #[inline] fn f32s_reduce_product(self, a: Self::f32s) -> f32 { a }
+    #[inline] fn f32s_reduce_min(self, a: Self::f32s) -> f32 { a }
+    #[inline] fn f32s_reduce_max(self, a: Self::f32s) -> f32 { a }
+    #[inline] fn f64s_reduce_sum(self, a: Self::f64s) -> f64 { a }
+    #[inline] fn f64s_reduce_product(self, a: Self::f64s) -> f64 { a }
+    #[inline] fn f64s_reduce_min(self, a: Self::f64s) -> f64 { a }
+    #[inline] fn f64s_reduce_max(self, a: Self::f64s) -> f64 { a }
 }
 
 #[allow(unused_macros)]
@@ -377,6 +394,15 @@ macro_rules! autovectorize_impl {
 
             #[inline] fn u32s_splat(self, value: u32) -> Self::u32s { u32x4(value, value, value, value) }
             #[inline] fn u64s_splat(self, value: u64) -> Self::u64s { u64x2(value, value) }
+
+            #[inline] fn f32s_reduce_sum(self, a: Self::f32s) -> f32 { (a.0 + a.2) + (a.1 + a.3) }
+            #[inline] fn f32s_reduce_product(self, a: Self::f32s) -> f32 { (a.0 * a.2) * (a.1 * a.3) }
+            #[inline] fn f32s_reduce_min(self, a: Self::f32s) -> f32 { a.0.min(a.2).min(a.1.min(a.3)) }
+            #[inline] fn f32s_reduce_max(self, a: Self::f32s) -> f32 { a.0.max(a.2).max(a.1.max(a.3)) }
+            #[inline] fn f64s_reduce_sum(self, a: Self::f64s) -> f64 { a.0 + a.1 }
+            #[inline] fn f64s_reduce_product(self, a: Self::f64s) -> f64 { a.0 * a.1 }
+            #[inline] fn f64s_reduce_min(self, a: Self::f64s) -> f64 { a.0.min(a.1) }
+            #[inline] fn f64s_reduce_max(self, a: Self::f64s) -> f64 { a.0.max(a.1) }
         }
     };
 }
