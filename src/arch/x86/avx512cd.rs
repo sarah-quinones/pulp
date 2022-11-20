@@ -1,6 +1,6 @@
 use super::*;
 
-pub trait Avx512cd: Avx512cdToken {
+impl Avx512cd {
     delegate! {
     fn _mm512_broadcastmw_epi32(k: __mmask16) -> __m512i;
     fn _mm512_broadcastmb_epi64(k: __mmask8) -> __m512i;
@@ -18,7 +18,7 @@ pub trait Avx512cd: Avx512cdToken {
     fn _mm512_maskz_lzcnt_epi64(k: __mmask8, a: __m512i) -> __m512i;
     }
 }
-pub trait Avx512cd_Avx512vl: Avx512cdToken + Avx512vlToken {
+impl Avx512cd_Avx512vl {
     delegate! {
     fn _mm256_broadcastmw_epi32(k: __mmask16) -> __m256i;
     fn _mm_broadcastmw_epi32(k: __mmask16) -> __m128i;
@@ -50,6 +50,3 @@ pub trait Avx512cd_Avx512vl: Avx512cdToken + Avx512vlToken {
     fn _mm_maskz_lzcnt_epi64(k: __mmask8, a: __m128i) -> __m128i;
     }
 }
-
-impl<T: Avx512cdToken> Avx512cd for T {}
-impl<T: Avx512cdToken + Avx512vlToken> Avx512cd_Avx512vl for T {}

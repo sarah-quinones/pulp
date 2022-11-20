@@ -1,6 +1,6 @@
 use super::*;
 
-pub trait Sse3: Sse3Token {
+impl Sse3 {
     delegate! {
         fn _mm_addsub_ps(a: __m128, b: __m128) -> __m128;
         fn _mm_addsub_pd(a: __m128d, b: __m128d) -> __m128d;
@@ -15,5 +15,3 @@ pub trait Sse3: Sse3Token {
         fn _mm_moveldup_ps(a: __m128) -> __m128;
     }
 }
-
-impl<T: Sse3Token> Sse3 for T {}

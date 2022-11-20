@@ -39,7 +39,7 @@ macro_rules! delegate {
         $(
             $(#[$attr])*
             #[inline(always)]
-            $(unsafe $($placeholder)?)? fn $func $(<$(const $generic: $generic_ty,)*>)?(self, $($arg: $ty,)*) $(-> $ret)? {
+            pub $(unsafe $($placeholder)?)? fn $func $(<$(const $generic: $generic_ty,)*>)?(self, $($arg: $ty,)*) $(-> $ret)? {
                 unsafe { arch::$func $(::<$($generic,)*>)?($($arg,)*) }
             }
         )*
@@ -77,173 +77,171 @@ macro_rules! feature_detected {
 #[doc(hidden)]
 #[rustfmt::skip]
 #[macro_export]
-macro_rules! __impl_simd {
-    ($name: ident, "aes") => { unsafe impl $crate::arch::x86::tokens::AesToken for $name {} };
-    ($name: ident, "pclmulqdq") => { unsafe impl $crate::arch::x86::tokens::PclmulqdqToken for $name {} };
-    ($name: ident, "rdrand") => { unsafe impl $crate::arch::x86::tokens::RdrandToken for $name {} };
-    ($name: ident, "rdseed") => { unsafe impl $crate::arch::x86::tokens::RdseedToken for $name {} };
-    ($name: ident, "tsc") => { unsafe impl $crate::arch::x86::tokens::TscToken for $name {} };
-    ($name: ident, "mmx") => { unsafe impl $crate::arch::x86::tokens::MmxToken for $name {} };
-    ($name: ident, "sse") => { unsafe impl $crate::arch::x86::tokens::SseToken for $name {} };
-    ($name: ident, "sse2") => { unsafe impl $crate::arch::x86::tokens::Sse2Token for $name {} };
-    ($name: ident, "sse3") => { unsafe impl $crate::arch::x86::tokens::Sse3Token for $name {} };
-    ($name: ident, "ssse3") => { unsafe impl $crate::arch::x86::tokens::Ssse3Token for $name {} };
-    ($name: ident, "sse4.1") => { unsafe impl $crate::arch::x86::tokens::Sse4_1Token for $name {} };
-    ($name: ident, "sse4.2") => { unsafe impl $crate::arch::x86::tokens::Sse4_2Token for $name {} };
-    ($name: ident, "sse4a") => { unsafe impl $crate::arch::x86::tokens::Sse4aToken for $name {} };
-    ($name: ident, "sha") => { unsafe impl $crate::arch::x86::tokens::ShaToken for $name {} };
-    ($name: ident, "avx") => { unsafe impl $crate::arch::x86::tokens::AvxToken for $name {} };
-    ($name: ident, "avx2") => { unsafe impl $crate::arch::x86::tokens::Avx2Token for $name {} };
-    ($name: ident, "avx512f") => { unsafe impl $crate::arch::x86::tokens::Avx512fToken for $name {} };
-    ($name: ident, "avx512cd") => { unsafe impl $crate::arch::x86::tokens::Avx512cdToken for $name {} };
-    ($name: ident, "avx512er") => { unsafe impl $crate::arch::x86::tokens::Avx512erToken for $name {} };
-    ($name: ident, "avx512pf") => { unsafe impl $crate::arch::x86::tokens::Avx512pfToken for $name {} };
-    ($name: ident, "avx512bw") => { unsafe impl $crate::arch::x86::tokens::Avx512bwToken for $name {} };
-    ($name: ident, "avx512dq") => { unsafe impl $crate::arch::x86::tokens::Avx512dqToken for $name {} };
-    ($name: ident, "avx512vl") => { unsafe impl $crate::arch::x86::tokens::Avx512vlToken for $name {} };
-    ($name: ident, "avx512ifma") => { unsafe impl $crate::arch::x86::tokens::Avx512ifmaToken for $name {} };
-    ($name: ident, "avx512vbmi") => { unsafe impl $crate::arch::x86::tokens::Avx512vbmiToken for $name {} };
-    ($name: ident, "avx512vpopcntdq") => { unsafe impl $crate::arch::x86::tokens::Avx512vpopcntdqToken for $name {} };
-    ($name: ident, "avx512vbmi2") => { unsafe impl $crate::arch::x86::tokens::Avx512vbmi2Token for $name {} };
-    ($name: ident, "avx512gfni") => { unsafe impl $crate::arch::x86::tokens::Avx512gfniToken for $name {} };
-    ($name: ident, "avx512vaes") => { unsafe impl $crate::arch::x86::tokens::Avx512vaesToken for $name {} };
-    ($name: ident, "avx512vpclmulqdq") => { unsafe impl $crate::arch::x86::tokens::Avx512vpclmulqdqToken for $name {} };
-    ($name: ident, "avx512vnni") => { unsafe impl $crate::arch::x86::tokens::Avx512vnniToken for $name {} };
-    ($name: ident, "avx512bitalg") => { unsafe impl $crate::arch::x86::tokens::Avx512bitalgToken for $name {} };
-    ($name: ident, "avx512bf16") => { unsafe impl $crate::arch::x86::tokens::Avx512bf16Token for $name {} };
-    ($name: ident, "avx512vp2intersect") => { unsafe impl $crate::arch::x86::tokens::Avx512vp2intersectToken for $name {} };
-    ($name: ident, "f16c") => { unsafe impl $crate::arch::x86::tokens::F16cToken for $name {} };
-    ($name: ident, "fma") => { unsafe impl $crate::arch::x86::tokens::FmaToken for $name {} };
-    ($name: ident, "bmi1") => { unsafe impl $crate::arch::x86::tokens::Bmi1Token for $name {} };
-    ($name: ident, "bmi2") => { unsafe impl $crate::arch::x86::tokens::Bmi2Token for $name {} };
-    ($name: ident, "lzcnt") => { unsafe impl $crate::arch::x86::tokens::LzcntToken for $name {} };
-    ($name: ident, "tbm") => { unsafe impl $crate::arch::x86::tokens::TbmToken for $name {} };
-    ($name: ident, "popcnt") => { unsafe impl $crate::arch::x86::tokens::PopcntToken for $name {} };
-    ($name: ident, "fxsr") => { unsafe impl $crate::arch::x86::tokens::FxsrToken for $name {} };
-    ($name: ident, "xsave") => { unsafe impl $crate::arch::x86::tokens::XsaveToken for $name {} };
-    ($name: ident, "xsaveopt") => { unsafe impl $crate::arch::x86::tokens::XsaveoptToken for $name {} };
-    ($name: ident, "xsaves") => { unsafe impl $crate::arch::x86::tokens::XsavesToken for $name {} };
-    ($name: ident, "xsavec") => { unsafe impl $crate::arch::x86::tokens::XsavecToken for $name {} };
-    ($name: ident, "cmpxchg16b") => { unsafe impl $crate::arch::x86::tokens::Cmpxchg16bToken for $name {} };
-    ($name: ident, "adx") => { unsafe impl $crate::arch::x86::tokens::AdxToken for $name {} };
-    ($name: ident, "rtm") => { unsafe impl $crate::arch::x86::tokens::RtmToken for $name {} };
-    ($name: ident, "abm") => { unsafe impl $crate::arch::x86::tokens::AbmToken for $name {} };
+macro_rules! __impl_type {
+    ("aes") => { $crate::arch::x86::Aes };
+    ("pclmulqdq") => { $crate::arch::x86::Pclmulqdq };
+    ("rdrand") => { $crate::arch::x86::Rdrand };
+    ("rdseed") => { $crate::arch::x86::Rdseed };
+    ("tsc") => { $crate::arch::x86::Tsc };
+    ("mmx") => { $crate::arch::x86::Mmx };
+    ("sse") => { $crate::arch::x86::Sse };
+    ("sse2") => { $crate::arch::x86::Sse2 };
+    ("sse3") => { $crate::arch::x86::Sse3 };
+    ("ssse3") => { $crate::arch::x86::Ssse3 };
+    ("sse4.1") => { $crate::arch::x86::Sse4_1 };
+    ("sse4.2") => { $crate::arch::x86::Sse4_2 };
+    ("sse4a") => { $crate::arch::x86::Sse4a };
+    ("sha") => { $crate::arch::x86::Sha };
+    ("avx") => { $crate::arch::x86::Avx };
+    ("avx2") => { $crate::arch::x86::Avx2 };
+    ("avx512f") => { $crate::arch::x86::Avx512f };
+    ("avx512cd") => { $crate::arch::x86::Avx512cd };
+    ("avx512er") => { $crate::arch::x86::Avx512er };
+    ("avx512pf") => { $crate::arch::x86::Avx512pf };
+    ("avx512bw") => { $crate::arch::x86::Avx512bw };
+    ("avx512dq") => { $crate::arch::x86::Avx512dq };
+    ("avx512vl") => { $crate::arch::x86::Avx512vl };
+    ("avx512ifma") => { $crate::arch::x86::Avx512ifma };
+    ("avx512vbmi") => { $crate::arch::x86::Avx512vbmi };
+    ("avx512vpopcntdq") => { $crate::arch::x86::Avx512vpopcntdq };
+    ("avx512vbmi2") => { $crate::arch::x86::Avx512vbmi2 };
+    ("avx512gfni") => { $crate::arch::x86::Avx512gfni };
+    ("avx512vaes") => { $crate::arch::x86::Avx512vaes };
+    ("avx512vpclmulqdq") => { $crate::arch::x86::Avx512vpclmulqdq };
+    ("avx512vnni") => { $crate::arch::x86::Avx512vnni };
+    ("avx512bitalg") => { $crate::arch::x86::Avx512bitalg };
+    ("avx512bf16") => { $crate::arch::x86::Avx512bf16 };
+    ("avx512vp2intersect") => { $crate::arch::x86::Avx512vp2intersect };
+    ("f16c") => { $crate::arch::x86::F16c };
+    ("fma") => { $crate::arch::x86::Fma };
+    ("bmi1") => { $crate::arch::x86::Bmi1 };
+    ("bmi2") => { $crate::arch::x86::Bmi2 };
+    ("lzcnt") => { $crate::arch::x86::Lzcnt };
+    ("tbm") => { $crate::arch::x86::Tbm };
+    ("popcnt") => { $crate::arch::x86::Popcnt };
+    ("fxsr") => { $crate::arch::x86::Fxsr };
+    ("xsave") => { $crate::arch::x86::Xsave };
+    ("xsaveopt") => { $crate::arch::x86::Xsaveopt };
+    ("xsaves") => { $crate::arch::x86::Xsaves };
+    ("xsavec") => { $crate::arch::x86::Xsavec };
+    ("cmpxchg16b") => { $crate::arch::x86::Cmpxchg16b };
+    ("adx") => { $crate::arch::x86::Adx };
+    ("rtm") => { $crate::arch::x86::Rtm };
+    ("abm") => { $crate::arch::x86::Abm };
 }
 
 #[macro_export]
 macro_rules! simd_type {
-    ($vis: vis $name: ident, $($feature: tt),* $(,)?) => {
-        #[repr(transparent)]
-        $vis struct $name {
-            #[doc(hidden)]
-            __private_do_not_touch: (),
-        }
-
-        impl ::core::clone::Clone for $name {
-            #[inline]
-            fn clone(&self) -> Self {
-                *self
+    (
+        $(
+            $(#[$attr: meta])*
+            $vis: vis struct $name: ident {
+                $($feature_vis: vis $ident: ident: $feature: tt),* $(,)?
             }
-        }
-
-        impl ::core::marker::Copy for $name {}
-        impl ::core::fmt::Debug for $name {
-            fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-                f.write_str(stringify!($name))
+        )*
+    ) => {
+        $(
+            #[repr(transparent)]
+            #[allow(dead_code)]
+            $(#[$attr])*
+            #[derive(Clone, Copy, Debug)]
+            $vis struct $name{
+                $($feature_vis $ident : $crate::__impl_type!($feature),)*
             }
-        }
 
-        #[allow(dead_code)]
-        impl $name {
-            #[inline(always)]
-            pub fn try_new() -> ::core::option::Option<Self> {
-                if true $(&& $crate::feature_detected!($feature))* {
-                    ::core::option::Option::Some(
-                        Self {
-                            __private_do_not_touch: ()
+            #[allow(dead_code)]
+            $(#[$attr])*
+            impl $name {
+                #[inline(always)]
+                pub unsafe fn new_unchecked() -> Self {
+                    Self{
+                        $($ident: <$crate::__impl_type!($feature)>::new_unchecked(),)*
+                    }
+                }
+
+                #[inline(always)]
+                pub fn try_new() -> Option<Self> {
+                    if Self::is_available() {
+                        Some(Self{
+                            $($ident: <$crate::__impl_type!($feature)>::new_unchecked(),)*
+                        })
+                    } else {
+                        None
+                    }
+                }
+
+                #[inline(always)]
+                pub fn is_available() -> bool {
+                    true $(&& <__impl_type!($feature)>::is_available())*
+                }
+
+                #[inline(always)]
+                pub fn vectorize<R>(self, f: impl FnOnce() -> R) -> R {
+                    $(#[target_feature(enable = $feature)])*
+                        unsafe fn vectorize<R>(f: impl FnOnce() -> R) -> R {
+                            f()
                         }
-                    )
-                } else {
-                    ::core::option::Option::None
+                    unsafe { vectorize(f) }
                 }
             }
-
-            #[inline(always)]
-            pub unsafe fn new_unchecked() -> Self {
-                Self {
-                    __private_do_not_touch: (),
-                }
-            }
-
-            #[inline(always)]
-            pub fn vectorize<R>(self, f: impl FnOnce() -> R) -> R {
-                $(#[target_feature(enable = $feature)])*
-                unsafe fn vectorize<R>(f: impl FnOnce() -> R) -> R {
-                    f()
-                }
-                unsafe { vectorize(f) }
-            }
-        }
-
-        $($crate::__impl_simd!($name, $feature);)*
+        )*
     };
 }
 
 macro_rules! internal_simd_type {
-    ($vis: vis $name: ident, $($feature: tt),* $(,)?) => {
-        #[repr(transparent)]
-        $vis struct $name {
-            #[doc(hidden)]
-            __private_do_not_touch: (),
-        }
-
-        impl ::core::clone::Clone for $name {
-            #[inline]
-            fn clone(&self) -> Self {
-                *self
+    (
+        $(
+            $(#[$attr: meta])*
+            $vis: vis struct $name: ident {
+                $($feature_vis: vis $ident: ident: $feature: tt),* $(,)?
             }
-        }
-
-        impl ::core::marker::Copy for $name {}
-        impl ::core::fmt::Debug for $name {
-            fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-                f.write_str(stringify!($name))
+        )*
+    ) => {
+        $(
+            #[repr(transparent)]
+            #[allow(dead_code)]
+            $(#[$attr])*
+            #[derive(Clone, Copy, Debug)]
+            $vis struct $name{
+                $($feature_vis $ident : __impl_type!($feature),)*
             }
-        }
 
-        #[allow(dead_code)]
-        impl $name {
-            #[inline(always)]
-            pub fn try_new() -> ::core::option::Option<Self> {
-                if true $(&& $crate::feature_detected!($feature))* {
-                    ::core::option::Option::Some(
-                        Self {
-                            __private_do_not_touch: ()
+            #[allow(dead_code)]
+            $(#[$attr])*
+            impl $name {
+                #[inline(always)]
+                pub unsafe fn new_unchecked() -> Self {
+                    Self{
+                        $($ident: <__impl_type!($feature)>::new_unchecked(),)*
+                    }
+                }
+
+                #[inline(always)]
+                pub fn try_new() -> Option<Self> {
+                    if Self::is_available() {
+                        Some(Self{
+                            $($ident: <__impl_type!($feature)>::new_unchecked(),)*
+                        })
+                    } else {
+                        None
+                    }
+                }
+
+                #[inline(always)]
+                pub fn is_available() -> bool {
+                    true $(&& <__impl_type!($feature)>::is_available())*
+                }
+
+                #[inline(always)]
+                pub fn vectorize<R>(self, f: impl FnOnce() -> R) -> R {
+                    $(#[target_feature(enable = $feature)])*
+                        unsafe fn vectorize<R>(f: impl FnOnce() -> R) -> R {
+                            f()
                         }
-                    )
-                } else {
-                    ::core::option::Option::None
+                    unsafe { vectorize(f) }
                 }
             }
-
-            #[inline(always)]
-            pub unsafe fn new_unchecked() -> Self {
-                Self {
-                    __private_do_not_touch: (),
-                }
-            }
-
-            #[inline(always)]
-            pub fn vectorize<R>(self, f: impl FnOnce() -> R) -> R {
-                $(#[target_feature(enable = $feature)])*
-                unsafe fn vectorize<R>(f: impl FnOnce() -> R) -> R {
-                    f()
-                }
-                unsafe { vectorize(f) }
-            }
-        }
-
-        $(__impl_simd!($name, $feature);)*
+        )*
     };
 }
 

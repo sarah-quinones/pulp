@@ -1,8 +1,6 @@
 use super::*;
 
-pub unsafe trait Ssse3Token: Copy {}
-
-pub trait Ssse3: Ssse3Token {
+impl Ssse3 {
     delegate! {
         fn _mm_abs_epi8(a: __m128i) -> __m128i;
         fn _mm_abs_epi16(a: __m128i) -> __m128i;
@@ -22,5 +20,3 @@ pub trait Ssse3: Ssse3Token {
         fn _mm_sign_epi32(a: __m128i, b: __m128i) -> __m128i;
     }
 }
-
-impl<T: Ssse3Token> Ssse3 for T {}

@@ -1,6 +1,6 @@
 use super::*;
 
-pub trait Fma: FmaToken {
+impl Fma {
     delegate! {
         fn _mm_fmadd_pd(a: __m128d, b: __m128d, c: __m128d) -> __m128d;
         fn _mm256_fmadd_pd(a: __m256d, b: __m256d, c: __m256d) -> __m256d;
@@ -36,5 +36,3 @@ pub trait Fma: FmaToken {
         fn _mm_fnmsub_ss(a: __m128, b: __m128, c: __m128) -> __m128;
     }
 }
-
-impl<T: FmaToken> Fma for T {}

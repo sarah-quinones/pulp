@@ -1,7 +1,7 @@
 use super::arch::{_MM_CMPINT_ENUM, _MM_MANTISSA_NORM_ENUM, _MM_MANTISSA_SIGN_ENUM, _MM_PERM_ENUM};
 use super::*;
 
-pub trait Avx512f: Avx512fToken {
+impl Avx512f {
     delegate! {
     fn _mm512_abs_epi32(a: __m512i) -> __m512i;
     fn _mm512_mask_abs_epi32(src: __m512i, k: __mmask16, a: __m512i) -> __m512i;
@@ -3424,7 +3424,7 @@ pub trait Avx512f: Avx512fToken {
     }
 }
 
-pub trait Avx512f_Avx512vl: Avx512fToken + Avx512vlToken {
+impl Avx512f_Avx512vl {
     delegate! {
     fn _mm256_mask_abs_epi32(src: __m256i, k: __mmask8, a: __m256i) -> __m256i;
     fn _mm256_maskz_abs_epi32(k: __mmask8, a: __m256i) -> __m256i;
@@ -5264,6 +5264,3 @@ pub trait Avx512f_Avx512vl: Avx512fToken + Avx512vlToken {
     unsafe fn _mm256_store_epi64(mem_addr: *mut i64, a: __m256i);
     }
 }
-
-impl<T: Avx512fToken> Avx512f for T {}
-impl<T: Avx512fToken + Avx512vlToken> Avx512f_Avx512vl for T {}

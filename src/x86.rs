@@ -53,17 +53,64 @@ impl f64x8 {
 }
 
 // https://en.wikipedia.org/wiki/X86-64#Microarchitecture_levels
-internal_simd_type!(pub Baseline, "sse", "sse2", "fxsr");
-internal_simd_type!(pub V2, "sse", "sse2", "fxsr", "sse3", "ssse3", "sse4.1", "sse4.2", "popcnt");
-internal_simd_type!(
-    pub V3, "sse", "sse2", "fxsr", "sse3", "ssse3", "sse4.1", "sse4.2", "popcnt", "avx", "avx2",
-    "bmi1", "bmi2", "fma", "lzcnt"
-);
-#[cfg(feature = "nightly")]
-internal_simd_type!(
-    pub V4, "sse", "sse2", "fxsr", "sse3", "ssse3", "sse4.1", "sse4.2", "popcnt", "avx", "avx2",
-    "bmi1", "bmi2", "fma", "lzcnt", "avx512f", "avx512bw", "avx512cd", "avx512dq", "avx512vl"
-);
+internal_simd_type! {
+    pub struct Baseline {
+        sse: "sse",
+        sse2: "sse2",
+        fxsr: "fxsr",
+    }
+
+    pub struct V2 {
+        sse: "sse",
+        sse2: "sse2",
+        fxsr: "fxsr",
+        sse3: "sse3",
+        ssse3: "ssse3",
+        sse4_1: "sse4.1",
+        sse4_2: "sse4.2",
+        popcnt: "popcnt",
+    }
+
+    pub struct V3 {
+        sse: "sse",
+        sse2: "sse2",
+        fxsr: "fxsr",
+        sse3: "sse3",
+        ssse3: "ssse3",
+        sse4_1: "sse4.1",
+        sse4_2: "sse4.2",
+        popcnt: "popcnt",
+        avx: "avx",
+        axv2: "avx2",
+        bmi1: "bmi1",
+        bmi2: "bmi2",
+        fma: "fma",
+        lzcnt: "lzcnt",
+    }
+
+    #[cfg(feature = "nightly")]
+    pub struct V4 {
+        sse: "sse",
+        sse2: "sse2",
+        fxsr: "fxsr",
+        sse3: "sse3",
+        ssse3: "ssse3",
+        sse4_1: "sse4.1",
+        sse4_2: "sse4.2",
+        popcnt: "popcnt",
+        avx: "avx",
+        axv2: "avx2",
+        bmi1: "bmi1",
+        bmi2: "bmi2",
+        fma: "fma",
+        lzcnt: "lzcnt",
+        avx512f: "avx512f",
+        avx512bw: "avx512bw",
+        avx512cd: "avx512cd",
+        avx512dq: "avx512dq",
+        avx512vl: "avx512vl",
+    }
+}
 
 impl Seal for Baseline {}
 impl Seal for V2 {}

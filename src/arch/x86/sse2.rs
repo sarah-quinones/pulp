@@ -1,6 +1,6 @@
 use super::*;
 
-pub trait Sse2: Sse2Token {
+impl Sse2 {
     delegate! {
         fn _mm_pause();
         fn _mm_clflush(p: *const u8);
@@ -266,5 +266,3 @@ pub trait Sse2: Sse2Token {
         fn _mm_unpacklo_pd(a: __m128d, b: __m128d) -> __m128d;
     }
 }
-
-impl<T: Sse2Token> Sse2 for T {}

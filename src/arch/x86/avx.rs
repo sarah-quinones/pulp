@@ -1,6 +1,6 @@
 use super::*;
 
-pub trait Avx: AvxToken {
+impl Avx {
     delegate! {
         fn _mm256_add_pd(a: __m256d, b: __m256d) -> __m256d;
         fn _mm256_add_ps(a: __m256, b: __m256) -> __m256;
@@ -324,5 +324,3 @@ pub trait Avx: AvxToken {
         fn _mm256_cvtss_f32(a: __m256) -> f32;
     }
 }
-
-impl<T: AvxToken> Avx for T {}

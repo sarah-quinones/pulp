@@ -1,6 +1,6 @@
 use super::*;
 
-pub trait Sse: SseToken {
+impl Sse {
     delegate! {
         fn _mm_add_ss(a: __m128, b: __m128) -> __m128;
         fn _mm_add_ps(a: __m128, b: __m128) -> __m128;
@@ -106,5 +106,3 @@ pub trait Sse: SseToken {
         unsafe fn _mm_stream_ps(mem_addr: *mut f32, a: __m128);
     }
 }
-
-impl<T: SseToken> Sse for T {}
