@@ -141,7 +141,6 @@ macro_rules! simd_type {
         )*
     ) => {
         $(
-            #[repr(transparent)]
             #[allow(dead_code)]
             $(#[$attr])*
             #[derive(Clone, Copy, Debug)]
