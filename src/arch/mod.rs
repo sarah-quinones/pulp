@@ -172,7 +172,7 @@ macro_rules! simd_type {
 
                 #[inline(always)]
                 pub fn is_available() -> bool {
-                    true $(&& <__impl_type!($feature)>::is_available())*
+                    true $(&& <$crate::__impl_type!($feature)>::is_available())*
                 }
 
                 #[inline(always)]
