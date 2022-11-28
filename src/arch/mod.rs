@@ -177,9 +177,10 @@ macro_rules! simd_type {
                 #[inline(always)]
                 pub fn vectorize<R>(self, f: impl FnOnce() -> R) -> R {
                     $(#[target_feature(enable = $feature)])*
-                        unsafe fn vectorize<R>(f: impl FnOnce() -> R) -> R {
-                            f()
-                        }
+                    #[inline]
+                    unsafe fn vectorize<R>(f: impl FnOnce() -> R) -> R {
+                        f()
+                    }
                     unsafe { vectorize(f) }
                 }
             }
@@ -234,9 +235,10 @@ macro_rules! internal_simd_type {
                 #[inline(always)]
                 pub fn vectorize<R>(self, f: impl FnOnce() -> R) -> R {
                     $(#[target_feature(enable = $feature)])*
-                        unsafe fn vectorize<R>(f: impl FnOnce() -> R) -> R {
-                            f()
-                        }
+                    #[inline]
+                    unsafe fn vectorize<R>(f: impl FnOnce() -> R) -> R {
+                        f()
+                    }
                     unsafe { vectorize(f) }
                 }
             }
