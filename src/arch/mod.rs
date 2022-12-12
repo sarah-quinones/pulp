@@ -69,7 +69,7 @@ macro_rules! feature_detected {
 #[macro_export]
 macro_rules! feature_detected {
     ($feature: tt) => {
-        cfg!($feature)
+        cfg!(target_arch = $feature)
     };
 }
 

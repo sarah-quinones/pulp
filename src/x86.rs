@@ -797,7 +797,9 @@ impl ArchInner {
 
 #[cfg(test)]
 mod tests {
+    extern crate alloc;
     use super::*;
+    use alloc::vec::Vec;
 
     #[test]
     fn times_two() {
