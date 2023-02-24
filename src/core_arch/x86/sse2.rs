@@ -3,6 +3,7 @@ use super::*;
 impl Sse2 {
     delegate! {
         fn _mm_pause();
+        #[allow(clippy::not_unsafe_ptr_arg_deref)]
         fn _mm_clflush(p: *const u8);
         fn _mm_lfence();
         fn _mm_mfence();

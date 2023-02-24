@@ -55,7 +55,12 @@
 //! }
 //! ```
 
-#![allow(non_camel_case_types)]
+#![allow(
+    non_camel_case_types,
+    clippy::zero_prefixed_literal,
+    clippy::identity_op,
+    clippy::too_many_arguments
+)]
 #![cfg_attr(feature = "nightly", feature(stdsimd), feature(avx512_target_feature))]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
@@ -246,6 +251,13 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 #[derive(Debug, Copy, Clone)]
 pub struct Scalar {
     __private: (),
+}
+
+impl Default for Scalar {
+    #[inline]
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Scalar {
@@ -506,6 +518,13 @@ impl Arch {
     }
 }
 
+impl Default for Arch {
+    #[inline]
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct Arch {
     inner: ArchInner,
@@ -601,4 +620,6 @@ pub fn as_arrays_mut<const N: usize, T>(slice: &mut [T]) -> (&mut [[T; N]], &mut
 pub mod core_arch;
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg_attr(docsrs, doc(cfg(any(target_arch = "x86", target_arch = "x86_64"))))]
+/// High level x86 API.
 pub mod x86;
