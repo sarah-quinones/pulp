@@ -199,19 +199,19 @@ __impl!(Avx512vbmi2, "avx512vbmi2");
 pub struct Avx512gfni {
     __private: (),
 }
-__impl!(Avx512gfni, "avx512gfni");
+__impl!(Avx512gfni, "gfni");
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct Avx512vaes {
     __private: (),
 }
-__impl!(Avx512vaes, "avx512vaes");
+__impl!(Avx512vaes, "vaes");
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct Avx512vpclmulqdq {
     __private: (),
 }
-__impl!(Avx512vpclmulqdq, "avx512vpclmulqdq");
+__impl!(Avx512vpclmulqdq, "vpclmulqdq");
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct Avx512vnni {

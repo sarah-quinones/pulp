@@ -59,6 +59,9 @@
 #![cfg_attr(feature = "nightly", feature(stdsimd), feature(avx512_target_feature))]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+// FIXME: remove this
+#![feature(link_llvm_intrinsics)]
+#![feature(simd_ffi)]
 
 use core::fmt::Debug;
 use core::marker::PhantomData;
@@ -69,6 +72,21 @@ use seal::Seal;
 
 mod seal {
     pub trait Seal {}
+}
+
+pub trait NullaryFnOnce {
+    type Output;
+
+    fn call(self) -> Self::Output;
+}
+
+impl<R, F: FnOnce() -> R> NullaryFnOnce for F {
+    type Output = R;
+
+    #[inline(always)]
+    fn call(self) -> Self::Output {
+        self()
+    }
 }
 
 pub trait WithSimd {
@@ -407,254 +425,6 @@ macro_rules! autovectorize_impl {
     };
 }
 
-#[derive(Copy, Clone)]
-#[repr(transparent)]
-#[doc(hidden)]
-pub struct m8(u8);
-#[derive(Copy, Clone)]
-#[repr(transparent)]
-#[doc(hidden)]
-pub struct m16(u16);
-#[derive(Copy, Clone)]
-#[repr(transparent)]
-#[doc(hidden)]
-pub struct m32(u32);
-#[derive(Copy, Clone)]
-#[repr(transparent)]
-#[doc(hidden)]
-pub struct m64(u64);
-
-impl Debug for m8 {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-        write!(f, "{}", self.is_set())
-    }
-}
-impl Debug for m16 {
-    #[inline]
-    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-        write!(f, "{}", self.is_set())
-    }
-}
-impl Debug for m32 {
-    #[inline]
-    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-        write!(f, "{}", self.is_set())
-    }
-}
-impl Debug for m64 {
-    #[inline]
-    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-        write!(f, "{}", self.is_set())
-    }
-}
-
-impl m8 {
-    #[inline]
-    pub fn new(value: bool) -> Self {
-        Self(if value { u8::MAX } else { 0 })
-    }
-
-    #[inline]
-    pub fn is_set(self) -> bool {
-        self.0 == u8::MAX
-    }
-
-    #[inline]
-    pub fn flip(self) -> Self {
-        Self(!self.0)
-    }
-}
-impl m16 {
-    #[inline]
-    pub fn new(value: bool) -> Self {
-        Self(if value { u16::MAX } else { 0 })
-    }
-
-    #[inline]
-    pub fn is_set(self) -> bool {
-        self.0 == u16::MAX
-    }
-
-    #[inline]
-    pub fn flip(self) -> Self {
-        Self(!self.0)
-    }
-}
-impl m32 {
-    #[inline]
-    pub fn new(value: bool) -> Self {
-        Self(if value { u32::MAX } else { 0 })
-    }
-
-    #[inline]
-    pub fn is_set(self) -> bool {
-        self.0 == u32::MAX
-    }
-
-    #[inline]
-    pub fn flip(self) -> Self {
-        Self(!self.0)
-    }
-}
-impl m64 {
-    #[inline]
-    pub fn new(value: bool) -> Self {
-        Self(if value { u64::MAX } else { 0 })
-    }
-
-    #[inline]
-    pub fn is_set(self) -> bool {
-        self.0 == u64::MAX
-    }
-
-    #[inline]
-    pub fn flip(self) -> Self {
-        Self(!self.0)
-    }
-}
-
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-#[doc(hidden)]
-pub struct f32x4(f32, f32, f32, f32);
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-#[doc(hidden)]
-pub struct f32x8(f32, f32, f32, f32, f32, f32, f32, f32);
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-#[rustfmt::skip]
-#[doc(hidden)]
-pub struct f32x16(f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32, f32);
-
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-#[doc(hidden)]
-pub struct i32x4(i32, i32, i32, i32);
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-#[doc(hidden)]
-pub struct i32x8(i32, i32, i32, i32, i32, i32, i32, i32);
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-#[rustfmt::skip]
-#[doc(hidden)]
-pub struct i32x16(i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32);
-
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-#[doc(hidden)]
-pub struct u32x4(u32, u32, u32, u32);
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-#[doc(hidden)]
-pub struct u32x8(u32, u32, u32, u32, u32, u32, u32, u32);
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-#[rustfmt::skip]
-#[doc(hidden)]
-pub struct u32x16(u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32, u32);
-
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-#[doc(hidden)]
-pub struct m32x4(m32, m32, m32, m32);
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-#[doc(hidden)]
-pub struct m32x8(m32, m32, m32, m32, m32, m32, m32, m32);
-
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-#[doc(hidden)]
-pub struct f64x2(f64, f64);
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-#[doc(hidden)]
-pub struct f64x4(f64, f64, f64, f64);
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-#[doc(hidden)]
-pub struct f64x8(f64, f64, f64, f64, f64, f64, f64, f64);
-
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-#[doc(hidden)]
-pub struct i64x2(i64, i64);
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-#[doc(hidden)]
-pub struct i64x4(i64, i64, i64, i64);
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-#[doc(hidden)]
-pub struct i64x8(i64, i64, i64, i64, i64, i64, i64, i64);
-
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-#[doc(hidden)]
-pub struct u64x2(u64, u64);
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-#[doc(hidden)]
-pub struct u64x4(u64, u64, u64, u64);
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-#[doc(hidden)]
-pub struct u64x8(u64, u64, u64, u64, u64, u64, u64, u64);
-
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-#[doc(hidden)]
-pub struct m64x2(m64, m64);
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-#[doc(hidden)]
-pub struct m64x4(m64, m64, m64, m64);
-
-unsafe impl Zeroable for f32x4 {}
-unsafe impl Zeroable for f32x8 {}
-unsafe impl Zeroable for f32x16 {}
-unsafe impl Pod for f32x4 {}
-unsafe impl Pod for f32x8 {}
-unsafe impl Pod for f32x16 {}
-unsafe impl Zeroable for i32x4 {}
-unsafe impl Zeroable for i32x8 {}
-unsafe impl Zeroable for i32x16 {}
-unsafe impl Pod for i32x4 {}
-unsafe impl Pod for i32x8 {}
-unsafe impl Pod for i32x16 {}
-unsafe impl Zeroable for u32x4 {}
-unsafe impl Zeroable for u32x8 {}
-unsafe impl Zeroable for u32x16 {}
-unsafe impl Pod for u32x4 {}
-unsafe impl Pod for u32x8 {}
-unsafe impl Pod for u32x16 {}
-
-unsafe impl Zeroable for f64x2 {}
-unsafe impl Zeroable for f64x4 {}
-unsafe impl Zeroable for f64x8 {}
-unsafe impl Pod for f64x2 {}
-unsafe impl Pod for f64x4 {}
-unsafe impl Pod for f64x8 {}
-unsafe impl Zeroable for i64x2 {}
-unsafe impl Zeroable for i64x4 {}
-unsafe impl Zeroable for i64x8 {}
-unsafe impl Pod for i64x2 {}
-unsafe impl Pod for i64x4 {}
-unsafe impl Pod for i64x8 {}
-unsafe impl Zeroable for u64x2 {}
-unsafe impl Zeroable for u64x4 {}
-unsafe impl Zeroable for u64x8 {}
-unsafe impl Pod for u64x2 {}
-unsafe impl Pod for u64x4 {}
-unsafe impl Pod for u64x8 {}
-
-unsafe impl NoUninit for m32x4 {}
-unsafe impl NoUninit for m32x8 {}
-unsafe impl NoUninit for m64x2 {}
-unsafe impl NoUninit for m64x4 {}
-
 #[inline]
 unsafe fn split_slice<T, U>(slice: &[T]) -> (&[U], &[T]) {
     assert_eq!(core::mem::size_of::<U>() % core::mem::size_of::<T>(), 0);
@@ -714,14 +484,14 @@ impl ArchInner {
 }
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-mod x86;
+mod __x86;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-use x86::ArchInner;
+use __x86::ArchInner;
 
 #[cfg(target_arch = "aarch64")]
-mod aarch64;
+mod __aarch64;
 #[cfg(target_arch = "aarch64")]
-use aarch64::ArchInner;
+use __aarch64::ArchInner;
 
 impl Arch {
     #[inline]
@@ -749,10 +519,24 @@ impl<T, U> CheckSameSize<T, U> {
     };
 }
 
+#[doc(hidden)]
+pub struct CheckSizeLessThanOrEqual<T, U>(PhantomData<(T, U)>);
+impl<T, U> CheckSizeLessThanOrEqual<T, U> {
+    pub const VALID: () = {
+        assert!(core::mem::size_of::<T>() <= core::mem::size_of::<U>());
+    };
+}
+
 #[macro_export]
 macro_rules! static_assert_same_size {
     ($t: ty, $u: ty) => {
         let _ = $crate::CheckSameSize::<$t, $u>::VALID;
+    };
+}
+#[macro_export]
+macro_rules! static_assert_size_less_than_or_equal {
+    ($t: ty, $u: ty) => {
+        let _ = $crate::CheckSizeLessThanOrEqual::<$t, $u>::VALID;
     };
 }
 
@@ -762,6 +546,17 @@ macro_rules! static_assert_same_size {
 #[inline(always)]
 pub fn cast<T: NoUninit, U: AnyBitPattern>(value: T) -> U {
     static_assert_same_size!(T, U);
+    let value = core::mem::ManuallyDrop::new(value);
+    let ptr = &value as *const core::mem::ManuallyDrop<T> as *const U;
+    unsafe { ptr.read_unaligned() }
+}
+
+/// Safe lossy transmute function, where the destination type may be smaller than the source type.
+///
+/// This property is checked at compile time.
+#[inline(always)]
+pub fn cast_lossy<T: NoUninit, U: AnyBitPattern>(value: T) -> U {
+    static_assert_size_less_than_or_equal!(U, T);
     let value = core::mem::ManuallyDrop::new(value);
     let ptr = &value as *const core::mem::ManuallyDrop<T> as *const U;
     unsafe { ptr.read_unaligned() }
@@ -802,4 +597,8 @@ pub fn as_arrays_mut<const N: usize, T>(slice: &mut [T]) -> (&mut [[T; N]], &mut
 }
 
 /// Platform dependent intrinsics.
-pub mod arch;
+#[doc(hidden)]
+pub mod core_arch;
+
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+pub mod x86;

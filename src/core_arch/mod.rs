@@ -78,56 +78,56 @@ macro_rules! feature_detected {
 #[rustfmt::skip]
 #[macro_export]
 macro_rules! __impl_type {
-    ("aes") => { $crate::arch::x86::Aes };
-    ("pclmulqdq") => { $crate::arch::x86::Pclmulqdq };
-    ("rdrand") => { $crate::arch::x86::Rdrand };
-    ("rdseed") => { $crate::arch::x86::Rdseed };
-    ("tsc") => { $crate::arch::x86::Tsc };
-    ("mmx") => { $crate::arch::x86::Mmx };
-    ("sse") => { $crate::arch::x86::Sse };
-    ("sse2") => { $crate::arch::x86::Sse2 };
-    ("sse3") => { $crate::arch::x86::Sse3 };
-    ("ssse3") => { $crate::arch::x86::Ssse3 };
-    ("sse4.1") => { $crate::arch::x86::Sse4_1 };
-    ("sse4.2") => { $crate::arch::x86::Sse4_2 };
-    ("sse4a") => { $crate::arch::x86::Sse4a };
-    ("sha") => { $crate::arch::x86::Sha };
-    ("avx") => { $crate::arch::x86::Avx };
-    ("avx2") => { $crate::arch::x86::Avx2 };
-    ("avx512f") => { $crate::arch::x86::Avx512f };
-    ("avx512cd") => { $crate::arch::x86::Avx512cd };
-    ("avx512er") => { $crate::arch::x86::Avx512er };
-    ("avx512pf") => { $crate::arch::x86::Avx512pf };
-    ("avx512bw") => { $crate::arch::x86::Avx512bw };
-    ("avx512dq") => { $crate::arch::x86::Avx512dq };
-    ("avx512vl") => { $crate::arch::x86::Avx512vl };
-    ("avx512ifma") => { $crate::arch::x86::Avx512ifma };
-    ("avx512vbmi") => { $crate::arch::x86::Avx512vbmi };
-    ("avx512vpopcntdq") => { $crate::arch::x86::Avx512vpopcntdq };
-    ("avx512vbmi2") => { $crate::arch::x86::Avx512vbmi2 };
-    ("avx512gfni") => { $crate::arch::x86::Avx512gfni };
-    ("avx512vaes") => { $crate::arch::x86::Avx512vaes };
-    ("avx512vpclmulqdq") => { $crate::arch::x86::Avx512vpclmulqdq };
-    ("avx512vnni") => { $crate::arch::x86::Avx512vnni };
-    ("avx512bitalg") => { $crate::arch::x86::Avx512bitalg };
-    ("avx512bf16") => { $crate::arch::x86::Avx512bf16 };
-    ("avx512vp2intersect") => { $crate::arch::x86::Avx512vp2intersect };
-    ("f16c") => { $crate::arch::x86::F16c };
-    ("fma") => { $crate::arch::x86::Fma };
-    ("bmi1") => { $crate::arch::x86::Bmi1 };
-    ("bmi2") => { $crate::arch::x86::Bmi2 };
-    ("lzcnt") => { $crate::arch::x86::Lzcnt };
-    ("tbm") => { $crate::arch::x86::Tbm };
-    ("popcnt") => { $crate::arch::x86::Popcnt };
-    ("fxsr") => { $crate::arch::x86::Fxsr };
-    ("xsave") => { $crate::arch::x86::Xsave };
-    ("xsaveopt") => { $crate::arch::x86::Xsaveopt };
-    ("xsaves") => { $crate::arch::x86::Xsaves };
-    ("xsavec") => { $crate::arch::x86::Xsavec };
-    ("cmpxchg16b") => { $crate::arch::x86::Cmpxchg16b };
-    ("adx") => { $crate::arch::x86::Adx };
-    ("rtm") => { $crate::arch::x86::Rtm };
-    ("abm") => { $crate::arch::x86::Abm };
+    ("aes") => { $crate::core_arch::x86::Aes };
+    ("pclmulqdq") => { $crate::core_arch::x86::Pclmulqdq };
+    ("rdrand") => { $crate::core_arch::x86::Rdrand };
+    ("rdseed") => { $crate::core_arch::x86::Rdseed };
+    ("tsc") => { $crate::core_arch::x86::Tsc };
+    ("mmx") => { $crate::core_arch::x86::Mmx };
+    ("sse") => { $crate::core_arch::x86::Sse };
+    ("sse2") => { $crate::core_arch::x86::Sse2 };
+    ("sse3") => { $crate::core_arch::x86::Sse3 };
+    ("ssse3") => { $crate::core_arch::x86::Ssse3 };
+    ("sse4.1") => { $crate::core_arch::x86::Sse4_1 };
+    ("sse4.2") => { $crate::core_arch::x86::Sse4_2 };
+    ("sse4a") => { $crate::core_arch::x86::Sse4a };
+    ("sha") => { $crate::core_arch::x86::Sha };
+    ("avx") => { $crate::core_arch::x86::Avx };
+    ("avx2") => { $crate::core_arch::x86::Avx2 };
+    ("avx512f") => { $crate::core_arch::x86::Avx512f };
+    ("avx512cd") => { $crate::core_arch::x86::Avx512cd };
+    ("avx512er") => { $crate::core_arch::x86::Avx512er };
+    ("avx512pf") => { $crate::core_arch::x86::Avx512pf };
+    ("avx512bw") => { $crate::core_arch::x86::Avx512bw };
+    ("avx512dq") => { $crate::core_arch::x86::Avx512dq };
+    ("avx512vl") => { $crate::core_arch::x86::Avx512vl };
+    ("avx512ifma") => { $crate::core_arch::x86::Avx512ifma };
+    ("avx512vbmi") => { $crate::core_arch::x86::Avx512vbmi };
+    ("avx512vpopcntdq") => { $crate::core_arch::x86::Avx512vpopcntdq };
+    ("avx512vbmi2") => { $crate::core_arch::x86::Avx512vbmi2 };
+    ("avx512gfni") => { $crate::core_arch::x86::Avx512gfni };
+    ("avx512vaes") => { $crate::core_arch::x86::Avx512vaes };
+    ("avx512vpclmulqdq") => { $crate::core_arch::x86::Avx512vpclmulqdq };
+    ("avx512vnni") => { $crate::core_arch::x86::Avx512vnni };
+    ("avx512bitalg") => { $crate::core_arch::x86::Avx512bitalg };
+    ("avx512bf16") => { $crate::core_arch::x86::Avx512bf16 };
+    ("avx512vp2intersect") => { $crate::core_arch::x86::Avx512vp2intersect };
+    ("f16c") => { $crate::core_arch::x86::F16c };
+    ("fma") => { $crate::core_arch::x86::Fma };
+    ("bmi1") => { $crate::core_arch::x86::Bmi1 };
+    ("bmi2") => { $crate::core_arch::x86::Bmi2 };
+    ("lzcnt") => { $crate::core_arch::x86::Lzcnt };
+    ("tbm") => { $crate::core_arch::x86::Tbm };
+    ("popcnt") => { $crate::core_arch::x86::Popcnt };
+    ("fxsr") => { $crate::core_arch::x86::Fxsr };
+    ("xsave") => { $crate::core_arch::x86::Xsave };
+    ("xsaveopt") => { $crate::core_arch::x86::Xsaveopt };
+    ("xsaves") => { $crate::core_arch::x86::Xsaves };
+    ("xsavec") => { $crate::core_arch::x86::Xsavec };
+    ("cmpxchg16b") => { $crate::core_arch::x86::Cmpxchg16b };
+    ("adx") => { $crate::core_arch::x86::Adx };
+    ("rtm") => { $crate::core_arch::x86::Rtm };
+    ("abm") => { $crate::core_arch::x86::Abm };
 }
 
 #[macro_export]
@@ -175,13 +175,21 @@ macro_rules! simd_type {
                 }
 
                 #[inline(always)]
-                pub fn vectorize<R>(self, f: impl FnOnce() -> R) -> R {
+                pub fn vectorize<F: $crate::NullaryFnOnce>(self, f: F) -> F::Output {
                     $(#[target_feature(enable = $feature)])*
                     #[inline]
-                    unsafe fn vectorize<R>(f: impl FnOnce() -> R) -> R {
-                        f()
+                    unsafe fn __impl<F: $crate::NullaryFnOnce>(f: F) -> F::Output {
+                        f.call()
                     }
-                    unsafe { vectorize(f) }
+                    unsafe { __impl(f) }
+                }
+
+                #[inline(always)]
+                pub fn to_ref(self) -> &'static Self {
+                    const __ASSERT_ZST: () = {
+                        assert!(::core::mem::size_of::<$name>() == 0);
+                    };
+                    unsafe { &*::core::ptr::NonNull::dangling().as_ptr() }
                 }
             }
         )*
@@ -233,13 +241,21 @@ macro_rules! internal_simd_type {
                 }
 
                 #[inline(always)]
-                pub fn vectorize<R>(self, f: impl FnOnce() -> R) -> R {
+                pub fn vectorize<F: $crate::NullaryFnOnce>(self, f: F) -> F::Output {
                     $(#[target_feature(enable = $feature)])*
                     #[inline]
-                    unsafe fn vectorize<R>(f: impl FnOnce() -> R) -> R {
-                        f()
+                    unsafe fn __impl<F: $crate::NullaryFnOnce>(f: F) -> F::Output {
+                        f.call()
                     }
-                    unsafe { vectorize(f) }
+                    unsafe { __impl(f) }
+                }
+
+                #[inline(always)]
+                pub fn to_ref(self) -> &'static Self {
+                    const __ASSERT_ZST: () = {
+                        assert!(::core::mem::size_of::<$name>() == 0);
+                    };
+                    unsafe { &*::core::ptr::NonNull::dangling().as_ptr() }
                 }
             }
         )*

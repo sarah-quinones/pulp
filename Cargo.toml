@@ -1,6 +1,6 @@
 [package]
 name = "pulp"
-version = "0.10.4"
+version = "0.11.0"
 edition = "2021"
 authors = ["sarah <>"]
 description = "Safe generic simd"
@@ -10,12 +10,20 @@ license = "MIT"
 keywords = ["simd"]
 
 [dependencies]
-bytemuck = "1.12"
+bytemuck = "1.13"
 
 [features]
 default = ["std"]
 std = []
-nightly = []
+nightly = ["bytemuck/nightly_stdsimd"]
+
+[dev-dependencies]
+criterion = "0.4.0"
+rand = "0.8.5"
+
+[[bench]]
+name = "bench"
+harness = false
 
 [package.metadata.docs.rs]
 all-features = true
