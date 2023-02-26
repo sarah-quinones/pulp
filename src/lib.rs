@@ -64,9 +64,6 @@
 #![cfg_attr(feature = "nightly", feature(stdsimd), feature(avx512_target_feature))]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
-// FIXME: remove this
-#![feature(link_llvm_intrinsics)]
-#![feature(simd_ffi)]
 
 use core::fmt::Debug;
 use core::marker::PhantomData;

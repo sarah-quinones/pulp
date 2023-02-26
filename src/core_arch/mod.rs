@@ -94,6 +94,9 @@ macro_rules! __impl_type {
     ("sha") => { $crate::core_arch::x86::Sha };
     ("avx") => { $crate::core_arch::x86::Avx };
     ("avx2") => { $crate::core_arch::x86::Avx2 };
+    ("gfni") => { $crate::core_arch::x86::Gfni };
+    ("vaes") => { $crate::core_arch::x86::Vaes };
+    ("vpclmulqdq") => { $crate::core_arch::x86::Vpclmulqdq };
     ("avx512f") => { $crate::core_arch::x86::Avx512f };
     ("avx512cd") => { $crate::core_arch::x86::Avx512cd };
     ("avx512er") => { $crate::core_arch::x86::Avx512er };
