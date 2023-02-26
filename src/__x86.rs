@@ -737,7 +737,7 @@ pub struct m64x8(pub __mmask8);
 
 #[cfg(feature = "nightly")]
 impl Debug for m64x8 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_tuple("m64x8")
             .field(&((self.0 >> 0x0) & 1 == 1))
             .field(&((self.0 >> 0x1) & 1 == 1))
@@ -753,7 +753,7 @@ impl Debug for m64x8 {
 
 #[cfg(feature = "nightly")]
 impl Debug for m32x16 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_tuple("m32x16")
             .field(&((self.0 >> 0x0) & 1 == 1))
             .field(&((self.0 >> 0x1) & 1 == 1))
