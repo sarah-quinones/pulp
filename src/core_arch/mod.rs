@@ -154,14 +154,21 @@ macro_rules! simd_type {
             #[allow(dead_code)]
             $(#[$attr])*
             impl $name {
-                #[inline(always)]
+                /// Returns a SIMD token type without checking if the required CPU features for
+                /// this type are available.
+                ///
+                /// # Safety
+                /// - the required CPU features must be available.
+                #[inline]
                 pub unsafe fn new_unchecked() -> Self {
                     Self{
                         $($ident: <$crate::__impl_type!($feature)>::new_unchecked(),)*
                     }
                 }
 
-                #[inline(always)]
+                /// Returns a SIMD token type if the required CPU features for this type are
+                /// available, otherwise returns `None`.
+                #[inline]
                 pub fn try_new() -> Option<Self> {
                     if Self::is_available() {
                         Some(Self{
@@ -172,11 +179,19 @@ macro_rules! simd_type {
                     }
                 }
 
-                #[inline(always)]
+                /// Returns `true` if the required CPU features for this type are available,
+                /// otherwise returns `false`.
+                #[inline]
                 pub fn is_available() -> bool {
                     true $(&& <$crate::__impl_type!($feature)>::is_available())*
                 }
 
+                /// Vectorizes the given function as if the CPU features for this type were applied
+                /// to it.
+                ///
+                /// # Note
+                /// For the vectorization to work properly, the given function must be inlined.
+                /// Consider marking it as `#[inline(always)]`
                 #[inline(always)]
                 pub fn vectorize<F: $crate::NullaryFnOnce>(self, f: F) -> F::Output {
                     $(#[target_feature(enable = $feature)])*
@@ -187,7 +202,9 @@ macro_rules! simd_type {
                     unsafe { __impl(f) }
                 }
 
-                #[inline(always)]
+                /// Takes a proof of the existence of this SIMD token (`self`), and returns a
+                /// persistent reference to it.
+                #[inline]
                 pub fn to_ref(self) -> &'static Self {
                     const __ASSERT_ZST: () = {
                         assert!(::core::mem::size_of::<$name>() == 0);
@@ -225,7 +242,7 @@ macro_rules! internal_simd_type {
                 ///
                 /// # Safety
                 /// - the required CPU features must be available.
-                #[inline(always)]
+                #[inline]
                 pub unsafe fn new_unchecked() -> Self {
                     Self{
                         $($ident: <__impl_type!($feature)>::new_unchecked(),)*
@@ -234,7 +251,7 @@ macro_rules! internal_simd_type {
 
                 /// Returns a SIMD token type if the required CPU features for this type are
                 /// available, otherwise returns `None`.
-                #[inline(always)]
+                #[inline]
                 pub fn try_new() -> Option<Self> {
                     if Self::is_available() {
                         Some(Self{
@@ -247,7 +264,7 @@ macro_rules! internal_simd_type {
 
                 /// Returns `true` if the required CPU features for this type are available,
                 /// otherwise returns `false`.
-                #[inline(always)]
+                #[inline]
                 pub fn is_available() -> bool {
                     true $(&& <__impl_type!($feature)>::is_available())*
                 }
@@ -270,7 +287,7 @@ macro_rules! internal_simd_type {
 
                 /// Takes a proof of the existence of this SIMD token (`self`), and returns a
                 /// persistent reference to it.
-                #[inline(always)]
+                #[inline]
                 pub fn to_ref(self) -> &'static Self {
                     const __ASSERT_ZST: () = {
                         assert!(::core::mem::size_of::<$name>() == 0);
