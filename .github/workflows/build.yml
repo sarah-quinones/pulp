@@ -1,0 +1,65 @@
+# Run tests
+name: Test
+
+on:
+  push:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  cargo-benches:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Compile benches
+        run: cargo bench --no-run
+
+  cargo-tests:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Test debug
+        run: cargo test
+
+      - name: Test debug no-std
+        run: cargo test --no-default-features
+
+  cargo-tests-nightly:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Test debug
+        run: cargo test
+
+      - name: Test debug no-std
+        run: cargo test --no-default-features
+
+      - name: Test debug nightly
+        run: cargo test --features=nightly
+
+      - name: Test debug no-std nightly
+        run: cargo test --no-default-features --features=nightly

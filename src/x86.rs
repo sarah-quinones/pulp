@@ -2,7 +2,7 @@
 
 use super::*;
 use crate::core_arch::internal_simd_type;
-#[cfg(any(doc, feature = "nightly"))]
+#[cfg(feature = "nightly")]
 use crate::core_arch::x86::{Avx512bw_Avx512vl, Avx512f_Avx512vl};
 #[cfg(target_arch = "x86")]
 use core::arch::x86::*;
@@ -754,7 +754,7 @@ internal_simd_type! {
     /// Notable additions over [`V3`] include:
     ///  - Instructions operating on 512-bit SIMD vectors.
     ///  - Masks are now composed of bits rather than vector lanes.
-    #[cfg(any(doc, feature = "nightly"))]
+    #[cfg(feature = "nightly")]
     #[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
     #[allow(missing_docs)]
     pub struct V4 {
@@ -4755,7 +4755,7 @@ impl V3 {
     }
 }
 
-#[cfg(any(doc, feature = "nightly"))]
+#[cfg(feature = "nightly")]
 #[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 impl V4 {
     #[inline(always)]
@@ -7405,7 +7405,7 @@ mod tests {
     #[test]
     fn test_to_ref() {
         let simd_ref = unsafe { V2::new_unchecked() }.to_ref();
-        dbg!(simd_ref);
+        let _ = *simd_ref;
     }
 
     #[test]

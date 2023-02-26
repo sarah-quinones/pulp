@@ -1,0 +1,52 @@
+# Check formatting using rustfmt
+# and lint with clippy
+name: Rustfmt and Clippy check
+
+on:
+  push:
+
+jobs:
+  rustfmt:
+    name: rustfmt
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rustfmt
+
+      - name: Run cargo fmt
+        run: cargo fmt --all -- --check
+
+  clippy:
+    name: clippy
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Run cargo clippy
+        run: cargo clippy --all-targets -- --no-deps -D warnings
+
+      - name: Run cargo clippy no_std
+        run: cargo clippy --no-default-features --all-targets -- --no-deps -D warnings
+
+  clippy-nightly:
+    name: clippy
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: clippy
+
+      - name: Run cargo clippy nightly
+        run: cargo clippy --features=nightly --all-targets -- --no-deps -D warnings

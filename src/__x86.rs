@@ -1004,7 +1004,7 @@ mod tests {
                 }
 
                 for x in tail {
-                    *x = *x * 3.0;
+                    *x *= 3.0;
                 }
             }
         }

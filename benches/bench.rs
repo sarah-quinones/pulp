@@ -5,6 +5,12 @@ use criterion::{criterion_group, criterion_main, Criterion};
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 #[cfg(feature = "nightly")]
 mod nightly {
+    #![allow(
+        clippy::identity_op,
+        clippy::too_many_arguments,
+        clippy::type_complexity
+    )]
+
     use pulp::x86::{b8, u64x8, V4};
     use pulp::{cast, NullaryFnOnce};
     const NETWORK_64BIT_1: u64x8 = u64x8(3, 2, 1, 0, 7, 6, 5, 4);
@@ -70,8 +76,7 @@ mod nightly {
         let zmm = cmp_merge(simd, zmm, shuffle(simd, zmm), b8(0xAA));
         let zmm = cmp_merge(simd, zmm, permute(simd, NETWORK_64BIT_2, zmm), b8(0xF0));
         let zmm = cmp_merge(simd, zmm, permute(simd, NETWORK_64BIT_3, zmm), b8(0xCC));
-        let zmm = cmp_merge(simd, zmm, shuffle(simd, zmm), b8(0xAA));
-        zmm
+        cmp_merge(simd, zmm, shuffle(simd, zmm), b8(0xAA))
     }
 
     /// Assumes zmm is bitonic and performs a recursive half cleaner
@@ -83,9 +88,7 @@ mod nightly {
         // 2) half_cleaner[4]
         let zmm = cmp_merge(simd, zmm, permute(simd, NETWORK_64BIT_3, zmm), b8(0xCC));
         // 3) half_cleaner[1]
-        let zmm = cmp_merge(simd, zmm, shuffle(simd, zmm), b8(0xAA));
-
-        zmm
+        cmp_merge(simd, zmm, shuffle(simd, zmm), b8(0xAA))
     }
 
     /// Assumes zmm0 and zmm1 are sorted and performs a recursive half cleaner
