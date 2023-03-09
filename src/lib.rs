@@ -487,7 +487,7 @@ impl ArchInner {
     #[inline(always)]
     pub fn dispatch<Op: WithSimd>(self, op: Op) -> Op::Output {
         match self {
-            Arch::Scalar(simd) => simd.vectorize(op),
+            ArchInner::Scalar(simd) => simd.vectorize(op),
         }
     }
 }
