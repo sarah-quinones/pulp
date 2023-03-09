@@ -8,23 +8,23 @@ mod arch {
     #[cfg(target_arch = "x86_64")]
     pub use core::arch::x86_64::*;
 
-    #[cfg(feature = "nightly", target_arch = "arm")]
+    #[cfg(all(feature = "nightly", target_arch = "arm"))]
     pub use core::arch::arm::*;
-    #[cfg(feature = "nightly", target_arch = "mips")]
+    #[cfg(all(feature = "nightly", target_arch = "mips"))]
     pub use core::arch::mips::*;
-    #[cfg(feature = "nightly", target_arch = "mips64")]
+    #[cfg(all(feature = "nightly", target_arch = "mips64"))]
     pub use core::arch::mips64::*;
-    #[cfg(feature = "nightly", target_arch = "nvptx")]
+    #[cfg(all(feature = "nightly", target_arch = "nvptx"))]
     pub use core::arch::nvptx::*;
-    #[cfg(feature = "nightly", target_arch = "powerpc")]
+    #[cfg(all(feature = "nightly", target_arch = "powerpc"))]
     pub use core::arch::powerpc::*;
-    #[cfg(feature = "nightly", target_arch = "powerpc64")]
+    #[cfg(all(feature = "nightly", target_arch = "powerpc64"))]
     pub use core::arch::powerpc64::*;
-    #[cfg(feature = "nightly", target_arch = "riscv32")]
+    #[cfg(all(feature = "nightly", target_arch = "riscv32"))]
     pub use core::arch::riscv32::*;
-    #[cfg(feature = "nightly", target_arch = "riscv64")]
+    #[cfg(all(feature = "nightly", target_arch = "riscv64"))]
     pub use core::arch::riscv64::*;
-    #[cfg(feature = "nightly", target_arch = "wasm64")]
+    #[cfg(all(feature = "nightly", target_arch = "wasm64"))]
     pub use core::arch::wasm64::*;
 }
 
