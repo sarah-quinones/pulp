@@ -1,5 +1,69 @@
 use super::*;
 
+#[derive(Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct m32(u32);
+#[derive(Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct m64(u64);
+#[derive(Debug, Copy, Clone, PartialEq)]
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+#[rustfmt::skip]
+pub struct m32x4(pub m32, pub m32, pub m32, pub m32);
+#[repr(C)]
+#[rustfmt::skip]
+pub struct f32x4(pub f32, pub f32, pub f32, pub f32);
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+#[rustfmt::skip]
+pub struct i32x4(pub i32, pub i32, pub i32, pub i32);
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+#[rustfmt::skip]
+pub struct u32x4(pub u32, pub u32, pub u32, pub u32);
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+#[rustfmt::skip]
+pub struct m64x2(pub m64, pub m64);
+#[derive(Debug, Copy, Clone, PartialEq)]
+#[repr(C)]
+#[rustfmt::skip]
+pub struct f64x2(pub f64, pub f64);
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+#[rustfmt::skip]
+pub struct i64x2(pub i64, pub i64);
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+#[rustfmt::skip]
+pub struct u64x2(pub u64, pub u64);
+
+unsafe impl Zeroable for m32 {}
+unsafe impl Pod for m32 {}
+unsafe impl Zeroable for m64 {}
+unsafe impl Pod for m64 {}
+
+unsafe impl Zeroable for m32x4 {}
+unsafe impl Pod for m32x4 {}
+unsafe impl Zeroable for f32x4 {}
+unsafe impl Pod for f32x4 {}
+unsafe impl Zeroable for i32x4 {}
+unsafe impl Pod for i32x4 {}
+unsafe impl Zeroable for u32x4 {}
+unsafe impl Pod for u32x4 {}
+
+unsafe impl Zeroable for m64x2 {}
+unsafe impl Pod for m64x2 {}
+unsafe impl Zeroable for f64x2 {}
+unsafe impl Pod for f64x2 {}
+unsafe impl Zeroable for i64x2 {}
+unsafe impl Pod for i64x2 {}
+unsafe impl Zeroable for u64x2 {}
+unsafe impl Pod for u64x2 {}
+
 #[derive(Debug, Clone, Copy)]
 pub struct Neon;
 
