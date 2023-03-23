@@ -6,12 +6,54 @@ pub struct m32(u32);
 #[derive(Copy, Clone, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct m64(u64);
-#[derive(Debug, Copy, Clone, PartialEq)]
+
+impl m32 {
+    #[inline(always)]
+    pub const fn new(flag: bool) -> Self {
+        Self(if flag { u32::MAX } else { 0 })
+    }
+    #[inline(always)]
+    pub const fn is_set(self) -> bool {
+        self.0 != 0
+    }
+    #[inline(always)]
+    pub const fn flip(self) -> Self {
+        Self(!self.0)
+    }
+}
+impl m64 {
+    #[inline(always)]
+    pub const fn new(flag: bool) -> Self {
+        Self(if flag { u64::MAX } else { 0 })
+    }
+    #[inline(always)]
+    pub const fn is_set(self) -> bool {
+        self.0 != 0
+    }
+    #[inline(always)]
+    pub const fn flip(self) -> Self {
+        Self(!self.0)
+    }
+}
+
+impl core::fmt::Debug for m32 {
+    #[inline]
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+        self.is_set().fmt(f)
+    }
+}
+impl core::fmt::Debug for m64 {
+    #[inline]
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+        self.is_set().fmt(f)
+    }
+}
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
 #[rustfmt::skip]
 pub struct m32x4(pub m32, pub m32, pub m32, pub m32);
+#[derive(Debug, Copy, Clone, PartialEq)]
 #[repr(C)]
 #[rustfmt::skip]
 pub struct f32x4(pub f32, pub f32, pub f32, pub f32);
