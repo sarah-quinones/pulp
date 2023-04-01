@@ -65,12 +65,15 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+use bytemuck::{AnyBitPattern, NoUninit, Pod, Zeroable};
 use core::fmt::Debug;
 use core::marker::PhantomData;
 use core::slice::{from_raw_parts, from_raw_parts_mut};
-
-use bytemuck::{AnyBitPattern, NoUninit, Pod, Zeroable};
+use num_complex::Complex;
 use seal::Seal;
+
+pub type c32 = Complex<f32>;
+pub type c64 = Complex<f64>;
 
 mod seal {
     pub trait Seal {}
@@ -111,11 +114,13 @@ impl<R, F: FnOnce() -> R> WithSimd for F {
 pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     type m32s: Debug + Copy + Send + Sync + 'static;
     type f32s: Debug + Copy + Send + Sync + Pod + 'static;
+    type c32s: Debug + Copy + Send + Sync + Pod + 'static;
     type i32s: Debug + Copy + Send + Sync + Pod + 'static;
     type u32s: Debug + Copy + Send + Sync + Pod + 'static;
 
     type m64s: Debug + Copy + Send + Sync + 'static;
     type f64s: Debug + Copy + Send + Sync + Pod + 'static;
+    type c64s: Debug + Copy + Send + Sync + Pod + 'static;
     type i64s: Debug + Copy + Send + Sync + Pod + 'static;
     type u64s: Debug + Copy + Send + Sync + Pod + 'static;
 
@@ -123,8 +128,20 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 
     #[inline] fn f32s_as_simd(slice: &[f32]) -> (&[Self::f32s], &[f32]) { unsafe { split_slice(slice) } }
     #[inline] fn f32s_as_mut_simd(slice: &mut [f32]) -> (&mut [Self::f32s], &mut [f32]) { unsafe { split_mut_slice(slice) } }
+    #[inline] fn c32s_as_simd(slice: &[c32]) -> (&[Self::c32s], &[c32]) { unsafe { split_slice(slice) } }
+    #[inline] fn c32s_as_mut_simd(slice: &mut [c32]) -> (&mut [Self::c32s], &mut [c32]) { unsafe { split_mut_slice(slice) } }
+    #[inline] fn i32s_as_simd(slice: &[i32]) -> (&[Self::i32s], &[i32]) { unsafe { split_slice(slice) } }
+    #[inline] fn i32s_as_mut_simd(slice: &mut [i32]) -> (&mut [Self::i32s], &mut [i32]) { unsafe { split_mut_slice(slice) } }
+    #[inline] fn u32s_as_simd(slice: &[u32]) -> (&[Self::u32s], &[u32]) { unsafe { split_slice(slice) } }
+    #[inline] fn u32s_as_mut_simd(slice: &mut [u32]) -> (&mut [Self::u32s], &mut [u32]) { unsafe { split_mut_slice(slice) } }
     #[inline] fn f64s_as_simd(slice: &[f64]) -> (&[Self::f64s], &[f64]) { unsafe { split_slice(slice) } }
     #[inline] fn f64s_as_mut_simd(slice: &mut [f64]) -> (&mut [Self::f64s], &mut [f64]) { unsafe { split_mut_slice(slice) } }
+    #[inline] fn c64s_as_simd(slice: &[c64]) -> (&[Self::c64s], &[c64]) { unsafe { split_slice(slice) } }
+    #[inline] fn c64s_as_mut_simd(slice: &mut [c64]) -> (&mut [Self::c64s], &mut [c64]) { unsafe { split_mut_slice(slice) } }
+    #[inline] fn i64s_as_simd(slice: &[i64]) -> (&[Self::i64s], &[i64]) { unsafe { split_slice(slice) } }
+    #[inline] fn i64s_as_mut_simd(slice: &mut [i64]) -> (&mut [Self::i64s], &mut [i64]) { unsafe { split_mut_slice(slice) } }
+    #[inline] fn u64s_as_simd(slice: &[u64]) -> (&[Self::u64s], &[u64]) { unsafe { split_slice(slice) } }
+    #[inline] fn u64s_as_mut_simd(slice: &mut [u64]) -> (&mut [Self::u64s], &mut [u64]) { unsafe { split_mut_slice(slice) } }
 
     fn m32s_not(self, a: Self::m32s) -> Self::m32s;
     fn m32s_and(self, a: Self::m32s, b: Self::m32s) -> Self::m32s;
@@ -198,6 +215,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     fn f32s_mul(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
     fn f32s_div(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
     #[inline] fn f32s_mul_adde(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s { self.f32s_add(self.f32s_mul(a, b), c) }
+    fn f32s_mul_add(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s;
     fn f32s_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s;
     fn f32s_less_than(self, a: Self::f32s, b: Self::f32s) -> Self::m32s;
     fn f32s_less_than_or_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s;
@@ -210,6 +228,13 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     fn f32s_reduce_min(self, a: Self::f32s) -> f32;
     fn f32s_reduce_max(self, a: Self::f32s) -> f32;
 
+    fn c32s_splat(self, value: c32) -> Self::c32s;
+    fn c32s_add(self, a: Self::c32s, b: Self::c32s) -> Self::c32s;
+    fn c32s_sub(self, a: Self::c32s, b: Self::c32s) -> Self::c32s;
+    fn c32s_mul(self, a: Self::c32s, b: Self::c32s) -> Self::c32s;
+    /// Contains the square of the norm in both the real and imaginary components.
+    fn c32s_abs2(self, a: Self::c32s) -> Self::c32s;
+
     fn f64s_splat(self, value: f64) -> Self::f64s;
     #[inline] fn f64s_abs(self, a: Self::f64s) -> Self::f64s { self.f64s_and(self.f64s_not(self.f64s_splat(-0.0)), a) }
     #[inline] fn f64s_neg(self, a: Self::f64s) -> Self::f64s { self.f64s_xor(a, self.f64s_splat(-0.0)) }
@@ -218,6 +243,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     fn f64s_mul(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
     fn f64s_div(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
     #[inline] fn f64s_mul_adde(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s { self.f64s_add(self.f64s_mul(a, b), c) }
+    fn f64s_mul_add(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s;
     fn f64s_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s;
     fn f64s_less_than(self, a: Self::f64s, b: Self::f64s) -> Self::m64s;
     fn f64s_less_than_or_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s;
@@ -229,6 +255,13 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     fn f64s_reduce_product(self, a: Self::f64s) -> f64;
     fn f64s_reduce_min(self, a: Self::f64s) -> f64;
     fn f64s_reduce_max(self, a: Self::f64s) -> f64;
+
+    fn c64s_splat(self, value: c64) -> Self::c64s;
+    fn c64s_add(self, a: Self::c64s, b: Self::c64s) -> Self::c64s;
+    fn c64s_sub(self, a: Self::c64s, b: Self::c64s) -> Self::c64s;
+    fn c64s_mul(self, a: Self::c64s, b: Self::c64s) -> Self::c64s;
+    /// Contains the square of the norm in both the real and imaginary components.
+    fn c64s_abs2(self, a: Self::c64s) -> Self::c64s;
 
     #[inline] fn f32s_transmute_i32s(self, a: Self::f32s) -> Self::i32s { cast(a) }
     #[inline] fn f32s_transmute_u32s(self, a: Self::f32s) -> Self::u32s { cast(a) }
@@ -271,11 +304,13 @@ impl Simd for Scalar {
 
     type m32s = bool;
     type f32s = f32;
+    type c32s = c32;
     type i32s = i32;
     type u32s = u32;
 
     type m64s = bool;
     type f64s = f64;
+    type c64s = c64;
     type i64s = i64;
     type u64s = u64;
 
@@ -292,6 +327,16 @@ impl Simd for Scalar {
     #[inline] fn f32s_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s { a == b }
     #[inline] fn f32s_less_than(self, a: Self::f32s, b: Self::f32s) -> Self::m32s { a < b }
     #[inline] fn f32s_less_than_or_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s { a <= b }
+
+    #[inline] fn c32s_splat(self, value: c32) -> Self::c32s { value }
+    #[inline] fn c32s_add(self, a: Self::c32s, b: Self::c32s) -> Self::c32s { a + b }
+    #[inline] fn c32s_sub(self, a: Self::c32s, b: Self::c32s) -> Self::c32s { a - b }
+    #[inline] fn c32s_mul(self, a: Self::c32s, b: Self::c32s) -> Self::c32s { a * b }
+
+    #[inline] fn c64s_splat(self, value: c64) -> Self::c64s { value }
+    #[inline] fn c64s_add(self, a: Self::c64s, b: Self::c64s) -> Self::c64s { a + b }
+    #[inline] fn c64s_sub(self, a: Self::c64s, b: Self::c64s) -> Self::c64s { a - b }
+    #[inline] fn c64s_mul(self, a: Self::c64s, b: Self::c64s) -> Self::c64s { a * b }
 
     #[inline] fn m64s_not(self, a: Self::m64s) -> Self::m64s { !a }
     #[inline] fn m64s_and(self, a: Self::m64s, b: Self::m64s) -> Self::m64s { a & b }
@@ -342,96 +387,12 @@ impl Simd for Scalar {
     #[inline] fn f64s_reduce_product(self, a: Self::f64s) -> f64 { a }
     #[inline] fn f64s_reduce_min(self, a: Self::f64s) -> f64 { a }
     #[inline] fn f64s_reduce_max(self, a: Self::f64s) -> f64 { a }
-}
 
-#[allow(unused_macros)]
-macro_rules! autovectorize_impl {
-    ($ty: ty, #[target_feature(enable = $tt: tt)]) => {
-        #[rustfmt::skip]
-        impl Simd for $ty {
-            #[inline] fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
-                #[target_feature(enable = $tt)]
-                unsafe fn vectorize<Op: WithSimd>(this: $ty, op: Op) -> Op::Output {
-                    op.with_simd(this)
-                }
-                unsafe { vectorize(self, op) }
-            }
+    #[inline] fn f32s_mul_add(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s { f32::mul_add(a, b, c) }
+    #[inline] fn f64s_mul_add(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s { f64::mul_add(a, b, c) }
 
-            type m32s = m32x4;
-            type f32s = f32x4;
-            type i32s = i32x4;
-            type u32s = u32x4;
-
-            type m64s = m64x2;
-            type f64s = f64x2;
-            type i64s = i64x2;
-            type u64s = u64x2;
-
-            #[inline] fn m32s_not(self, a: Self::m32s) -> Self::m32s { m32x4(a.0.flip(), a.1.flip(), a.2.flip(), a.3.flip()) }
-            #[inline] fn m32s_and(self, a: Self::m32s, b: Self::m32s) -> Self::m32s { m32x4(m32(a.0.0 & b.0.0), m32(a.1.0 & b.1.0), m32(a.2.0 & b.2.0), m32(a.3.0 & b.3.0)) }
-            #[inline] fn m32s_or(self, a: Self::m32s, b: Self::m32s) -> Self::m32s { m32x4(m32(a.0.0 | b.0.0), m32(a.1.0 | b.1.0), m32(a.2.0 | b.2.0), m32(a.3.0 | b.3.0)) }
-            #[inline] fn m32s_xor(self, a: Self::m32s, b: Self::m32s) -> Self::m32s { m32x4(m32(a.0.0 ^ b.0.0), m32(a.1.0 ^ b.1.0), m32(a.2.0 ^ b.2.0), m32(a.3.0 ^ b.3.0)) }
-
-            #[inline] fn f32s_splat(self, value: f32) -> Self::f32s { f32x4(value, value, value, value) }
-            #[inline] fn f32s_add(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { f32x4(a.0 + b.0, a.1 + b.1, a.2 + b.2, a.3 + b.3) }
-            #[inline] fn f32s_sub(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { f32x4(a.0 - b.0, a.1 - b.1, a.2 - b.2, a.3 - b.3) }
-            #[inline] fn f32s_mul(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { f32x4(a.0 * b.0, a.1 * b.1, a.2 * b.2, a.3 * b.3) }
-            #[inline] fn f32s_div(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { f32x4(a.0 / b.0, a.1 / b.1, a.2 / b.2, a.3 / b.3) }
-            #[inline] fn f32s_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s { m32x4(m32::new(a.0 == b.0), m32::new(a.1 == b.1), m32::new(a.2 == b.2), m32::new(a.3 == b.3)) }
-            #[inline] fn f32s_less_than(self, a: Self::f32s, b: Self::f32s) -> Self::m32s { m32x4(m32::new(a.0 < b.0), m32::new(a.1 < b.1), m32::new(a.2 < b.2), m32::new(a.3 < b.3)) }
-            #[inline] fn f32s_less_than_or_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s { m32x4(m32::new(a.0 <= b.0), m32::new(a.1 <= b.1), m32::new(a.2 <= b.2), m32::new(a.3 <= b.3)) }
-
-            #[inline] fn m64s_not(self, a: Self::m64s) -> Self::m64s { m64x2(a.0.flip(), a.1.flip()) }
-            #[inline] fn m64s_and(self, a: Self::m64s, b: Self::m64s) -> Self::m64s { m64x2(m64(a.0.0 & b.0.0), m64(a.1.0 & b.1.0)) }
-            #[inline] fn m64s_or(self, a: Self::m64s, b: Self::m64s) -> Self::m64s { m64x2(m64(a.0.0 | b.0.0), m64(a.1.0 | b.1.0)) }
-            #[inline] fn m64s_xor(self, a: Self::m64s, b: Self::m64s) -> Self::m64s { m64x2(m64(a.0.0 ^ b.0.0), m64(a.1.0 ^ b.1.0)) }
-
-            #[inline] fn f64s_splat(self, value: f64) -> Self::f64s { f64x2(value, value) }
-            #[inline] fn f64s_add(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { f64x2(a.0 + b.0, a.1 + b.1) }
-            #[inline] fn f64s_sub(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { f64x2(a.0 - b.0, a.1 - b.1) }
-            #[inline] fn f64s_mul(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { f64x2(a.0 * b.0, a.1 * b.1) }
-            #[inline] fn f64s_div(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { f64x2(a.0 / b.0, a.1 / b.1) }
-            #[inline] fn f64s_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s { m64x2(m64::new(a.0 == b.0), m64::new(a.1 == b.1)) }
-            #[inline] fn f64s_less_than(self, a: Self::f64s, b: Self::f64s) -> Self::m64s { m64x2(m64::new(a.0 < b.0), m64::new(a.1 < b.1)) }
-            #[inline] fn f64s_less_than_or_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s { m64x2(m64::new(a.0 <= b.0), m64::new(a.1 <= b.1)) }
-
-            #[inline] fn u32s_not(self, a: Self::u32s) -> Self::u32s { u32x4(!a.0, !a.1, !a.2, !a.3) }
-            #[inline] fn u32s_and(self, a: Self::u32s, b: Self::u32s) -> Self::u32s { u32x4(a.0 & b.0, a.1 & b.1, a.2 & b.2, a.3 & b.3) }
-            #[inline] fn u32s_or(self, a: Self::u32s, b: Self::u32s) -> Self::u32s { u32x4(a.0 | b.0, a.1 | b.1, a.2 | b.2, a.3 | b.3) }
-            #[inline] fn u32s_xor(self, a: Self::u32s, b: Self::u32s) -> Self::u32s { u32x4(a.0 ^ b.0, a.1 ^ b.1, a.2 ^ b.2, a.3 ^ b.3) }
-
-            #[inline] fn u64s_not(self, a: Self::u64s) -> Self::u64s { u64x2(!a.0, !a.1) }
-            #[inline] fn u64s_and(self, a: Self::u64s, b: Self::u64s) -> Self::u64s { u64x2(a.0 & b.0, a.1 & b.1) }
-            #[inline] fn u64s_or(self, a: Self::u64s, b: Self::u64s) -> Self::u64s { u64x2(a.0 | b.0, a.1 | b.1) }
-            #[inline] fn u64s_xor(self, a: Self::u64s, b: Self::u64s) -> Self::u64s { u64x2(a.0 ^ b.0, a.1 ^ b.1) }
-
-            #[inline] fn m32s_select_u32s(self, mask: Self::m32s, if_true: Self::u32s, if_false: Self::u32s) -> Self::u32s { let mask: u32x4 = unsafe { ::core::mem::transmute(mask) }; self.u32s_or(self.u32s_and(mask, if_true), self.u32s_and(self.u32s_not(mask), if_false)) }
-            #[inline] fn m64s_select_u64s(self, mask: Self::m64s, if_true: Self::u64s, if_false: Self::u64s) -> Self::u64s { let mask: u64x2 = unsafe { ::core::mem::transmute(mask) }; self.u64s_or(self.u64s_and(mask, if_true), self.u64s_and(self.u64s_not(mask), if_false)) }
-
-            #[inline] fn f32s_min(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { f32x4(a.0.min(b.0), a.1.min(b.1), a.2.min(b.2), a.3.min(b.3)) }
-            #[inline] fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s { f32x4(a.0.max(b.0), a.1.max(b.1), a.2.max(b.2), a.3.max(b.3)) }
-
-            #[inline] fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { f64x2(a.0.min(b.0), a.1.min(b.1)) }
-            #[inline] fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s { f64x2(a.0.max(b.0), a.1.max(b.1)) }
-
-            #[inline] fn u32s_add(self, a: Self::u32s, b: Self::u32s) -> Self::u32s { u32x4(a.0.wrapping_add(b.0), a.1.wrapping_add(b.1), a.2.wrapping_add(b.2), a.3.wrapping_add(b.3)) }
-            #[inline] fn u32s_sub(self, a: Self::u32s, b: Self::u32s) -> Self::u32s { u32x4(a.0.wrapping_sub(b.0), a.1.wrapping_sub(b.1), a.2.wrapping_sub(b.2), a.3.wrapping_sub(b.3)) }
-            #[inline] fn u64s_add(self, a: Self::u64s, b: Self::u64s) -> Self::u64s { u64x2(a.0.wrapping_add(b.0), a.1.wrapping_add(b.1)) }
-            #[inline] fn u64s_sub(self, a: Self::u64s, b: Self::u64s) -> Self::u64s { u64x2(a.0.wrapping_sub(b.0), a.1.wrapping_sub(b.1)) }
-
-            #[inline] fn u32s_splat(self, value: u32) -> Self::u32s { u32x4(value, value, value, value) }
-            #[inline] fn u64s_splat(self, value: u64) -> Self::u64s { u64x2(value, value) }
-
-            #[inline] fn f32s_reduce_sum(self, a: Self::f32s) -> f32 { (a.0 + a.2) + (a.1 + a.3) }
-            #[inline] fn f32s_reduce_product(self, a: Self::f32s) -> f32 { (a.0 * a.2) * (a.1 * a.3) }
-            #[inline] fn f32s_reduce_min(self, a: Self::f32s) -> f32 { a.0.min(a.2).min(a.1.min(a.3)) }
-            #[inline] fn f32s_reduce_max(self, a: Self::f32s) -> f32 { a.0.max(a.2).max(a.1.max(a.3)) }
-            #[inline] fn f64s_reduce_sum(self, a: Self::f64s) -> f64 { a.0 + a.1 }
-            #[inline] fn f64s_reduce_product(self, a: Self::f64s) -> f64 { a.0 * a.1 }
-            #[inline] fn f64s_reduce_min(self, a: Self::f64s) -> f64 { a.0.min(a.1) }
-            #[inline] fn f64s_reduce_max(self, a: Self::f64s) -> f64 { a.0.max(a.1) }
-        }
-    };
+    #[inline] fn c32s_abs2(self, a: Self::c32s) -> Self::c32s { let norm2 = a.re * a.re + a.im * a.im; c32::new(norm2, norm2) }
+    #[inline] fn c64s_abs2(self, a: Self::c64s) -> Self::c64s { let norm2 = a.re * a.re + a.im * a.im; c64::new(norm2, norm2) }
 }
 
 #[inline]
@@ -470,14 +431,14 @@ unsafe fn split_mut_slice<T, U>(slice: &mut [T]) -> (&mut [U], &mut [T]) {
     )
 }
 
-#[cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")))]
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
 #[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
 enum ArchInner {
     Scalar(crate::Scalar),
 }
 
-#[cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")))]
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
 impl ArchInner {
     #[inline]
     pub fn new() -> Self {
@@ -490,17 +451,19 @@ impl ArchInner {
             ArchInner::Scalar(simd) => simd.vectorize(op),
         }
     }
+
+    #[inline(always)]
+    pub fn dispatch_true_simd<Op: WithSimd>(self, op: Op) -> Result<Op::Output, Op> {
+        match self {
+            ArchInner::Scalar(_) => Err(op),
+        }
+    }
 }
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 mod __x86;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use __x86::ArchInner;
-
-#[cfg(target_arch = "aarch64")]
-mod __aarch64;
-#[cfg(target_arch = "aarch64")]
-use __aarch64::ArchInner;
 
 impl Arch {
     #[inline]
@@ -512,6 +475,10 @@ impl Arch {
     #[inline(always)]
     pub fn dispatch<Op: WithSimd>(self, op: Op) -> Op::Output {
         self.inner.dispatch(op)
+    }
+    #[inline(always)]
+    pub fn dispatch_true_simd<Op: WithSimd>(self, op: Op) -> Result<Op::Output, Op> {
+        self.inner.dispatch_true_simd(op)
     }
 }
 
@@ -618,5 +585,5 @@ pub mod core_arch;
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 #[cfg_attr(docsrs, doc(cfg(any(target_arch = "x86", target_arch = "x86_64"))))]
-/// High level x86 API.
+/// Low level x86 API.
 pub mod x86;
