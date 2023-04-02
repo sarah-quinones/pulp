@@ -294,6 +294,18 @@ impl Seal for V3 {}
 #[cfg(feature = "nightly")]
 impl Seal for V4 {}
 
+static V3_U32_MASKS: [u32x8; 9] = [
+    u32x8(0, 0, 0, 0, 0, 0, 0, 0),
+    u32x8(!0, 0, 0, 0, 0, 0, 0, 0),
+    u32x8(!0, !0, 0, 0, 0, 0, 0, 0),
+    u32x8(!0, !0, !0, 0, 0, 0, 0, 0),
+    u32x8(!0, !0, !0, !0, 0, 0, 0, 0),
+    u32x8(!0, !0, !0, !0, !0, 0, 0, 0),
+    u32x8(!0, !0, !0, !0, !0, !0, 0, 0),
+    u32x8(!0, !0, !0, !0, !0, !0, !0, 0),
+    u32x8(!0, !0, !0, !0, !0, !0, !0, !0),
+];
+
 #[rustfmt::skip]
 impl Simd for V2 {
     type m32s = m32x4;
@@ -495,7 +507,7 @@ impl Simd for V2 {
         unsafe {
             let ab = cast(a);
             let xy = cast(b);
-            
+
             let yx = _mm_shuffle_ps::<0b10_11_00_01>(xy, xy);
             let aa = _mm_unpacklo_ps(ab, ab);
             let bb = _mm_unpackhi_ps(ab, ab);
@@ -525,7 +537,7 @@ impl Simd for V2 {
         unsafe {
             let ab = cast(a);
             let xy = cast(b);
-            
+
             let yx = _mm_shuffle_pd::<0b01>(xy, xy);
             let aa = _mm_unpacklo_pd(ab, ab);
             let bb = _mm_unpackhi_pd(ab, ab);
@@ -550,6 +562,42 @@ impl Simd for V2 {
             let sqr_rev = _mm_shuffle_pd::<0b01>(cast(sqr), cast(sqr));
             self.f64s_add(sqr, cast(sqr_rev))
         }
+    }
+
+    #[inline(always)]
+    fn u32s_partial_load(self, slice: &[u32], padding: Self::u32s) -> Self::u32s {
+        let _ = (&slice, &padding);
+        todo!()
+    }
+
+    #[inline(always)]
+    fn u32s_partial_store(self, slice: &mut [u32], values: Self::u32s) {
+        let _ = (&slice, &values);
+        todo!()
+    }
+
+    #[inline(always)]
+    fn u64s_partial_load(self, slice: &[u64], padding: Self::u64s) -> Self::u64s {
+        let _ = (&slice, &padding);
+        todo!()
+    }
+
+    #[inline(always)]
+    fn u64s_partial_store(self, slice: &mut [u64], values: Self::u64s) {
+        let _ = (&slice, &values);
+        todo!()
+    }
+
+    #[inline(always)]
+    fn c64s_partial_load(self, slice: &[c64], padding: Self::c64s) -> Self::c64s {
+        let _ = (&slice, &padding);
+        todo!()
+    }
+
+    #[inline(always)]
+    fn c64s_partial_store(self, slice: &mut [c64], values: Self::c64s) {
+        let _ = (&slice, &values);
+        todo!()
     }
 }
 
@@ -740,7 +788,7 @@ impl Simd for V3 {
         unsafe {
             let ab = cast(a);
             let xy = cast(b);
-            
+
             let yx = _mm256_permute_ps::<0b10_11_00_01>(xy);
             let aa = _mm256_unpacklo_ps(ab, ab);
             let bb = _mm256_unpackhi_ps(ab, ab);
@@ -761,7 +809,7 @@ impl Simd for V3 {
         unsafe {
             let ab = cast(a);
             let xy = cast(b);
-            
+
             let yx = _mm256_permute_pd::<0b0101>(xy);
             let aa = _mm256_unpacklo_pd(ab, ab);
             let bb = _mm256_unpackhi_pd(ab, ab);
@@ -785,6 +833,54 @@ impl Simd for V3 {
             let sqr = self.f64s_mul(a, a);
             let sqr_rev = _mm256_shuffle_pd::<0b0101>(cast(sqr), cast(sqr));
             self.f64s_add(sqr, cast(sqr_rev))
+        }
+    }
+
+    #[inline(always)]
+    fn u32s_partial_load(self, slice: &[u32], padding: Self::u32s) -> Self::u32s {
+        unsafe {
+            let mask = cast(V3_U32_MASKS[slice.len().min(8)]);
+            cast(_mm256_blendv_epi8(cast(padding), _mm256_maskload_epi32(slice.as_ptr() as _, mask), mask))
+        }
+    }
+
+    #[inline(always)]
+    fn u32s_partial_store(self, slice: &mut [u32], values: Self::u32s) {
+        unsafe {
+            let mask = cast(V3_U32_MASKS[slice.len().min(8)]);
+            _mm256_maskstore_epi32(slice.as_mut_ptr() as _, mask, cast(values))
+        }
+    }
+
+    #[inline(always)]
+    fn u64s_partial_load(self, slice: &[u64], padding: Self::u64s) -> Self::u64s {
+        unsafe {
+            let mask = cast(V3_U32_MASKS[(2 * slice.len()).min(8)]);
+            cast(_mm256_blendv_epi8(cast(padding), _mm256_maskload_epi64(slice.as_ptr() as _, mask), mask))
+        }
+    }
+
+    #[inline(always)]
+    fn u64s_partial_store(self, slice: &mut [u64], values: Self::u64s) {
+        unsafe {
+            let mask = cast(V3_U32_MASKS[(slice.len() * 2).min(8)]);
+            _mm256_maskstore_epi32(slice.as_mut_ptr() as _, mask, cast(values))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_partial_load(self, slice: &[c64], padding: Self::c64s) -> Self::c64s {
+        unsafe {
+            let mask = cast(V3_U32_MASKS[(4 * slice.len()).min(8)]);
+            cast(_mm256_blendv_epi8(cast(padding), _mm256_maskload_epi64(slice.as_ptr() as _, mask), mask))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_partial_store(self, slice: &mut [c64], values: Self::c64s) {
+        unsafe {
+            let mask = cast(V3_U32_MASKS[(slice.len() * 4).min(8)]);
+            _mm256_maskstore_epi32(slice.as_mut_ptr() as _, mask, cast(values))
         }
     }
 }
@@ -1029,7 +1125,7 @@ impl Simd for V4 {
         unsafe {
             let ab = cast(a);
             let xy = cast(b);
-            
+
             let yx = _mm512_permute_ps::<0b10_11_00_01>(xy);
             let aa = _mm512_unpacklo_ps(ab, ab);
             let bb = _mm512_unpackhi_ps(ab, ab);
@@ -1050,7 +1146,7 @@ impl Simd for V4 {
         unsafe {
             let ab = cast(a);
             let xy = cast(b);
-            
+
             let yx = _mm512_permute_pd::<0b01010101>(xy);
             let aa = _mm512_unpacklo_pd(ab, ab);
             let bb = _mm512_unpackhi_pd(ab, ab);
@@ -1074,6 +1170,54 @@ impl Simd for V4 {
             let sqr = self.f64s_mul(a, a);
             let sqr_rev = _mm512_shuffle_pd::<0b01010101>(cast(sqr), cast(sqr));
             self.f64s_add(sqr, cast(sqr_rev))
+        }
+    }
+
+    #[inline(always)]
+    fn u32s_partial_load(self, slice: &[u32], padding: Self::u32s) -> Self::u32s {
+        unsafe {
+            let mask = (1u32 << slice.len().min(16) - 1) as u16;
+            cast(_mm512_mask_loadu_epi32(cast(padding), mask, slice.as_ptr() as _))
+        }
+    }
+
+    #[inline(always)]
+    fn u32s_partial_store(self, slice: &mut [u32], values: Self::u32s) {
+        unsafe {
+            let mask = (1u32 << slice.len().min(16) - 1) as u16;
+            _mm512_mask_storeu_epi32(slice.as_mut_ptr() as _, mask, cast(values));
+        }
+    }
+
+    #[inline(always)]
+    fn u64s_partial_load(self, slice: &[u64], padding: Self::u64s) -> Self::u64s {
+        unsafe {
+            let mask = (1u32 << (2 * slice.len()).min(16) - 1) as u16;
+            cast(_mm512_mask_loadu_epi32(cast(padding), mask, slice.as_ptr() as _))
+        }
+    }
+
+    #[inline(always)]
+    fn u64s_partial_store(self, slice: &mut [u64], values: Self::u64s) {
+        unsafe {
+            let mask = (1u32 << (2 * slice.len()).min(16) - 1) as u16;
+            _mm512_mask_storeu_epi32(slice.as_mut_ptr() as _, mask, cast(values));
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_partial_load(self, slice: &[c64], padding: Self::c64s) -> Self::c64s {
+        unsafe {
+            let mask = (1u32 << (4 * slice.len()).min(16) - 1) as u16;
+            cast(_mm512_mask_loadu_epi32(cast(padding), mask, slice.as_ptr() as _))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_partial_store(self, slice: &mut [c64], values: Self::c64s) {
+        unsafe {
+            let mask = (1u32 << (4 * slice.len()).min(16) - 1) as u16;
+            _mm512_mask_storeu_epi32(slice.as_mut_ptr() as _, mask, cast(values));
         }
     }
 }
