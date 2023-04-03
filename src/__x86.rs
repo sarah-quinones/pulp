@@ -1382,7 +1382,7 @@ impl Simd for V4 {
     #[inline(always)]
     fn u32s_partial_load(self, slice: &[u32], padding: Self::u32s) -> Self::u32s {
         unsafe {
-            let mask = (1u32 << slice.len().min(16) - 1) as u16;
+            let mask = ((1u32 << slice.len().min(16)) - 1) as u16;
             cast(_mm512_mask_loadu_epi32(cast(padding), mask, slice.as_ptr() as _))
         }
     }
@@ -1390,7 +1390,7 @@ impl Simd for V4 {
     #[inline(always)]
     fn u32s_partial_store(self, slice: &mut [u32], values: Self::u32s) {
         unsafe {
-            let mask = (1u32 << slice.len().min(16) - 1) as u16;
+            let mask = ((1u32 << slice.len().min(16)) - 1) as u16;
             _mm512_mask_storeu_epi32(slice.as_mut_ptr() as _, mask, cast(values));
         }
     }
@@ -1398,7 +1398,7 @@ impl Simd for V4 {
     #[inline(always)]
     fn u64s_partial_load(self, slice: &[u64], padding: Self::u64s) -> Self::u64s {
         unsafe {
-            let mask = (1u32 << (2 * slice.len()).min(16) - 1) as u16;
+            let mask = ((1u32 << (2 * slice.len()).min(16)) - 1) as u16;
             cast(_mm512_mask_loadu_epi32(cast(padding), mask, slice.as_ptr() as _))
         }
     }
@@ -1406,7 +1406,7 @@ impl Simd for V4 {
     #[inline(always)]
     fn u64s_partial_store(self, slice: &mut [u64], values: Self::u64s) {
         unsafe {
-            let mask = (1u32 << (2 * slice.len()).min(16) - 1) as u16;
+            let mask = ((1u32 << (2 * slice.len()).min(16)) - 1) as u16;
             _mm512_mask_storeu_epi32(slice.as_mut_ptr() as _, mask, cast(values));
         }
     }
@@ -1414,7 +1414,7 @@ impl Simd for V4 {
     #[inline(always)]
     fn c64s_partial_load(self, slice: &[c64], padding: Self::c64s) -> Self::c64s {
         unsafe {
-            let mask = (1u32 << (4 * slice.len()).min(16) - 1) as u16;
+            let mask = ((1u32 << (4 * slice.len()).min(16)) - 1) as u16;
             cast(_mm512_mask_loadu_epi32(cast(padding), mask, slice.as_ptr() as _))
         }
     }
@@ -1422,7 +1422,7 @@ impl Simd for V4 {
     #[inline(always)]
     fn c64s_partial_store(self, slice: &mut [c64], values: Self::c64s) {
         unsafe {
-            let mask = (1u32 << (4 * slice.len()).min(16) - 1) as u16;
+            let mask = ((1u32 << (4 * slice.len()).min(16)) - 1) as u16;
             _mm512_mask_storeu_epi32(slice.as_mut_ptr() as _, mask, cast(values));
         }
     }
@@ -1598,6 +1598,7 @@ mod tests {
     extern crate alloc;
 
     use super::*;
+    use alloc::vec;
     use alloc::vec::Vec;
     use assert_approx_eq::assert_approx_eq;
     use core::iter::zip;
