@@ -294,6 +294,20 @@ impl Seal for V3 {}
 #[cfg(feature = "nightly")]
 impl Seal for V4 {}
 
+#[cfg(feature = "nightly")]
+impl V4 {
+    #[target_feature(enable = "avx512f")]
+    #[inline]
+    unsafe fn fmsubadd_ps(a: __m512, b: __m512, c: __m512) -> __m512 {
+        _mm512_fmaddsub_ps(a, b, _mm512_sub_ps(_mm512_set1_ps(-0.0), c))
+    }
+    #[target_feature(enable = "avx512f")]
+    #[inline]
+    unsafe fn fmsubadd_pd(a: __m512d, b: __m512d, c: __m512d) -> __m512d {
+        _mm512_fmaddsub_pd(a, b, _mm512_sub_pd(_mm512_set1_pd(-0.0), c))
+    }
+}
+
 static V3_U32_MASKS: [u32x8; 9] = [
     u32x8(0, 0, 0, 0, 0, 0, 0, 0),
     u32x8(!0, 0, 0, 0, 0, 0, 0, 0),
@@ -509,8 +523,8 @@ impl Simd for V2 {
             let xy = cast(b);
 
             let yx = _mm_shuffle_ps::<0b10_11_00_01>(xy, xy);
-            let aa = _mm_unpacklo_ps(ab, ab);
-            let bb = _mm_unpackhi_ps(ab, ab);
+            let aa = _mm_moveldup_ps(ab);
+            let bb = _mm_movehdup_ps(ab);
 
             cast(_mm_addsub_ps(_mm_mul_ps(aa, xy), _mm_mul_ps(bb, yx)))
         }
@@ -598,6 +612,76 @@ impl Simd for V2 {
     fn c64s_partial_store(self, slice: &mut [c64], values: Self::c64s) {
         let _ = (&slice, &values);
         todo!()
+    }
+
+    #[inline(always)]
+    fn c32s_conj(self, a: Self::c32s) -> Self::c32s {
+        self.f32s_xor(a, self.c32s_splat(c32{ re: 0.0, im: -0.0 }))
+    }
+
+    #[inline(always)]
+    fn c32s_conj_mul(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+        self.c32s_mul(self.c32s_conj(a), b)
+    }
+
+    #[inline(always)]
+    fn c32s_mul_adde(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+        self.c32s_add(self.c32s_mul(a, b), c)
+    }
+
+    #[inline(always)]
+    fn c32s_conj_mul_adde(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+        self.c32s_add(self.c32s_conj_mul(a, b), c)
+    }
+
+    #[inline(always)]
+    fn c64s_conj(self, a: Self::c64s) -> Self::c64s {
+        self.f64s_xor(a, self.c64s_splat(c64{ re: 0.0, im: -0.0 }))
+    }
+
+    #[inline(always)]
+    fn c64s_conj_mul(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+        self.c64s_mul(self.c64s_conj(a), b)
+    }
+
+    #[inline(always)]
+    fn c64s_mul_adde(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+        self.c64s_add(self.c64s_mul(a, b), c)
+    }
+
+    #[inline(always)]
+    fn c64s_conj_mul_adde(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+        self.c64s_add(self.c64s_conj_mul(a, b), c)
+    }
+
+    #[inline(always)]
+    fn c32s_neg(self, a: Self::c32s) -> Self::c32s {
+        self.f32s_xor(a, self.f32s_splat(-0.0))
+    }
+
+    #[inline(always)]
+    fn c32s_reduce_sum(self, a: Self::c32s) -> c32 {
+        unsafe {
+            // a0 a1 a2 a3
+            let a: __m128 = transmute(a);
+            // a2 a3 a2 a3
+            let hi = _mm_movehl_ps(a, a);
+
+            // a0+a2 a1+a3 _ _
+            let r0 = _mm_add_ps(a, hi);
+
+            cast(_mm_cvtsd_f64(cast(r0)))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_neg(self, a: Self::c64s) -> Self::c64s {
+        self.f64s_xor(a, self.f64s_splat(-0.0))
+    }
+
+    #[inline(always)]
+    fn c64s_reduce_sum(self, a: Self::c64s) -> c64 {
+        cast(a)
     }
 }
 
@@ -790,8 +874,8 @@ impl Simd for V3 {
             let xy = cast(b);
 
             let yx = _mm256_permute_ps::<0b10_11_00_01>(xy);
-            let aa = _mm256_unpacklo_ps(ab, ab);
-            let bb = _mm256_unpackhi_ps(ab, ab);
+            let aa = _mm256_moveldup_ps(ab);
+            let bb = _mm256_movehdup_ps(ab);
 
             cast(_mm256_fmaddsub_ps(aa, xy, _mm256_mul_ps(bb, yx)))
         }
@@ -881,6 +965,128 @@ impl Simd for V3 {
         unsafe {
             let mask = cast(V3_U32_MASKS[(slice.len() * 4).min(8)]);
             _mm256_maskstore_epi32(slice.as_mut_ptr() as _, mask, cast(values))
+        }
+    }
+
+    #[inline(always)]
+    fn c32s_conj(self, a: Self::c32s) -> Self::c32s {
+        self.f32s_xor(a, self.c32s_splat(c32{ re: 0.0, im: -0.0 }))
+    }
+
+    #[inline(always)]
+    fn c32s_conj_mul(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm256_permute_ps::<0b10_11_00_01>(xy);
+            let aa = _mm256_moveldup_ps(ab);
+            let bb = _mm256_movehdup_ps(ab);
+
+            cast(_mm256_fmsubadd_ps(aa, xy, _mm256_mul_ps(bb, yx)))
+        }
+    }
+
+    #[inline(always)]
+    fn c32s_mul_adde(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm256_permute_ps::<0b10_11_00_01>(xy);
+            let aa = _mm256_moveldup_ps(ab);
+            let bb = _mm256_movehdup_ps(ab);
+
+            cast(_mm256_fmaddsub_ps(aa, xy, _mm256_fmaddsub_ps(bb, yx, cast(c))))
+        }
+    }
+
+    #[inline(always)]
+    fn c32s_conj_mul_adde(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm256_permute_ps::<0b10_11_00_01>(xy);
+            let aa = _mm256_moveldup_ps(ab);
+            let bb = _mm256_movehdup_ps(ab);
+
+            cast(_mm256_fmsubadd_ps(aa, xy, _mm256_fmsubadd_ps(bb, yx, cast(c))))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_conj(self, a: Self::c64s) -> Self::c64s {
+        self.f64s_xor(a, self.c64s_splat(c64{ re: 0.0, im: -0.0 }))
+    }
+
+    #[inline(always)]
+    fn c64s_conj_mul(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm256_permute_pd::<0b0101>(xy);
+            let aa = _mm256_unpacklo_pd(ab, ab);
+            let bb = _mm256_unpackhi_pd(ab, ab);
+
+            cast(_mm256_fmsubadd_pd(aa, xy, _mm256_mul_pd(bb, yx)))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_mul_adde(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm256_permute_pd::<0b0101>(xy);
+            let aa = _mm256_unpacklo_pd(ab, ab);
+            let bb = _mm256_unpackhi_pd(ab, ab);
+
+            cast(_mm256_fmaddsub_pd(aa, xy, _mm256_fmaddsub_pd(bb, yx, cast(c))))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_conj_mul_adde(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm256_permute_pd::<0b0101>(xy);
+            let aa = _mm256_unpacklo_pd(ab, ab);
+            let bb = _mm256_unpackhi_pd(ab, ab);
+
+            cast(_mm256_fmsubadd_pd(aa, xy, _mm256_fmsubadd_pd(bb, yx, cast(c))))
+        }
+    }
+
+    #[inline(always)]
+    fn c32s_neg(self, a: Self::c32s) -> Self::c32s {
+        self.f32s_xor(a, self.f32s_splat(-0.0))
+    }
+
+    #[inline(always)]
+    fn c32s_reduce_sum(self, a: Self::c32s) -> c32 {
+        unsafe {
+            let a: __m256 = transmute(a);
+            let r = _mm_add_ps(_mm256_castps256_ps128(a), _mm256_extractf128_ps::<1>(a));
+            V2::new_unchecked().c32s_reduce_sum(transmute(r))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_neg(self, a: Self::c64s) -> Self::c64s {
+        self.f64s_xor(a, self.f64s_splat(-0.0))
+    }
+
+    #[inline(always)]
+    fn c64s_reduce_sum(self, a: Self::c64s) -> c64 {
+        unsafe {
+            let a: __m256d = transmute(a);
+            let r = _mm_add_pd(_mm256_castpd256_pd128(a), _mm256_extractf128_pd::<1>(a));
+            V2::new_unchecked().c64s_reduce_sum(transmute(r))
         }
     }
 }
@@ -1127,8 +1333,8 @@ impl Simd for V4 {
             let xy = cast(b);
 
             let yx = _mm512_permute_ps::<0b10_11_00_01>(xy);
-            let aa = _mm512_unpacklo_ps(ab, ab);
-            let bb = _mm512_unpackhi_ps(ab, ab);
+            let aa = _mm512_moveldup_ps(ab);
+            let bb = _mm512_movehdup_ps(ab);
 
             cast(_mm512_fmaddsub_ps(aa, xy, _mm512_mul_ps(bb, yx)))
         }
@@ -1220,6 +1426,128 @@ impl Simd for V4 {
             _mm512_mask_storeu_epi32(slice.as_mut_ptr() as _, mask, cast(values));
         }
     }
+
+    #[inline(always)]
+    fn c32s_conj(self, a: Self::c32s) -> Self::c32s {
+        self.f32s_xor(a, self.c32s_splat(c32{ re: 0.0, im: -0.0 }))
+    }
+
+    #[inline(always)]
+    fn c32s_conj_mul(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm512_permute_ps::<0b10_11_00_01>(xy);
+            let aa = _mm512_moveldup_ps(ab);
+            let bb = _mm512_movehdup_ps(ab);
+
+            cast(Self::fmsubadd_ps(aa, xy, _mm512_mul_ps(bb, yx)))
+        }
+    }
+
+    #[inline(always)]
+    fn c32s_mul_adde(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm512_permute_ps::<0b10_11_00_01>(xy);
+            let aa = _mm512_moveldup_ps(ab);
+            let bb = _mm512_movehdup_ps(ab);
+
+            cast(_mm512_fmaddsub_ps(aa, xy, _mm512_fmaddsub_ps(bb, yx, cast(c))))
+        }
+    }
+
+    #[inline(always)]
+    fn c32s_conj_mul_adde(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm512_permute_ps::<0b10_11_00_01>(xy);
+            let aa = _mm512_moveldup_ps(ab);
+            let bb = _mm512_movehdup_ps(ab);
+
+            cast(Self::fmsubadd_ps(aa, xy, Self::fmsubadd_ps(bb, yx, cast(c))))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_conj(self, a: Self::c64s) -> Self::c64s {
+        self.f64s_xor(a, self.c64s_splat(c64{ re: 0.0, im: -0.0 }))
+    }
+
+    #[inline(always)]
+    fn c64s_conj_mul(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm512_permute_pd::<0b01010101>(xy);
+            let aa = _mm512_unpacklo_pd(ab, ab);
+            let bb = _mm512_unpackhi_pd(ab, ab);
+
+            cast(Self::fmsubadd_pd(aa, xy, _mm512_mul_pd(bb, yx)))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_mul_adde(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm512_permute_pd::<0b01010101>(xy);
+            let aa = _mm512_unpacklo_pd(ab, ab);
+            let bb = _mm512_unpackhi_pd(ab, ab);
+
+            cast(_mm512_fmaddsub_pd(aa, xy, _mm512_fmaddsub_pd(bb, yx, cast(c))))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_conj_mul_adde(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm512_permute_pd::<0b01010101>(xy);
+            let aa = _mm512_unpacklo_pd(ab, ab);
+            let bb = _mm512_unpackhi_pd(ab, ab);
+
+            cast(Self::fmsubadd_pd(aa, xy, Self::fmsubadd_pd(bb, yx, cast(c))))
+        }
+    }
+
+    #[inline(always)]
+    fn c32s_neg(self, a: Self::c32s) -> Self::c32s {
+        self.f32s_xor(a, self.f32s_splat(-0.0))
+    }
+
+    #[inline(always)]
+    fn c32s_reduce_sum(self, a: Self::c32s) -> c32 {
+        unsafe {
+            let a: __m512 = transmute(a);
+            let r = _mm256_add_ps(_mm512_castps512_ps256(a), transmute(_mm512_extractf64x4_pd::<1>(transmute(a))));
+            V3::new_unchecked().c32s_reduce_sum(transmute(r))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_neg(self, a: Self::c64s) -> Self::c64s {
+        self.f64s_xor(a, self.f64s_splat(-0.0))
+    }
+
+    #[inline(always)]
+    fn c64s_reduce_sum(self, a: Self::c64s) -> c64 {
+        unsafe {
+            let a: __m512d = transmute(a);
+            let r = _mm256_add_pd(_mm512_castpd512_pd256(a), _mm512_extractf64x4_pd::<1>(a));
+            V3::new_unchecked().c64s_reduce_sum(transmute(r))
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -1268,8 +1596,12 @@ impl ArchInner {
 #[cfg(test)]
 mod tests {
     extern crate alloc;
+
     use super::*;
     use alloc::vec::Vec;
+    use assert_approx_eq::assert_approx_eq;
+    use core::iter::zip;
+    use rand::random;
 
     #[test]
     fn times_two() {
@@ -1307,6 +1639,180 @@ mod tests {
 
         for (i, x) in v.into_iter().enumerate() {
             assert_eq!(x, 6.0 * i as f64);
+        }
+    }
+
+    #[test]
+    fn cplx_ops() {
+        let n = 16;
+        let a = (0..n)
+            .map(|_| c32 {
+                re: random(),
+                im: random(),
+            })
+            .collect::<Vec<_>>();
+        let b = (0..n)
+            .map(|_| c32 {
+                re: random(),
+                im: random(),
+            })
+            .collect::<Vec<_>>();
+        let c = (0..n)
+            .map(|_| c32 {
+                re: random(),
+                im: random(),
+            })
+            .collect::<Vec<_>>();
+
+        let axb_target = zip(&a, &b).map(|(a, b)| a * b).collect::<Vec<_>>();
+        let conjaxb_target = zip(&a, &b).map(|(a, b)| a.conj() * b).collect::<Vec<_>>();
+        let axbpc_target = zip(zip(&a, &b), &c)
+            .map(|((a, b), c)| a * b + c)
+            .collect::<Vec<_>>();
+        let conjaxbpc_target = zip(zip(&a, &b), &c)
+            .map(|((a, b), c)| a.conj() * b + c)
+            .collect::<Vec<_>>();
+
+        if let Some(simd) = V2::try_new() {
+            let mut axb = vec![c32::new(0.0, 0.0); n];
+            let mut conjaxb = vec![c32::new(0.0, 0.0); n];
+            let mut axbpc = vec![c32::new(0.0, 0.0); n];
+            let mut conjaxbpc = vec![c32::new(0.0, 0.0); n];
+
+            {
+                let a = V2::c32s_as_simd(&a).0;
+                let b = V2::c32s_as_simd(&b).0;
+                let c = V2::c32s_as_simd(&c).0;
+                let axb = V2::c32s_as_mut_simd(&mut axb).0;
+                let conjaxb = V2::c32s_as_mut_simd(&mut conjaxb).0;
+                let axbpc = V2::c32s_as_mut_simd(&mut axbpc).0;
+                let conjaxbpc = V2::c32s_as_mut_simd(&mut conjaxbpc).0;
+
+                for (axb, (a, b)) in zip(axb, zip(a, b)) {
+                    *axb = simd.c32s_mul(*a, *b);
+                }
+                for (conjaxb, (a, b)) in zip(conjaxb, zip(a, b)) {
+                    *conjaxb = simd.c32s_conj_mul(*a, *b);
+                }
+                for (axbpc, ((a, b), c)) in zip(axbpc, zip(zip(a, b), c)) {
+                    *axbpc = simd.c32s_mul_adde(*a, *b, *c);
+                }
+                for (conjaxbpc, ((a, b), c)) in zip(conjaxbpc, zip(zip(a, b), c)) {
+                    *conjaxbpc = simd.c32s_conj_mul_adde(*a, *b, *c);
+                }
+            }
+
+            for (target, actual) in zip(&axb_target, &axb) {
+                assert_approx_eq!(target.re, actual.re);
+                assert_approx_eq!(target.im, actual.im);
+            }
+            for (target, actual) in zip(&conjaxb_target, &conjaxb) {
+                assert_approx_eq!(target.re, actual.re);
+                assert_approx_eq!(target.im, actual.im);
+            }
+            for (target, actual) in zip(&axbpc_target, &axbpc) {
+                assert_approx_eq!(target.re, actual.re);
+                assert_approx_eq!(target.im, actual.im);
+            }
+            for (target, actual) in zip(&conjaxbpc_target, &conjaxbpc) {
+                assert_approx_eq!(target.re, actual.re);
+                assert_approx_eq!(target.im, actual.im);
+            }
+        }
+
+        if let Some(simd) = V3::try_new() {
+            let mut axb = vec![c32::new(0.0, 0.0); n];
+            let mut conjaxb = vec![c32::new(0.0, 0.0); n];
+            let mut axbpc = vec![c32::new(0.0, 0.0); n];
+            let mut conjaxbpc = vec![c32::new(0.0, 0.0); n];
+
+            {
+                let a = V3::c32s_as_simd(&a).0;
+                let b = V3::c32s_as_simd(&b).0;
+                let c = V3::c32s_as_simd(&c).0;
+                let axb = V3::c32s_as_mut_simd(&mut axb).0;
+                let conjaxb = V3::c32s_as_mut_simd(&mut conjaxb).0;
+                let axbpc = V3::c32s_as_mut_simd(&mut axbpc).0;
+                let conjaxbpc = V3::c32s_as_mut_simd(&mut conjaxbpc).0;
+
+                for (axb, (a, b)) in zip(axb, zip(a, b)) {
+                    *axb = simd.c32s_mul(*a, *b);
+                }
+                for (conjaxb, (a, b)) in zip(conjaxb, zip(a, b)) {
+                    *conjaxb = simd.c32s_conj_mul(*a, *b);
+                }
+                for (axbpc, ((a, b), c)) in zip(axbpc, zip(zip(a, b), c)) {
+                    *axbpc = simd.c32s_mul_adde(*a, *b, *c);
+                }
+                for (conjaxbpc, ((a, b), c)) in zip(conjaxbpc, zip(zip(a, b), c)) {
+                    *conjaxbpc = simd.c32s_conj_mul_adde(*a, *b, *c);
+                }
+            }
+
+            for (target, actual) in zip(&axb_target, &axb) {
+                assert_approx_eq!(target.re, actual.re);
+                assert_approx_eq!(target.im, actual.im);
+            }
+            for (target, actual) in zip(&conjaxb_target, &conjaxb) {
+                assert_approx_eq!(target.re, actual.re);
+                assert_approx_eq!(target.im, actual.im);
+            }
+            for (target, actual) in zip(&axbpc_target, &axbpc) {
+                assert_approx_eq!(target.re, actual.re);
+                assert_approx_eq!(target.im, actual.im);
+            }
+            for (target, actual) in zip(&conjaxbpc_target, &conjaxbpc) {
+                assert_approx_eq!(target.re, actual.re);
+                assert_approx_eq!(target.im, actual.im);
+            }
+        }
+
+        #[cfg(feature = "nightly")]
+        if let Some(simd) = V4::try_new() {
+            let mut axb = vec![c32::new(0.0, 0.0); n];
+            let mut conjaxb = vec![c32::new(0.0, 0.0); n];
+            let mut axbpc = vec![c32::new(0.0, 0.0); n];
+            let mut conjaxbpc = vec![c32::new(0.0, 0.0); n];
+
+            {
+                let a = V4::c32s_as_simd(&a).0;
+                let b = V4::c32s_as_simd(&b).0;
+                let c = V4::c32s_as_simd(&c).0;
+                let axb = V4::c32s_as_mut_simd(&mut axb).0;
+                let conjaxb = V4::c32s_as_mut_simd(&mut conjaxb).0;
+                let axbpc = V4::c32s_as_mut_simd(&mut axbpc).0;
+                let conjaxbpc = V4::c32s_as_mut_simd(&mut conjaxbpc).0;
+
+                for (axb, (a, b)) in zip(axb, zip(a, b)) {
+                    *axb = simd.c32s_mul(*a, *b);
+                }
+                for (conjaxb, (a, b)) in zip(conjaxb, zip(a, b)) {
+                    *conjaxb = simd.c32s_conj_mul(*a, *b);
+                }
+                for (axbpc, ((a, b), c)) in zip(axbpc, zip(zip(a, b), c)) {
+                    *axbpc = simd.c32s_mul_adde(*a, *b, *c);
+                }
+                for (conjaxbpc, ((a, b), c)) in zip(conjaxbpc, zip(zip(a, b), c)) {
+                    *conjaxbpc = simd.c32s_conj_mul_adde(*a, *b, *c);
+                }
+            }
+
+            for (target, actual) in zip(&axb_target, &axb) {
+                assert_approx_eq!(target.re, actual.re);
+                assert_approx_eq!(target.im, actual.im);
+            }
+            for (target, actual) in zip(&conjaxb_target, &conjaxb) {
+                assert_approx_eq!(target.re, actual.re);
+                assert_approx_eq!(target.im, actual.im);
+            }
+            for (target, actual) in zip(&axbpc_target, &axbpc) {
+                assert_approx_eq!(target.re, actual.re);
+                assert_approx_eq!(target.im, actual.im);
+            }
+            for (target, actual) in zip(&conjaxbpc_target, &conjaxbpc) {
+                assert_approx_eq!(target.re, actual.re);
+                assert_approx_eq!(target.im, actual.im);
+            }
         }
     }
 }

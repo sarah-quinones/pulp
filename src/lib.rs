@@ -249,11 +249,21 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     fn f32s_reduce_max(self, a: Self::f32s) -> f32;
 
     fn c32s_splat(self, value: c32) -> Self::c32s;
+    fn c32s_conj(self, a: Self::c32s) -> Self::c32s;
+    fn c32s_neg(self, a: Self::c32s) -> Self::c32s;
     fn c32s_add(self, a: Self::c32s, b: Self::c32s) -> Self::c32s;
     fn c32s_sub(self, a: Self::c32s, b: Self::c32s) -> Self::c32s;
+    /// Computes `a * b`
     fn c32s_mul(self, a: Self::c32s, b: Self::c32s) -> Self::c32s;
+    /// Computes `conj(a) * b`
+    fn c32s_conj_mul(self, a: Self::c32s, b: Self::c32s) -> Self::c32s;
+    /// Computes `a * b + c`
+    fn c32s_mul_adde(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s;
+    /// Computes `conj(a) * b + c`
+    fn c32s_conj_mul_adde(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s;
     /// Contains the square of the norm in both the real and imaginary components.
     fn c32s_abs2(self, a: Self::c32s) -> Self::c32s;
+    fn c32s_reduce_sum(self, a: Self::c32s) -> c32;
 
     fn f64s_splat(self, value: f64) -> Self::f64s;
     #[inline] fn f64s_abs(self, a: Self::f64s) -> Self::f64s { self.f64s_and(self.f64s_not(self.f64s_splat(-0.0)), a) }
@@ -277,11 +287,21 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     fn f64s_reduce_max(self, a: Self::f64s) -> f64;
 
     fn c64s_splat(self, value: c64) -> Self::c64s;
+    fn c64s_conj(self, a: Self::c64s) -> Self::c64s;
+    fn c64s_neg(self, a: Self::c64s) -> Self::c64s;
     fn c64s_add(self, a: Self::c64s, b: Self::c64s) -> Self::c64s;
     fn c64s_sub(self, a: Self::c64s, b: Self::c64s) -> Self::c64s;
+    /// Computes `a * b`
     fn c64s_mul(self, a: Self::c64s, b: Self::c64s) -> Self::c64s;
+    /// Computes `conj(a) * b`
+    fn c64s_conj_mul(self, a: Self::c64s, b: Self::c64s) -> Self::c64s;
+    /// Computes `a * b + c`
+    fn c64s_mul_adde(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s;
+    /// Computes `conj(a) * b + c`
+    fn c64s_conj_mul_adde(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s;
     /// Contains the square of the norm in both the real and imaginary components.
     fn c64s_abs2(self, a: Self::c64s) -> Self::c64s;
+    fn c64s_reduce_sum(self, a: Self::c64s) -> c64;
 
     #[inline] fn f32s_transmute_i32s(self, a: Self::f32s) -> Self::i32s { cast(a) }
     #[inline] fn f32s_transmute_u32s(self, a: Self::f32s) -> Self::u32s { cast(a) }
@@ -460,6 +480,66 @@ impl Simd for Scalar {
         if let Some((head, _)) = slice.split_first_mut() {
             *head = values;
         }
+    }
+
+    #[inline]
+    fn c32s_conj_mul(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+        a.conj() * b
+    }
+
+    #[inline]
+    fn c32s_mul_adde(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+        a * b + c
+    }
+
+    #[inline]
+    fn c32s_conj_mul_adde(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+        a.conj() * b + c
+    }
+
+    #[inline]
+    fn c64s_conj_mul(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+        a.conj() * b
+    }
+
+    #[inline]
+    fn c64s_mul_adde(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+        a * b + c
+    }
+
+    #[inline]
+    fn c64s_conj_mul_adde(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+        a.conj() * b + c
+    }
+
+    #[inline]
+    fn c32s_conj(self, a: Self::c32s) -> Self::c32s {
+        a.conj()
+    }
+
+    #[inline]
+    fn c64s_conj(self, a: Self::c64s) -> Self::c64s {
+        a.conj()
+    }
+
+    #[inline]
+    fn c32s_neg(self, a: Self::c32s) -> Self::c32s {
+        -a
+    }
+
+    #[inline]
+    fn c32s_reduce_sum(self, a: Self::c32s) -> c32 {
+        a
+    }
+
+    #[inline]
+    fn c64s_neg(self, a: Self::c64s) -> Self::c64s {
+        -a
+    }
+
+    #[inline]
+    fn c64s_reduce_sum(self, a: Self::c64s) -> c64 {
+        a
     }
 }
 

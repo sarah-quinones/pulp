@@ -5442,13 +5442,21 @@ impl V4 {
     /// to/from the results.
     #[inline(always)]
     pub fn mul_addsub_f32x16(self, a: f32x16, b: f32x16, c: f32x16) -> f32x16 {
-        cast(self.avx512f._mm512_fmsubadd_ps(cast(a), cast(b), cast(c)))
+        cast(self.avx512f._mm512_fmaddsub_ps(
+            cast(a),
+            cast(b),
+            cast(self.sub_f32x16(self.splat_f32x16(-0.0), c)),
+        ))
     }
     /// Multiplies the elements in each lane of `a` and `b`, and alternatively adds/subtracts 'c'
     /// to/from the results.
     #[inline(always)]
     pub fn mul_addsub_f64x8(self, a: f64x8, b: f64x8, c: f64x8) -> f64x8 {
-        cast(self.avx512f._mm512_fmsubadd_pd(cast(a), cast(b), cast(c)))
+        cast(self.avx512f._mm512_fmaddsub_pd(
+            cast(a),
+            cast(b),
+            cast(self.sub_f64x8(self.splat_f64x8(-0.0), c)),
+        ))
     }
 
     /// Multiplies the elements in each lane of `a` and `b`, and alternatively subtracts/adds 'c'
