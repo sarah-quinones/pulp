@@ -126,22 +126,22 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 
     fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output;
 
-    #[inline] fn f32s_as_simd(slice: &[f32]) -> (&[Self::f32s], &[f32]) { unsafe { split_slice(slice) } }
-    #[inline] fn f32s_as_mut_simd(slice: &mut [f32]) -> (&mut [Self::f32s], &mut [f32]) { unsafe { split_mut_slice(slice) } }
-    #[inline] fn c32s_as_simd(slice: &[c32]) -> (&[Self::c32s], &[c32]) { unsafe { split_slice(slice) } }
-    #[inline] fn c32s_as_mut_simd(slice: &mut [c32]) -> (&mut [Self::c32s], &mut [c32]) { unsafe { split_mut_slice(slice) } }
-    #[inline] fn i32s_as_simd(slice: &[i32]) -> (&[Self::i32s], &[i32]) { unsafe { split_slice(slice) } }
-    #[inline] fn i32s_as_mut_simd(slice: &mut [i32]) -> (&mut [Self::i32s], &mut [i32]) { unsafe { split_mut_slice(slice) } }
-    #[inline] fn u32s_as_simd(slice: &[u32]) -> (&[Self::u32s], &[u32]) { unsafe { split_slice(slice) } }
-    #[inline] fn u32s_as_mut_simd(slice: &mut [u32]) -> (&mut [Self::u32s], &mut [u32]) { unsafe { split_mut_slice(slice) } }
-    #[inline] fn f64s_as_simd(slice: &[f64]) -> (&[Self::f64s], &[f64]) { unsafe { split_slice(slice) } }
-    #[inline] fn f64s_as_mut_simd(slice: &mut [f64]) -> (&mut [Self::f64s], &mut [f64]) { unsafe { split_mut_slice(slice) } }
-    #[inline] fn c64s_as_simd(slice: &[c64]) -> (&[Self::c64s], &[c64]) { unsafe { split_slice(slice) } }
-    #[inline] fn c64s_as_mut_simd(slice: &mut [c64]) -> (&mut [Self::c64s], &mut [c64]) { unsafe { split_mut_slice(slice) } }
-    #[inline] fn i64s_as_simd(slice: &[i64]) -> (&[Self::i64s], &[i64]) { unsafe { split_slice(slice) } }
-    #[inline] fn i64s_as_mut_simd(slice: &mut [i64]) -> (&mut [Self::i64s], &mut [i64]) { unsafe { split_mut_slice(slice) } }
-    #[inline] fn u64s_as_simd(slice: &[u64]) -> (&[Self::u64s], &[u64]) { unsafe { split_slice(slice) } }
-    #[inline] fn u64s_as_mut_simd(slice: &mut [u64]) -> (&mut [Self::u64s], &mut [u64]) { unsafe { split_mut_slice(slice) } }
+    #[inline(always)] fn f32s_as_simd(slice: &[f32]) -> (&[Self::f32s], &[f32]) { unsafe { split_slice(slice) } }
+    #[inline(always)] fn f32s_as_mut_simd(slice: &mut [f32]) -> (&mut [Self::f32s], &mut [f32]) { unsafe { split_mut_slice(slice) } }
+    #[inline(always)] fn c32s_as_simd(slice: &[c32]) -> (&[Self::c32s], &[c32]) { unsafe { split_slice(slice) } }
+    #[inline(always)] fn c32s_as_mut_simd(slice: &mut [c32]) -> (&mut [Self::c32s], &mut [c32]) { unsafe { split_mut_slice(slice) } }
+    #[inline(always)] fn i32s_as_simd(slice: &[i32]) -> (&[Self::i32s], &[i32]) { unsafe { split_slice(slice) } }
+    #[inline(always)] fn i32s_as_mut_simd(slice: &mut [i32]) -> (&mut [Self::i32s], &mut [i32]) { unsafe { split_mut_slice(slice) } }
+    #[inline(always)] fn u32s_as_simd(slice: &[u32]) -> (&[Self::u32s], &[u32]) { unsafe { split_slice(slice) } }
+    #[inline(always)] fn u32s_as_mut_simd(slice: &mut [u32]) -> (&mut [Self::u32s], &mut [u32]) { unsafe { split_mut_slice(slice) } }
+    #[inline(always)] fn f64s_as_simd(slice: &[f64]) -> (&[Self::f64s], &[f64]) { unsafe { split_slice(slice) } }
+    #[inline(always)] fn f64s_as_mut_simd(slice: &mut [f64]) -> (&mut [Self::f64s], &mut [f64]) { unsafe { split_mut_slice(slice) } }
+    #[inline(always)] fn c64s_as_simd(slice: &[c64]) -> (&[Self::c64s], &[c64]) { unsafe { split_slice(slice) } }
+    #[inline(always)] fn c64s_as_mut_simd(slice: &mut [c64]) -> (&mut [Self::c64s], &mut [c64]) { unsafe { split_mut_slice(slice) } }
+    #[inline(always)] fn i64s_as_simd(slice: &[i64]) -> (&[Self::i64s], &[i64]) { unsafe { split_slice(slice) } }
+    #[inline(always)] fn i64s_as_mut_simd(slice: &mut [i64]) -> (&mut [Self::i64s], &mut [i64]) { unsafe { split_mut_slice(slice) } }
+    #[inline(always)] fn u64s_as_simd(slice: &[u64]) -> (&[Self::u64s], &[u64]) { unsafe { split_slice(slice) } }
+    #[inline(always)] fn u64s_as_mut_simd(slice: &mut [u64]) -> (&mut [Self::u64s], &mut [u64]) { unsafe { split_mut_slice(slice) } }
 
     fn u32s_partial_load(self, slice: &[u32]) -> Self::u32s;
     fn u32s_partial_store(self, slice: &mut [u32], values: Self::u32s);
@@ -611,7 +611,7 @@ impl Simd for Scalar {
     }
 }
 
-#[inline]
+#[inline(always)]
 unsafe fn split_slice<T, U>(slice: &[T]) -> (&[U], &[T]) {
     assert_eq!(core::mem::size_of::<U>() % core::mem::size_of::<T>(), 0);
     assert_eq!(core::mem::align_of::<U>(), core::mem::align_of::<T>());
@@ -629,7 +629,7 @@ unsafe fn split_slice<T, U>(slice: &[T]) -> (&[U], &[T]) {
     )
 }
 
-#[inline]
+#[inline(always)]
 unsafe fn split_mut_slice<T, U>(slice: &mut [T]) -> (&mut [U], &mut [T]) {
     assert_eq!(core::mem::size_of::<U>() % core::mem::size_of::<T>(), 0);
     assert_eq!(core::mem::align_of::<U>(), core::mem::align_of::<T>());
