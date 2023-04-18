@@ -289,6 +289,106 @@ internal_simd_type! {
     }
 }
 
+// x86-32 wants to use a 32-bit address size, but asm! defaults to using the full
+// register name (e.g. rax). We have to explicitly override the placeholder to
+// use the 32-bit register name in that case.
+
+#[cfg(feature = "nightly")]
+#[cfg(target_pointer_width = "32")]
+macro_rules! vpl {
+    ($inst:expr) => {
+        concat!($inst, ", [{p:e}]")
+    };
+}
+#[cfg(feature = "nightly")]
+#[cfg(target_pointer_width = "64")]
+macro_rules! vpl {
+    ($inst:expr) => {
+        concat!($inst, ", [{p}]")
+    };
+}
+#[cfg(feature = "nightly")]
+#[cfg(target_pointer_width = "32")]
+macro_rules! vps {
+    ($inst1:expr, $inst2:expr) => {
+        concat!($inst1, " [{p:e}]", $inst2)
+    };
+}
+#[cfg(feature = "nightly")]
+#[cfg(target_pointer_width = "64")]
+macro_rules! vps {
+    ($inst1:expr, $inst2:expr) => {
+        concat!($inst1, " [{p}]", $inst2)
+    };
+}
+
+// this is copied from the standard library with added flags from V4.
+// if the full flags are not provided, the function doesn't get inlined properly
+#[cfg(feature = "nightly")]
+#[inline]
+#[target_feature(enable = "sse")]
+#[target_feature(enable = "sse2")]
+#[target_feature(enable = "fxsr")]
+#[target_feature(enable = "sse3")]
+#[target_feature(enable = "ssse3")]
+#[target_feature(enable = "sse4.1")]
+#[target_feature(enable = "sse4.2")]
+#[target_feature(enable = "popcnt")]
+#[target_feature(enable = "avx")]
+#[target_feature(enable = "avx2")]
+#[target_feature(enable = "bmi1")]
+#[target_feature(enable = "bmi2")]
+#[target_feature(enable = "fma")]
+#[target_feature(enable = "lzcnt")]
+#[target_feature(enable = "avx512f")]
+#[target_feature(enable = "avx512bw")]
+#[target_feature(enable = "avx512cd")]
+#[target_feature(enable = "avx512dq")]
+#[target_feature(enable = "avx512vl")]
+pub unsafe fn _mm512_maskz_loadu_epi32(k: __mmask16, mem_addr: *const i32) -> __m512i {
+    let mut dst: __m512i;
+    core::arch::asm!(
+        vpl!("vmovdqu32 {dst}{{{k}}} {{z}}"),
+        p = in(reg) mem_addr,
+        k = in(kreg) k,
+        dst = out(zmm_reg) dst,
+        options(pure, readonly, nostack)
+    );
+    dst
+}
+
+// see above comment
+#[cfg(feature = "nightly")]
+#[inline]
+#[target_feature(enable = "sse")]
+#[target_feature(enable = "sse2")]
+#[target_feature(enable = "fxsr")]
+#[target_feature(enable = "sse3")]
+#[target_feature(enable = "ssse3")]
+#[target_feature(enable = "sse4.1")]
+#[target_feature(enable = "sse4.2")]
+#[target_feature(enable = "popcnt")]
+#[target_feature(enable = "avx")]
+#[target_feature(enable = "avx2")]
+#[target_feature(enable = "bmi1")]
+#[target_feature(enable = "bmi2")]
+#[target_feature(enable = "fma")]
+#[target_feature(enable = "lzcnt")]
+#[target_feature(enable = "avx512f")]
+#[target_feature(enable = "avx512bw")]
+#[target_feature(enable = "avx512cd")]
+#[target_feature(enable = "avx512dq")]
+#[target_feature(enable = "avx512vl")]
+pub unsafe fn _mm512_mask_storeu_epi32(mem_addr: *mut i32, mask: __mmask16, a: __m512i) {
+    core::arch::asm!(
+        vps!("vmovdqu32", "{{{mask}}}, {a}"),
+        p = in(reg) mem_addr,
+        mask = in(kreg) mask,
+        a = in(zmm_reg) a,
+        options(nostack)
+    );
+}
+
 impl Seal for V2 {}
 impl Seal for V3 {}
 #[cfg(feature = "nightly")]
@@ -318,6 +418,60 @@ static V3_U32_MASKS: [u32x8; 9] = [
     u32x8(!0, !0, !0, !0, !0, !0, 0, 0),
     u32x8(!0, !0, !0, !0, !0, !0, !0, 0),
     u32x8(!0, !0, !0, !0, !0, !0, !0, !0),
+];
+
+static V3_U32_LAST_MASKS: [u32x8; 9] = [
+    u32x8(0, 0, 0, 0, 0, 0, 0, 0),
+    u32x8(0, 0, 0, 0, 0, 0, 0, !0),
+    u32x8(0, 0, 0, 0, 0, 0, !0, !0),
+    u32x8(0, 0, 0, 0, 0, !0, !0, !0),
+    u32x8(0, 0, 0, 0, !0, !0, !0, !0),
+    u32x8(0, 0, 0, !0, !0, !0, !0, !0),
+    u32x8(0, 0, !0, !0, !0, !0, !0, !0),
+    u32x8(0, !0, !0, !0, !0, !0, !0, !0),
+    u32x8(!0, !0, !0, !0, !0, !0, !0, !0),
+];
+
+#[cfg(feature = "nightly")]
+static V4_U32_MASKS: [u16; 17] = [
+    0b0000000000000000,
+    0b0000000000000001,
+    0b0000000000000011,
+    0b0000000000000111,
+    0b0000000000001111,
+    0b0000000000011111,
+    0b0000000000111111,
+    0b0000000001111111,
+    0b0000000011111111,
+    0b0000000111111111,
+    0b0000001111111111,
+    0b0000011111111111,
+    0b0000111111111111,
+    0b0001111111111111,
+    0b0011111111111111,
+    0b0111111111111111,
+    0b1111111111111111,
+];
+
+#[cfg(feature = "nightly")]
+static V4_U32_LAST_MASKS: [u16; 17] = [
+    0b0000000000000000,
+    0b1000000000000000,
+    0b1100000000000000,
+    0b1110000000000000,
+    0b1111000000000000,
+    0b1111100000000000,
+    0b1111110000000000,
+    0b1111111000000000,
+    0b1111111100000000,
+    0b1111111110000000,
+    0b1111111111000000,
+    0b1111111111100000,
+    0b1111111111110000,
+    0b1111111111111000,
+    0b1111111111111100,
+    0b1111111111111110,
+    0b1111111111111111,
 ];
 
 #[rustfmt::skip]
@@ -579,8 +733,8 @@ impl Simd for V2 {
     }
 
     #[inline(always)]
-    fn u32s_partial_load(self, slice: &[u32], padding: Self::u32s) -> Self::u32s {
-        let _ = (&slice, &padding);
+    fn u32s_partial_load(self, slice: &[u32]) -> Self::u32s {
+        let _ = &slice;
         todo!()
     }
 
@@ -591,8 +745,8 @@ impl Simd for V2 {
     }
 
     #[inline(always)]
-    fn u64s_partial_load(self, slice: &[u64], padding: Self::u64s) -> Self::u64s {
-        let _ = (&slice, &padding);
+    fn u64s_partial_load(self, slice: &[u64]) -> Self::u64s {
+        let _ = &slice;
         todo!()
     }
 
@@ -603,13 +757,49 @@ impl Simd for V2 {
     }
 
     #[inline(always)]
-    fn c64s_partial_load(self, slice: &[c64], padding: Self::c64s) -> Self::c64s {
-        let _ = (&slice, &padding);
+    fn c64s_partial_load(self, slice: &[c64]) -> Self::c64s {
+        let _ = &slice;
         todo!()
     }
 
     #[inline(always)]
     fn c64s_partial_store(self, slice: &mut [c64], values: Self::c64s) {
+        let _ = (&slice, &values);
+        todo!()
+    }
+
+    #[inline(always)]
+    fn u32s_partial_load_last(self, slice: &[u32]) -> Self::u32s {
+        let _ = &slice;
+        todo!()
+    }
+
+    #[inline(always)]
+    fn u32s_partial_store_last(self, slice: &mut [u32], values: Self::u32s) {
+        let _ = (&slice, &values);
+        todo!()
+    }
+
+    #[inline(always)]
+    fn u64s_partial_load_last(self, slice: &[u64]) -> Self::u64s {
+        let _ = &slice;
+        todo!()
+    }
+
+    #[inline(always)]
+    fn u64s_partial_store_last(self, slice: &mut [u64], values: Self::u64s) {
+        let _ = (&slice, &values);
+        todo!()
+    }
+
+    #[inline(always)]
+    fn c64s_partial_load_last(self, slice: &[c64]) -> Self::c64s {
+        let _ = &slice;
+        todo!()
+    }
+
+    #[inline(always)]
+    fn c64s_partial_store_last(self, slice: &mut [c64], values: Self::c64s) {
         let _ = (&slice, &values);
         todo!()
     }
@@ -921,10 +1111,10 @@ impl Simd for V3 {
     }
 
     #[inline(always)]
-    fn u32s_partial_load(self, slice: &[u32], padding: Self::u32s) -> Self::u32s {
+    fn u32s_partial_load(self, slice: &[u32]) -> Self::u32s {
         unsafe {
             let mask = cast(V3_U32_MASKS[slice.len().min(8)]);
-            cast(_mm256_blendv_epi8(cast(padding), _mm256_maskload_epi32(slice.as_ptr() as _, mask), mask))
+            cast(_mm256_maskload_epi32(slice.as_ptr() as _, mask))
         }
     }
 
@@ -937,10 +1127,10 @@ impl Simd for V3 {
     }
 
     #[inline(always)]
-    fn u64s_partial_load(self, slice: &[u64], padding: Self::u64s) -> Self::u64s {
+    fn u64s_partial_load(self, slice: &[u64]) -> Self::u64s {
         unsafe {
             let mask = cast(V3_U32_MASKS[(2 * slice.len()).min(8)]);
-            cast(_mm256_blendv_epi8(cast(padding), _mm256_maskload_epi64(slice.as_ptr() as _, mask), mask))
+            cast(_mm256_maskload_epi64(slice.as_ptr() as _, mask))
         }
     }
 
@@ -953,10 +1143,10 @@ impl Simd for V3 {
     }
 
     #[inline(always)]
-    fn c64s_partial_load(self, slice: &[c64], padding: Self::c64s) -> Self::c64s {
+    fn c64s_partial_load(self, slice: &[c64]) -> Self::c64s {
         unsafe {
             let mask = cast(V3_U32_MASKS[(4 * slice.len()).min(8)]);
-            cast(_mm256_blendv_epi8(cast(padding), _mm256_maskload_epi64(slice.as_ptr() as _, mask), mask))
+            cast(_mm256_maskload_epi64(slice.as_ptr() as _, mask))
         }
     }
 
@@ -965,6 +1155,60 @@ impl Simd for V3 {
         unsafe {
             let mask = cast(V3_U32_MASKS[(slice.len() * 4).min(8)]);
             _mm256_maskstore_epi32(slice.as_mut_ptr() as _, mask, cast(values))
+        }
+    }
+
+    #[inline(always)]
+    fn u32s_partial_load_last(self, slice: &[u32]) -> Self::u32s {
+        unsafe {
+            let len = slice.len();
+            let mask = cast(V3_U32_LAST_MASKS[len.min(8)]);
+            cast(_mm256_maskload_epi32(slice.as_ptr().add(len).wrapping_sub(8) as _, mask))
+        }
+    }
+
+    #[inline(always)]
+    fn u32s_partial_store_last(self, slice: &mut [u32], values: Self::u32s) {
+        unsafe {
+            let len = slice.len();
+            let mask = cast(V3_U32_LAST_MASKS[len.min(8)]);
+            _mm256_maskstore_epi32(slice.as_mut_ptr().add(len).wrapping_sub(8) as _, mask, cast(values))
+        }
+    }
+
+    #[inline(always)]
+    fn u64s_partial_load_last(self, slice: &[u64]) -> Self::u64s {
+        unsafe {
+            let len = slice.len();
+            let mask = cast(V3_U32_LAST_MASKS[(2 * len).min(8)]);
+            cast(_mm256_maskload_epi64(slice.as_ptr().add(len).wrapping_sub(4) as _, mask))
+        }
+    }
+
+    #[inline(always)]
+    fn u64s_partial_store_last(self, slice: &mut [u64], values: Self::u64s) {
+        unsafe {
+            let len = slice.len();
+            let mask = cast(V3_U32_LAST_MASKS[(len * 2).min(8)]);
+            _mm256_maskstore_epi32(slice.as_mut_ptr().add(len).wrapping_sub(4) as _, mask, cast(values))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_partial_load_last(self, slice: &[c64]) -> Self::c64s {
+        unsafe {
+            let len = slice.len();
+            let mask = cast(V3_U32_LAST_MASKS[(4 * len).min(8)]);
+            cast(_mm256_maskload_epi64(slice.as_ptr().add(len).wrapping_sub(2) as _, mask))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_partial_store_last(self, slice: &mut [c64], values: Self::c64s) {
+        unsafe {
+            let len = slice.len();
+            let mask = cast(V3_U32_LAST_MASKS[(len * 4).min(8)]);
+            _mm256_maskstore_epi32(slice.as_mut_ptr().add(len).wrapping_sub(2) as _, mask, cast(values))
         }
     }
 
@@ -1380,50 +1624,104 @@ impl Simd for V4 {
     }
 
     #[inline(always)]
-    fn u32s_partial_load(self, slice: &[u32], padding: Self::u32s) -> Self::u32s {
+    fn u32s_partial_load(self, slice: &[u32]) -> Self::u32s {
         unsafe {
-            let mask = ((1u32 << slice.len().min(16)) - 1) as u16;
-            cast(_mm512_mask_loadu_epi32(cast(padding), mask, slice.as_ptr() as _))
+            let mask = cast(V4_U32_MASKS[slice.len().min(16)]);
+            cast(_mm512_maskz_loadu_epi32(mask, slice.as_ptr() as _))
         }
     }
 
     #[inline(always)]
     fn u32s_partial_store(self, slice: &mut [u32], values: Self::u32s) {
         unsafe {
-            let mask = ((1u32 << slice.len().min(16)) - 1) as u16;
+            let mask = cast(V4_U32_MASKS[slice.len().min(16)]);
             _mm512_mask_storeu_epi32(slice.as_mut_ptr() as _, mask, cast(values));
         }
     }
 
     #[inline(always)]
-    fn u64s_partial_load(self, slice: &[u64], padding: Self::u64s) -> Self::u64s {
+    fn u64s_partial_load(self, slice: &[u64]) -> Self::u64s {
         unsafe {
-            let mask = ((1u32 << (2 * slice.len()).min(16)) - 1) as u16;
-            cast(_mm512_mask_loadu_epi32(cast(padding), mask, slice.as_ptr() as _))
+            let mask = cast(V4_U32_MASKS[(2 * slice.len()).min(16)]);
+            cast(_mm512_maskz_loadu_epi32(mask, slice.as_ptr() as _))
         }
     }
 
     #[inline(always)]
     fn u64s_partial_store(self, slice: &mut [u64], values: Self::u64s) {
         unsafe {
-            let mask = ((1u32 << (2 * slice.len()).min(16)) - 1) as u16;
+            let mask = cast(V4_U32_MASKS[(2 * slice.len()).min(16)]);
             _mm512_mask_storeu_epi32(slice.as_mut_ptr() as _, mask, cast(values));
         }
     }
 
     #[inline(always)]
-    fn c64s_partial_load(self, slice: &[c64], padding: Self::c64s) -> Self::c64s {
+    fn c64s_partial_load(self, slice: &[c64]) -> Self::c64s {
         unsafe {
-            let mask = ((1u32 << (4 * slice.len()).min(16)) - 1) as u16;
-            cast(_mm512_mask_loadu_epi32(cast(padding), mask, slice.as_ptr() as _))
+            let mask = cast(V4_U32_MASKS[(4 * slice.len()).min(16)]);
+            cast(_mm512_maskz_loadu_epi32(mask, slice.as_ptr() as _))
         }
     }
 
     #[inline(always)]
     fn c64s_partial_store(self, slice: &mut [c64], values: Self::c64s) {
         unsafe {
-            let mask = ((1u32 << (4 * slice.len()).min(16)) - 1) as u16;
+            let mask = cast(V4_U32_MASKS[(4 * slice.len()).min(16)]);
             _mm512_mask_storeu_epi32(slice.as_mut_ptr() as _, mask, cast(values));
+        }
+    }
+
+    #[inline(always)]
+    fn u32s_partial_load_last(self, slice: &[u32]) -> Self::u32s {
+        unsafe {
+            let len = slice.len();
+            let mask = cast(V4_U32_LAST_MASKS[slice.len().min(16)]);
+            cast(_mm512_maskz_loadu_epi32(mask, slice.as_ptr().add(len).wrapping_sub(16) as _))
+        }
+    }
+
+    #[inline(always)]
+    fn u32s_partial_store_last(self, slice: &mut [u32], values: Self::u32s) {
+        unsafe {
+            let len = slice.len();
+            let mask = cast(V4_U32_LAST_MASKS[slice.len().min(16)]);
+            _mm512_mask_storeu_epi32(slice.as_mut_ptr().add(len).wrapping_sub(16) as _, mask, cast(values));
+        }
+    }
+
+    #[inline(always)]
+    fn u64s_partial_load_last(self, slice: &[u64]) -> Self::u64s {
+        unsafe {
+            let len = slice.len();
+            let mask = cast(V4_U32_LAST_MASKS[(2 * slice.len()).min(16)]);
+            cast(_mm512_maskz_loadu_epi32(mask, slice.as_ptr().add(len).wrapping_sub(8) as _))
+        }
+    }
+
+    #[inline(always)]
+    fn u64s_partial_store_last(self, slice: &mut [u64], values: Self::u64s) {
+        unsafe {
+            let len = slice.len();
+            let mask = cast(V4_U32_LAST_MASKS[(2 * slice.len()).min(16)]);
+            _mm512_mask_storeu_epi32(slice.as_mut_ptr().add(len).wrapping_sub(8) as _, mask, cast(values));
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_partial_load_last(self, slice: &[c64]) -> Self::c64s {
+        unsafe {
+            let len = slice.len();
+            let mask = cast(V4_U32_LAST_MASKS[(4 * slice.len()).min(16)]);
+            cast(_mm512_maskz_loadu_epi32(mask, slice.as_ptr().add(len).wrapping_sub(4) as _))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_partial_store_last(self, slice: &mut [c64], values: Self::c64s) {
+        unsafe {
+            let len = slice.len();
+            let mask = cast(V4_U32_LAST_MASKS[(4 * slice.len()).min(16)]);
+            _mm512_mask_storeu_epi32(slice.as_mut_ptr().add(len).wrapping_sub(4) as _, mask, cast(values));
         }
     }
 
