@@ -1,5 +1,3 @@
-#![warn(missing_docs)]
-
 use super::*;
 use crate::core_arch::internal_simd_type;
 #[cfg(feature = "nightly")]
@@ -187,8 +185,24 @@ impl Debug for b8 {
 impl Debug for b16 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
         #[derive(Copy, Clone, Debug)]
-        #[rustfmt::skip]
-        struct b16(bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool);
+        struct b16(
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+        );
         b16(
             ((self.0 >> 00) & 1) == 1,
             ((self.0 >> 01) & 1) == 1,
@@ -213,8 +227,40 @@ impl Debug for b16 {
 impl Debug for b32 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
         #[derive(Copy, Clone, Debug)]
-        #[rustfmt::skip]
-        struct b32(bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool);
+        struct b32(
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+        );
         b32(
             ((self.0 >> 00) & 1) == 1,
             ((self.0 >> 01) & 1) == 1,
@@ -255,8 +301,72 @@ impl Debug for b32 {
 impl Debug for b64 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
         #[derive(Copy, Clone, Debug)]
-        #[rustfmt::skip]
-        struct b64(bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool);
+        struct b64(
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+        );
         b64(
             ((self.0 >> 00) & 1) == 1,
             ((self.0 >> 01) & 1) == 1,
@@ -412,205 +522,705 @@ impl m64 {
 /// A 128-bit SIMD vector with 16 elements of type [`i8`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
-pub struct i8x16(pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8);
+pub struct i8x16(
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+);
 /// A 256-bit SIMD vector with 32 elements of type [`i8`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
-pub struct i8x32(pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8);
+pub struct i8x32(
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+);
 /// A 512-bit SIMD vector with 64 elements of type [`i8`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
-pub struct i8x64(pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8, pub i8);
+pub struct i8x64(
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+);
 
 /// A 128-bit SIMD vector with 16 elements of type [`u8`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
-pub struct u8x16(pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8);
+pub struct u8x16(
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+);
 /// A 256-bit SIMD vector with 32 elements of type [`u8`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
-pub struct u8x32(pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8);
+pub struct u8x32(
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+);
 /// A 512-bit SIMD vector with 64 elements of type [`u8`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
-pub struct u8x64(pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8, pub u8);
+pub struct u8x64(
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+);
 
 /// A 128-bit SIMD vector with 16 elements of type [`m8`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
-pub struct m8x16(pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8);
+pub struct m8x16(
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+);
 /// A 256-bit SIMD vector with 32 elements of type [`m8`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
-pub struct m8x32(pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8, pub m8);
+pub struct m8x32(
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+);
 
 /// A 128-bit SIMD vector with 8 elements of type [`i16`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
-pub struct i16x8(pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16);
+pub struct i16x8(
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+);
 /// A 256-bit SIMD vector with 16 elements of type [`i16`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
-pub struct i16x16(pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16);
+pub struct i16x16(
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+);
 /// A 512-bit SIMD vector with 32 elements of type [`i16`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
-pub struct i16x32(pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16, pub i16);
+pub struct i16x32(
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+);
 
 /// A 128-bit SIMD vector with 8 elements of type [`u16`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
-pub struct u16x8(pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16);
+pub struct u16x8(
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+);
 /// A 256-bit SIMD vector with 16 elements of type [`u16`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
-pub struct u16x16(pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16);
+pub struct u16x16(
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+);
 /// A 512-bit SIMD vector with 32 elements of type [`u16`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
-pub struct u16x32(pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16, pub u16);
+pub struct u16x32(
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+);
 
 /// A 128-bit SIMD vector with 8 elements of type [`m16`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
-pub struct m16x8(pub m16, pub m16, pub m16, pub m16, pub m16, pub m16, pub m16, pub m16);
+pub struct m16x8(
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+);
 /// A 256-bit SIMD vector with 16 elements of type [`m16`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
-pub struct m16x16(pub m16, pub m16, pub m16, pub m16, pub m16, pub m16, pub m16, pub m16, pub m16, pub m16, pub m16, pub m16, pub m16, pub m16, pub m16, pub m16);
+pub struct m16x16(
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+);
 
 /// A 128-bit SIMD vector with 4 elements of type [`f32`].
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[repr(C)]
-#[rustfmt::skip]
 pub struct f32x4(pub f32, pub f32, pub f32, pub f32);
 /// A 256-bit SIMD vector with 8 elements of type [`f32`].
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[repr(C)]
-#[rustfmt::skip]
-pub struct f32x8(pub f32, pub f32, pub f32, pub f32, pub f32, pub f32, pub f32, pub f32);
+pub struct f32x8(
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+);
 /// A 512-bit SIMD vector with 16 elements of type [`f32`].
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[repr(C)]
-#[rustfmt::skip]
-pub struct f32x16(pub f32, pub f32, pub f32, pub f32, pub f32, pub f32, pub f32, pub f32, pub f32, pub f32, pub f32, pub f32, pub f32, pub f32, pub f32, pub f32);
+pub struct f32x16(
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+);
 
 /// A 128-bit SIMD vector with 4 elements of type [`i32`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
 pub struct i32x4(pub i32, pub i32, pub i32, pub i32);
 /// A 256-bit SIMD vector with 8 elements of type [`i32`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
-pub struct i32x8(pub i32, pub i32, pub i32, pub i32, pub i32, pub i32, pub i32, pub i32);
+pub struct i32x8(
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+);
 /// A 512-bit SIMD vector with 16 elements of type [`i32`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
-pub struct i32x16(pub i32, pub i32, pub i32, pub i32, pub i32, pub i32, pub i32, pub i32, pub i32, pub i32, pub i32, pub i32, pub i32, pub i32, pub i32, pub i32);
+pub struct i32x16(
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+);
 
 /// A 128-bit SIMD vector with 4 elements of type [`u32`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
 pub struct u32x4(pub u32, pub u32, pub u32, pub u32);
 /// A 256-bit SIMD vector with 8 elements of type [`u32`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
-pub struct u32x8(pub u32, pub u32, pub u32, pub u32, pub u32, pub u32, pub u32, pub u32);
+pub struct u32x8(
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+);
 /// A 512-bit SIMD vector with 16 elements of type [`u32`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
-pub struct u32x16(pub u32, pub u32, pub u32, pub u32, pub u32, pub u32, pub u32, pub u32, pub u32, pub u32, pub u32, pub u32, pub u32, pub u32, pub u32, pub u32);
+pub struct u32x16(
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+);
 
 /// A 128-bit SIMD vector with 4 elements of type [`m32`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
 pub struct m32x4(pub m32, pub m32, pub m32, pub m32);
 /// A 256-bit SIMD vector with 8 elements of type [`m32`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
-pub struct m32x8(pub m32, pub m32, pub m32, pub m32, pub m32, pub m32, pub m32, pub m32);
+pub struct m32x8(
+    pub m32,
+    pub m32,
+    pub m32,
+    pub m32,
+    pub m32,
+    pub m32,
+    pub m32,
+    pub m32,
+);
 
 /// A 128-bit SIMD vector with 2 elements of type [`f64`].
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[repr(C)]
-#[rustfmt::skip]
 pub struct f64x2(pub f64, pub f64);
 /// A 256-bit SIMD vector with 4 elements of type [`f64`].
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[repr(C)]
-#[rustfmt::skip]
 pub struct f64x4(pub f64, pub f64, pub f64, pub f64);
 /// A 512-bit SIMD vector with 8 elements of type [`f64`].
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[repr(C)]
-#[rustfmt::skip]
-pub struct f64x8(pub f64, pub f64, pub f64, pub f64, pub f64, pub f64, pub f64, pub f64);
+pub struct f64x8(
+    pub f64,
+    pub f64,
+    pub f64,
+    pub f64,
+    pub f64,
+    pub f64,
+    pub f64,
+    pub f64,
+);
 
 /// A 128-bit SIMD vector with 2 elements of type [`i64`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
 pub struct i64x2(pub i64, pub i64);
 /// A 256-bit SIMD vector with 4 elements of type [`i64`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
 pub struct i64x4(pub i64, pub i64, pub i64, pub i64);
 /// A 512-bit SIMD vector with 8 elements of type [`i64`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
-pub struct i64x8(pub i64, pub i64, pub i64, pub i64, pub i64, pub i64, pub i64, pub i64);
+pub struct i64x8(
+    pub i64,
+    pub i64,
+    pub i64,
+    pub i64,
+    pub i64,
+    pub i64,
+    pub i64,
+    pub i64,
+);
 
 /// A 128-bit SIMD vector with 2 elements of type [`u64`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
 pub struct u64x2(pub u64, pub u64);
 /// A 256-bit SIMD vector with 4 elements of type [`u64`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
 pub struct u64x4(pub u64, pub u64, pub u64, pub u64);
 /// A 512-bit SIMD vector with 8 elements of type [`u64`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
-pub struct u64x8(pub u64, pub u64, pub u64, pub u64, pub u64, pub u64, pub u64, pub u64);
+pub struct u64x8(
+    pub u64,
+    pub u64,
+    pub u64,
+    pub u64,
+    pub u64,
+    pub u64,
+    pub u64,
+    pub u64,
+);
 
 /// A 128-bit SIMD vector with 2 elements of type [`m64`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
 pub struct m64x2(pub m64, pub m64);
 /// A 256-bit SIMD vector with 4 elements of type [`m64`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
-#[rustfmt::skip]
 pub struct m64x4(pub m64, pub m64, pub m64, pub m64);
 
 unsafe impl Zeroable for m8 {}
@@ -710,6 +1320,160 @@ unsafe impl Zeroable for m64x4 {}
 unsafe impl Pod for m64x2 {}
 unsafe impl Pod for m64x4 {}
 
+use core::mem::transmute;
+
+// x86-32 wants to use a 32-bit address size, but asm! defaults to using the full
+// register name (e.g. rax). We have to explicitly override the placeholder to
+// use the 32-bit register name in that case.
+
+#[cfg(feature = "nightly")]
+#[cfg(target_pointer_width = "32")]
+macro_rules! vpl {
+    ($inst:expr) => {
+        concat!($inst, ", [{p:e}]")
+    };
+}
+#[cfg(feature = "nightly")]
+#[cfg(target_pointer_width = "64")]
+macro_rules! vpl {
+    ($inst:expr) => {
+        concat!($inst, ", [{p}]")
+    };
+}
+#[cfg(feature = "nightly")]
+#[cfg(target_pointer_width = "32")]
+macro_rules! vps {
+    ($inst1:expr, $inst2:expr) => {
+        concat!($inst1, " [{p:e}]", $inst2)
+    };
+}
+#[cfg(feature = "nightly")]
+#[cfg(target_pointer_width = "64")]
+macro_rules! vps {
+    ($inst1:expr, $inst2:expr) => {
+        concat!($inst1, " [{p}]", $inst2)
+    };
+}
+
+/// # Safety
+/// Same preconditions as the one in `std::arch`
+#[cfg(feature = "nightly")]
+#[inline]
+#[target_feature(enable = "sse")]
+#[target_feature(enable = "sse2")]
+#[target_feature(enable = "fxsr")]
+#[target_feature(enable = "sse3")]
+#[target_feature(enable = "ssse3")]
+#[target_feature(enable = "sse4.1")]
+#[target_feature(enable = "sse4.2")]
+#[target_feature(enable = "popcnt")]
+#[target_feature(enable = "avx")]
+#[target_feature(enable = "avx2")]
+#[target_feature(enable = "bmi1")]
+#[target_feature(enable = "bmi2")]
+#[target_feature(enable = "fma")]
+#[target_feature(enable = "lzcnt")]
+#[target_feature(enable = "avx512f")]
+#[target_feature(enable = "avx512bw")]
+#[target_feature(enable = "avx512cd")]
+#[target_feature(enable = "avx512dq")]
+#[target_feature(enable = "avx512vl")]
+pub unsafe fn _mm512_maskz_loadu_epi32(k: __mmask16, mem_addr: *const i32) -> __m512i {
+    // this is copied from the standard library with added flags from V4.
+    // if the full flags are not provided, the function doesn't get inlined properly
+    let mut dst: __m512i;
+    core::arch::asm!(
+        vpl!("vmovdqu32 {dst}{{{k}}} {{z}}"),
+        p = in(reg) mem_addr,
+        k = in(kreg) k,
+        dst = out(zmm_reg) dst,
+        options(pure, readonly, nostack)
+    );
+    dst
+}
+
+/// # Safety
+/// Same preconditions as the one in `std::arch`
+#[cfg(feature = "nightly")]
+#[inline]
+#[target_feature(enable = "sse")]
+#[target_feature(enable = "sse2")]
+#[target_feature(enable = "fxsr")]
+#[target_feature(enable = "sse3")]
+#[target_feature(enable = "ssse3")]
+#[target_feature(enable = "sse4.1")]
+#[target_feature(enable = "sse4.2")]
+#[target_feature(enable = "popcnt")]
+#[target_feature(enable = "avx")]
+#[target_feature(enable = "avx2")]
+#[target_feature(enable = "bmi1")]
+#[target_feature(enable = "bmi2")]
+#[target_feature(enable = "fma")]
+#[target_feature(enable = "lzcnt")]
+#[target_feature(enable = "avx512f")]
+#[target_feature(enable = "avx512bw")]
+#[target_feature(enable = "avx512cd")]
+#[target_feature(enable = "avx512dq")]
+#[target_feature(enable = "avx512vl")]
+pub unsafe fn _mm512_mask_storeu_epi32(mem_addr: *mut i32, mask: __mmask16, a: __m512i) {
+    core::arch::asm!(
+        vps!("vmovdqu32", "{{{mask}}}, {a}"),
+        p = in(reg) mem_addr,
+        mask = in(kreg) mask,
+        a = in(zmm_reg) a,
+        options(nostack)
+    );
+}
+
+impl Seal for V2 {}
+impl Seal for V3 {}
+#[cfg(feature = "nightly")]
+impl Seal for V4 {}
+
+#[cfg(feature = "nightly")]
+impl V4 {
+    #[target_feature(enable = "avx512f")]
+    #[inline]
+    unsafe fn fmsubadd_ps(a: __m512, b: __m512, c: __m512) -> __m512 {
+        _mm512_fmaddsub_ps(a, b, _mm512_sub_ps(_mm512_set1_ps(-0.0), c))
+    }
+    #[target_feature(enable = "avx512f")]
+    #[inline]
+    unsafe fn fmsubadd_pd(a: __m512d, b: __m512d, c: __m512d) -> __m512d {
+        _mm512_fmaddsub_pd(a, b, _mm512_sub_pd(_mm512_set1_pd(-0.0), c))
+    }
+}
+
+impl f32x8 {
+    #[inline]
+    fn as_vec(self) -> __m256 {
+        unsafe { transmute(self) }
+    }
+}
+
+impl f64x4 {
+    #[inline]
+    fn as_vec(self) -> __m256d {
+        unsafe { transmute(self) }
+    }
+}
+
+#[cfg(feature = "nightly")]
+impl f32x16 {
+    #[inline]
+    fn as_vec(self) -> __m512 {
+        unsafe { transmute(self) }
+    }
+}
+
+#[cfg(feature = "nightly")]
+impl f64x8 {
+    #[inline]
+    fn as_vec(self) -> __m512d {
+        unsafe { transmute(self) }
+    }
+}
+
 // https://en.wikipedia.org/wiki/X86-64#Microarchitecture_levels
 internal_simd_type! {
     /// SSE instruction set.
@@ -798,6 +1562,1614 @@ impl core::ops::Deref for V4 {
     fn deref(&self) -> &Self::Target {
         static_assert_same_size!((), V3);
         unsafe { &*(self as *const V4 as *const V3) }
+    }
+}
+
+static V3_U32_MASKS: [u32x8; 9] = [
+    u32x8(0, 0, 0, 0, 0, 0, 0, 0),
+    u32x8(!0, 0, 0, 0, 0, 0, 0, 0),
+    u32x8(!0, !0, 0, 0, 0, 0, 0, 0),
+    u32x8(!0, !0, !0, 0, 0, 0, 0, 0),
+    u32x8(!0, !0, !0, !0, 0, 0, 0, 0),
+    u32x8(!0, !0, !0, !0, !0, 0, 0, 0),
+    u32x8(!0, !0, !0, !0, !0, !0, 0, 0),
+    u32x8(!0, !0, !0, !0, !0, !0, !0, 0),
+    u32x8(!0, !0, !0, !0, !0, !0, !0, !0),
+];
+
+static V3_U32_LAST_MASKS: [u32x8; 9] = [
+    u32x8(0, 0, 0, 0, 0, 0, 0, 0),
+    u32x8(0, 0, 0, 0, 0, 0, 0, !0),
+    u32x8(0, 0, 0, 0, 0, 0, !0, !0),
+    u32x8(0, 0, 0, 0, 0, !0, !0, !0),
+    u32x8(0, 0, 0, 0, !0, !0, !0, !0),
+    u32x8(0, 0, 0, !0, !0, !0, !0, !0),
+    u32x8(0, 0, !0, !0, !0, !0, !0, !0),
+    u32x8(0, !0, !0, !0, !0, !0, !0, !0),
+    u32x8(!0, !0, !0, !0, !0, !0, !0, !0),
+];
+
+#[cfg(feature = "nightly")]
+static V4_U32_MASKS: [u16; 17] = [
+    0b0000000000000000,
+    0b0000000000000001,
+    0b0000000000000011,
+    0b0000000000000111,
+    0b0000000000001111,
+    0b0000000000011111,
+    0b0000000000111111,
+    0b0000000001111111,
+    0b0000000011111111,
+    0b0000000111111111,
+    0b0000001111111111,
+    0b0000011111111111,
+    0b0000111111111111,
+    0b0001111111111111,
+    0b0011111111111111,
+    0b0111111111111111,
+    0b1111111111111111,
+];
+
+#[cfg(feature = "nightly")]
+static V4_U32_LAST_MASKS: [u16; 17] = [
+    0b0000000000000000,
+    0b1000000000000000,
+    0b1100000000000000,
+    0b1110000000000000,
+    0b1111000000000000,
+    0b1111100000000000,
+    0b1111110000000000,
+    0b1111111000000000,
+    0b1111111100000000,
+    0b1111111110000000,
+    0b1111111111000000,
+    0b1111111111100000,
+    0b1111111111110000,
+    0b1111111111111000,
+    0b1111111111111100,
+    0b1111111111111110,
+    0b1111111111111111,
+];
+
+impl V2 {
+    #[inline(always)]
+    fn f32s_reduce_sum(self, a: f32x4) -> f32 {
+        unsafe {
+            // a0 a1 a2 a3
+            let a: __m128 = transmute(a);
+            // a2 a3 a2 a3
+            let hi = _mm_movehl_ps(a, a);
+
+            // a0+a2 a1+a3 _ _
+            let r0 = _mm_add_ps(a, hi);
+            // a1+a3 a2+a1 _ _
+            let r0_shuffled = _mm_shuffle_ps::<0b0001>(r0, r0);
+
+            let r = _mm_add_ss(r0, r0_shuffled);
+
+            _mm_cvtss_f32(r)
+        }
+    }
+    #[inline(always)]
+    fn f32s_reduce_product(self, a: f32x4) -> f32 {
+        unsafe {
+            let a: __m128 = transmute(a);
+            let hi = _mm_movehl_ps(a, a);
+            let r0 = _mm_mul_ps(a, hi);
+            let r0_shuffled = _mm_shuffle_ps::<0b0001>(r0, r0);
+            let r = _mm_mul_ss(r0, r0_shuffled);
+            _mm_cvtss_f32(r)
+        }
+    }
+    #[inline(always)]
+    fn f32s_reduce_min(self, a: f32x4) -> f32 {
+        unsafe {
+            let a: __m128 = transmute(a);
+            let hi = _mm_movehl_ps(a, a);
+            let r0 = _mm_min_ps(a, hi);
+            let r0_shuffled = _mm_shuffle_ps::<0b0001>(r0, r0);
+            let r = _mm_min_ss(r0, r0_shuffled);
+            _mm_cvtss_f32(r)
+        }
+    }
+    #[inline(always)]
+    fn f32s_reduce_max(self, a: f32x4) -> f32 {
+        unsafe {
+            let a: __m128 = transmute(a);
+            let hi = _mm_movehl_ps(a, a);
+            let r0 = _mm_max_ps(a, hi);
+            let r0_shuffled = _mm_shuffle_ps::<0b0001>(r0, r0);
+            let r = _mm_max_ss(r0, r0_shuffled);
+            _mm_cvtss_f32(r)
+        }
+    }
+    #[inline(always)]
+    fn f64s_reduce_sum(self, a: f64x2) -> f64 {
+        unsafe {
+            let a: __m128d = transmute(a);
+            let hi = transmute(_mm_movehl_ps(transmute(a), transmute(a)));
+            let r = _mm_add_sd(a, hi);
+            _mm_cvtsd_f64(r)
+        }
+    }
+    #[inline(always)]
+    fn f64s_reduce_product(self, a: f64x2) -> f64 {
+        unsafe {
+            let a: __m128d = transmute(a);
+            let hi = transmute(_mm_movehl_ps(transmute(a), transmute(a)));
+            let r = _mm_mul_sd(a, hi);
+            _mm_cvtsd_f64(r)
+        }
+    }
+    #[inline(always)]
+    fn f64s_reduce_min(self, a: f64x2) -> f64 {
+        unsafe {
+            let a: __m128d = transmute(a);
+            let hi = transmute(_mm_movehl_ps(transmute(a), transmute(a)));
+            let r = _mm_min_sd(a, hi);
+            _mm_cvtsd_f64(r)
+        }
+    }
+    #[inline(always)]
+    fn f64s_reduce_max(self, a: f64x2) -> f64 {
+        unsafe {
+            let a: __m128d = transmute(a);
+            let hi = transmute(_mm_movehl_ps(transmute(a), transmute(a)));
+            let r = _mm_max_sd(a, hi);
+            _mm_cvtsd_f64(r)
+        }
+    }
+
+    #[inline(always)]
+    fn c32s_reduce_sum(self, a: f32x4) -> c32 {
+        unsafe {
+            // a0 a1 a2 a3
+            let a: __m128 = transmute(a);
+            // a2 a3 a2 a3
+            let hi = _mm_movehl_ps(a, a);
+
+            // a0+a2 a1+a3 _ _
+            let r0 = _mm_add_ps(a, hi);
+
+            cast(_mm_cvtsd_f64(cast(r0)))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_reduce_sum(self, a: f64x2) -> c64 {
+        cast(a)
+    }
+}
+
+impl Simd for V3 {
+    type m32s = m32x8;
+    type f32s = f32x8;
+    type i32s = i32x8;
+    type u32s = u32x8;
+
+    type m64s = m64x4;
+    type f64s = f64x4;
+    type i64s = i64x4;
+    type u64s = u64x4;
+
+    #[inline]
+    fn m32s_not(self, a: Self::m32s) -> Self::m32s {
+        unsafe {
+            transmute(_mm256_xor_pd(
+                transmute(_mm256_set1_epi32(-1)),
+                transmute(a),
+            ))
+        }
+    }
+    #[inline]
+    fn m32s_and(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
+        unsafe { transmute(_mm256_and_pd(transmute(a), transmute(b))) }
+    }
+    #[inline]
+    fn m32s_or(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
+        unsafe { transmute(_mm256_or_pd(transmute(a), transmute(b))) }
+    }
+    #[inline]
+    fn m32s_xor(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
+        unsafe { transmute(_mm256_xor_pd(transmute(a), transmute(b))) }
+    }
+
+    #[inline]
+    fn m64s_not(self, a: Self::m64s) -> Self::m64s {
+        unsafe {
+            transmute(_mm256_xor_pd(
+                transmute(_mm256_set1_epi32(-1)),
+                transmute(a),
+            ))
+        }
+    }
+    #[inline]
+    fn m64s_and(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
+        unsafe { transmute(_mm256_and_pd(transmute(a), transmute(b))) }
+    }
+    #[inline]
+    fn m64s_or(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
+        unsafe { transmute(_mm256_or_pd(transmute(a), transmute(b))) }
+    }
+    #[inline]
+    fn m64s_xor(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
+        unsafe { transmute(_mm256_xor_pd(transmute(a), transmute(b))) }
+    }
+
+    #[inline]
+    fn u32s_not(self, a: Self::u32s) -> Self::u32s {
+        unsafe {
+            transmute(_mm256_xor_pd(
+                transmute(_mm256_set1_epi32(-1)),
+                transmute(a),
+            ))
+        }
+    }
+    #[inline]
+    fn u32s_and(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+        unsafe { transmute(_mm256_and_pd(transmute(a), transmute(b))) }
+    }
+    #[inline]
+    fn u32s_or(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+        unsafe { transmute(_mm256_or_pd(transmute(a), transmute(b))) }
+    }
+    #[inline]
+    fn u32s_xor(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+        unsafe { transmute(_mm256_xor_pd(transmute(a), transmute(b))) }
+    }
+
+    #[inline]
+    fn u64s_not(self, a: Self::u64s) -> Self::u64s {
+        unsafe {
+            transmute(_mm256_xor_pd(
+                transmute(_mm256_set1_epi32(-1)),
+                transmute(a),
+            ))
+        }
+    }
+    #[inline]
+    fn u64s_and(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+        unsafe { transmute(_mm256_and_pd(transmute(a), transmute(b))) }
+    }
+    #[inline]
+    fn u64s_or(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+        unsafe { transmute(_mm256_or_pd(transmute(a), transmute(b))) }
+    }
+    #[inline]
+    fn u64s_xor(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+        unsafe { transmute(_mm256_xor_pd(transmute(a), transmute(b))) }
+    }
+
+    #[inline]
+    fn f32s_splat(self, value: f32) -> Self::f32s {
+        unsafe { transmute(_mm256_set1_ps(value)) }
+    }
+    #[inline]
+    fn f32s_add(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+        unsafe { transmute(_mm256_add_ps(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f32s_sub(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+        unsafe { transmute(_mm256_sub_ps(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f32s_mul(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+        unsafe { transmute(_mm256_mul_ps(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f32s_div(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+        unsafe { transmute(_mm256_div_ps(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f32s_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
+        unsafe { transmute(_mm256_cmp_ps::<_CMP_EQ_OQ>(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f32s_less_than(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
+        unsafe { transmute(_mm256_cmp_ps::<_CMP_LT_OQ>(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f32s_less_than_or_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
+        unsafe { transmute(_mm256_cmp_ps::<_CMP_LE_OQ>(a.as_vec(), b.as_vec())) }
+    }
+
+    #[inline]
+    fn f64s_splat(self, value: f64) -> Self::f64s {
+        unsafe { transmute(_mm256_set1_pd(value)) }
+    }
+    #[inline]
+    fn f64s_add(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+        unsafe { transmute(_mm256_add_pd(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f64s_sub(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+        unsafe { transmute(_mm256_sub_pd(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f64s_mul(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+        unsafe { transmute(_mm256_mul_pd(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f64s_div(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+        unsafe { transmute(_mm256_div_pd(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f64s_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
+        unsafe { transmute(_mm256_cmp_pd::<_CMP_EQ_OQ>(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f64s_less_than(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
+        unsafe { transmute(_mm256_cmp_pd::<_CMP_LT_OQ>(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f64s_less_than_or_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
+        unsafe { transmute(_mm256_cmp_pd::<_CMP_LE_OQ>(a.as_vec(), b.as_vec())) }
+    }
+
+    #[inline]
+    fn m32s_select_u32s(
+        self,
+        mask: Self::m32s,
+        if_true: Self::u32s,
+        if_false: Self::u32s,
+    ) -> Self::u32s {
+        unsafe {
+            let mask: __m256d = transmute(mask);
+            let if_true: __m256d = transmute(if_true);
+            let if_false: __m256d = transmute(if_false);
+
+            transmute(_mm256_blendv_pd(if_false, if_true, mask))
+        }
+    }
+    #[inline]
+    fn m64s_select_u64s(
+        self,
+        mask: Self::m64s,
+        if_true: Self::u64s,
+        if_false: Self::u64s,
+    ) -> Self::u64s {
+        unsafe {
+            let mask: __m256d = transmute(mask);
+            let if_true: __m256d = transmute(if_true);
+            let if_false: __m256d = transmute(if_false);
+
+            transmute(_mm256_blendv_pd(if_false, if_true, mask))
+        }
+    }
+
+    #[inline]
+    fn f32s_min(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+        unsafe { transmute(_mm256_min_ps(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+        unsafe { transmute(_mm256_max_ps(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+        unsafe { transmute(_mm256_min_pd(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+        unsafe { transmute(_mm256_max_pd(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn u32s_splat(self, value: u32) -> Self::u32s {
+        unsafe { transmute(_mm256_set1_epi32(value as i32)) }
+    }
+    #[inline]
+    fn u64s_splat(self, value: u64) -> Self::u64s {
+        unsafe { transmute(_mm256_set1_epi64x(value as i64)) }
+    }
+
+    #[inline]
+    fn u32s_add(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+        unsafe { transmute(_mm256_add_epi32(transmute(a), transmute(b))) }
+    }
+    #[inline]
+    fn u32s_sub(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+        unsafe { transmute(_mm256_sub_epi32(transmute(a), transmute(b))) }
+    }
+    #[inline]
+    fn u64s_add(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+        unsafe { transmute(_mm256_add_epi64(transmute(a), transmute(b))) }
+    }
+    #[inline]
+    fn u64s_sub(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+        unsafe { transmute(_mm256_sub_epi64(transmute(a), transmute(b))) }
+    }
+
+    #[inline]
+    fn f64s_mul_adde(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+        unsafe { transmute(_mm256_fmadd_pd(a.as_vec(), b.as_vec(), c.as_vec())) }
+    }
+    #[inline]
+    fn f32s_mul_adde(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+        unsafe { transmute(_mm256_fmadd_ps(a.as_vec(), b.as_vec(), c.as_vec())) }
+    }
+
+    #[inline]
+    fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
+        struct Impl<Op> {
+            this: V3,
+            op: Op,
+        }
+        impl<Op: WithSimd> crate::NullaryFnOnce for Impl<Op> {
+            type Output = Op::Output;
+
+            #[inline(always)]
+            fn call(self) -> Self::Output {
+                self.op.with_simd(self.this)
+            }
+        }
+        self.vectorize(Impl { this: self, op })
+    }
+
+    #[inline(always)]
+    fn f32s_reduce_sum(self, a: Self::f32s) -> f32 {
+        unsafe {
+            let a: __m256 = transmute(a);
+            let r = _mm_add_ps(_mm256_castps256_ps128(a), _mm256_extractf128_ps::<1>(a));
+            (*self).f32s_reduce_sum(transmute(r))
+        }
+    }
+
+    #[inline(always)]
+    fn f32s_reduce_product(self, a: Self::f32s) -> f32 {
+        unsafe {
+            let a: __m256 = transmute(a);
+            let r = _mm_mul_ps(_mm256_castps256_ps128(a), _mm256_extractf128_ps::<1>(a));
+            (*self).f32s_reduce_product(transmute(r))
+        }
+    }
+
+    #[inline(always)]
+    fn f32s_reduce_min(self, a: Self::f32s) -> f32 {
+        unsafe {
+            let a: __m256 = transmute(a);
+            let r = _mm_min_ps(_mm256_castps256_ps128(a), _mm256_extractf128_ps::<1>(a));
+            (*self).f32s_reduce_min(transmute(r))
+        }
+    }
+
+    #[inline(always)]
+    fn f32s_reduce_max(self, a: Self::f32s) -> f32 {
+        unsafe {
+            let a: __m256 = transmute(a);
+            let r = _mm_max_ps(_mm256_castps256_ps128(a), _mm256_extractf128_ps::<1>(a));
+            (*self).f32s_reduce_max(transmute(r))
+        }
+    }
+
+    #[inline(always)]
+    fn f64s_reduce_sum(self, a: Self::f64s) -> f64 {
+        unsafe {
+            let a: __m256d = transmute(a);
+            let r = _mm_add_pd(_mm256_castpd256_pd128(a), _mm256_extractf128_pd::<1>(a));
+            (*self).f64s_reduce_sum(transmute(r))
+        }
+    }
+
+    #[inline(always)]
+    fn f64s_reduce_product(self, a: Self::f64s) -> f64 {
+        unsafe {
+            let a: __m256d = transmute(a);
+            let r = _mm_mul_pd(_mm256_castpd256_pd128(a), _mm256_extractf128_pd::<1>(a));
+            (*self).f64s_reduce_product(transmute(r))
+        }
+    }
+
+    #[inline(always)]
+    fn f64s_reduce_min(self, a: Self::f64s) -> f64 {
+        unsafe {
+            let a: __m256d = transmute(a);
+            let r = _mm_min_pd(_mm256_castpd256_pd128(a), _mm256_extractf128_pd::<1>(a));
+            (*self).f64s_reduce_min(transmute(r))
+        }
+    }
+
+    #[inline(always)]
+    fn f64s_reduce_max(self, a: Self::f64s) -> f64 {
+        unsafe {
+            let a: __m256d = transmute(a);
+            let r = _mm_max_pd(_mm256_castpd256_pd128(a), _mm256_extractf128_pd::<1>(a));
+            (*self).f64s_reduce_max(transmute(r))
+        }
+    }
+
+    type c32s = f32x8;
+    type c64s = f64x4;
+
+    #[inline(always)]
+    fn c32s_splat(self, value: c32) -> Self::c32s {
+        cast(self.f64s_splat(cast(value)))
+    }
+    #[inline(always)]
+    fn c32s_add(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+        self.f32s_add(a, b)
+    }
+    #[inline(always)]
+    fn c32s_sub(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+        self.f32s_sub(a, b)
+    }
+
+    #[inline(always)]
+    fn c32s_mul(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm256_permute_ps::<0b10_11_00_01>(xy);
+            let aa = _mm256_moveldup_ps(ab);
+            let bb = _mm256_movehdup_ps(ab);
+
+            cast(_mm256_fmaddsub_ps(aa, xy, _mm256_mul_ps(bb, yx)))
+        }
+    }
+
+    #[inline(always)]
+    fn f32s_mul_add(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+        self.f32s_mul_adde(a, b, c)
+    }
+    #[inline(always)]
+    fn f64s_mul_add(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+        self.f64s_mul_adde(a, b, c)
+    }
+
+    #[inline(always)]
+    fn c64s_splat(self, value: c64) -> Self::c64s {
+        unsafe { cast(_mm256_broadcast_pd(&*(&value as *const _ as *const _))) }
+    }
+    #[inline(always)]
+    fn c64s_add(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+        self.f64s_add(a, b)
+    }
+    #[inline(always)]
+    fn c64s_sub(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+        self.f64s_sub(a, b)
+    }
+
+    #[inline(always)]
+    fn c64s_mul(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm256_permute_pd::<0b0101>(xy);
+            let aa = _mm256_unpacklo_pd(ab, ab);
+            let bb = _mm256_unpackhi_pd(ab, ab);
+
+            cast(_mm256_fmaddsub_pd(aa, xy, _mm256_mul_pd(bb, yx)))
+        }
+    }
+
+    #[inline(always)]
+    fn c32s_abs2(self, a: Self::c32s) -> Self::c32s {
+        unsafe {
+            let sqr = self.f32s_mul(a, a);
+            let sqr_rev = _mm256_shuffle_ps::<0b10_11_00_01>(cast(sqr), cast(sqr));
+            self.f32s_add(sqr, cast(sqr_rev))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_abs2(self, a: Self::c64s) -> Self::c64s {
+        unsafe {
+            let sqr = self.f64s_mul(a, a);
+            let sqr_rev = _mm256_shuffle_pd::<0b0101>(cast(sqr), cast(sqr));
+            self.f64s_add(sqr, cast(sqr_rev))
+        }
+    }
+
+    #[inline(always)]
+    fn u32s_partial_load(self, slice: &[u32]) -> Self::u32s {
+        unsafe {
+            let mask = cast(V3_U32_MASKS[slice.len().min(8)]);
+            cast(_mm256_maskload_epi32(slice.as_ptr() as _, mask))
+        }
+    }
+
+    #[inline(always)]
+    fn u32s_partial_store(self, slice: &mut [u32], values: Self::u32s) {
+        unsafe {
+            let mask = cast(V3_U32_MASKS[slice.len().min(8)]);
+            _mm256_maskstore_epi32(slice.as_mut_ptr() as _, mask, cast(values))
+        }
+    }
+
+    #[inline(always)]
+    fn u64s_partial_load(self, slice: &[u64]) -> Self::u64s {
+        unsafe {
+            let mask = cast(V3_U32_MASKS[(2 * slice.len()).min(8)]);
+            cast(_mm256_maskload_epi64(slice.as_ptr() as _, mask))
+        }
+    }
+
+    #[inline(always)]
+    fn u64s_partial_store(self, slice: &mut [u64], values: Self::u64s) {
+        unsafe {
+            let mask = cast(V3_U32_MASKS[(slice.len() * 2).min(8)]);
+            _mm256_maskstore_epi32(slice.as_mut_ptr() as _, mask, cast(values))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_partial_load(self, slice: &[c64]) -> Self::c64s {
+        unsafe {
+            let mask = cast(V3_U32_MASKS[(4 * slice.len()).min(8)]);
+            cast(_mm256_maskload_epi64(slice.as_ptr() as _, mask))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_partial_store(self, slice: &mut [c64], values: Self::c64s) {
+        unsafe {
+            let mask = cast(V3_U32_MASKS[(slice.len() * 4).min(8)]);
+            _mm256_maskstore_epi32(slice.as_mut_ptr() as _, mask, cast(values))
+        }
+    }
+
+    #[inline(always)]
+    fn u32s_partial_load_last(self, slice: &[u32]) -> Self::u32s {
+        unsafe {
+            let len = slice.len();
+            let mask = cast(V3_U32_LAST_MASKS[len.min(8)]);
+            cast(_mm256_maskload_epi32(
+                slice.as_ptr().add(len).wrapping_sub(8) as _,
+                mask,
+            ))
+        }
+    }
+
+    #[inline(always)]
+    fn u32s_partial_store_last(self, slice: &mut [u32], values: Self::u32s) {
+        unsafe {
+            let len = slice.len();
+            let mask = cast(V3_U32_LAST_MASKS[len.min(8)]);
+            _mm256_maskstore_epi32(
+                slice.as_mut_ptr().add(len).wrapping_sub(8) as _,
+                mask,
+                cast(values),
+            )
+        }
+    }
+
+    #[inline(always)]
+    fn u64s_partial_load_last(self, slice: &[u64]) -> Self::u64s {
+        unsafe {
+            let len = slice.len();
+            let mask = cast(V3_U32_LAST_MASKS[(2 * len).min(8)]);
+            cast(_mm256_maskload_epi64(
+                slice.as_ptr().add(len).wrapping_sub(4) as _,
+                mask,
+            ))
+        }
+    }
+
+    #[inline(always)]
+    fn u64s_partial_store_last(self, slice: &mut [u64], values: Self::u64s) {
+        unsafe {
+            let len = slice.len();
+            let mask = cast(V3_U32_LAST_MASKS[(len * 2).min(8)]);
+            _mm256_maskstore_epi32(
+                slice.as_mut_ptr().add(len).wrapping_sub(4) as _,
+                mask,
+                cast(values),
+            )
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_partial_load_last(self, slice: &[c64]) -> Self::c64s {
+        unsafe {
+            let len = slice.len();
+            let mask = cast(V3_U32_LAST_MASKS[(4 * len).min(8)]);
+            cast(_mm256_maskload_epi64(
+                slice.as_ptr().add(len).wrapping_sub(2) as _,
+                mask,
+            ))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_partial_store_last(self, slice: &mut [c64], values: Self::c64s) {
+        unsafe {
+            let len = slice.len();
+            let mask = cast(V3_U32_LAST_MASKS[(len * 4).min(8)]);
+            _mm256_maskstore_epi32(
+                slice.as_mut_ptr().add(len).wrapping_sub(2) as _,
+                mask,
+                cast(values),
+            )
+        }
+    }
+
+    #[inline(always)]
+    fn c32s_conj(self, a: Self::c32s) -> Self::c32s {
+        self.f32s_xor(a, self.c32s_splat(c32 { re: 0.0, im: -0.0 }))
+    }
+
+    #[inline(always)]
+    fn c32s_conj_mul(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm256_permute_ps::<0b10_11_00_01>(xy);
+            let aa = _mm256_moveldup_ps(ab);
+            let bb = _mm256_movehdup_ps(ab);
+
+            cast(_mm256_fmsubadd_ps(aa, xy, _mm256_mul_ps(bb, yx)))
+        }
+    }
+
+    #[inline(always)]
+    fn c32s_mul_adde(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm256_permute_ps::<0b10_11_00_01>(xy);
+            let aa = _mm256_moveldup_ps(ab);
+            let bb = _mm256_movehdup_ps(ab);
+
+            cast(_mm256_fmaddsub_ps(
+                aa,
+                xy,
+                _mm256_fmaddsub_ps(bb, yx, cast(c)),
+            ))
+        }
+    }
+
+    #[inline(always)]
+    fn c32s_conj_mul_adde(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm256_permute_ps::<0b10_11_00_01>(xy);
+            let aa = _mm256_moveldup_ps(ab);
+            let bb = _mm256_movehdup_ps(ab);
+
+            cast(_mm256_fmsubadd_ps(
+                aa,
+                xy,
+                _mm256_fmsubadd_ps(bb, yx, cast(c)),
+            ))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_conj(self, a: Self::c64s) -> Self::c64s {
+        self.f64s_xor(a, self.c64s_splat(c64 { re: 0.0, im: -0.0 }))
+    }
+
+    #[inline(always)]
+    fn c64s_conj_mul(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm256_permute_pd::<0b0101>(xy);
+            let aa = _mm256_unpacklo_pd(ab, ab);
+            let bb = _mm256_unpackhi_pd(ab, ab);
+
+            cast(_mm256_fmsubadd_pd(aa, xy, _mm256_mul_pd(bb, yx)))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_mul_adde(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm256_permute_pd::<0b0101>(xy);
+            let aa = _mm256_unpacklo_pd(ab, ab);
+            let bb = _mm256_unpackhi_pd(ab, ab);
+
+            cast(_mm256_fmaddsub_pd(
+                aa,
+                xy,
+                _mm256_fmaddsub_pd(bb, yx, cast(c)),
+            ))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_conj_mul_adde(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm256_permute_pd::<0b0101>(xy);
+            let aa = _mm256_unpacklo_pd(ab, ab);
+            let bb = _mm256_unpackhi_pd(ab, ab);
+
+            cast(_mm256_fmsubadd_pd(
+                aa,
+                xy,
+                _mm256_fmsubadd_pd(bb, yx, cast(c)),
+            ))
+        }
+    }
+
+    #[inline(always)]
+    fn c32s_neg(self, a: Self::c32s) -> Self::c32s {
+        self.f32s_xor(a, self.f32s_splat(-0.0))
+    }
+
+    #[inline(always)]
+    fn c32s_reduce_sum(self, a: Self::c32s) -> c32 {
+        unsafe {
+            let a: __m256 = transmute(a);
+            let r = _mm_add_ps(_mm256_castps256_ps128(a), _mm256_extractf128_ps::<1>(a));
+            (*self).c32s_reduce_sum(transmute(r))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_neg(self, a: Self::c64s) -> Self::c64s {
+        self.f64s_xor(a, self.f64s_splat(-0.0))
+    }
+
+    #[inline(always)]
+    fn c64s_reduce_sum(self, a: Self::c64s) -> c64 {
+        unsafe {
+            let a: __m256d = transmute(a);
+            let r = _mm_add_pd(_mm256_castpd256_pd128(a), _mm256_extractf128_pd::<1>(a));
+            (*self).c64s_reduce_sum(transmute(r))
+        }
+    }
+
+    #[inline(always)]
+    fn u32s_wrapping_dyn_shl(self, a: Self::u32s, amount: Self::u32s) -> Self::u32s {
+        self.shl_dyn_u32x8(a, self.and_u32x8(amount, self.splat_u32x8(32 - 1)))
+    }
+
+    #[inline(always)]
+    fn u32s_wrapping_dyn_shr(self, a: Self::u32s, amount: Self::u32s) -> Self::u32s {
+        self.shr_dyn_u32x8(a, self.and_u32x8(amount, self.splat_u32x8(32 - 1)))
+    }
+
+    #[inline(always)]
+    fn u32s_widening_mul(self, a: Self::u32s, b: Self::u32s) -> (Self::u32s, Self::u32s) {
+        self.widening_mul_u32x8(a, b)
+    }
+
+    #[inline(always)]
+    fn u32s_less_than(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+        self.cmp_lt_u32x8(a, b)
+    }
+
+    #[inline(always)]
+    fn u32s_greater_than(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+        self.cmp_gt_u32x8(a, b)
+    }
+
+    #[inline(always)]
+    fn u32s_less_than_or_equal(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+        self.cmp_le_u32x8(a, b)
+    }
+
+    #[inline(always)]
+    fn u32s_greater_than_or_equal(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+        self.cmp_ge_u32x8(a, b)
+    }
+}
+
+#[cfg(feature = "nightly")]
+impl Simd for V4 {
+    type m32s = b16;
+    type f32s = f32x16;
+    type i32s = i32x16;
+    type u32s = u32x16;
+
+    type m64s = b8;
+    type f64s = f64x8;
+    type i64s = i64x8;
+    type u64s = u64x8;
+
+    #[inline]
+    fn m32s_not(self, a: Self::m32s) -> Self::m32s {
+        b16(!a.0)
+    }
+    #[inline]
+    fn m32s_and(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
+        b16(a.0 & b.0)
+    }
+    #[inline]
+    fn m32s_or(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
+        b16(a.0 | b.0)
+    }
+    #[inline]
+    fn m32s_xor(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
+        b16(a.0 ^ b.0)
+    }
+
+    #[inline]
+    fn m64s_not(self, a: Self::m64s) -> Self::m64s {
+        b8(!a.0)
+    }
+    #[inline]
+    fn m64s_and(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
+        b8(a.0 & b.0)
+    }
+    #[inline]
+    fn m64s_or(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
+        b8(a.0 | b.0)
+    }
+    #[inline]
+    fn m64s_xor(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
+        b8(a.0 ^ b.0)
+    }
+
+    #[inline]
+    fn u32s_not(self, a: Self::u32s) -> Self::u32s {
+        unsafe { transmute(_mm512_xor_si512(_mm512_set1_epi32(-1), transmute(a))) }
+    }
+    #[inline]
+    fn u32s_and(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+        unsafe { transmute(_mm512_and_si512(transmute(a), transmute(b))) }
+    }
+    #[inline]
+    fn u32s_or(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+        unsafe { transmute(_mm512_or_si512(transmute(a), transmute(b))) }
+    }
+    #[inline]
+    fn u32s_xor(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+        unsafe { transmute(_mm512_xor_si512(transmute(a), transmute(b))) }
+    }
+
+    #[inline]
+    fn u64s_not(self, a: Self::u64s) -> Self::u64s {
+        unsafe { transmute(_mm512_xor_si512(_mm512_set1_epi32(-1), transmute(a))) }
+    }
+    #[inline]
+    fn u64s_and(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+        unsafe { transmute(_mm512_and_si512(transmute(a), transmute(b))) }
+    }
+    #[inline]
+    fn u64s_or(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+        unsafe { transmute(_mm512_or_si512(transmute(a), transmute(b))) }
+    }
+    #[inline]
+    fn u64s_xor(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+        unsafe { transmute(_mm512_xor_si512(transmute(a), transmute(b))) }
+    }
+
+    #[inline]
+    fn f32s_splat(self, value: f32) -> Self::f32s {
+        unsafe { transmute(_mm512_set1_ps(value)) }
+    }
+    #[inline]
+    fn f32s_add(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+        unsafe { transmute(_mm512_add_ps(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f32s_sub(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+        unsafe { transmute(_mm512_sub_ps(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f32s_mul(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+        unsafe { transmute(_mm512_mul_ps(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f32s_div(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+        unsafe { transmute(_mm512_div_ps(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f32s_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
+        unsafe { transmute(_mm512_cmp_ps_mask::<_CMP_EQ_OQ>(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f32s_less_than(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
+        unsafe { transmute(_mm512_cmp_ps_mask::<_CMP_LT_OQ>(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f32s_less_than_or_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
+        unsafe { transmute(_mm512_cmp_ps_mask::<_CMP_LE_OQ>(a.as_vec(), b.as_vec())) }
+    }
+
+    #[inline]
+    fn f64s_splat(self, value: f64) -> Self::f64s {
+        unsafe { transmute(_mm512_set1_pd(value)) }
+    }
+    #[inline]
+    fn f64s_add(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+        unsafe { transmute(_mm512_add_pd(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f64s_sub(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+        unsafe { transmute(_mm512_sub_pd(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f64s_mul(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+        unsafe { transmute(_mm512_mul_pd(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f64s_div(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+        unsafe { transmute(_mm512_div_pd(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f64s_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
+        unsafe { transmute(_mm512_cmp_pd_mask::<_CMP_EQ_OQ>(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f64s_less_than(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
+        unsafe { transmute(_mm512_cmp_pd_mask::<_CMP_LT_OQ>(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f64s_less_than_or_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
+        unsafe { transmute(_mm512_cmp_pd_mask::<_CMP_LE_OQ>(a.as_vec(), b.as_vec())) }
+    }
+
+    #[inline]
+    fn f64s_mul_adde(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+        unsafe { transmute(_mm512_fmadd_pd(a.as_vec(), b.as_vec(), c.as_vec())) }
+    }
+    #[inline]
+    fn f32s_mul_adde(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+        unsafe { transmute(_mm512_fmadd_ps(a.as_vec(), b.as_vec(), c.as_vec())) }
+    }
+
+    #[inline]
+    fn m32s_select_u32s(
+        self,
+        mask: Self::m32s,
+        if_true: Self::u32s,
+        if_false: Self::u32s,
+    ) -> Self::u32s {
+        unsafe {
+            let mask: __mmask16 = mask.0;
+            let if_true: __m512 = transmute(if_true);
+            let if_false: __m512 = transmute(if_false);
+
+            transmute(_mm512_mask_blend_ps(mask, if_false, if_true))
+        }
+    }
+
+    #[inline]
+    fn m64s_select_u64s(
+        self,
+        mask: Self::m64s,
+        if_true: Self::u64s,
+        if_false: Self::u64s,
+    ) -> Self::u64s {
+        unsafe {
+            let mask: __mmask8 = mask.0;
+            let if_true: __m512d = transmute(if_true);
+            let if_false: __m512d = transmute(if_false);
+
+            transmute(_mm512_mask_blend_pd(mask, if_false, if_true))
+        }
+    }
+
+    #[inline]
+    fn f32s_min(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+        unsafe { transmute(_mm512_min_ps(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+        unsafe { transmute(_mm512_max_ps(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+        unsafe { transmute(_mm512_min_pd(a.as_vec(), b.as_vec())) }
+    }
+    #[inline]
+    fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+        unsafe { transmute(_mm512_max_pd(a.as_vec(), b.as_vec())) }
+    }
+
+    #[inline]
+    fn u32s_add(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+        unsafe { transmute(_mm512_add_epi32(transmute(a), transmute(b))) }
+    }
+    #[inline]
+    fn u32s_sub(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+        unsafe { transmute(_mm512_sub_epi32(transmute(a), transmute(b))) }
+    }
+    #[inline]
+    fn u64s_add(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+        unsafe { transmute(_mm512_add_epi64(transmute(a), transmute(b))) }
+    }
+    #[inline]
+    fn u64s_sub(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+        unsafe { transmute(_mm512_sub_epi64(transmute(a), transmute(b))) }
+    }
+
+    #[inline]
+    fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
+        struct Impl<Op> {
+            this: V4,
+            op: Op,
+        }
+        impl<Op: WithSimd> crate::NullaryFnOnce for Impl<Op> {
+            type Output = Op::Output;
+
+            #[inline(always)]
+            fn call(self) -> Self::Output {
+                self.op.with_simd(self.this)
+            }
+        }
+        self.vectorize(Impl { this: self, op })
+    }
+
+    #[inline]
+    fn u32s_splat(self, value: u32) -> Self::u32s {
+        unsafe { transmute(_mm512_set1_epi32(value as i32)) }
+    }
+    #[inline]
+    fn u64s_splat(self, value: u64) -> Self::u64s {
+        unsafe { transmute(_mm512_set1_epi64(value as i64)) }
+    }
+
+    #[inline(always)]
+    fn f32s_reduce_sum(self, a: Self::f32s) -> f32 {
+        unsafe {
+            let a: __m512 = transmute(a);
+            let r = _mm256_add_ps(
+                _mm512_castps512_ps256(a),
+                transmute(_mm512_extractf64x4_pd::<1>(transmute(a))),
+            );
+            (*self).f32s_reduce_sum(transmute(r))
+        }
+    }
+
+    #[inline(always)]
+    fn f32s_reduce_product(self, a: Self::f32s) -> f32 {
+        unsafe {
+            let a: __m512 = transmute(a);
+            let r = _mm256_mul_ps(
+                _mm512_castps512_ps256(a),
+                transmute(_mm512_extractf64x4_pd::<1>(transmute(a))),
+            );
+            (*self).f32s_reduce_product(transmute(r))
+        }
+    }
+
+    #[inline(always)]
+    fn f32s_reduce_min(self, a: Self::f32s) -> f32 {
+        unsafe {
+            let a: __m512 = transmute(a);
+            let r = _mm256_min_ps(
+                _mm512_castps512_ps256(a),
+                transmute(_mm512_extractf64x4_pd::<1>(transmute(a))),
+            );
+            (*self).f32s_reduce_min(transmute(r))
+        }
+    }
+
+    #[inline(always)]
+    fn f32s_reduce_max(self, a: Self::f32s) -> f32 {
+        unsafe {
+            let a: __m512 = transmute(a);
+            let r = _mm256_max_ps(
+                _mm512_castps512_ps256(a),
+                transmute(_mm512_extractf64x4_pd::<1>(transmute(a))),
+            );
+            (*self).f32s_reduce_max(transmute(r))
+        }
+    }
+
+    #[inline(always)]
+    fn f64s_reduce_sum(self, a: Self::f64s) -> f64 {
+        unsafe {
+            let a: __m512d = transmute(a);
+            let r = _mm256_add_pd(_mm512_castpd512_pd256(a), _mm512_extractf64x4_pd::<1>(a));
+            (*self).f64s_reduce_sum(transmute(r))
+        }
+    }
+
+    #[inline(always)]
+    fn f64s_reduce_product(self, a: Self::f64s) -> f64 {
+        unsafe {
+            let a: __m512d = transmute(a);
+            let r = _mm256_mul_pd(_mm512_castpd512_pd256(a), _mm512_extractf64x4_pd::<1>(a));
+            (*self).f64s_reduce_product(transmute(r))
+        }
+    }
+
+    #[inline(always)]
+    fn f64s_reduce_min(self, a: Self::f64s) -> f64 {
+        unsafe {
+            let a: __m512d = transmute(a);
+            let r = _mm256_min_pd(_mm512_castpd512_pd256(a), _mm512_extractf64x4_pd::<1>(a));
+            (*self).f64s_reduce_min(transmute(r))
+        }
+    }
+
+    #[inline(always)]
+    fn f64s_reduce_max(self, a: Self::f64s) -> f64 {
+        unsafe {
+            let a: __m512d = transmute(a);
+            let r = _mm256_max_pd(_mm512_castpd512_pd256(a), _mm512_extractf64x4_pd::<1>(a));
+            (*self).f64s_reduce_max(transmute(r))
+        }
+    }
+
+    type c32s = f32x16;
+    type c64s = f64x8;
+
+    #[inline(always)]
+    fn c32s_splat(self, value: c32) -> Self::c32s {
+        cast(self.f64s_splat(cast(value)))
+    }
+    #[inline(always)]
+    fn c32s_add(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+        self.f32s_add(a, b)
+    }
+    #[inline(always)]
+    fn c32s_sub(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+        self.f32s_sub(a, b)
+    }
+
+    #[inline(always)]
+    fn c32s_mul(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm512_permute_ps::<0b10_11_00_01>(xy);
+            let aa = _mm512_moveldup_ps(ab);
+            let bb = _mm512_movehdup_ps(ab);
+
+            cast(_mm512_fmaddsub_ps(aa, xy, _mm512_mul_ps(bb, yx)))
+        }
+    }
+
+    #[inline(always)]
+    fn f32s_mul_add(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+        self.f32s_mul_adde(a, b, c)
+    }
+    #[inline(always)]
+    fn f64s_mul_add(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+        self.f64s_mul_adde(a, b, c)
+    }
+
+    #[inline(always)]
+    fn c64s_splat(self, value: c64) -> Self::c64s {
+        unsafe { cast(_mm512_broadcast_f32x4(cast(value))) }
+    }
+    #[inline(always)]
+    fn c64s_add(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+        self.f64s_add(a, b)
+    }
+    #[inline(always)]
+    fn c64s_sub(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+        self.f64s_sub(a, b)
+    }
+
+    #[inline(always)]
+    fn c64s_mul(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm512_permute_pd::<0b01010101>(xy);
+            let aa = _mm512_unpacklo_pd(ab, ab);
+            let bb = _mm512_unpackhi_pd(ab, ab);
+
+            cast(_mm512_fmaddsub_pd(aa, xy, _mm512_mul_pd(bb, yx)))
+        }
+    }
+
+    #[inline(always)]
+    fn c32s_abs2(self, a: Self::c32s) -> Self::c32s {
+        unsafe {
+            let sqr = self.f32s_mul(a, a);
+            let sqr_rev = _mm512_shuffle_ps::<0b10_11_00_01>(cast(sqr), cast(sqr));
+            self.f32s_add(sqr, cast(sqr_rev))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_abs2(self, a: Self::c64s) -> Self::c64s {
+        unsafe {
+            let sqr = self.f64s_mul(a, a);
+            let sqr_rev = _mm512_shuffle_pd::<0b01010101>(cast(sqr), cast(sqr));
+            self.f64s_add(sqr, cast(sqr_rev))
+        }
+    }
+
+    #[inline(always)]
+    fn u32s_partial_load(self, slice: &[u32]) -> Self::u32s {
+        unsafe {
+            let mask = cast(V4_U32_MASKS[slice.len().min(16)]);
+            cast(_mm512_maskz_loadu_epi32(mask, slice.as_ptr() as _))
+        }
+    }
+
+    #[inline(always)]
+    fn u32s_partial_store(self, slice: &mut [u32], values: Self::u32s) {
+        unsafe {
+            let mask = cast(V4_U32_MASKS[slice.len().min(16)]);
+            _mm512_mask_storeu_epi32(slice.as_mut_ptr() as _, mask, cast(values));
+        }
+    }
+
+    #[inline(always)]
+    fn u64s_partial_load(self, slice: &[u64]) -> Self::u64s {
+        unsafe {
+            let mask = cast(V4_U32_MASKS[(2 * slice.len()).min(16)]);
+            cast(_mm512_maskz_loadu_epi32(mask, slice.as_ptr() as _))
+        }
+    }
+
+    #[inline(always)]
+    fn u64s_partial_store(self, slice: &mut [u64], values: Self::u64s) {
+        unsafe {
+            let mask = cast(V4_U32_MASKS[(2 * slice.len()).min(16)]);
+            _mm512_mask_storeu_epi32(slice.as_mut_ptr() as _, mask, cast(values));
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_partial_load(self, slice: &[c64]) -> Self::c64s {
+        unsafe {
+            let mask = cast(V4_U32_MASKS[(4 * slice.len()).min(16)]);
+            cast(_mm512_maskz_loadu_epi32(mask, slice.as_ptr() as _))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_partial_store(self, slice: &mut [c64], values: Self::c64s) {
+        unsafe {
+            let mask = cast(V4_U32_MASKS[(4 * slice.len()).min(16)]);
+            _mm512_mask_storeu_epi32(slice.as_mut_ptr() as _, mask, cast(values));
+        }
+    }
+
+    #[inline(always)]
+    fn u32s_partial_load_last(self, slice: &[u32]) -> Self::u32s {
+        unsafe {
+            let len = slice.len();
+            let mask = cast(V4_U32_LAST_MASKS[slice.len().min(16)]);
+            cast(_mm512_maskz_loadu_epi32(
+                mask,
+                slice.as_ptr().add(len).wrapping_sub(16) as _,
+            ))
+        }
+    }
+
+    #[inline(always)]
+    fn u32s_partial_store_last(self, slice: &mut [u32], values: Self::u32s) {
+        unsafe {
+            let len = slice.len();
+            let mask = cast(V4_U32_LAST_MASKS[slice.len().min(16)]);
+            _mm512_mask_storeu_epi32(
+                slice.as_mut_ptr().add(len).wrapping_sub(16) as _,
+                mask,
+                cast(values),
+            );
+        }
+    }
+
+    #[inline(always)]
+    fn u64s_partial_load_last(self, slice: &[u64]) -> Self::u64s {
+        unsafe {
+            let len = slice.len();
+            let mask = cast(V4_U32_LAST_MASKS[(2 * slice.len()).min(16)]);
+            cast(_mm512_maskz_loadu_epi32(
+                mask,
+                slice.as_ptr().add(len).wrapping_sub(8) as _,
+            ))
+        }
+    }
+
+    #[inline(always)]
+    fn u64s_partial_store_last(self, slice: &mut [u64], values: Self::u64s) {
+        unsafe {
+            let len = slice.len();
+            let mask = cast(V4_U32_LAST_MASKS[(2 * slice.len()).min(16)]);
+            _mm512_mask_storeu_epi32(
+                slice.as_mut_ptr().add(len).wrapping_sub(8) as _,
+                mask,
+                cast(values),
+            );
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_partial_load_last(self, slice: &[c64]) -> Self::c64s {
+        unsafe {
+            let len = slice.len();
+            let mask = cast(V4_U32_LAST_MASKS[(4 * slice.len()).min(16)]);
+            cast(_mm512_maskz_loadu_epi32(
+                mask,
+                slice.as_ptr().add(len).wrapping_sub(4) as _,
+            ))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_partial_store_last(self, slice: &mut [c64], values: Self::c64s) {
+        unsafe {
+            let len = slice.len();
+            let mask = cast(V4_U32_LAST_MASKS[(4 * slice.len()).min(16)]);
+            _mm512_mask_storeu_epi32(
+                slice.as_mut_ptr().add(len).wrapping_sub(4) as _,
+                mask,
+                cast(values),
+            );
+        }
+    }
+
+    #[inline(always)]
+    fn c32s_conj(self, a: Self::c32s) -> Self::c32s {
+        self.f32s_xor(a, self.c32s_splat(c32 { re: 0.0, im: -0.0 }))
+    }
+
+    #[inline(always)]
+    fn c32s_conj_mul(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm512_permute_ps::<0b10_11_00_01>(xy);
+            let aa = _mm512_moveldup_ps(ab);
+            let bb = _mm512_movehdup_ps(ab);
+
+            cast(Self::fmsubadd_ps(aa, xy, _mm512_mul_ps(bb, yx)))
+        }
+    }
+
+    #[inline(always)]
+    fn c32s_mul_adde(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm512_permute_ps::<0b10_11_00_01>(xy);
+            let aa = _mm512_moveldup_ps(ab);
+            let bb = _mm512_movehdup_ps(ab);
+
+            cast(_mm512_fmaddsub_ps(
+                aa,
+                xy,
+                _mm512_fmaddsub_ps(bb, yx, cast(c)),
+            ))
+        }
+    }
+
+    #[inline(always)]
+    fn c32s_conj_mul_adde(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm512_permute_ps::<0b10_11_00_01>(xy);
+            let aa = _mm512_moveldup_ps(ab);
+            let bb = _mm512_movehdup_ps(ab);
+
+            cast(Self::fmsubadd_ps(
+                aa,
+                xy,
+                Self::fmsubadd_ps(bb, yx, cast(c)),
+            ))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_conj(self, a: Self::c64s) -> Self::c64s {
+        self.f64s_xor(a, self.c64s_splat(c64 { re: 0.0, im: -0.0 }))
+    }
+
+    #[inline(always)]
+    fn c64s_conj_mul(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm512_permute_pd::<0b01010101>(xy);
+            let aa = _mm512_unpacklo_pd(ab, ab);
+            let bb = _mm512_unpackhi_pd(ab, ab);
+
+            cast(Self::fmsubadd_pd(aa, xy, _mm512_mul_pd(bb, yx)))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_mul_adde(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm512_permute_pd::<0b01010101>(xy);
+            let aa = _mm512_unpacklo_pd(ab, ab);
+            let bb = _mm512_unpackhi_pd(ab, ab);
+
+            cast(_mm512_fmaddsub_pd(
+                aa,
+                xy,
+                _mm512_fmaddsub_pd(bb, yx, cast(c)),
+            ))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_conj_mul_adde(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+        unsafe {
+            let ab = cast(a);
+            let xy = cast(b);
+
+            let yx = _mm512_permute_pd::<0b01010101>(xy);
+            let aa = _mm512_unpacklo_pd(ab, ab);
+            let bb = _mm512_unpackhi_pd(ab, ab);
+
+            cast(Self::fmsubadd_pd(
+                aa,
+                xy,
+                Self::fmsubadd_pd(bb, yx, cast(c)),
+            ))
+        }
+    }
+
+    #[inline(always)]
+    fn c32s_neg(self, a: Self::c32s) -> Self::c32s {
+        self.f32s_xor(a, self.f32s_splat(-0.0))
+    }
+
+    #[inline(always)]
+    fn c32s_reduce_sum(self, a: Self::c32s) -> c32 {
+        unsafe {
+            let a: __m512 = transmute(a);
+            let r = _mm256_add_ps(
+                _mm512_castps512_ps256(a),
+                transmute(_mm512_extractf64x4_pd::<1>(transmute(a))),
+            );
+            (*self).c32s_reduce_sum(transmute(r))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_neg(self, a: Self::c64s) -> Self::c64s {
+        self.f64s_xor(a, self.f64s_splat(-0.0))
+    }
+
+    #[inline(always)]
+    fn c64s_reduce_sum(self, a: Self::c64s) -> c64 {
+        unsafe {
+            let a: __m512d = transmute(a);
+            let r = _mm256_add_pd(_mm512_castpd512_pd256(a), _mm512_extractf64x4_pd::<1>(a));
+            (*self).c64s_reduce_sum(transmute(r))
+        }
+    }
+
+    #[inline(always)]
+    fn u32s_wrapping_dyn_shl(self, a: Self::u32s, amount: Self::u32s) -> Self::u32s {
+        self.shl_dyn_u32x16(a, self.and_u32x16(amount, self.splat_u32x16(32 - 1)))
+    }
+
+    #[inline(always)]
+    fn u32s_wrapping_dyn_shr(self, a: Self::u32s, amount: Self::u32s) -> Self::u32s {
+        self.shr_dyn_u32x16(a, self.and_u32x16(amount, self.splat_u32x16(32 - 1)))
+    }
+
+    #[inline(always)]
+    fn u32s_widening_mul(self, a: Self::u32s, b: Self::u32s) -> (Self::u32s, Self::u32s) {
+        self.widening_mul_u32x16(a, b)
+    }
+
+    #[inline(always)]
+    fn u32s_less_than(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+        self.cmp_lt_u32x16(a, b)
+    }
+
+    #[inline(always)]
+    fn u32s_greater_than(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+        self.cmp_gt_u32x16(a, b)
+    }
+
+    #[inline(always)]
+    fn u32s_less_than_or_equal(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+        self.cmp_le_u32x16(a, b)
+    }
+
+    #[inline(always)]
+    fn u32s_greater_than_or_equal(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+        self.cmp_ge_u32x16(a, b)
     }
 }
 
@@ -7387,9 +9759,59 @@ impl V4 {
     }
 }
 
+/// x86 arch
+#[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
+pub enum ArchInner {
+    #[cfg(feature = "nightly")]
+    V4(V4),
+    V3(V3),
+    Scalar(crate::Scalar),
+}
+
+impl ArchInner {
+    /// Detects the best available instruction set.
+    #[inline]
+    pub fn new() -> Self {
+        #[cfg(feature = "nightly")]
+        if let Some(simd) = V4::try_new() {
+            return Self::V4(simd);
+        }
+        if let Some(simd) = V3::try_new() {
+            return Self::V3(simd);
+        }
+        Self::Scalar(crate::Scalar::new())
+    }
+
+    /// Detects the best available instruction set.
+    #[inline(always)]
+    pub fn dispatch<Op: WithSimd>(self, op: Op) -> Op::Output {
+        match self {
+            #[cfg(feature = "nightly")]
+            ArchInner::V4(simd) => Simd::vectorize(simd, op),
+            ArchInner::V3(simd) => Simd::vectorize(simd, op),
+            ArchInner::Scalar(simd) => Simd::vectorize(simd, op),
+        }
+    }
+}
+
+impl Default for ArchInner {
+    #[inline]
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    extern crate alloc;
+
     use super::*;
+    use alloc::vec;
+    use alloc::vec::Vec;
+    use assert_approx_eq::assert_approx_eq;
+    use core::iter::zip;
+    use rand::random;
 
     #[allow(unused_macros)]
     macro_rules! dbgx {
@@ -7408,6 +9830,172 @@ mod tests {
         ($($val:expr),+ $(,)?) => {
             ($(dbgx!($val)),+,)
         };
+    }
+
+    #[test]
+    fn times_two() {
+        let n = 1312;
+        let mut v = (0..n).map(|i| i as f64).collect::<Vec<_>>();
+        let arch = Arch::new();
+
+        struct TimesThree<'a>(&'a mut [f64]);
+        impl<'a> WithSimd for TimesThree<'a> {
+            type Output = ();
+
+            #[inline(always)]
+            fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
+                let v = self.0;
+                let (head, tail) = S::f64s_as_mut_simd(v);
+
+                let three = simd.f64s_splat(3.0);
+                for x in head {
+                    *x = simd.f64s_mul(three, *x);
+                }
+
+                for x in tail {
+                    *x *= 3.0;
+                }
+            }
+        }
+
+        arch.dispatch(|| {
+            for x in &mut v {
+                *x *= 2.0;
+            }
+        });
+
+        arch.dispatch(TimesThree(&mut v));
+
+        for (i, x) in v.into_iter().enumerate() {
+            assert_eq!(x, 6.0 * i as f64);
+        }
+    }
+
+    #[test]
+    fn cplx_ops() {
+        let n = 16;
+        let a = (0..n)
+            .map(|_| c32 {
+                re: random(),
+                im: random(),
+            })
+            .collect::<Vec<_>>();
+        let b = (0..n)
+            .map(|_| c32 {
+                re: random(),
+                im: random(),
+            })
+            .collect::<Vec<_>>();
+        let c = (0..n)
+            .map(|_| c32 {
+                re: random(),
+                im: random(),
+            })
+            .collect::<Vec<_>>();
+
+        let axb_target = zip(&a, &b).map(|(a, b)| a * b).collect::<Vec<_>>();
+        let conjaxb_target = zip(&a, &b).map(|(a, b)| a.conj() * b).collect::<Vec<_>>();
+        let axbpc_target = zip(zip(&a, &b), &c)
+            .map(|((a, b), c)| a * b + c)
+            .collect::<Vec<_>>();
+        let conjaxbpc_target = zip(zip(&a, &b), &c)
+            .map(|((a, b), c)| a.conj() * b + c)
+            .collect::<Vec<_>>();
+
+        if let Some(simd) = V3::try_new() {
+            let mut axb = vec![c32::new(0.0, 0.0); n];
+            let mut conjaxb = vec![c32::new(0.0, 0.0); n];
+            let mut axbpc = vec![c32::new(0.0, 0.0); n];
+            let mut conjaxbpc = vec![c32::new(0.0, 0.0); n];
+
+            {
+                let a = V3::c32s_as_simd(&a).0;
+                let b = V3::c32s_as_simd(&b).0;
+                let c = V3::c32s_as_simd(&c).0;
+                let axb = V3::c32s_as_mut_simd(&mut axb).0;
+                let conjaxb = V3::c32s_as_mut_simd(&mut conjaxb).0;
+                let axbpc = V3::c32s_as_mut_simd(&mut axbpc).0;
+                let conjaxbpc = V3::c32s_as_mut_simd(&mut conjaxbpc).0;
+
+                for (axb, (a, b)) in zip(axb, zip(a, b)) {
+                    *axb = simd.c32s_mul(*a, *b);
+                }
+                for (conjaxb, (a, b)) in zip(conjaxb, zip(a, b)) {
+                    *conjaxb = simd.c32s_conj_mul(*a, *b);
+                }
+                for (axbpc, ((a, b), c)) in zip(axbpc, zip(zip(a, b), c)) {
+                    *axbpc = simd.c32s_mul_adde(*a, *b, *c);
+                }
+                for (conjaxbpc, ((a, b), c)) in zip(conjaxbpc, zip(zip(a, b), c)) {
+                    *conjaxbpc = simd.c32s_conj_mul_adde(*a, *b, *c);
+                }
+            }
+
+            for (target, actual) in zip(&axb_target, &axb) {
+                assert_approx_eq!(target.re, actual.re);
+                assert_approx_eq!(target.im, actual.im);
+            }
+            for (target, actual) in zip(&conjaxb_target, &conjaxb) {
+                assert_approx_eq!(target.re, actual.re);
+                assert_approx_eq!(target.im, actual.im);
+            }
+            for (target, actual) in zip(&axbpc_target, &axbpc) {
+                assert_approx_eq!(target.re, actual.re);
+                assert_approx_eq!(target.im, actual.im);
+            }
+            for (target, actual) in zip(&conjaxbpc_target, &conjaxbpc) {
+                assert_approx_eq!(target.re, actual.re);
+                assert_approx_eq!(target.im, actual.im);
+            }
+        }
+
+        #[cfg(feature = "nightly")]
+        if let Some(simd) = V4::try_new() {
+            let mut axb = vec![c32::new(0.0, 0.0); n];
+            let mut conjaxb = vec![c32::new(0.0, 0.0); n];
+            let mut axbpc = vec![c32::new(0.0, 0.0); n];
+            let mut conjaxbpc = vec![c32::new(0.0, 0.0); n];
+
+            {
+                let a = V4::c32s_as_simd(&a).0;
+                let b = V4::c32s_as_simd(&b).0;
+                let c = V4::c32s_as_simd(&c).0;
+                let axb = V4::c32s_as_mut_simd(&mut axb).0;
+                let conjaxb = V4::c32s_as_mut_simd(&mut conjaxb).0;
+                let axbpc = V4::c32s_as_mut_simd(&mut axbpc).0;
+                let conjaxbpc = V4::c32s_as_mut_simd(&mut conjaxbpc).0;
+
+                for (axb, (a, b)) in zip(axb, zip(a, b)) {
+                    *axb = simd.c32s_mul(*a, *b);
+                }
+                for (conjaxb, (a, b)) in zip(conjaxb, zip(a, b)) {
+                    *conjaxb = simd.c32s_conj_mul(*a, *b);
+                }
+                for (axbpc, ((a, b), c)) in zip(axbpc, zip(zip(a, b), c)) {
+                    *axbpc = simd.c32s_mul_adde(*a, *b, *c);
+                }
+                for (conjaxbpc, ((a, b), c)) in zip(conjaxbpc, zip(zip(a, b), c)) {
+                    *conjaxbpc = simd.c32s_conj_mul_adde(*a, *b, *c);
+                }
+            }
+
+            for (target, actual) in zip(&axb_target, &axb) {
+                assert_approx_eq!(target.re, actual.re);
+                assert_approx_eq!(target.im, actual.im);
+            }
+            for (target, actual) in zip(&conjaxb_target, &conjaxb) {
+                assert_approx_eq!(target.re, actual.re);
+                assert_approx_eq!(target.im, actual.im);
+            }
+            for (target, actual) in zip(&axbpc_target, &axbpc) {
+                assert_approx_eq!(target.re, actual.re);
+                assert_approx_eq!(target.im, actual.im);
+            }
+            for (target, actual) in zip(&conjaxbpc_target, &conjaxbpc) {
+                assert_approx_eq!(target.re, actual.re);
+                assert_approx_eq!(target.im, actual.im);
+            }
+        }
     }
 
     #[test]
