@@ -1355,8 +1355,8 @@ macro_rules! vps {
     };
 }
 
-// this is copied from the standard library with added flags from V4.
-// if the full flags are not provided, the function doesn't get inlined properly
+/// # Safety
+/// Same preconditions as the one in `std::arch`
 #[cfg(feature = "nightly")]
 #[inline]
 #[target_feature(enable = "sse")]
@@ -1379,6 +1379,8 @@ macro_rules! vps {
 #[target_feature(enable = "avx512dq")]
 #[target_feature(enable = "avx512vl")]
 pub unsafe fn _mm512_maskz_loadu_epi32(k: __mmask16, mem_addr: *const i32) -> __m512i {
+    // this is copied from the standard library with added flags from V4.
+    // if the full flags are not provided, the function doesn't get inlined properly
     let mut dst: __m512i;
     core::arch::asm!(
         vpl!("vmovdqu32 {dst}{{{k}}} {{z}}"),
@@ -1390,7 +1392,8 @@ pub unsafe fn _mm512_maskz_loadu_epi32(k: __mmask16, mem_addr: *const i32) -> __
     dst
 }
 
-// see above comment
+/// # Safety
+/// Same preconditions as the one in `std::arch`
 #[cfg(feature = "nightly")]
 #[inline]
 #[target_feature(enable = "sse")]
