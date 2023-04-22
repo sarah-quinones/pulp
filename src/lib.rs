@@ -483,6 +483,10 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     fn u32s_splat(self, value: u32) -> Self::u32s;
     fn u32s_add(self, a: Self::u32s, b: Self::u32s) -> Self::u32s;
     fn u32s_sub(self, a: Self::u32s, b: Self::u32s) -> Self::u32s;
+    fn u32s_less_than(self, a: Self::u32s, b: Self::u32s) -> Self::m32s;
+    fn u32s_greater_than(self, a: Self::u32s, b: Self::u32s) -> Self::m32s;
+    fn u32s_less_than_or_equal(self, a: Self::u32s, b: Self::u32s) -> Self::m32s;
+    fn u32s_greater_than_or_equal(self, a: Self::u32s, b: Self::u32s) -> Self::m32s;
     fn u32s_wrapping_dyn_shl(self, a: Self::u32s, amount: Self::u32s) -> Self::u32s;
     fn u32s_wrapping_dyn_shr(self, a: Self::u32s, amount: Self::u32s) -> Self::u32s;
     fn u32s_widening_mul(self, a: Self::u32s, b: Self::u32s) -> (Self::u32s, Self::u32s);
@@ -1181,6 +1185,26 @@ impl Simd for Scalar {
         let lo = c as u32;
         let hi = (c >> 32) as u32;
         (lo, hi)
+    }
+
+    #[inline]
+    fn u32s_less_than(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+        a < b
+    }
+
+    #[inline]
+    fn u32s_greater_than(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+        a > b
+    }
+
+    #[inline]
+    fn u32s_less_than_or_equal(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+        a <= b
+    }
+
+    #[inline]
+    fn u32s_greater_than_or_equal(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+        a >= b
     }
 }
 

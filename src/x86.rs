@@ -2433,6 +2433,26 @@ impl Simd for V3 {
     fn u32s_widening_mul(self, a: Self::u32s, b: Self::u32s) -> (Self::u32s, Self::u32s) {
         self.widening_mul_u32x8(a, b)
     }
+
+    #[inline(always)]
+    fn u32s_less_than(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+        self.cmp_lt_u32x8(a, b)
+    }
+
+    #[inline(always)]
+    fn u32s_greater_than(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+        self.cmp_gt_u32x8(a, b)
+    }
+
+    #[inline(always)]
+    fn u32s_less_than_or_equal(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+        self.cmp_le_u32x8(a, b)
+    }
+
+    #[inline(always)]
+    fn u32s_greater_than_or_equal(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+        self.cmp_ge_u32x8(a, b)
+    }
 }
 
 #[cfg(feature = "nightly")]
@@ -3127,6 +3147,26 @@ impl Simd for V4 {
     #[inline(always)]
     fn u32s_widening_mul(self, a: Self::u32s, b: Self::u32s) -> (Self::u32s, Self::u32s) {
         self.widening_mul_u32x16(a, b)
+    }
+
+    #[inline(always)]
+    fn u32s_less_than(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+        self.cmp_lt_u32x16(a, b)
+    }
+
+    #[inline(always)]
+    fn u32s_greater_than(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+        self.cmp_gt_u32x16(a, b)
+    }
+
+    #[inline(always)]
+    fn u32s_less_than_or_equal(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+        self.cmp_le_u32x16(a, b)
+    }
+
+    #[inline(always)]
+    fn u32s_greater_than_or_equal(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+        self.cmp_ge_u32x16(a, b)
     }
 }
 
