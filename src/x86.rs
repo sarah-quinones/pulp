@@ -1914,11 +1914,11 @@ impl Simd for V3 {
         if_false: Self::u32s,
     ) -> Self::u32s {
         unsafe {
-            let mask: __m256d = transmute(mask);
-            let if_true: __m256d = transmute(if_true);
-            let if_false: __m256d = transmute(if_false);
+            let mask: __m256 = transmute(mask);
+            let if_true: __m256 = transmute(if_true);
+            let if_false: __m256 = transmute(if_false);
 
-            transmute(_mm256_blendv_pd(if_false, if_true, mask))
+            transmute(_mm256_blendv_ps(if_false, if_true, mask))
         }
     }
     #[inline]
