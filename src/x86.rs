@@ -1980,20 +1980,20 @@ impl Simd for V3 {
     }
 
     #[inline]
-    fn f64s_mul_adde(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+    fn f64s_mul_add_e(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
         unsafe { transmute(_mm256_fmadd_pd(a.as_vec(), b.as_vec(), c.as_vec())) }
     }
     #[inline]
-    fn f64_scalar_mul_adde(self, a: f64, b: f64, c: f64) -> f64 {
+    fn f64_scalar_mul_add_e(self, a: f64, b: f64, c: f64) -> f64 {
         f64::mul_add(a, b, c)
     }
 
     #[inline]
-    fn f32s_mul_adde(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+    fn f32s_mul_add_e(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
         unsafe { transmute(_mm256_fmadd_ps(a.as_vec(), b.as_vec(), c.as_vec())) }
     }
     #[inline]
-    fn f32_scalar_mul_adde(self, a: f32, b: f32, c: f32) -> f32 {
+    fn f32_scalar_mul_add_e(self, a: f32, b: f32, c: f32) -> f32 {
         f32::mul_add(a, b, c)
     }
 
@@ -2122,13 +2122,13 @@ impl Simd for V3 {
         let b_re = b.re;
         let b_im = b.im;
 
-        let re = self.f32_scalar_mul_adde(a_re, b_re, -a_im * b_im);
-        let im = self.f32_scalar_mul_adde(a_re, b_im, a_im * b_re);
+        let re = self.f32_scalar_mul_add(a_re, b_re, -a_im * b_im);
+        let im = self.f32_scalar_mul_add(a_re, b_im, a_im * b_re);
 
         c32 { re, im }
     }
     #[inline(always)]
-    fn c32_scalar_mul_adde(self, a: c32, b: c32, c: c32) -> c32 {
+    fn c32_scalar_mul_add(self, a: c32, b: c32, c: c32) -> c32 {
         let a_re = a.re;
         let a_im = a.im;
         let b_re = b.re;
@@ -2136,8 +2136,8 @@ impl Simd for V3 {
         let c_re = c.re;
         let c_im = c.im;
 
-        let re = self.f32_scalar_mul_adde(a_re, b_re, self.f32_scalar_mul_adde(-a_im, b_im, c_re));
-        let im = self.f32_scalar_mul_adde(a_re, b_im, self.f32_scalar_mul_adde(a_im, b_re, c_im));
+        let re = self.f32_scalar_mul_add(a_re, b_re, self.f32_scalar_mul_add(-a_im, b_im, c_re));
+        let im = self.f32_scalar_mul_add(a_re, b_im, self.f32_scalar_mul_add(a_im, b_re, c_im));
 
         c32 { re, im }
     }
@@ -2148,13 +2148,13 @@ impl Simd for V3 {
         let b_re = b.re;
         let b_im = b.im;
 
-        let re = self.f32_scalar_mul_adde(a_re, b_re, a_im * b_im);
-        let im = self.f32_scalar_mul_adde(a_re, b_im, -a_im * b_re);
+        let re = self.f32_scalar_mul_add(a_re, b_re, a_im * b_im);
+        let im = self.f32_scalar_mul_add(a_re, b_im, -a_im * b_re);
 
         c32 { re, im }
     }
     #[inline(always)]
-    fn c32_scalar_conj_mul_adde(self, a: c32, b: c32, c: c32) -> c32 {
+    fn c32_scalar_conj_mul_add(self, a: c32, b: c32, c: c32) -> c32 {
         let a_re = a.re;
         let a_im = a.im;
         let b_re = b.re;
@@ -2162,8 +2162,8 @@ impl Simd for V3 {
         let c_re = c.re;
         let c_im = c.im;
 
-        let re = self.f32_scalar_mul_adde(a_re, b_re, self.f32_scalar_mul_adde(a_im, b_im, c_re));
-        let im = self.f32_scalar_mul_adde(a_re, b_im, self.f32_scalar_mul_adde(-a_im, b_re, c_im));
+        let re = self.f32_scalar_mul_add(a_re, b_re, self.f32_scalar_mul_add(a_im, b_im, c_re));
+        let im = self.f32_scalar_mul_add(a_re, b_im, self.f32_scalar_mul_add(-a_im, b_re, c_im));
 
         c32 { re, im }
     }
@@ -2175,13 +2175,13 @@ impl Simd for V3 {
         let b_re = b.re;
         let b_im = b.im;
 
-        let re = self.f64_scalar_mul_adde(a_re, b_re, -a_im * b_im);
-        let im = self.f64_scalar_mul_adde(a_re, b_im, a_im * b_re);
+        let re = self.f64_scalar_mul_add(a_re, b_re, -a_im * b_im);
+        let im = self.f64_scalar_mul_add(a_re, b_im, a_im * b_re);
 
         c64 { re, im }
     }
     #[inline(always)]
-    fn c64_scalar_mul_adde(self, a: c64, b: c64, c: c64) -> c64 {
+    fn c64_scalar_mul_add(self, a: c64, b: c64, c: c64) -> c64 {
         let a_re = a.re;
         let a_im = a.im;
         let b_re = b.re;
@@ -2189,8 +2189,8 @@ impl Simd for V3 {
         let c_re = c.re;
         let c_im = c.im;
 
-        let re = self.f64_scalar_mul_adde(a_re, b_re, self.f64_scalar_mul_adde(-a_im, b_im, c_re));
-        let im = self.f64_scalar_mul_adde(a_re, b_im, self.f64_scalar_mul_adde(a_im, b_re, c_im));
+        let re = self.f64_scalar_mul_add(a_re, b_re, self.f64_scalar_mul_add(-a_im, b_im, c_re));
+        let im = self.f64_scalar_mul_add(a_re, b_im, self.f64_scalar_mul_add(a_im, b_re, c_im));
 
         c64 { re, im }
     }
@@ -2201,13 +2201,13 @@ impl Simd for V3 {
         let b_re = b.re;
         let b_im = b.im;
 
-        let re = self.f64_scalar_mul_adde(a_re, b_re, a_im * b_im);
-        let im = self.f64_scalar_mul_adde(a_re, b_im, -a_im * b_re);
+        let re = self.f64_scalar_mul_add(a_re, b_re, a_im * b_im);
+        let im = self.f64_scalar_mul_add(a_re, b_im, -a_im * b_re);
 
         c64 { re, im }
     }
     #[inline(always)]
-    fn c64_scalar_conj_mul_adde(self, a: c64, b: c64, c: c64) -> c64 {
+    fn c64_scalar_conj_mul_add(self, a: c64, b: c64, c: c64) -> c64 {
         let a_re = a.re;
         let a_im = a.im;
         let b_re = b.re;
@@ -2215,19 +2215,19 @@ impl Simd for V3 {
         let c_re = c.re;
         let c_im = c.im;
 
-        let re = self.f64_scalar_mul_adde(a_re, b_re, self.f64_scalar_mul_adde(a_im, b_im, c_re));
-        let im = self.f64_scalar_mul_adde(a_re, b_im, self.f64_scalar_mul_adde(-a_im, b_re, c_im));
+        let re = self.f64_scalar_mul_add(a_re, b_re, self.f64_scalar_mul_add(a_im, b_im, c_re));
+        let im = self.f64_scalar_mul_add(a_re, b_im, self.f64_scalar_mul_add(-a_im, b_re, c_im));
 
         c64 { re, im }
     }
 
     #[inline(always)]
     fn f32s_mul_add(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
-        self.f32s_mul_adde(a, b, c)
+        self.f32s_mul_add_e(a, b, c)
     }
     #[inline(always)]
     fn f64s_mul_add(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
-        self.f64s_mul_adde(a, b, c)
+        self.f64s_mul_add_e(a, b, c)
     }
 
     #[inline(always)]
@@ -2418,7 +2418,7 @@ impl Simd for V3 {
     }
 
     #[inline(always)]
-    fn c32s_mul_adde(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+    fn c32s_mul_add(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
         unsafe {
             let ab = cast(a);
             let xy = cast(b);
@@ -2436,7 +2436,7 @@ impl Simd for V3 {
     }
 
     #[inline(always)]
-    fn c32s_conj_mul_adde(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+    fn c32s_conj_mul_add(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
         unsafe {
             let ab = cast(a);
             let xy = cast(b);
@@ -2473,7 +2473,7 @@ impl Simd for V3 {
     }
 
     #[inline(always)]
-    fn c64s_mul_adde(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+    fn c64s_mul_add(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
         unsafe {
             let ab = cast(a);
             let xy = cast(b);
@@ -2491,7 +2491,7 @@ impl Simd for V3 {
     }
 
     #[inline(always)]
-    fn c64s_conj_mul_adde(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+    fn c64s_conj_mul_add(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
         unsafe {
             let ab = cast(a);
             let xy = cast(b);
@@ -2719,16 +2719,16 @@ impl Simd for V4 {
     }
 
     #[inline]
-    fn f64s_mul_adde(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+    fn f64s_mul_add_e(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
         unsafe { transmute(_mm512_fmadd_pd(a.as_vec(), b.as_vec(), c.as_vec())) }
     }
     #[inline]
-    fn f32s_mul_adde(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+    fn f32s_mul_add_e(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
         unsafe { transmute(_mm512_fmadd_ps(a.as_vec(), b.as_vec(), c.as_vec())) }
     }
     #[inline]
-    fn f32_scalar_mul_adde(self, a: f32, b: f32, c: f32) -> f32 {
-        (*self).f32_scalar_mul_adde(a, b, c)
+    fn f32_scalar_mul_add_e(self, a: f32, b: f32, c: f32) -> f32 {
+        (*self).f32_scalar_mul_add_e(a, b, c)
     }
 
     #[inline]
@@ -2939,11 +2939,11 @@ impl Simd for V4 {
 
     #[inline(always)]
     fn f32s_mul_add(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
-        self.f32s_mul_adde(a, b, c)
+        self.f32s_mul_add_e(a, b, c)
     }
     #[inline(always)]
     fn f64s_mul_add(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
-        self.f64s_mul_adde(a, b, c)
+        self.f64s_mul_add_e(a, b, c)
     }
 
     #[inline(always)]
@@ -3134,7 +3134,7 @@ impl Simd for V4 {
     }
 
     #[inline(always)]
-    fn c32s_mul_adde(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+    fn c32s_mul_add(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
         unsafe {
             let ab = cast(a);
             let xy = cast(b);
@@ -3152,7 +3152,7 @@ impl Simd for V4 {
     }
 
     #[inline(always)]
-    fn c32s_conj_mul_adde(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+    fn c32s_conj_mul_add(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
         unsafe {
             let ab = cast(a);
             let xy = cast(b);
@@ -3189,7 +3189,7 @@ impl Simd for V4 {
     }
 
     #[inline(always)]
-    fn c64s_mul_adde(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+    fn c64s_mul_add(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
         unsafe {
             let ab = cast(a);
             let xy = cast(b);
@@ -3207,7 +3207,7 @@ impl Simd for V4 {
     }
 
     #[inline(always)]
-    fn c64s_conj_mul_adde(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+    fn c64s_conj_mul_add(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
         unsafe {
             let ab = cast(a);
             let xy = cast(b);
@@ -3295,16 +3295,16 @@ impl Simd for V4 {
         (*self).c32_scalar_mul(a, b)
     }
     #[inline(always)]
-    fn c32_scalar_mul_adde(self, a: c32, b: c32, c: c32) -> c32 {
-        (*self).c32_scalar_mul_adde(a, b, c)
+    fn c32_scalar_mul_add(self, a: c32, b: c32, c: c32) -> c32 {
+        (*self).c32_scalar_mul_add(a, b, c)
     }
     #[inline(always)]
     fn c32_scalar_conj_mul(self, a: c32, b: c32) -> c32 {
         (*self).c32_scalar_conj_mul(a, b)
     }
     #[inline(always)]
-    fn c32_scalar_conj_mul_adde(self, a: c32, b: c32, c: c32) -> c32 {
-        (*self).c32_scalar_conj_mul_adde(a, b, c)
+    fn c32_scalar_conj_mul_add(self, a: c32, b: c32, c: c32) -> c32 {
+        (*self).c32_scalar_conj_mul_add(a, b, c)
     }
 
     #[inline(always)]
@@ -3312,16 +3312,16 @@ impl Simd for V4 {
         (*self).c64_scalar_mul(a, b)
     }
     #[inline(always)]
-    fn c64_scalar_mul_adde(self, a: c64, b: c64, c: c64) -> c64 {
-        (*self).c64_scalar_mul_adde(a, b, c)
+    fn c64_scalar_mul_add(self, a: c64, b: c64, c: c64) -> c64 {
+        (*self).c64_scalar_mul_add(a, b, c)
     }
     #[inline(always)]
     fn c64_scalar_conj_mul(self, a: c64, b: c64) -> c64 {
         (*self).c64_scalar_conj_mul(a, b)
     }
     #[inline(always)]
-    fn c64_scalar_conj_mul_adde(self, a: c64, b: c64, c: c64) -> c64 {
-        (*self).c64_scalar_conj_mul_adde(a, b, c)
+    fn c64_scalar_conj_mul_add(self, a: c64, b: c64, c: c64) -> c64 {
+        (*self).c64_scalar_conj_mul_add(a, b, c)
     }
 }
 
@@ -10070,16 +10070,16 @@ mod tests {
                 let conjaxbpc = V3::c32s_as_mut_simd(&mut conjaxbpc).0;
 
                 for (axb, (a, b)) in zip(axb, zip(a, b)) {
-                    *axb = simd.c32s_mul(*a, *b);
+                    *axb = simd.c32s_mul_e(*a, *b);
                 }
                 for (conjaxb, (a, b)) in zip(conjaxb, zip(a, b)) {
-                    *conjaxb = simd.c32s_conj_mul(*a, *b);
+                    *conjaxb = simd.c32s_conj_mul_e(*a, *b);
                 }
                 for (axbpc, ((a, b), c)) in zip(axbpc, zip(zip(a, b), c)) {
-                    *axbpc = simd.c32s_mul_adde(*a, *b, *c);
+                    *axbpc = simd.c32s_mul_add_e(*a, *b, *c);
                 }
                 for (conjaxbpc, ((a, b), c)) in zip(conjaxbpc, zip(zip(a, b), c)) {
-                    *conjaxbpc = simd.c32s_conj_mul_adde(*a, *b, *c);
+                    *conjaxbpc = simd.c32s_conj_mul_add_e(*a, *b, *c);
                 }
             }
 
@@ -10118,16 +10118,16 @@ mod tests {
                 let conjaxbpc = V4::c32s_as_mut_simd(&mut conjaxbpc).0;
 
                 for (axb, (a, b)) in zip(axb, zip(a, b)) {
-                    *axb = simd.c32s_mul(*a, *b);
+                    *axb = simd.c32s_mul_e(*a, *b);
                 }
                 for (conjaxb, (a, b)) in zip(conjaxb, zip(a, b)) {
-                    *conjaxb = simd.c32s_conj_mul(*a, *b);
+                    *conjaxb = simd.c32s_conj_mul_e(*a, *b);
                 }
                 for (axbpc, ((a, b), c)) in zip(axbpc, zip(zip(a, b), c)) {
-                    *axbpc = simd.c32s_mul_adde(*a, *b, *c);
+                    *axbpc = simd.c32s_mul_add_e(*a, *b, *c);
                 }
                 for (conjaxbpc, ((a, b), c)) in zip(conjaxbpc, zip(zip(a, b), c)) {
-                    *conjaxbpc = simd.c32s_conj_mul_adde(*a, *b, *c);
+                    *conjaxbpc = simd.c32s_conj_mul_add_e(*a, *b, *c);
                 }
             }
 

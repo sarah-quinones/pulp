@@ -543,14 +543,18 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     fn f32s_mul(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
     fn f32s_div(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
     #[inline]
-    fn f32s_mul_adde(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+    fn f32s_mul_add_e(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
         self.f32s_add(self.f32s_mul(a, b), c)
     }
     #[inline]
-    fn f32_scalar_mul_adde(self, a: f32, b: f32, c: f32) -> f32 {
+    fn f32_scalar_mul_add_e(self, a: f32, b: f32, c: f32) -> f32 {
         a * b + c
     }
     fn f32s_mul_add(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s;
+    #[inline]
+    fn f32_scalar_mul_add(self, a: f32, b: f32, c: f32) -> f32 {
+        f32::mul_add(a, b, c)
+    }
     fn f32s_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s;
     fn f32s_less_than(self, a: Self::f32s, b: Self::f32s) -> Self::m32s;
     fn f32s_less_than_or_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s;
@@ -575,25 +579,96 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     fn c32s_add(self, a: Self::c32s, b: Self::c32s) -> Self::c32s;
     fn c32s_sub(self, a: Self::c32s, b: Self::c32s) -> Self::c32s;
     /// Computes `a * b`
-    fn c32s_mul(self, a: Self::c32s, b: Self::c32s) -> Self::c32s;
-    fn c32_scalar_mul(self, a: c32, b: c32) -> c32 {
+    #[inline]
+    fn c32s_mul_e(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+        self.c32s_mul(a, b)
+    }
+    #[inline]
+    fn c32_scalar_mul_e(self, a: c32, b: c32) -> c32 {
         a * b
     }
+    fn c32s_mul(self, a: Self::c32s, b: Self::c32s) -> Self::c32s;
+    #[inline]
+    fn c32_scalar_mul(self, a: c32, b: c32) -> c32 {
+        let a_re = a.re;
+        let a_im = a.im;
+        let b_re = b.re;
+        let b_im = b.im;
+
+        let re = self.f32_scalar_mul_add(a_re, b_re, -a_im * b_im);
+        let im = self.f32_scalar_mul_add(a_re, b_im, a_im * b_re);
+
+        c32 { re, im }
+    }
     /// Computes `conj(a) * b`
-    fn c32s_conj_mul(self, a: Self::c32s, b: Self::c32s) -> Self::c32s;
-    fn c32_scalar_conj_mul(self, a: c32, b: c32) -> c32 {
+    #[inline]
+    fn c32s_conj_mul_e(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+        self.c32s_conj_mul(a, b)
+    }
+    #[inline]
+    fn c32_scalar_conj_mul_e(self, a: c32, b: c32) -> c32 {
         a.conj() * b
     }
+    fn c32s_conj_mul(self, a: Self::c32s, b: Self::c32s) -> Self::c32s;
+    #[inline]
+    fn c32_scalar_conj_mul(self, a: c32, b: c32) -> c32 {
+        let a_re = a.re;
+        let a_im = a.im;
+        let b_re = b.re;
+        let b_im = b.im;
+
+        let re = self.f32_scalar_mul_add(a_re, b_re, a_im * b_im);
+        let im = self.f32_scalar_mul_add(a_re, b_im, -a_im * b_re);
+
+        c32 { re, im }
+    }
+
     /// Computes `a * b + c`
-    fn c32s_mul_adde(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s;
-    fn c32_scalar_mul_adde(self, a: c32, b: c32, c: c32) -> c32 {
+    #[inline]
+    fn c32s_mul_add_e(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+        self.c32s_mul_add(a, b, c)
+    }
+    #[inline]
+    fn c32_scalar_mul_add_e(self, a: c32, b: c32, c: c32) -> c32 {
         a * b + c
     }
+    fn c32s_mul_add(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s;
+    #[inline]
+    fn c32_scalar_mul_add(self, a: c32, b: c32, c: c32) -> c32 {
+        let a_re = a.re;
+        let a_im = a.im;
+        let b_re = b.re;
+        let b_im = b.im;
+
+        let re = self.f32_scalar_mul_add(a_re, b_re, self.f32_scalar_mul_add(-a_im, b_im, c.re));
+        let im = self.f32_scalar_mul_add(a_re, b_im, self.f32_scalar_mul_add(a_im, b_re, c.im));
+
+        c32 { re, im }
+    }
+
     /// Computes `conj(a) * b + c`
-    fn c32s_conj_mul_adde(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s;
-    fn c32_scalar_conj_mul_adde(self, a: c32, b: c32, c: c32) -> c32 {
+    #[inline]
+    fn c32s_conj_mul_add_e(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+        self.c32s_conj_mul_add(a, b, c)
+    }
+    #[inline]
+    fn c32_scalar_conj_mul_add_e(self, a: c32, b: c32, c: c32) -> c32 {
         a.conj() * b + c
     }
+    fn c32s_conj_mul_add(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s;
+    #[inline]
+    fn c32_scalar_conj_mul_add(self, a: c32, b: c32, c: c32) -> c32 {
+        let a_re = a.re;
+        let a_im = a.im;
+        let b_re = b.re;
+        let b_im = b.im;
+
+        let re = self.f32_scalar_mul_add(a_re, b_re, self.f32_scalar_mul_add(a_im, b_im, c.re));
+        let im = self.f32_scalar_mul_add(a_re, b_im, self.f32_scalar_mul_add(-a_im, b_re, c.im));
+
+        c32 { re, im }
+    }
+
     /// Contains the square of the norm in both the real and imaginary components.
     fn c32s_abs2(self, a: Self::c32s) -> Self::c32s;
     fn c32s_reduce_sum(self, a: Self::c32s) -> c32;
@@ -612,14 +687,18 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     fn f64s_mul(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
     fn f64s_div(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
     #[inline]
-    fn f64s_mul_adde(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+    fn f64s_mul_add_e(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
         self.f64s_add(self.f64s_mul(a, b), c)
     }
     #[inline]
-    fn f64_scalar_mul_adde(self, a: f64, b: f64, c: f64) -> f64 {
+    fn f64_scalar_mul_add_e(self, a: f64, b: f64, c: f64) -> f64 {
         a * b + c
     }
     fn f64s_mul_add(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s;
+    #[inline]
+    fn f64_scalar_mul_add(self, a: f64, b: f64, c: f64) -> f64 {
+        f64::mul_add(a, b, c)
+    }
     fn f64s_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s;
     fn f64s_less_than(self, a: Self::f64s, b: Self::f64s) -> Self::m64s;
     fn f64s_less_than_or_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s;
@@ -644,25 +723,95 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     fn c64s_add(self, a: Self::c64s, b: Self::c64s) -> Self::c64s;
     fn c64s_sub(self, a: Self::c64s, b: Self::c64s) -> Self::c64s;
     /// Computes `a * b`
-    fn c64s_mul(self, a: Self::c64s, b: Self::c64s) -> Self::c64s;
-    fn c64_scalar_mul(self, a: c64, b: c64) -> c64 {
+    fn c64s_mul_e(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+        self.c64s_mul(a, b)
+    }
+    #[inline]
+    fn c64_scalar_mul_e(self, a: c64, b: c64) -> c64 {
         a * b
     }
+    fn c64s_mul(self, a: Self::c64s, b: Self::c64s) -> Self::c64s;
+    #[inline]
+    fn c64_scalar_mul(self, a: c64, b: c64) -> c64 {
+        let a_re = a.re;
+        let a_im = a.im;
+        let b_re = b.re;
+        let b_im = b.im;
+
+        let re = self.f64_scalar_mul_add(a_re, b_re, -a_im * b_im);
+        let im = self.f64_scalar_mul_add(a_re, b_im, a_im * b_re);
+
+        c64 { re, im }
+    }
     /// Computes `conj(a) * b`
-    fn c64s_conj_mul(self, a: Self::c64s, b: Self::c64s) -> Self::c64s;
-    fn c64_scalar_conj_mul(self, a: c64, b: c64) -> c64 {
+    #[inline]
+    fn c64s_conj_mul_e(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+        self.c64s_conj_mul(a, b)
+    }
+    #[inline]
+    fn c64_scalar_conj_mul_e(self, a: c64, b: c64) -> c64 {
         a.conj() * b
     }
+    fn c64s_conj_mul(self, a: Self::c64s, b: Self::c64s) -> Self::c64s;
+    #[inline]
+    fn c64_scalar_conj_mul(self, a: c64, b: c64) -> c64 {
+        let a_re = a.re;
+        let a_im = a.im;
+        let b_re = b.re;
+        let b_im = b.im;
+
+        let re = self.f64_scalar_mul_add(a_re, b_re, a_im * b_im);
+        let im = self.f64_scalar_mul_add(a_re, b_im, -a_im * b_re);
+
+        c64 { re, im }
+    }
+
     /// Computes `a * b + c`
-    fn c64s_mul_adde(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s;
-    fn c64_scalar_mul_adde(self, a: c64, b: c64, c: c64) -> c64 {
+    #[inline]
+    fn c64s_mul_add_e(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+        self.c64s_mul_add(a, b, c)
+    }
+    #[inline]
+    fn c64_scalar_mul_add_e(self, a: c64, b: c64, c: c64) -> c64 {
         a * b + c
     }
+    fn c64s_mul_add(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s;
+    #[inline]
+    fn c64_scalar_mul_add(self, a: c64, b: c64, c: c64) -> c64 {
+        let a_re = a.re;
+        let a_im = a.im;
+        let b_re = b.re;
+        let b_im = b.im;
+
+        let re = self.f64_scalar_mul_add(a_re, b_re, self.f64_scalar_mul_add(-a_im, b_im, c.re));
+        let im = self.f64_scalar_mul_add(a_re, b_im, self.f64_scalar_mul_add(a_im, b_re, c.im));
+
+        c64 { re, im }
+    }
+
     /// Computes `conj(a) * b + c`
-    fn c64s_conj_mul_adde(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s;
-    fn c64_scalar_conj_mul_adde(self, a: c64, b: c64, c: c64) -> c64 {
+    #[inline]
+    fn c64s_conj_mul_add_e(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+        self.c64s_conj_mul_add(a, b, c)
+    }
+    #[inline]
+    fn c64_scalar_conj_mul_add_e(self, a: c64, b: c64, c: c64) -> c64 {
         a.conj() * b + c
     }
+    fn c64s_conj_mul_add(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s;
+    #[inline]
+    fn c64_scalar_conj_mul_add(self, a: c64, b: c64, c: c64) -> c64 {
+        let a_re = a.re;
+        let a_im = a.im;
+        let b_re = b.re;
+        let b_im = b.im;
+
+        let re = self.f64_scalar_mul_add(a_re, b_re, self.f64_scalar_mul_add(a_im, b_im, c.re));
+        let im = self.f64_scalar_mul_add(a_re, b_im, self.f64_scalar_mul_add(-a_im, b_re, c.im));
+
+        c64 { re, im }
+    }
+
     /// Contains the square of the norm in both the real and imaginary components.
     fn c64s_abs2(self, a: Self::c64s) -> Self::c64s;
     fn c64s_reduce_sum(self, a: Self::c64s) -> c64;
@@ -817,7 +966,7 @@ impl Simd for Scalar {
         a - b
     }
     #[inline]
-    fn c32s_mul(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+    fn c32s_mul_e(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
         a * b
     }
 
@@ -834,7 +983,7 @@ impl Simd for Scalar {
         a - b
     }
     #[inline]
-    fn c64s_mul(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+    fn c64s_mul_e(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
         a * b
     }
 
@@ -1143,32 +1292,32 @@ impl Simd for Scalar {
     }
 
     #[inline]
-    fn c32s_conj_mul(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+    fn c32s_conj_mul_e(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
         a.conj() * b
     }
 
     #[inline]
-    fn c32s_mul_adde(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+    fn c32s_mul_add_e(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
         a * b + c
     }
 
     #[inline]
-    fn c32s_conj_mul_adde(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+    fn c32s_conj_mul_add_e(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
         a.conj() * b + c
     }
 
     #[inline]
-    fn c64s_conj_mul(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+    fn c64s_conj_mul_e(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
         a.conj() * b
     }
 
     #[inline]
-    fn c64s_mul_adde(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+    fn c64s_mul_add_e(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
         a * b + c
     }
 
     #[inline]
-    fn c64s_conj_mul_adde(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+    fn c64s_conj_mul_add_e(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
         a.conj() * b + c
     }
 
@@ -1237,6 +1386,46 @@ impl Simd for Scalar {
     #[inline]
     fn u32s_greater_than_or_equal(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
         a >= b
+    }
+
+    #[inline]
+    fn c32s_mul(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+        self.c32_scalar_mul(a, b)
+    }
+
+    #[inline]
+    fn c32s_conj_mul(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+        self.c32_scalar_conj_mul(a, b)
+    }
+
+    #[inline]
+    fn c32s_mul_add(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+        self.c32_scalar_mul_add(a, b, c)
+    }
+
+    #[inline]
+    fn c32s_conj_mul_add(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+        self.c32_scalar_conj_mul_add(a, b, c)
+    }
+
+    #[inline]
+    fn c64s_mul(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+        self.c64_scalar_mul(a, b)
+    }
+
+    #[inline]
+    fn c64s_conj_mul(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+        self.c64_scalar_conj_mul(a, b)
+    }
+
+    #[inline]
+    fn c64s_mul_add(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+        self.c64_scalar_mul_add(a, b, c)
+    }
+
+    #[inline]
+    fn c64s_conj_mul_add(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+        self.c64_scalar_conj_mul_add(a, b, c)
     }
 }
 
