@@ -1985,7 +1985,13 @@ impl Simd for V3 {
     }
     #[inline]
     fn f64_scalar_mul_add_e(self, a: f64, b: f64, c: f64) -> f64 {
-        f64::mul_add(a, b, c)
+        unsafe {
+            crate::cast_lossy(_mm_fmadd_sd(
+                _mm_load_sd(&a),
+                _mm_load_sd(&b),
+                _mm_load_sd(&c),
+            ))
+        }
     }
 
     #[inline]
@@ -1994,7 +2000,13 @@ impl Simd for V3 {
     }
     #[inline]
     fn f32_scalar_mul_add_e(self, a: f32, b: f32, c: f32) -> f32 {
-        f32::mul_add(a, b, c)
+        unsafe {
+            crate::cast_lossy(_mm_fmadd_ss(
+                _mm_load_ss(&a),
+                _mm_load_ss(&b),
+                _mm_load_ss(&c),
+            ))
+        }
     }
 
     #[inline]

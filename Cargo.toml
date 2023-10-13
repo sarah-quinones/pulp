@@ -12,6 +12,7 @@ keywords = ["simd"]
 [dependencies]
 bytemuck = "1"
 num-complex = { version = "0.4.3", default-features = false, features = ["bytemuck"] }
+libm = { version = "0.2", default-features = false }
 
 [features]
 default = ["std"]
