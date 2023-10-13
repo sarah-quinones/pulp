@@ -9926,11 +9926,16 @@ impl V4 {
 /// x86 arch
 #[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
-pub enum ArchInner {
+#[repr(u8)]
+pub(crate) enum ArchInner {
+    Scalar(crate::Scalar) = 0,
+    V3(V3) = 1,
     #[cfg(feature = "nightly")]
-    V4(V4),
-    V3(V3),
-    Scalar(crate::Scalar),
+    V4(V4) = 2,
+
+    // improves codegen for some reason
+    #[allow(dead_code)]
+    Dummy = u8::MAX - 1,
 }
 
 impl ArchInner {
@@ -9955,6 +9960,7 @@ impl ArchInner {
             ArchInner::V4(simd) => Simd::vectorize(simd, op),
             ArchInner::V3(simd) => Simd::vectorize(simd, op),
             ArchInner::Scalar(simd) => Simd::vectorize(simd, op),
+            ArchInner::Dummy => unsafe { core::hint::unreachable_unchecked() },
         }
     }
 }

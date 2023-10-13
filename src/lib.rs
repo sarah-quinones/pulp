@@ -1484,7 +1484,9 @@ unsafe fn split_mut_slice<T, U>(slice: &mut [T]) -> (&mut [U], &mut [T]) {
 #[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
 enum ArchInner {
-    Scalar(crate::Scalar),
+    Scalar(crate::Scalar) = 0,
+    // improves codegen for some reason
+    Dummy = u8::MAX - 1,
 }
 
 #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
@@ -1498,6 +1500,7 @@ impl ArchInner {
     pub fn dispatch<Op: WithSimd>(self, op: Op) -> Op::Output {
         match self {
             ArchInner::Scalar(simd) => simd.vectorize(op),
+            ArchInner::Dummy => unsafe { core::hint::unreachable_unchecked() },
         }
     }
 }
@@ -1506,11 +1509,33 @@ impl ArchInner {
 use x86::ArchInner;
 
 impl Arch {
-    #[inline]
+    #[inline(always)]
+    fn __static_available() -> &'static ::core::sync::atomic::AtomicU8 {
+        static AVAILABLE: ::core::sync::atomic::AtomicU8 =
+            ::core::sync::atomic::AtomicU8::new(u8::MAX);
+        &AVAILABLE
+    }
+
+    #[inline(never)]
+    fn __detect_is_available() -> u8 {
+        let out = unsafe {
+            core::mem::transmute(Self {
+                inner: ArchInner::new(),
+            })
+        };
+        Self::__static_available().store(out as u8, ::core::sync::atomic::Ordering::Relaxed);
+        out
+    }
+
+    #[inline(always)]
     pub fn new() -> Self {
-        Self {
-            inner: ArchInner::new(),
+        let mut available =
+            Self::__static_available().load(::core::sync::atomic::Ordering::Relaxed);
+        if available == u8::MAX {
+            available = Self::__detect_is_available();
         }
+
+        unsafe { core::mem::transmute(available) }
     }
     #[inline(always)]
     pub fn dispatch<Op: WithSimd>(self, op: Op) -> Op::Output {

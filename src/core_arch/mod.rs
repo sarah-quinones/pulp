@@ -180,11 +180,29 @@ macro_rules! simd_type {
                     }
                 }
 
+                #[inline(always)]
+                fn __static_available() -> &'static ::core::sync::atomic::AtomicU8 {
+                    static AVAILABLE: ::core::sync::atomic::AtomicU8 = ::core::sync::atomic::AtomicU8::new(u8::MAX);
+                    &AVAILABLE
+                }
+
                 /// Returns `true` if the required CPU features for this type are available,
                 /// otherwise returns `false`.
                 #[inline]
                 pub fn is_available() -> bool {
-                    true $(&& <$crate::__impl_type!($feature)>::is_available())*
+                    let mut available = Self::__static_available().load(::core::sync::atomic::Ordering::Relaxed);
+                    if available == u8::MAX {
+                        available = Self::__detect_is_available() as u8;
+                    }
+
+                    available != 0
+                }
+
+                #[inline(never)]
+                fn __detect_is_available() -> bool {
+                    let out = true $(&& <$crate::__impl_type!($feature)>::is_available())*;
+                    Self::__static_available().store(out as u8, ::core::sync::atomic::Ordering::Relaxed);
+                    out
                 }
 
                 /// Vectorizes the given function as if the CPU features for this type were applied
@@ -263,11 +281,29 @@ macro_rules! internal_simd_type {
                     }
                 }
 
+                #[inline(always)]
+                fn __static_available() -> &'static ::core::sync::atomic::AtomicU8 {
+                    static AVAILABLE: ::core::sync::atomic::AtomicU8 = ::core::sync::atomic::AtomicU8::new(u8::MAX);
+                    &AVAILABLE
+                }
+
                 /// Returns `true` if the required CPU features for this type are available,
                 /// otherwise returns `false`.
                 #[inline]
                 pub fn is_available() -> bool {
-                    true $(&& <__impl_type!($feature)>::is_available())*
+                    let mut available = Self::__static_available().load(::core::sync::atomic::Ordering::Relaxed);
+                    if available == u8::MAX {
+                        available = Self::__detect_is_available() as u8;
+                    }
+
+                    available != 0
+                }
+
+                #[inline(never)]
+                fn __detect_is_available() -> bool {
+                    let out = true $(&& <__impl_type!($feature)>::is_available())*;
+                    Self::__static_available().store(out as u8, ::core::sync::atomic::Ordering::Relaxed);
+                    out
                 }
 
                 /// Vectorizes the given function as if the CPU features for this type were applied
