@@ -9928,10 +9928,11 @@ impl V4 {
 #[non_exhaustive]
 #[repr(u8)]
 pub(crate) enum ArchInner {
-    Scalar(crate::Scalar) = 0,
-    V3(V3) = 1,
+    // msrv(1.66) discriminants on non-unit variants
+    Scalar = 0,
+    V3 = 1,
     #[cfg(feature = "nightly")]
-    V4(V4) = 2,
+    V4 = 2,
 
     // improves codegen for some reason
     #[allow(dead_code)]
@@ -9943,13 +9944,13 @@ impl ArchInner {
     #[inline]
     pub fn new() -> Self {
         #[cfg(feature = "nightly")]
-        if let Some(simd) = V4::try_new() {
-            return Self::V4(simd);
+        if V4::try_new().is_some() {
+            return Self::V4;
         }
-        if let Some(simd) = V3::try_new() {
-            return Self::V3(simd);
+        if V3::try_new().is_some() {
+            return Self::V3;
         }
-        Self::Scalar(crate::Scalar::new())
+        Self::Scalar
     }
 
     /// Detects the best available instruction set.
@@ -9957,9 +9958,9 @@ impl ArchInner {
     pub fn dispatch<Op: WithSimd>(self, op: Op) -> Op::Output {
         match self {
             #[cfg(feature = "nightly")]
-            ArchInner::V4(simd) => Simd::vectorize(simd, op),
-            ArchInner::V3(simd) => Simd::vectorize(simd, op),
-            ArchInner::Scalar(simd) => Simd::vectorize(simd, op),
+            ArchInner::V4 => Simd::vectorize(unsafe { V4::new_unchecked() }, op),
+            ArchInner::V3 => Simd::vectorize(unsafe { V3::new_unchecked() }, op),
+            ArchInner::Scalar => Simd::vectorize(Scalar::new(), op),
             ArchInner::Dummy => unsafe { core::hint::unreachable_unchecked() },
         }
     }

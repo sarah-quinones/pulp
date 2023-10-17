@@ -1485,7 +1485,7 @@ unsafe fn split_mut_slice<T, U>(slice: &mut [T]) -> (&mut [U], &mut [T]) {
 #[non_exhaustive]
 #[repr(u8)]
 enum ArchInner {
-    Scalar(crate::Scalar) = 0,
+    Scalar = 0,
     // improves codegen for some reason
     Dummy = u8::MAX - 1,
 }
@@ -1494,13 +1494,13 @@ enum ArchInner {
 impl ArchInner {
     #[inline]
     pub fn new() -> Self {
-        Self::Scalar(crate::Scalar::new())
+        Self::Scalar
     }
 
     #[inline(always)]
     pub fn dispatch<Op: WithSimd>(self, op: Op) -> Op::Output {
         match self {
-            ArchInner::Scalar(simd) => simd.vectorize(op),
+            ArchInner::Scalar => crate::Scalar::new().vectorize(op),
             ArchInner::Dummy => unsafe { core::hint::unreachable_unchecked() },
         }
     }
