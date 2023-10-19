@@ -11,8 +11,8 @@ mod nightly {
         clippy::type_complexity
     )]
 
-    use pulp::x86::{b8, u64x8, V4};
-    use pulp::{cast, NullaryFnOnce};
+    use pulp::x86::V4;
+    use pulp::{b8, cast, u64x8, NullaryFnOnce};
     const NETWORK_64BIT_1: u64x8 = u64x8(3, 2, 1, 0, 7, 6, 5, 4);
     const NETWORK_64BIT_2: u64x8 = u64x8(7, 6, 5, 4, 3, 2, 1, 0);
     const NETWORK_64BIT_3: u64x8 = u64x8(2, 3, 0, 1, 6, 7, 4, 5);

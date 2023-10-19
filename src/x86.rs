@@ -7,1319 +7,6 @@ use core::arch::x86::*;
 #[cfg(target_arch = "x86_64")]
 use core::arch::x86_64::*;
 
-/// Mask type with 8 bits. Its bit representation is normally either all ones or all zeros. But
-/// this may not be relied on in unsafe code since the type may be converted from any suitably
-/// sized POD type using [`cast`].
-#[derive(Copy, Clone, PartialEq, Eq)]
-#[repr(transparent)]
-pub struct m8(u8);
-/// Mask type with 16 bits. Its bit representation is normally either all ones or all zeros. But
-/// this may not be relied on in unsafe code since the type may be converted from any suitably
-/// sized POD type using [`cast`].
-#[derive(Copy, Clone, PartialEq, Eq)]
-#[repr(transparent)]
-pub struct m16(u16);
-/// Mask type with 32 bits. Its bit representation is normally either all ones or all zeros. But
-/// this may not be relied on in unsafe code since the type may be converted from any suitably
-/// sized POD type using [`cast`].
-#[derive(Copy, Clone, PartialEq, Eq)]
-#[repr(transparent)]
-pub struct m32(u32);
-/// Mask type with 64 bits. Its bit representation is normally either all ones or all zeros. But
-/// this may not be relied on in unsafe code since the type may be converted from any suitably
-/// sized POD type using [`cast`].
-#[derive(Copy, Clone, PartialEq, Eq)]
-#[repr(transparent)]
-pub struct m64(u64);
-
-/// Bitmask type for 8 elements, used for mask operations on AVX512.
-#[derive(Copy, Clone, PartialEq, Eq)]
-#[repr(transparent)]
-pub struct b8(pub u8);
-/// Bitmask type for 16 elements, used for mask operations on AVX512.
-#[derive(Copy, Clone, PartialEq, Eq)]
-#[repr(transparent)]
-pub struct b16(pub u16);
-/// Bitmask type for 32 elements, used for mask operations on AVX512.
-#[derive(Copy, Clone, PartialEq, Eq)]
-#[repr(transparent)]
-pub struct b32(pub u32);
-/// Bitmask type for 64 elements, used for mask operations on AVX512.
-#[derive(Copy, Clone, PartialEq, Eq)]
-#[repr(transparent)]
-pub struct b64(pub u64);
-
-impl core::ops::Not for b8 {
-    type Output = b8;
-    #[inline(always)]
-    fn not(self) -> Self::Output {
-        b8(!self.0)
-    }
-}
-impl core::ops::BitAnd for b8 {
-    type Output = b8;
-    #[inline(always)]
-    fn bitand(self, rhs: Self) -> Self::Output {
-        b8(self.0 & rhs.0)
-    }
-}
-impl core::ops::BitOr for b8 {
-    type Output = b8;
-    #[inline(always)]
-    fn bitor(self, rhs: Self) -> Self::Output {
-        b8(self.0 | rhs.0)
-    }
-}
-impl core::ops::BitXor for b8 {
-    type Output = b8;
-    #[inline(always)]
-    fn bitxor(self, rhs: Self) -> Self::Output {
-        b8(self.0 ^ rhs.0)
-    }
-}
-
-impl core::ops::Not for b16 {
-    type Output = b16;
-    #[inline(always)]
-    fn not(self) -> Self::Output {
-        b16(!self.0)
-    }
-}
-impl core::ops::BitAnd for b16 {
-    type Output = b16;
-    #[inline(always)]
-    fn bitand(self, rhs: Self) -> Self::Output {
-        b16(self.0 & rhs.0)
-    }
-}
-impl core::ops::BitOr for b16 {
-    type Output = b16;
-    #[inline(always)]
-    fn bitor(self, rhs: Self) -> Self::Output {
-        b16(self.0 | rhs.0)
-    }
-}
-impl core::ops::BitXor for b16 {
-    type Output = b16;
-    #[inline(always)]
-    fn bitxor(self, rhs: Self) -> Self::Output {
-        b16(self.0 ^ rhs.0)
-    }
-}
-
-impl core::ops::Not for b32 {
-    type Output = b32;
-    #[inline(always)]
-    fn not(self) -> Self::Output {
-        b32(!self.0)
-    }
-}
-impl core::ops::BitAnd for b32 {
-    type Output = b32;
-    #[inline(always)]
-    fn bitand(self, rhs: Self) -> Self::Output {
-        b32(self.0 & rhs.0)
-    }
-}
-impl core::ops::BitOr for b32 {
-    type Output = b32;
-    #[inline(always)]
-    fn bitor(self, rhs: Self) -> Self::Output {
-        b32(self.0 | rhs.0)
-    }
-}
-impl core::ops::BitXor for b32 {
-    type Output = b32;
-    #[inline(always)]
-    fn bitxor(self, rhs: Self) -> Self::Output {
-        b32(self.0 ^ rhs.0)
-    }
-}
-
-impl core::ops::Not for b64 {
-    type Output = b64;
-    #[inline(always)]
-    fn not(self) -> Self::Output {
-        b64(!self.0)
-    }
-}
-impl core::ops::BitAnd for b64 {
-    type Output = b64;
-    #[inline(always)]
-    fn bitand(self, rhs: Self) -> Self::Output {
-        b64(self.0 & rhs.0)
-    }
-}
-impl core::ops::BitOr for b64 {
-    type Output = b64;
-    #[inline(always)]
-    fn bitor(self, rhs: Self) -> Self::Output {
-        b64(self.0 | rhs.0)
-    }
-}
-impl core::ops::BitXor for b64 {
-    type Output = b64;
-    #[inline(always)]
-    fn bitxor(self, rhs: Self) -> Self::Output {
-        b64(self.0 ^ rhs.0)
-    }
-}
-
-impl Debug for b8 {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-        #[derive(Copy, Clone, Debug)]
-        struct b8(bool, bool, bool, bool, bool, bool, bool, bool);
-        b8(
-            ((self.0 >> 0) & 1) == 1,
-            ((self.0 >> 1) & 1) == 1,
-            ((self.0 >> 2) & 1) == 1,
-            ((self.0 >> 3) & 1) == 1,
-            ((self.0 >> 4) & 1) == 1,
-            ((self.0 >> 5) & 1) == 1,
-            ((self.0 >> 6) & 1) == 1,
-            ((self.0 >> 7) & 1) == 1,
-        )
-        .fmt(f)
-    }
-}
-impl Debug for b16 {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-        #[derive(Copy, Clone, Debug)]
-        struct b16(
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-        );
-        b16(
-            ((self.0 >> 00) & 1) == 1,
-            ((self.0 >> 01) & 1) == 1,
-            ((self.0 >> 02) & 1) == 1,
-            ((self.0 >> 03) & 1) == 1,
-            ((self.0 >> 04) & 1) == 1,
-            ((self.0 >> 05) & 1) == 1,
-            ((self.0 >> 06) & 1) == 1,
-            ((self.0 >> 07) & 1) == 1,
-            ((self.0 >> 08) & 1) == 1,
-            ((self.0 >> 09) & 1) == 1,
-            ((self.0 >> 10) & 1) == 1,
-            ((self.0 >> 11) & 1) == 1,
-            ((self.0 >> 12) & 1) == 1,
-            ((self.0 >> 13) & 1) == 1,
-            ((self.0 >> 14) & 1) == 1,
-            ((self.0 >> 15) & 1) == 1,
-        )
-        .fmt(f)
-    }
-}
-impl Debug for b32 {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-        #[derive(Copy, Clone, Debug)]
-        struct b32(
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-        );
-        b32(
-            ((self.0 >> 00) & 1) == 1,
-            ((self.0 >> 01) & 1) == 1,
-            ((self.0 >> 02) & 1) == 1,
-            ((self.0 >> 03) & 1) == 1,
-            ((self.0 >> 04) & 1) == 1,
-            ((self.0 >> 05) & 1) == 1,
-            ((self.0 >> 06) & 1) == 1,
-            ((self.0 >> 07) & 1) == 1,
-            ((self.0 >> 08) & 1) == 1,
-            ((self.0 >> 09) & 1) == 1,
-            ((self.0 >> 10) & 1) == 1,
-            ((self.0 >> 11) & 1) == 1,
-            ((self.0 >> 12) & 1) == 1,
-            ((self.0 >> 13) & 1) == 1,
-            ((self.0 >> 14) & 1) == 1,
-            ((self.0 >> 15) & 1) == 1,
-            ((self.0 >> 16) & 1) == 1,
-            ((self.0 >> 17) & 1) == 1,
-            ((self.0 >> 18) & 1) == 1,
-            ((self.0 >> 19) & 1) == 1,
-            ((self.0 >> 20) & 1) == 1,
-            ((self.0 >> 21) & 1) == 1,
-            ((self.0 >> 22) & 1) == 1,
-            ((self.0 >> 23) & 1) == 1,
-            ((self.0 >> 24) & 1) == 1,
-            ((self.0 >> 25) & 1) == 1,
-            ((self.0 >> 26) & 1) == 1,
-            ((self.0 >> 27) & 1) == 1,
-            ((self.0 >> 28) & 1) == 1,
-            ((self.0 >> 29) & 1) == 1,
-            ((self.0 >> 30) & 1) == 1,
-            ((self.0 >> 31) & 1) == 1,
-        )
-        .fmt(f)
-    }
-}
-impl Debug for b64 {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-        #[derive(Copy, Clone, Debug)]
-        struct b64(
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-            bool,
-        );
-        b64(
-            ((self.0 >> 00) & 1) == 1,
-            ((self.0 >> 01) & 1) == 1,
-            ((self.0 >> 02) & 1) == 1,
-            ((self.0 >> 03) & 1) == 1,
-            ((self.0 >> 04) & 1) == 1,
-            ((self.0 >> 05) & 1) == 1,
-            ((self.0 >> 06) & 1) == 1,
-            ((self.0 >> 07) & 1) == 1,
-            ((self.0 >> 08) & 1) == 1,
-            ((self.0 >> 09) & 1) == 1,
-            ((self.0 >> 10) & 1) == 1,
-            ((self.0 >> 11) & 1) == 1,
-            ((self.0 >> 12) & 1) == 1,
-            ((self.0 >> 13) & 1) == 1,
-            ((self.0 >> 14) & 1) == 1,
-            ((self.0 >> 15) & 1) == 1,
-            ((self.0 >> 16) & 1) == 1,
-            ((self.0 >> 17) & 1) == 1,
-            ((self.0 >> 18) & 1) == 1,
-            ((self.0 >> 19) & 1) == 1,
-            ((self.0 >> 20) & 1) == 1,
-            ((self.0 >> 21) & 1) == 1,
-            ((self.0 >> 22) & 1) == 1,
-            ((self.0 >> 23) & 1) == 1,
-            ((self.0 >> 24) & 1) == 1,
-            ((self.0 >> 25) & 1) == 1,
-            ((self.0 >> 26) & 1) == 1,
-            ((self.0 >> 27) & 1) == 1,
-            ((self.0 >> 28) & 1) == 1,
-            ((self.0 >> 29) & 1) == 1,
-            ((self.0 >> 30) & 1) == 1,
-            ((self.0 >> 31) & 1) == 1,
-            ((self.0 >> 32) & 1) == 1,
-            ((self.0 >> 33) & 1) == 1,
-            ((self.0 >> 34) & 1) == 1,
-            ((self.0 >> 35) & 1) == 1,
-            ((self.0 >> 36) & 1) == 1,
-            ((self.0 >> 37) & 1) == 1,
-            ((self.0 >> 38) & 1) == 1,
-            ((self.0 >> 39) & 1) == 1,
-            ((self.0 >> 40) & 1) == 1,
-            ((self.0 >> 41) & 1) == 1,
-            ((self.0 >> 42) & 1) == 1,
-            ((self.0 >> 43) & 1) == 1,
-            ((self.0 >> 44) & 1) == 1,
-            ((self.0 >> 45) & 1) == 1,
-            ((self.0 >> 46) & 1) == 1,
-            ((self.0 >> 47) & 1) == 1,
-            ((self.0 >> 48) & 1) == 1,
-            ((self.0 >> 49) & 1) == 1,
-            ((self.0 >> 50) & 1) == 1,
-            ((self.0 >> 51) & 1) == 1,
-            ((self.0 >> 52) & 1) == 1,
-            ((self.0 >> 53) & 1) == 1,
-            ((self.0 >> 54) & 1) == 1,
-            ((self.0 >> 55) & 1) == 1,
-            ((self.0 >> 56) & 1) == 1,
-            ((self.0 >> 57) & 1) == 1,
-            ((self.0 >> 58) & 1) == 1,
-            ((self.0 >> 59) & 1) == 1,
-            ((self.0 >> 60) & 1) == 1,
-            ((self.0 >> 61) & 1) == 1,
-            ((self.0 >> 62) & 1) == 1,
-            ((self.0 >> 63) & 1) == 1,
-        )
-        .fmt(f)
-    }
-}
-
-impl Debug for m8 {
-    #[inline]
-    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-        self.is_set().fmt(f)
-    }
-}
-impl Debug for m16 {
-    #[inline]
-    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-        self.is_set().fmt(f)
-    }
-}
-impl Debug for m32 {
-    #[inline]
-    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-        self.is_set().fmt(f)
-    }
-}
-impl Debug for m64 {
-    #[inline]
-    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-        self.is_set().fmt(f)
-    }
-}
-
-impl m8 {
-    /// Returns a mask with all bits set one, if `flag` is true, otherwise returns a mask with all
-    /// bits set to zero.
-    #[inline(always)]
-    pub const fn new(flag: bool) -> Self {
-        Self(if flag { u8::MAX } else { 0 })
-    }
-
-    /// Returns `false` if the mask bits are all zero, otherwise returns `true`.
-    #[inline(always)]
-    pub const fn is_set(self) -> bool {
-        self.0 != 0
-    }
-}
-impl m16 {
-    /// Returns a mask with all bits set one, if `flag` is true, otherwise returns a mask with all
-    /// bits set to zero.
-    #[inline(always)]
-    pub const fn new(flag: bool) -> Self {
-        Self(if flag { u16::MAX } else { 0 })
-    }
-
-    /// Returns `false` if the mask bits are all zero, otherwise returns `true`.
-    #[inline(always)]
-    pub const fn is_set(self) -> bool {
-        self.0 != 0
-    }
-}
-impl m32 {
-    /// Returns a mask with all bits set one, if `flag` is true, otherwise returns a mask with all
-    /// bits set to zero.
-    #[inline(always)]
-    pub const fn new(flag: bool) -> Self {
-        Self(if flag { u32::MAX } else { 0 })
-    }
-
-    /// Returns `false` if the mask bits are all zero, otherwise returns `true`.
-    #[inline(always)]
-    pub const fn is_set(self) -> bool {
-        self.0 != 0
-    }
-}
-impl m64 {
-    /// Returns a mask with all bits set one, if `flag` is true, otherwise returns a mask with all
-    /// bits set to zero.
-    #[inline(always)]
-    pub const fn new(flag: bool) -> Self {
-        Self(if flag { u64::MAX } else { 0 })
-    }
-
-    /// Returns `false` if the mask bits are all zero, otherwise returns `true`.
-    #[inline(always)]
-    pub const fn is_set(self) -> bool {
-        self.0 != 0
-    }
-}
-
-/// A 128-bit SIMD vector with 16 elements of type [`i8`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct i8x16(
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-);
-/// A 256-bit SIMD vector with 32 elements of type [`i8`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct i8x32(
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-);
-/// A 512-bit SIMD vector with 64 elements of type [`i8`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct i8x64(
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-    pub i8,
-);
-
-/// A 128-bit SIMD vector with 16 elements of type [`u8`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct u8x16(
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-);
-/// A 256-bit SIMD vector with 32 elements of type [`u8`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct u8x32(
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-);
-/// A 512-bit SIMD vector with 64 elements of type [`u8`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct u8x64(
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-    pub u8,
-);
-
-/// A 128-bit SIMD vector with 16 elements of type [`m8`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct m8x16(
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-);
-/// A 256-bit SIMD vector with 32 elements of type [`m8`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct m8x32(
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-    pub m8,
-);
-
-/// A 128-bit SIMD vector with 8 elements of type [`i16`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct i16x8(
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-);
-/// A 256-bit SIMD vector with 16 elements of type [`i16`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct i16x16(
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-);
-/// A 512-bit SIMD vector with 32 elements of type [`i16`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct i16x32(
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-    pub i16,
-);
-
-/// A 128-bit SIMD vector with 8 elements of type [`u16`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct u16x8(
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-);
-/// A 256-bit SIMD vector with 16 elements of type [`u16`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct u16x16(
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-);
-/// A 512-bit SIMD vector with 32 elements of type [`u16`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct u16x32(
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-    pub u16,
-);
-
-/// A 128-bit SIMD vector with 8 elements of type [`m16`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct m16x8(
-    pub m16,
-    pub m16,
-    pub m16,
-    pub m16,
-    pub m16,
-    pub m16,
-    pub m16,
-    pub m16,
-);
-/// A 256-bit SIMD vector with 16 elements of type [`m16`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct m16x16(
-    pub m16,
-    pub m16,
-    pub m16,
-    pub m16,
-    pub m16,
-    pub m16,
-    pub m16,
-    pub m16,
-    pub m16,
-    pub m16,
-    pub m16,
-    pub m16,
-    pub m16,
-    pub m16,
-    pub m16,
-    pub m16,
-);
-
-/// A 128-bit SIMD vector with 4 elements of type [`f32`].
-#[derive(Debug, Copy, Clone, PartialEq)]
-#[repr(C)]
-pub struct f32x4(pub f32, pub f32, pub f32, pub f32);
-/// A 256-bit SIMD vector with 8 elements of type [`f32`].
-#[derive(Debug, Copy, Clone, PartialEq)]
-#[repr(C)]
-pub struct f32x8(
-    pub f32,
-    pub f32,
-    pub f32,
-    pub f32,
-    pub f32,
-    pub f32,
-    pub f32,
-    pub f32,
-);
-/// A 512-bit SIMD vector with 16 elements of type [`f32`].
-#[derive(Debug, Copy, Clone, PartialEq)]
-#[repr(C)]
-pub struct f32x16(
-    pub f32,
-    pub f32,
-    pub f32,
-    pub f32,
-    pub f32,
-    pub f32,
-    pub f32,
-    pub f32,
-    pub f32,
-    pub f32,
-    pub f32,
-    pub f32,
-    pub f32,
-    pub f32,
-    pub f32,
-    pub f32,
-);
-
-/// A 128-bit SIMD vector with 4 elements of type [`i32`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct i32x4(pub i32, pub i32, pub i32, pub i32);
-/// A 256-bit SIMD vector with 8 elements of type [`i32`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct i32x8(
-    pub i32,
-    pub i32,
-    pub i32,
-    pub i32,
-    pub i32,
-    pub i32,
-    pub i32,
-    pub i32,
-);
-/// A 512-bit SIMD vector with 16 elements of type [`i32`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct i32x16(
-    pub i32,
-    pub i32,
-    pub i32,
-    pub i32,
-    pub i32,
-    pub i32,
-    pub i32,
-    pub i32,
-    pub i32,
-    pub i32,
-    pub i32,
-    pub i32,
-    pub i32,
-    pub i32,
-    pub i32,
-    pub i32,
-);
-
-/// A 128-bit SIMD vector with 4 elements of type [`u32`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct u32x4(pub u32, pub u32, pub u32, pub u32);
-/// A 256-bit SIMD vector with 8 elements of type [`u32`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct u32x8(
-    pub u32,
-    pub u32,
-    pub u32,
-    pub u32,
-    pub u32,
-    pub u32,
-    pub u32,
-    pub u32,
-);
-/// A 512-bit SIMD vector with 16 elements of type [`u32`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct u32x16(
-    pub u32,
-    pub u32,
-    pub u32,
-    pub u32,
-    pub u32,
-    pub u32,
-    pub u32,
-    pub u32,
-    pub u32,
-    pub u32,
-    pub u32,
-    pub u32,
-    pub u32,
-    pub u32,
-    pub u32,
-    pub u32,
-);
-
-/// A 128-bit SIMD vector with 4 elements of type [`m32`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct m32x4(pub m32, pub m32, pub m32, pub m32);
-/// A 256-bit SIMD vector with 8 elements of type [`m32`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct m32x8(
-    pub m32,
-    pub m32,
-    pub m32,
-    pub m32,
-    pub m32,
-    pub m32,
-    pub m32,
-    pub m32,
-);
-
-/// A 128-bit SIMD vector with 2 elements of type [`f64`].
-#[derive(Debug, Copy, Clone, PartialEq)]
-#[repr(C)]
-pub struct f64x2(pub f64, pub f64);
-/// A 256-bit SIMD vector with 4 elements of type [`f64`].
-#[derive(Debug, Copy, Clone, PartialEq)]
-#[repr(C)]
-pub struct f64x4(pub f64, pub f64, pub f64, pub f64);
-/// A 512-bit SIMD vector with 8 elements of type [`f64`].
-#[derive(Debug, Copy, Clone, PartialEq)]
-#[repr(C)]
-pub struct f64x8(
-    pub f64,
-    pub f64,
-    pub f64,
-    pub f64,
-    pub f64,
-    pub f64,
-    pub f64,
-    pub f64,
-);
-
-/// A 128-bit SIMD vector with 2 elements of type [`i64`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct i64x2(pub i64, pub i64);
-/// A 256-bit SIMD vector with 4 elements of type [`i64`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct i64x4(pub i64, pub i64, pub i64, pub i64);
-/// A 512-bit SIMD vector with 8 elements of type [`i64`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct i64x8(
-    pub i64,
-    pub i64,
-    pub i64,
-    pub i64,
-    pub i64,
-    pub i64,
-    pub i64,
-    pub i64,
-);
-
-/// A 128-bit SIMD vector with 2 elements of type [`u64`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct u64x2(pub u64, pub u64);
-/// A 256-bit SIMD vector with 4 elements of type [`u64`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct u64x4(pub u64, pub u64, pub u64, pub u64);
-/// A 512-bit SIMD vector with 8 elements of type [`u64`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct u64x8(
-    pub u64,
-    pub u64,
-    pub u64,
-    pub u64,
-    pub u64,
-    pub u64,
-    pub u64,
-    pub u64,
-);
-
-/// A 128-bit SIMD vector with 2 elements of type [`m64`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct m64x2(pub m64, pub m64);
-/// A 256-bit SIMD vector with 4 elements of type [`m64`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(C)]
-pub struct m64x4(pub m64, pub m64, pub m64, pub m64);
-
-unsafe impl Zeroable for m8 {}
-unsafe impl Pod for m8 {}
-unsafe impl Zeroable for m16 {}
-unsafe impl Pod for m16 {}
-unsafe impl Zeroable for m32 {}
-unsafe impl Pod for m32 {}
-unsafe impl Zeroable for m64 {}
-unsafe impl Pod for m64 {}
-unsafe impl Zeroable for b8 {}
-unsafe impl Pod for b8 {}
-unsafe impl Zeroable for b16 {}
-unsafe impl Pod for b16 {}
-unsafe impl Zeroable for b32 {}
-unsafe impl Pod for b32 {}
-unsafe impl Zeroable for b64 {}
-unsafe impl Pod for b64 {}
-
-unsafe impl Zeroable for i8x16 {}
-unsafe impl Zeroable for i8x32 {}
-unsafe impl Zeroable for i8x64 {}
-unsafe impl Pod for i8x16 {}
-unsafe impl Pod for i8x32 {}
-unsafe impl Pod for i8x64 {}
-unsafe impl Zeroable for u8x16 {}
-unsafe impl Zeroable for u8x32 {}
-unsafe impl Zeroable for u8x64 {}
-unsafe impl Pod for u8x16 {}
-unsafe impl Pod for u8x32 {}
-unsafe impl Pod for u8x64 {}
-unsafe impl Zeroable for m8x16 {}
-unsafe impl Zeroable for m8x32 {}
-unsafe impl Pod for m8x16 {}
-unsafe impl Pod for m8x32 {}
-
-unsafe impl Zeroable for i16x8 {}
-unsafe impl Zeroable for i16x16 {}
-unsafe impl Zeroable for i16x32 {}
-unsafe impl Pod for i16x8 {}
-unsafe impl Pod for i16x16 {}
-unsafe impl Pod for i16x32 {}
-unsafe impl Zeroable for u16x8 {}
-unsafe impl Zeroable for u16x16 {}
-unsafe impl Zeroable for u16x32 {}
-unsafe impl Pod for u16x8 {}
-unsafe impl Pod for u16x16 {}
-unsafe impl Pod for u16x32 {}
-unsafe impl Zeroable for m16x8 {}
-unsafe impl Zeroable for m16x16 {}
-unsafe impl Pod for m16x8 {}
-unsafe impl Pod for m16x16 {}
-
-unsafe impl Zeroable for f32x4 {}
-unsafe impl Zeroable for f32x8 {}
-unsafe impl Zeroable for f32x16 {}
-unsafe impl Pod for f32x4 {}
-unsafe impl Pod for f32x8 {}
-unsafe impl Pod for f32x16 {}
-unsafe impl Zeroable for i32x4 {}
-unsafe impl Zeroable for i32x8 {}
-unsafe impl Zeroable for i32x16 {}
-unsafe impl Pod for i32x4 {}
-unsafe impl Pod for i32x8 {}
-unsafe impl Pod for i32x16 {}
-unsafe impl Zeroable for u32x4 {}
-unsafe impl Zeroable for u32x8 {}
-unsafe impl Zeroable for u32x16 {}
-unsafe impl Pod for u32x4 {}
-unsafe impl Pod for u32x8 {}
-unsafe impl Pod for u32x16 {}
-unsafe impl Zeroable for m32x4 {}
-unsafe impl Zeroable for m32x8 {}
-unsafe impl Pod for m32x4 {}
-unsafe impl Pod for m32x8 {}
-
-unsafe impl Zeroable for f64x2 {}
-unsafe impl Zeroable for f64x4 {}
-unsafe impl Zeroable for f64x8 {}
-unsafe impl Pod for f64x2 {}
-unsafe impl Pod for f64x4 {}
-unsafe impl Pod for f64x8 {}
-unsafe impl Zeroable for i64x2 {}
-unsafe impl Zeroable for i64x4 {}
-unsafe impl Zeroable for i64x8 {}
-unsafe impl Pod for i64x2 {}
-unsafe impl Pod for i64x4 {}
-unsafe impl Pod for i64x8 {}
-unsafe impl Zeroable for u64x2 {}
-unsafe impl Zeroable for u64x4 {}
-unsafe impl Zeroable for u64x8 {}
-unsafe impl Pod for u64x2 {}
-unsafe impl Pod for u64x4 {}
-unsafe impl Pod for u64x8 {}
-unsafe impl Zeroable for m64x2 {}
-unsafe impl Zeroable for m64x4 {}
-unsafe impl Pod for m64x2 {}
-unsafe impl Pod for m64x4 {}
-
 use core::mem::transmute;
 
 // x86-32 wants to use a 32-bit address size, but asm! defaults to using the full
@@ -1445,14 +132,14 @@ impl V4 {
 }
 
 impl f32x8 {
-    #[inline]
+    #[inline(always)]
     fn as_vec(self) -> __m256 {
         unsafe { transmute(self) }
     }
 }
 
 impl f64x4 {
-    #[inline]
+    #[inline(always)]
     fn as_vec(self) -> __m256d {
         unsafe { transmute(self) }
     }
@@ -1460,7 +147,7 @@ impl f64x4 {
 
 #[cfg(feature = "nightly")]
 impl f32x16 {
-    #[inline]
+    #[inline(always)]
     fn as_vec(self) -> __m512 {
         unsafe { transmute(self) }
     }
@@ -1468,7 +155,7 @@ impl f32x16 {
 
 #[cfg(feature = "nightly")]
 impl f64x8 {
-    #[inline]
+    #[inline(always)]
     fn as_vec(self) -> __m512d {
         unsafe { transmute(self) }
     }
@@ -1752,7 +439,7 @@ impl Simd for V3 {
     type i64s = i64x4;
     type u64s = u64x4;
 
-    #[inline]
+    #[inline(always)]
     fn m32s_not(self, a: Self::m32s) -> Self::m32s {
         unsafe {
             transmute(_mm256_xor_pd(
@@ -1761,20 +448,20 @@ impl Simd for V3 {
             ))
         }
     }
-    #[inline]
+    #[inline(always)]
     fn m32s_and(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
         unsafe { transmute(_mm256_and_pd(transmute(a), transmute(b))) }
     }
-    #[inline]
+    #[inline(always)]
     fn m32s_or(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
         unsafe { transmute(_mm256_or_pd(transmute(a), transmute(b))) }
     }
-    #[inline]
+    #[inline(always)]
     fn m32s_xor(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
         unsafe { transmute(_mm256_xor_pd(transmute(a), transmute(b))) }
     }
 
-    #[inline]
+    #[inline(always)]
     fn m64s_not(self, a: Self::m64s) -> Self::m64s {
         unsafe {
             transmute(_mm256_xor_pd(
@@ -1783,20 +470,20 @@ impl Simd for V3 {
             ))
         }
     }
-    #[inline]
+    #[inline(always)]
     fn m64s_and(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
         unsafe { transmute(_mm256_and_pd(transmute(a), transmute(b))) }
     }
-    #[inline]
+    #[inline(always)]
     fn m64s_or(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
         unsafe { transmute(_mm256_or_pd(transmute(a), transmute(b))) }
     }
-    #[inline]
+    #[inline(always)]
     fn m64s_xor(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
         unsafe { transmute(_mm256_xor_pd(transmute(a), transmute(b))) }
     }
 
-    #[inline]
+    #[inline(always)]
     fn u32s_not(self, a: Self::u32s) -> Self::u32s {
         unsafe {
             transmute(_mm256_xor_pd(
@@ -1805,20 +492,20 @@ impl Simd for V3 {
             ))
         }
     }
-    #[inline]
+    #[inline(always)]
     fn u32s_and(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
         unsafe { transmute(_mm256_and_pd(transmute(a), transmute(b))) }
     }
-    #[inline]
+    #[inline(always)]
     fn u32s_or(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
         unsafe { transmute(_mm256_or_pd(transmute(a), transmute(b))) }
     }
-    #[inline]
+    #[inline(always)]
     fn u32s_xor(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
         unsafe { transmute(_mm256_xor_pd(transmute(a), transmute(b))) }
     }
 
-    #[inline]
+    #[inline(always)]
     fn u64s_not(self, a: Self::u64s) -> Self::u64s {
         unsafe {
             transmute(_mm256_xor_pd(
@@ -1827,86 +514,86 @@ impl Simd for V3 {
             ))
         }
     }
-    #[inline]
+    #[inline(always)]
     fn u64s_and(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
         unsafe { transmute(_mm256_and_pd(transmute(a), transmute(b))) }
     }
-    #[inline]
+    #[inline(always)]
     fn u64s_or(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
         unsafe { transmute(_mm256_or_pd(transmute(a), transmute(b))) }
     }
-    #[inline]
+    #[inline(always)]
     fn u64s_xor(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
         unsafe { transmute(_mm256_xor_pd(transmute(a), transmute(b))) }
     }
 
-    #[inline]
+    #[inline(always)]
     fn f32s_splat(self, value: f32) -> Self::f32s {
         unsafe { transmute(_mm256_set1_ps(value)) }
     }
-    #[inline]
+    #[inline(always)]
     fn f32s_add(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
         unsafe { transmute(_mm256_add_ps(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f32s_sub(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
         unsafe { transmute(_mm256_sub_ps(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f32s_mul(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
         unsafe { transmute(_mm256_mul_ps(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f32s_div(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
         unsafe { transmute(_mm256_div_ps(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f32s_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
         unsafe { transmute(_mm256_cmp_ps::<_CMP_EQ_OQ>(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f32s_less_than(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
         unsafe { transmute(_mm256_cmp_ps::<_CMP_LT_OQ>(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f32s_less_than_or_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
         unsafe { transmute(_mm256_cmp_ps::<_CMP_LE_OQ>(a.as_vec(), b.as_vec())) }
     }
 
-    #[inline]
+    #[inline(always)]
     fn f64s_splat(self, value: f64) -> Self::f64s {
         unsafe { transmute(_mm256_set1_pd(value)) }
     }
-    #[inline]
+    #[inline(always)]
     fn f64s_add(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
         unsafe { transmute(_mm256_add_pd(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f64s_sub(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
         unsafe { transmute(_mm256_sub_pd(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f64s_mul(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
         unsafe { transmute(_mm256_mul_pd(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f64s_div(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
         unsafe { transmute(_mm256_div_pd(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f64s_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
         unsafe { transmute(_mm256_cmp_pd::<_CMP_EQ_OQ>(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f64s_less_than(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
         unsafe { transmute(_mm256_cmp_pd::<_CMP_LT_OQ>(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f64s_less_than_or_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
         unsafe { transmute(_mm256_cmp_pd::<_CMP_LE_OQ>(a.as_vec(), b.as_vec())) }
     }
 
-    #[inline]
+    #[inline(always)]
     fn m32s_select_u32s(
         self,
         mask: Self::m32s,
@@ -1921,7 +608,7 @@ impl Simd for V3 {
             transmute(_mm256_blendv_ps(if_false, if_true, mask))
         }
     }
-    #[inline]
+    #[inline(always)]
     fn m64s_select_u64s(
         self,
         mask: Self::m64s,
@@ -1937,53 +624,53 @@ impl Simd for V3 {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     fn f32s_min(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
         unsafe { transmute(_mm256_min_ps(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
         unsafe { transmute(_mm256_max_ps(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
         unsafe { transmute(_mm256_min_pd(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
         unsafe { transmute(_mm256_max_pd(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn u32s_splat(self, value: u32) -> Self::u32s {
         unsafe { transmute(_mm256_set1_epi32(value as i32)) }
     }
-    #[inline]
+    #[inline(always)]
     fn u64s_splat(self, value: u64) -> Self::u64s {
         unsafe { transmute(_mm256_set1_epi64x(value as i64)) }
     }
 
-    #[inline]
+    #[inline(always)]
     fn u32s_add(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
         unsafe { transmute(_mm256_add_epi32(transmute(a), transmute(b))) }
     }
-    #[inline]
+    #[inline(always)]
     fn u32s_sub(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
         unsafe { transmute(_mm256_sub_epi32(transmute(a), transmute(b))) }
     }
-    #[inline]
+    #[inline(always)]
     fn u64s_add(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
         unsafe { transmute(_mm256_add_epi64(transmute(a), transmute(b))) }
     }
-    #[inline]
+    #[inline(always)]
     fn u64s_sub(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
         unsafe { transmute(_mm256_sub_epi64(transmute(a), transmute(b))) }
     }
 
-    #[inline]
+    #[inline(always)]
     fn f64s_mul_add_e(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
         unsafe { transmute(_mm256_fmadd_pd(a.as_vec(), b.as_vec(), c.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f64_scalar_mul_add_e(self, a: f64, b: f64, c: f64) -> f64 {
         unsafe {
             crate::cast_lossy(_mm_fmadd_sd(
@@ -1994,11 +681,11 @@ impl Simd for V3 {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     fn f32s_mul_add_e(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
         unsafe { transmute(_mm256_fmadd_ps(a.as_vec(), b.as_vec(), c.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f32_scalar_mul_add_e(self, a: f32, b: f32, c: f32) -> f32 {
         unsafe {
             crate::cast_lossy(_mm_fmadd_ss(
@@ -2009,7 +696,7 @@ impl Simd for V3 {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
         struct Impl<Op> {
             this: V3,
@@ -2596,154 +1283,154 @@ impl Simd for V4 {
     type i64s = i64x8;
     type u64s = u64x8;
 
-    #[inline]
+    #[inline(always)]
     fn m32s_not(self, a: Self::m32s) -> Self::m32s {
         b16(!a.0)
     }
-    #[inline]
+    #[inline(always)]
     fn m32s_and(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
         b16(a.0 & b.0)
     }
-    #[inline]
+    #[inline(always)]
     fn m32s_or(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
         b16(a.0 | b.0)
     }
-    #[inline]
+    #[inline(always)]
     fn m32s_xor(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
         b16(a.0 ^ b.0)
     }
 
-    #[inline]
+    #[inline(always)]
     fn m64s_not(self, a: Self::m64s) -> Self::m64s {
         b8(!a.0)
     }
-    #[inline]
+    #[inline(always)]
     fn m64s_and(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
         b8(a.0 & b.0)
     }
-    #[inline]
+    #[inline(always)]
     fn m64s_or(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
         b8(a.0 | b.0)
     }
-    #[inline]
+    #[inline(always)]
     fn m64s_xor(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
         b8(a.0 ^ b.0)
     }
 
-    #[inline]
+    #[inline(always)]
     fn u32s_not(self, a: Self::u32s) -> Self::u32s {
         unsafe { transmute(_mm512_xor_si512(_mm512_set1_epi32(-1), transmute(a))) }
     }
-    #[inline]
+    #[inline(always)]
     fn u32s_and(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
         unsafe { transmute(_mm512_and_si512(transmute(a), transmute(b))) }
     }
-    #[inline]
+    #[inline(always)]
     fn u32s_or(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
         unsafe { transmute(_mm512_or_si512(transmute(a), transmute(b))) }
     }
-    #[inline]
+    #[inline(always)]
     fn u32s_xor(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
         unsafe { transmute(_mm512_xor_si512(transmute(a), transmute(b))) }
     }
 
-    #[inline]
+    #[inline(always)]
     fn u64s_not(self, a: Self::u64s) -> Self::u64s {
         unsafe { transmute(_mm512_xor_si512(_mm512_set1_epi32(-1), transmute(a))) }
     }
-    #[inline]
+    #[inline(always)]
     fn u64s_and(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
         unsafe { transmute(_mm512_and_si512(transmute(a), transmute(b))) }
     }
-    #[inline]
+    #[inline(always)]
     fn u64s_or(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
         unsafe { transmute(_mm512_or_si512(transmute(a), transmute(b))) }
     }
-    #[inline]
+    #[inline(always)]
     fn u64s_xor(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
         unsafe { transmute(_mm512_xor_si512(transmute(a), transmute(b))) }
     }
 
-    #[inline]
+    #[inline(always)]
     fn f32s_splat(self, value: f32) -> Self::f32s {
         unsafe { transmute(_mm512_set1_ps(value)) }
     }
-    #[inline]
+    #[inline(always)]
     fn f32s_add(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
         unsafe { transmute(_mm512_add_ps(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f32s_sub(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
         unsafe { transmute(_mm512_sub_ps(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f32s_mul(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
         unsafe { transmute(_mm512_mul_ps(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f32s_div(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
         unsafe { transmute(_mm512_div_ps(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f32s_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
         unsafe { transmute(_mm512_cmp_ps_mask::<_CMP_EQ_OQ>(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f32s_less_than(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
         unsafe { transmute(_mm512_cmp_ps_mask::<_CMP_LT_OQ>(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f32s_less_than_or_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
         unsafe { transmute(_mm512_cmp_ps_mask::<_CMP_LE_OQ>(a.as_vec(), b.as_vec())) }
     }
 
-    #[inline]
+    #[inline(always)]
     fn f64s_splat(self, value: f64) -> Self::f64s {
         unsafe { transmute(_mm512_set1_pd(value)) }
     }
-    #[inline]
+    #[inline(always)]
     fn f64s_add(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
         unsafe { transmute(_mm512_add_pd(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f64s_sub(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
         unsafe { transmute(_mm512_sub_pd(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f64s_mul(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
         unsafe { transmute(_mm512_mul_pd(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f64s_div(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
         unsafe { transmute(_mm512_div_pd(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f64s_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
         unsafe { transmute(_mm512_cmp_pd_mask::<_CMP_EQ_OQ>(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f64s_less_than(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
         unsafe { transmute(_mm512_cmp_pd_mask::<_CMP_LT_OQ>(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f64s_less_than_or_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
         unsafe { transmute(_mm512_cmp_pd_mask::<_CMP_LE_OQ>(a.as_vec(), b.as_vec())) }
     }
 
-    #[inline]
+    #[inline(always)]
     fn f64s_mul_add_e(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
         unsafe { transmute(_mm512_fmadd_pd(a.as_vec(), b.as_vec(), c.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f32s_mul_add_e(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
         unsafe { transmute(_mm512_fmadd_ps(a.as_vec(), b.as_vec(), c.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f32_scalar_mul_add_e(self, a: f32, b: f32, c: f32) -> f32 {
         (*self).f32_scalar_mul_add_e(a, b, c)
     }
 
-    #[inline]
+    #[inline(always)]
     fn m32s_select_u32s(
         self,
         mask: Self::m32s,
@@ -2759,7 +1446,7 @@ impl Simd for V4 {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     fn m64s_select_u64s(
         self,
         mask: Self::m64s,
@@ -2775,41 +1462,41 @@ impl Simd for V4 {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     fn f32s_min(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
         unsafe { transmute(_mm512_min_ps(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
         unsafe { transmute(_mm512_max_ps(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
         unsafe { transmute(_mm512_min_pd(a.as_vec(), b.as_vec())) }
     }
-    #[inline]
+    #[inline(always)]
     fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
         unsafe { transmute(_mm512_max_pd(a.as_vec(), b.as_vec())) }
     }
 
-    #[inline]
+    #[inline(always)]
     fn u32s_add(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
         unsafe { transmute(_mm512_add_epi32(transmute(a), transmute(b))) }
     }
-    #[inline]
+    #[inline(always)]
     fn u32s_sub(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
         unsafe { transmute(_mm512_sub_epi32(transmute(a), transmute(b))) }
     }
-    #[inline]
+    #[inline(always)]
     fn u64s_add(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
         unsafe { transmute(_mm512_add_epi64(transmute(a), transmute(b))) }
     }
-    #[inline]
+    #[inline(always)]
     fn u64s_sub(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
         unsafe { transmute(_mm512_sub_epi64(transmute(a), transmute(b))) }
     }
 
-    #[inline]
+    #[inline(always)]
     fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
         struct Impl<Op> {
             this: V4,
@@ -2826,11 +1513,11 @@ impl Simd for V4 {
         self.vectorize(Impl { this: self, op })
     }
 
-    #[inline]
+    #[inline(always)]
     fn u32s_splat(self, value: u32) -> Self::u32s {
         unsafe { transmute(_mm512_set1_epi32(value as i32)) }
     }
-    #[inline]
+    #[inline(always)]
     fn u64s_splat(self, value: u64) -> Self::u64s {
         unsafe { transmute(_mm512_set1_epi64(value as i64)) }
     }
@@ -3355,7 +2042,7 @@ impl V2 {
     /// Returns a SIMD vector with all lanes set to the given value.
     #[inline(always)]
     pub fn splat_m8x16(self, value: m8) -> m8x16 {
-        cast(self.sse2._mm_set1_epi8(value.0 as i8))
+        unsafe { transmute(self.sse2._mm_set1_epi8(value.0 as i8)) }
     }
     /// Returns a SIMD vector with all lanes set to the given value.
     #[inline(always)]
@@ -3370,7 +2057,7 @@ impl V2 {
     /// Returns a SIMD vector with all lanes set to the given value.
     #[inline(always)]
     pub fn splat_m16x8(self, value: m16) -> m16x8 {
-        cast(self.sse2._mm_set1_epi16(value.0 as i16))
+        unsafe { transmute(self.sse2._mm_set1_epi16(value.0 as i16)) }
     }
     /// Returns a SIMD vector with all lanes set to the given value.
     #[inline(always)]
@@ -3385,7 +2072,7 @@ impl V2 {
     /// Returns a SIMD vector with all lanes set to the given value.
     #[inline(always)]
     pub fn splat_m32x4(self, value: m32) -> m32x4 {
-        cast(self.sse2._mm_set1_epi32(value.0 as i32))
+        unsafe { transmute(self.sse2._mm_set1_epi32(value.0 as i32)) }
     }
     /// Returns a SIMD vector with all lanes set to the given value.
     #[inline(always)]
@@ -3405,7 +2092,7 @@ impl V2 {
     /// Returns a SIMD vector with all lanes set to the given value.
     #[inline(always)]
     pub fn splat_m64x2(self, value: m64) -> m64x2 {
-        cast(self.sse2._mm_set1_epi64x(value.0 as i64))
+        unsafe { transmute(self.sse2._mm_set1_epi64x(value.0 as i64)) }
     }
     /// Returns a SIMD vector with all lanes set to the given value.
     #[inline(always)]
@@ -3430,7 +2117,7 @@ impl V2 {
     /// Returns the bitwise AND of `a` and `b`.
     #[inline(always)]
     pub fn and_m8x16(self, a: m8x16, b: m8x16) -> m8x16 {
-        cast(self.sse2._mm_and_si128(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_and_si128(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise AND of `a` and `b`.
     #[inline(always)]
@@ -3445,7 +2132,7 @@ impl V2 {
     /// Returns the bitwise AND of `a` and `b`.
     #[inline(always)]
     pub fn and_m16x8(self, a: m16x8, b: m16x8) -> m16x8 {
-        cast(self.sse2._mm_and_si128(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_and_si128(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise AND of `a` and `b`.
     #[inline(always)]
@@ -3460,7 +2147,7 @@ impl V2 {
     /// Returns the bitwise AND of `a` and `b`.
     #[inline(always)]
     pub fn and_m32x4(self, a: m32x4, b: m32x4) -> m32x4 {
-        cast(self.sse2._mm_and_si128(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_and_si128(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise AND of `a` and `b`.
     #[inline(always)]
@@ -3480,7 +2167,7 @@ impl V2 {
     /// Returns the bitwise AND of `a` and `b`.
     #[inline(always)]
     pub fn and_m64x2(self, a: m64x2, b: m64x2) -> m64x2 {
-        cast(self.sse2._mm_and_si128(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_and_si128(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise AND of `a` and `b`.
     #[inline(always)]
@@ -3501,7 +2188,7 @@ impl V2 {
     /// Returns the bitwise OR of `a` and `b`.
     #[inline(always)]
     pub fn or_m8x16(self, a: m8x16, b: m8x16) -> m8x16 {
-        cast(self.sse2._mm_or_si128(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_or_si128(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise OR of `a` and `b`.
     #[inline(always)]
@@ -3516,7 +2203,7 @@ impl V2 {
     /// Returns the bitwise OR of `a` and `b`.
     #[inline(always)]
     pub fn or_m16x8(self, a: m16x8, b: m16x8) -> m16x8 {
-        cast(self.sse2._mm_or_si128(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_or_si128(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise OR of `a` and `b`.
     #[inline(always)]
@@ -3531,7 +2218,7 @@ impl V2 {
     /// Returns the bitwise OR of `a` and `b`.
     #[inline(always)]
     pub fn or_m32x4(self, a: m32x4, b: m32x4) -> m32x4 {
-        cast(self.sse2._mm_or_si128(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_or_si128(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise OR of `a` and `b`.
     #[inline(always)]
@@ -3551,7 +2238,7 @@ impl V2 {
     /// Returns the bitwise OR of `a` and `b`.
     #[inline(always)]
     pub fn or_m64x2(self, a: m64x2, b: m64x2) -> m64x2 {
-        cast(self.sse2._mm_or_si128(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_or_si128(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise OR of `a` and `b`.
     #[inline(always)]
@@ -3572,7 +2259,7 @@ impl V2 {
     /// Returns the bitwise XOR of `a` and `b`.
     #[inline(always)]
     pub fn xor_m8x16(self, a: m8x16, b: m8x16) -> m8x16 {
-        cast(self.sse2._mm_xor_si128(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_xor_si128(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise XOR of `a` and `b`.
     #[inline(always)]
@@ -3587,7 +2274,7 @@ impl V2 {
     /// Returns the bitwise XOR of `a` and `b`.
     #[inline(always)]
     pub fn xor_m16x8(self, a: m16x8, b: m16x8) -> m16x8 {
-        cast(self.sse2._mm_xor_si128(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_xor_si128(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise XOR of `a` and `b`.
     #[inline(always)]
@@ -3602,7 +2289,7 @@ impl V2 {
     /// Returns the bitwise XOR of `a` and `b`.
     #[inline(always)]
     pub fn xor_m32x4(self, a: m32x4, b: m32x4) -> m32x4 {
-        cast(self.sse2._mm_xor_si128(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_xor_si128(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise XOR of `a` and `b`.
     #[inline(always)]
@@ -3622,7 +2309,7 @@ impl V2 {
     /// Returns the bitwise XOR of `a` and `b`.
     #[inline(always)]
     pub fn xor_m64x2(self, a: m64x2, b: m64x2) -> m64x2 {
-        cast(self.sse2._mm_xor_si128(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_xor_si128(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise XOR of `a` and `b`.
     #[inline(always)]
@@ -3704,7 +2391,7 @@ impl V2 {
     /// Returns the bitwise AND of NOT `a` and `b`.
     #[inline(always)]
     pub fn andnot_m8x16(self, a: m8x16, b: m8x16) -> m8x16 {
-        cast(self.sse2._mm_andnot_si128(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_andnot_si128(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise AND of NOT `a` and `b`.
     #[inline(always)]
@@ -3719,7 +2406,7 @@ impl V2 {
     /// Returns the bitwise AND of NOT `a` and `b`.
     #[inline(always)]
     pub fn andnot_m16x8(self, a: m16x8, b: m16x8) -> m16x8 {
-        cast(self.sse2._mm_andnot_si128(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_andnot_si128(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise AND of NOT `a` and `b`.
     #[inline(always)]
@@ -3734,7 +2421,7 @@ impl V2 {
     /// Returns the bitwise AND of NOT `a` and `b`.
     #[inline(always)]
     pub fn andnot_m32x4(self, a: m32x4, b: m32x4) -> m32x4 {
-        cast(self.sse2._mm_andnot_si128(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_andnot_si128(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise AND of NOT `a` and `b`.
     #[inline(always)]
@@ -3754,7 +2441,7 @@ impl V2 {
     /// Returns the bitwise AND of NOT `a` and `b`.
     #[inline(always)]
     pub fn andnot_m64x2(self, a: m64x2, b: m64x2) -> m64x2 {
-        cast(self.sse2._mm_andnot_si128(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_andnot_si128(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise AND of NOT `a` and `b`.
     #[inline(always)]
@@ -4717,42 +3404,42 @@ impl V2 {
     /// Compares the elements in each lane of `a` and `b` for equality.
     #[inline(always)]
     pub fn cmp_eq_u8x16(self, a: u8x16, b: u8x16) -> m8x16 {
-        cast(self.sse2._mm_cmpeq_epi8(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_cmpeq_epi8(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for equality.
     #[inline(always)]
     pub fn cmp_eq_i8x16(self, a: i8x16, b: i8x16) -> m8x16 {
-        cast(self.sse2._mm_cmpeq_epi8(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_cmpeq_epi8(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for equality.
     #[inline(always)]
     pub fn cmp_eq_u16x8(self, a: u16x8, b: u16x8) -> m16x8 {
-        cast(self.sse2._mm_cmpeq_epi16(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_cmpeq_epi16(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for equality.
     #[inline(always)]
     pub fn cmp_eq_i16x8(self, a: i16x8, b: i16x8) -> m16x8 {
-        cast(self.sse2._mm_cmpeq_epi16(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_cmpeq_epi16(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for equality.
     #[inline(always)]
     pub fn cmp_eq_u32x4(self, a: u32x4, b: u32x4) -> m32x4 {
-        cast(self.sse2._mm_cmpeq_epi32(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_cmpeq_epi32(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for equality.
     #[inline(always)]
     pub fn cmp_eq_i32x4(self, a: i32x4, b: i32x4) -> m32x4 {
-        cast(self.sse2._mm_cmpeq_epi32(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_cmpeq_epi32(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for equality.
     #[inline(always)]
     pub fn cmp_eq_u64x2(self, a: u64x2, b: u64x2) -> m64x2 {
-        cast(self.sse4_1._mm_cmpeq_epi64(cast(a), cast(b)))
+        unsafe { transmute(self.sse4_1._mm_cmpeq_epi64(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for equality.
     #[inline(always)]
     pub fn cmp_eq_i64x2(self, a: i64x2, b: i64x2) -> m64x2 {
-        cast(self.sse4_1._mm_cmpeq_epi64(cast(a), cast(b)))
+        unsafe { transmute(self.sse4_1._mm_cmpeq_epi64(cast(a), cast(b))) }
     }
 
     /// Compares the elements in each lane of `a` and `b` for greater-than.
@@ -4764,7 +3451,7 @@ impl V2 {
     /// Compares the elements in each lane of `a` and `b` for greater-than.
     #[inline(always)]
     pub fn cmp_gt_i8x16(self, a: i8x16, b: i8x16) -> m8x16 {
-        cast(self.sse2._mm_cmpgt_epi8(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_cmpgt_epi8(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for greater-than.
     #[inline(always)]
@@ -4775,7 +3462,7 @@ impl V2 {
     /// Compares the elements in each lane of `a` and `b` for greater-than.
     #[inline(always)]
     pub fn cmp_gt_i16x8(self, a: i16x8, b: i16x8) -> m16x8 {
-        cast(self.sse2._mm_cmpgt_epi16(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_cmpgt_epi16(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for greater-than.
     #[inline(always)]
@@ -4786,7 +3473,7 @@ impl V2 {
     /// Compares the elements in each lane of `a` and `b` for greater-than.
     #[inline(always)]
     pub fn cmp_gt_i32x4(self, a: i32x4, b: i32x4) -> m32x4 {
-        cast(self.sse2._mm_cmpgt_epi32(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_cmpgt_epi32(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for greater-than.
     #[inline(always)]
@@ -4797,7 +3484,7 @@ impl V2 {
     /// Compares the elements in each lane of `a` and `b` for greater-than.
     #[inline(always)]
     pub fn cmp_gt_i64x2(self, a: i64x2, b: i64x2) -> m64x2 {
-        cast(self.sse4_2._mm_cmpgt_epi64(cast(a), cast(b)))
+        unsafe { transmute(self.sse4_2._mm_cmpgt_epi64(cast(a), cast(b))) }
     }
 
     /// Compares the elements in each lane of `a` and `b` for greater-than-or-equal-to.
@@ -4850,7 +3537,7 @@ impl V2 {
     /// Compares the elements in each lane of `a` and `b` for less-than.
     #[inline(always)]
     pub fn cmp_lt_i8x16(self, a: i8x16, b: i8x16) -> m8x16 {
-        cast(self.sse2._mm_cmplt_epi8(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_cmplt_epi8(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for less-than.
     #[inline(always)]
@@ -4861,7 +3548,7 @@ impl V2 {
     /// Compares the elements in each lane of `a` and `b` for less-than.
     #[inline(always)]
     pub fn cmp_lt_i16x8(self, a: i16x8, b: i16x8) -> m16x8 {
-        cast(self.sse2._mm_cmplt_epi16(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_cmplt_epi16(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for less-than.
     #[inline(always)]
@@ -4872,7 +3559,7 @@ impl V2 {
     /// Compares the elements in each lane of `a` and `b` for less-than.
     #[inline(always)]
     pub fn cmp_lt_i32x4(self, a: i32x4, b: i32x4) -> m32x4 {
-        cast(self.sse2._mm_cmplt_epi32(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_cmplt_epi32(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for less-than.
     #[inline(always)]
@@ -4883,7 +3570,7 @@ impl V2 {
     /// Compares the elements in each lane of `a` and `b` for less-than.
     #[inline(always)]
     pub fn cmp_lt_i64x2(self, a: i64x2, b: i64x2) -> m64x2 {
-        cast(self.sse4_2._mm_cmpgt_epi64(cast(b), cast(a)))
+        unsafe { transmute(self.sse4_2._mm_cmpgt_epi64(cast(b), cast(a))) }
     }
 
     /// Compares the elements in each lane of `a` and `b` for less-than-or-equal-to.
@@ -4930,133 +3617,133 @@ impl V2 {
     /// Compares the elements in each lane of `a` and `b` for equality.
     #[inline(always)]
     pub fn cmp_eq_f32x4(self, a: f32x4, b: f32x4) -> m32x4 {
-        cast(self.sse._mm_cmpeq_ps(cast(a), cast(b)))
+        unsafe { transmute(self.sse._mm_cmpeq_ps(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for equality.
     #[inline(always)]
     pub fn cmp_eq_f64x2(self, a: f64x2, b: f64x2) -> m64x2 {
-        cast(self.sse2._mm_cmpeq_pd(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_cmpeq_pd(cast(a), cast(b))) }
     }
 
     /// Compares the elements in each lane of `a` and `b` for inequality.
     #[inline(always)]
     pub fn cmp_not_eq_f32x4(self, a: f32x4, b: f32x4) -> m32x4 {
-        cast(self.sse._mm_cmpneq_ps(cast(a), cast(b)))
+        unsafe { transmute(self.sse._mm_cmpneq_ps(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for inequality.
     #[inline(always)]
     pub fn cmp_not_eq_f64x2(self, a: f64x2, b: f64x2) -> m64x2 {
-        cast(self.sse2._mm_cmpneq_pd(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_cmpneq_pd(cast(a), cast(b))) }
     }
 
     /// Compares the elements in each lane of `a` and `b` for greater-than.
     #[inline(always)]
     pub fn cmp_gt_f32x4(self, a: f32x4, b: f32x4) -> m32x4 {
-        cast(self.sse._mm_cmpgt_ps(cast(a), cast(b)))
+        unsafe { transmute(self.sse._mm_cmpgt_ps(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for greater-than.
     #[inline(always)]
     pub fn cmp_gt_f64x2(self, a: f64x2, b: f64x2) -> m64x2 {
-        cast(self.sse2._mm_cmpgt_pd(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_cmpgt_pd(cast(a), cast(b))) }
     }
 
     /// Compares the elements in each lane of `a` and `b` for greater-than-or-equal-to.
     #[inline(always)]
     pub fn cmp_ge_f32x4(self, a: f32x4, b: f32x4) -> m32x4 {
-        cast(self.sse._mm_cmpge_ps(cast(a), cast(b)))
+        unsafe { transmute(self.sse._mm_cmpge_ps(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for greater-than-or-equal-to.
     #[inline(always)]
     pub fn cmp_ge_f64x2(self, a: f64x2, b: f64x2) -> m64x2 {
-        cast(self.sse2._mm_cmpge_pd(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_cmpge_pd(cast(a), cast(b))) }
     }
 
     /// Compares the elements in each lane of `a` and `b` for not-greater-than.
     #[inline(always)]
     pub fn cmp_not_gt_f32x4(self, a: f32x4, b: f32x4) -> m32x4 {
-        cast(self.sse._mm_cmpngt_ps(cast(a), cast(b)))
+        unsafe { transmute(self.sse._mm_cmpngt_ps(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for not-greater-than.
     #[inline(always)]
     pub fn cmp_not_gt_f64x2(self, a: f64x2, b: f64x2) -> m64x2 {
-        cast(self.sse2._mm_cmpngt_pd(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_cmpngt_pd(cast(a), cast(b))) }
     }
 
     /// Compares the elements in each lane of `a` and `b` for not-greater-than-or-equal.
     #[inline(always)]
     pub fn cmp_not_ge_f32x4(self, a: f32x4, b: f32x4) -> m32x4 {
-        cast(self.sse._mm_cmpnge_ps(cast(a), cast(b)))
+        unsafe { transmute(self.sse._mm_cmpnge_ps(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for not-greater-than-or-equal.
     #[inline(always)]
     pub fn cmp_not_ge_f64x2(self, a: f64x2, b: f64x2) -> m64x2 {
-        cast(self.sse2._mm_cmpnge_pd(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_cmpnge_pd(cast(a), cast(b))) }
     }
 
     /// Compares the elements in each lane of `a` and `b` for less-than.
     #[inline(always)]
     pub fn cmp_lt_f32x4(self, a: f32x4, b: f32x4) -> m32x4 {
-        cast(self.sse._mm_cmplt_ps(cast(a), cast(b)))
+        unsafe { transmute(self.sse._mm_cmplt_ps(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for less-than.
     #[inline(always)]
     pub fn cmp_lt_f64x2(self, a: f64x2, b: f64x2) -> m64x2 {
-        cast(self.sse2._mm_cmplt_pd(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_cmplt_pd(cast(a), cast(b))) }
     }
 
     /// Compares the elements in each lane of `a` and `b` for less-than-or-equal-to.
     #[inline(always)]
     pub fn cmp_le_f32x4(self, a: f32x4, b: f32x4) -> m32x4 {
-        cast(self.sse._mm_cmple_ps(cast(a), cast(b)))
+        unsafe { transmute(self.sse._mm_cmple_ps(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for less-than-or-equal-to.
     #[inline(always)]
     pub fn cmp_le_f64x2(self, a: f64x2, b: f64x2) -> m64x2 {
-        cast(self.sse2._mm_cmple_pd(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_cmple_pd(cast(a), cast(b))) }
     }
 
     /// Compares the elements in each lane of `a` and `b` for not-less-than.
     #[inline(always)]
     pub fn cmp_not_lt_f32x4(self, a: f32x4, b: f32x4) -> m32x4 {
-        cast(self.sse._mm_cmpnlt_ps(cast(a), cast(b)))
+        unsafe { transmute(self.sse._mm_cmpnlt_ps(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for not-less-than.
     #[inline(always)]
     pub fn cmp_not_lt_f64x2(self, a: f64x2, b: f64x2) -> m64x2 {
-        cast(self.sse2._mm_cmpnlt_pd(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_cmpnlt_pd(cast(a), cast(b))) }
     }
 
     /// Compares the elements in each lane of `a` and `b` for not-less-than-or-equal.
     #[inline(always)]
     pub fn cmp_not_le_f32x4(self, a: f32x4, b: f32x4) -> m32x4 {
-        cast(self.sse._mm_cmpnle_ps(cast(a), cast(b)))
+        unsafe { transmute(self.sse._mm_cmpnle_ps(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for not-less-than-or-equal.
     #[inline(always)]
     pub fn cmp_not_le_f64x2(self, a: f64x2, b: f64x2) -> m64x2 {
-        cast(self.sse2._mm_cmpnle_pd(cast(a), cast(b)))
+        unsafe { transmute(self.sse2._mm_cmpnle_pd(cast(a), cast(b))) }
     }
 
     /// Checks if the elements in each lane of `a` are NaN.
     #[inline(always)]
     pub fn is_nan_f32x4(self, a: f32x4) -> m32x4 {
-        cast(self.sse._mm_cmpunord_ps(cast(a), cast(a)))
+        unsafe { transmute(self.sse._mm_cmpunord_ps(cast(a), cast(a))) }
     }
     /// Checks if the elements in each lane of `a` are NaN.
     #[inline(always)]
     pub fn is_nan_f64x2(self, a: f64x2) -> m64x2 {
-        cast(self.sse2._mm_cmpunord_pd(cast(a), cast(a)))
+        unsafe { transmute(self.sse2._mm_cmpunord_pd(cast(a), cast(a))) }
     }
 
     /// Checks if the elements in each lane of `a` are not NaN.
     #[inline(always)]
     pub fn is_not_nan_f32x4(self, a: f32x4) -> m32x4 {
-        cast(self.sse._mm_cmpord_ps(cast(a), cast(a)))
+        unsafe { transmute(self.sse._mm_cmpord_ps(cast(a), cast(a))) }
     }
     /// Checks if the elements in each lane of `a` are not NaN.
     #[inline(always)]
     pub fn is_not_nan_f64x2(self, a: f64x2) -> m64x2 {
-        cast(self.sse2._mm_cmpord_pd(cast(a), cast(a)))
+        unsafe { transmute(self.sse2._mm_cmpord_pd(cast(a), cast(a))) }
     }
 
     //-------------------------------------------------------------------------------
@@ -5112,7 +3799,7 @@ impl V2 {
     pub fn select_u8x16(self, mask: m8x16, if_true: u8x16, if_false: u8x16) -> u8x16 {
         cast(
             self.sse4_1
-                ._mm_blendv_epi8(cast(if_false), cast(if_true), cast(mask)),
+                ._mm_blendv_epi8(cast(if_false), cast(if_true), unsafe { transmute(mask) }),
         )
     }
     /// Combines `if_true` and `if_false`, selecting elements from `if_true` if the corresponding
@@ -5127,7 +3814,7 @@ impl V2 {
     pub fn select_u16x8(self, mask: m16x8, if_true: u16x8, if_false: u16x8) -> u16x8 {
         cast(
             self.sse4_1
-                ._mm_blendv_epi8(cast(if_false), cast(if_true), cast(mask)),
+                ._mm_blendv_epi8(cast(if_false), cast(if_true), unsafe { transmute(mask) }),
         )
     }
     /// Combines `if_true` and `if_false`, selecting elements from `if_true` if the corresponding
@@ -5142,7 +3829,7 @@ impl V2 {
     pub fn select_u32x4(self, mask: m32x4, if_true: u32x4, if_false: u32x4) -> u32x4 {
         cast(
             self.sse4_1
-                ._mm_blendv_epi8(cast(if_false), cast(if_true), cast(mask)),
+                ._mm_blendv_epi8(cast(if_false), cast(if_true), unsafe { transmute(mask) }),
         )
     }
     /// Combines `if_true` and `if_false`, selecting elements from `if_true` if the corresponding
@@ -5157,7 +3844,7 @@ impl V2 {
     pub fn select_f32x4(self, mask: m32x4, if_true: f32x4, if_false: f32x4) -> f32x4 {
         cast(
             self.sse4_1
-                ._mm_blendv_ps(cast(if_false), cast(if_true), cast(mask)),
+                ._mm_blendv_ps(cast(if_false), cast(if_true), unsafe { transmute(mask) }),
         )
     }
     /// Combines `if_true` and `if_false`, selecting elements from `if_true` if the corresponding
@@ -5166,7 +3853,7 @@ impl V2 {
     pub fn select_u64x2(self, mask: m64x2, if_true: u64x2, if_false: u64x2) -> u64x2 {
         cast(
             self.sse4_1
-                ._mm_blendv_epi8(cast(if_false), cast(if_true), cast(mask)),
+                ._mm_blendv_epi8(cast(if_false), cast(if_true), unsafe { transmute(mask) }),
         )
     }
     /// Combines `if_true` and `if_false`, selecting elements from `if_true` if the corresponding
@@ -5181,7 +3868,7 @@ impl V2 {
     pub fn select_f64x2(self, mask: m64x2, if_true: f64x2, if_false: f64x2) -> f64x2 {
         cast(
             self.sse4_1
-                ._mm_blendv_pd(cast(if_false), cast(if_true), cast(mask)),
+                ._mm_blendv_pd(cast(if_false), cast(if_true), unsafe { transmute(mask) }),
         )
     }
 }
@@ -5204,7 +3891,7 @@ impl V3 {
     /// Returns a SIMD vector with all lanes set to the given value.
     #[inline(always)]
     pub fn splat_m8x32(self, value: m8) -> m8x32 {
-        cast(self.avx._mm256_set1_epi8(value.0 as i8))
+        unsafe { transmute(self.avx._mm256_set1_epi8(value.0 as i8)) }
     }
     /// Returns a SIMD vector with all lanes set to the given value.
     #[inline(always)]
@@ -5219,7 +3906,7 @@ impl V3 {
     /// Returns a SIMD vector with all lanes set to the given value.
     #[inline(always)]
     pub fn splat_m16x16(self, value: m16) -> m16x16 {
-        cast(self.avx._mm256_set1_epi16(value.0 as i16))
+        unsafe { transmute(self.avx._mm256_set1_epi16(value.0 as i16)) }
     }
     /// Returns a SIMD vector with all lanes set to the given value.
     #[inline(always)]
@@ -5234,7 +3921,7 @@ impl V3 {
     /// Returns a SIMD vector with all lanes set to the given value.
     #[inline(always)]
     pub fn splat_m32x8(self, value: m32) -> m32x8 {
-        cast(self.avx._mm256_set1_epi32(value.0 as i32))
+        unsafe { transmute(self.avx._mm256_set1_epi32(value.0 as i32)) }
     }
     /// Returns a SIMD vector with all lanes set to the given value.
     #[inline(always)]
@@ -5254,7 +3941,7 @@ impl V3 {
     /// Returns a SIMD vector with all lanes set to the given value.
     #[inline(always)]
     pub fn splat_m64x4(self, value: m64) -> m64x4 {
-        cast(self.avx._mm256_set1_epi64x(value.0 as i64))
+        unsafe { transmute(self.avx._mm256_set1_epi64x(value.0 as i64)) }
     }
     /// Returns a SIMD vector with all lanes set to the given value.
     #[inline(always)]
@@ -5279,7 +3966,7 @@ impl V3 {
     /// Returns the bitwise AND of `a` and `b`.
     #[inline(always)]
     pub fn and_m8x32(self, a: m8x32, b: m8x32) -> m8x32 {
-        cast(self.avx2._mm256_and_si256(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_and_si256(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise AND of `a` and `b`.
     #[inline(always)]
@@ -5294,7 +3981,7 @@ impl V3 {
     /// Returns the bitwise AND of `a` and `b`.
     #[inline(always)]
     pub fn and_m16x16(self, a: m16x16, b: m16x16) -> m16x16 {
-        cast(self.avx2._mm256_and_si256(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_and_si256(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise AND of `a` and `b`.
     #[inline(always)]
@@ -5309,7 +3996,7 @@ impl V3 {
     /// Returns the bitwise AND of `a` and `b`.
     #[inline(always)]
     pub fn and_m32x8(self, a: m32x8, b: m32x8) -> m32x8 {
-        cast(self.avx2._mm256_and_si256(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_and_si256(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise AND of `a` and `b`.
     #[inline(always)]
@@ -5329,7 +4016,7 @@ impl V3 {
     /// Returns the bitwise AND of `a` and `b`.
     #[inline(always)]
     pub fn and_m64x4(self, a: m64x4, b: m64x4) -> m64x4 {
-        cast(self.avx2._mm256_and_si256(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_and_si256(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise AND of `a` and `b`.
     #[inline(always)]
@@ -5350,7 +4037,7 @@ impl V3 {
     /// Returns the bitwise OR of `a` and `b`.
     #[inline(always)]
     pub fn or_m8x32(self, a: m8x32, b: m8x32) -> m8x32 {
-        cast(self.avx2._mm256_or_si256(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_or_si256(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise OR of `a` and `b`.
     #[inline(always)]
@@ -5365,7 +4052,7 @@ impl V3 {
     /// Returns the bitwise OR of `a` and `b`.
     #[inline(always)]
     pub fn or_m16x16(self, a: m16x16, b: m16x16) -> m16x16 {
-        cast(self.avx2._mm256_or_si256(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_or_si256(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise OR of `a` and `b`.
     #[inline(always)]
@@ -5380,7 +4067,7 @@ impl V3 {
     /// Returns the bitwise OR of `a` and `b`.
     #[inline(always)]
     pub fn or_m32x8(self, a: m32x8, b: m32x8) -> m32x8 {
-        cast(self.avx2._mm256_or_si256(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_or_si256(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise OR of `a` and `b`.
     #[inline(always)]
@@ -5400,7 +4087,7 @@ impl V3 {
     /// Returns the bitwise OR of `a` and `b`.
     #[inline(always)]
     pub fn or_m64x4(self, a: m64x4, b: m64x4) -> m64x4 {
-        cast(self.avx2._mm256_or_si256(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_or_si256(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise OR of `a` and `b`.
     #[inline(always)]
@@ -5421,7 +4108,7 @@ impl V3 {
     /// Returns the bitwise XOR of `a` and `b`.
     #[inline(always)]
     pub fn xor_m8x32(self, a: m8x32, b: m8x32) -> m8x32 {
-        cast(self.avx2._mm256_xor_si256(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_xor_si256(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise XOR of `a` and `b`.
     #[inline(always)]
@@ -5436,7 +4123,7 @@ impl V3 {
     /// Returns the bitwise XOR of `a` and `b`.
     #[inline(always)]
     pub fn xor_m16x16(self, a: m16x16, b: m16x16) -> m16x16 {
-        cast(self.avx2._mm256_xor_si256(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_xor_si256(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise XOR of `a` and `b`.
     #[inline(always)]
@@ -5451,7 +4138,7 @@ impl V3 {
     /// Returns the bitwise XOR of `a` and `b`.
     #[inline(always)]
     pub fn xor_m32x8(self, a: m32x8, b: m32x8) -> m32x8 {
-        cast(self.avx2._mm256_xor_si256(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_xor_si256(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise XOR of `a` and `b`.
     #[inline(always)]
@@ -5471,7 +4158,7 @@ impl V3 {
     /// Returns the bitwise XOR of `a` and `b`.
     #[inline(always)]
     pub fn xor_m64x4(self, a: m64x4, b: m64x4) -> m64x4 {
-        cast(self.avx2._mm256_xor_si256(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_xor_si256(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise XOR of `a` and `b`.
     #[inline(always)]
@@ -5553,7 +4240,7 @@ impl V3 {
     /// Returns the bitwise AND of NOT `a` and `b`.
     #[inline(always)]
     pub fn andnot_m8x32(self, a: m8x32, b: m8x32) -> m8x32 {
-        cast(self.avx2._mm256_andnot_si256(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_andnot_si256(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise AND of NOT `a` and `b`.
     #[inline(always)]
@@ -5568,7 +4255,7 @@ impl V3 {
     /// Returns the bitwise AND of NOT `a` and `b`.
     #[inline(always)]
     pub fn andnot_m16x16(self, a: m16x16, b: m16x16) -> m16x16 {
-        cast(self.avx2._mm256_andnot_si256(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_andnot_si256(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise AND of NOT `a` and `b`.
     #[inline(always)]
@@ -5583,7 +4270,7 @@ impl V3 {
     /// Returns the bitwise AND of NOT `a` and `b`.
     #[inline(always)]
     pub fn andnot_m32x8(self, a: m32x8, b: m32x8) -> m32x8 {
-        cast(self.avx2._mm256_andnot_si256(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_andnot_si256(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise AND of NOT `a` and `b`.
     #[inline(always)]
@@ -5603,7 +4290,7 @@ impl V3 {
     /// Returns the bitwise AND of NOT `a` and `b`.
     #[inline(always)]
     pub fn andnot_m64x4(self, a: m64x4, b: m64x4) -> m64x4 {
-        cast(self.avx2._mm256_andnot_si256(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_andnot_si256(transmute(a), transmute(b))) }
     }
     /// Returns the bitwise AND of NOT `a` and `b`.
     #[inline(always)]
@@ -6819,42 +5506,42 @@ impl V3 {
     /// Compares the elements in each lane of `a` and `b` for equality.
     #[inline(always)]
     pub fn cmp_eq_u8x32(self, a: u8x32, b: u8x32) -> m8x32 {
-        cast(self.avx2._mm256_cmpeq_epi8(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_cmpeq_epi8(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for equality.
     #[inline(always)]
     pub fn cmp_eq_i8x32(self, a: i8x32, b: i8x32) -> m8x32 {
-        cast(self.avx2._mm256_cmpeq_epi8(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_cmpeq_epi8(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for equality.
     #[inline(always)]
     pub fn cmp_eq_u16x16(self, a: u16x16, b: u16x16) -> m16x16 {
-        cast(self.avx2._mm256_cmpeq_epi16(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_cmpeq_epi16(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for equality.
     #[inline(always)]
     pub fn cmp_eq_i16x16(self, a: i16x16, b: i16x16) -> m16x16 {
-        cast(self.avx2._mm256_cmpeq_epi16(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_cmpeq_epi16(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for equality.
     #[inline(always)]
     pub fn cmp_eq_u32x8(self, a: u32x8, b: u32x8) -> m32x8 {
-        cast(self.avx2._mm256_cmpeq_epi32(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_cmpeq_epi32(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for equality.
     #[inline(always)]
     pub fn cmp_eq_i32x8(self, a: i32x8, b: i32x8) -> m32x8 {
-        cast(self.avx2._mm256_cmpeq_epi32(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_cmpeq_epi32(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for equality.
     #[inline(always)]
     pub fn cmp_eq_u64x4(self, a: u64x4, b: u64x4) -> m64x4 {
-        cast(self.avx2._mm256_cmpeq_epi64(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_cmpeq_epi64(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for equality.
     #[inline(always)]
     pub fn cmp_eq_i64x4(self, a: i64x4, b: i64x4) -> m64x4 {
-        cast(self.avx2._mm256_cmpeq_epi64(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_cmpeq_epi64(cast(a), cast(b))) }
     }
 
     /// Compares the elements in each lane of `a` and `b` for greater-than.
@@ -6866,7 +5553,7 @@ impl V3 {
     /// Compares the elements in each lane of `a` and `b` for greater-than.
     #[inline(always)]
     pub fn cmp_gt_i8x32(self, a: i8x32, b: i8x32) -> m8x32 {
-        cast(self.avx2._mm256_cmpgt_epi8(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_cmpgt_epi8(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for greater-than.
     #[inline(always)]
@@ -6877,7 +5564,7 @@ impl V3 {
     /// Compares the elements in each lane of `a` and `b` for greater-than.
     #[inline(always)]
     pub fn cmp_gt_i16x16(self, a: i16x16, b: i16x16) -> m16x16 {
-        cast(self.avx2._mm256_cmpgt_epi16(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_cmpgt_epi16(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for greater-than.
     #[inline(always)]
@@ -6888,7 +5575,7 @@ impl V3 {
     /// Compares the elements in each lane of `a` and `b` for greater-than.
     #[inline(always)]
     pub fn cmp_gt_i32x8(self, a: i32x8, b: i32x8) -> m32x8 {
-        cast(self.avx2._mm256_cmpgt_epi32(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_cmpgt_epi32(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for greater-than.
     #[inline(always)]
@@ -6899,7 +5586,7 @@ impl V3 {
     /// Compares the elements in each lane of `a` and `b` for greater-than.
     #[inline(always)]
     pub fn cmp_gt_i64x4(self, a: i64x4, b: i64x4) -> m64x4 {
-        cast(self.avx2._mm256_cmpgt_epi64(cast(a), cast(b)))
+        unsafe { transmute(self.avx2._mm256_cmpgt_epi64(cast(a), cast(b))) }
     }
 
     /// Compares the elements in each lane of `a` and `b` for greater-than-or-equal-to.
@@ -6952,7 +5639,7 @@ impl V3 {
     /// Compares the elements in each lane of `a` and `b` for less-than.
     #[inline(always)]
     pub fn cmp_lt_i8x32(self, a: i8x32, b: i8x32) -> m8x32 {
-        cast(self.avx2._mm256_cmpgt_epi8(cast(b), cast(a)))
+        unsafe { transmute(self.avx2._mm256_cmpgt_epi8(cast(b), cast(a))) }
     }
     /// Compares the elements in each lane of `a` and `b` for less-than.
     #[inline(always)]
@@ -6963,7 +5650,7 @@ impl V3 {
     /// Compares the elements in each lane of `a` and `b` for less-than.
     #[inline(always)]
     pub fn cmp_lt_i16x16(self, a: i16x16, b: i16x16) -> m16x16 {
-        cast(self.avx2._mm256_cmpgt_epi16(cast(b), cast(a)))
+        unsafe { transmute(self.avx2._mm256_cmpgt_epi16(cast(b), cast(a))) }
     }
     /// Compares the elements in each lane of `a` and `b` for less-than.
     #[inline(always)]
@@ -6974,7 +5661,7 @@ impl V3 {
     /// Compares the elements in each lane of `a` and `b` for less-than.
     #[inline(always)]
     pub fn cmp_lt_i32x8(self, a: i32x8, b: i32x8) -> m32x8 {
-        cast(self.avx2._mm256_cmpgt_epi32(cast(b), cast(a)))
+        unsafe { transmute(self.avx2._mm256_cmpgt_epi32(cast(b), cast(a))) }
     }
     /// Compares the elements in each lane of `a` and `b` for less-than.
     #[inline(always)]
@@ -6985,7 +5672,7 @@ impl V3 {
     /// Compares the elements in each lane of `a` and `b` for less-than.
     #[inline(always)]
     pub fn cmp_lt_i64x4(self, a: i64x4, b: i64x4) -> m64x4 {
-        cast(self.avx2._mm256_cmpgt_epi64(cast(b), cast(a)))
+        unsafe { transmute(self.avx2._mm256_cmpgt_epi64(cast(b), cast(a))) }
     }
 
     /// Compares the elements in each lane of `a` and `b` for less-than-or-equal-to.
@@ -7032,133 +5719,133 @@ impl V3 {
     /// Compares the elements in each lane of `a` and `b` for equality.
     #[inline(always)]
     pub fn cmp_eq_f32x8(self, a: f32x8, b: f32x8) -> m32x8 {
-        cast(self.avx._mm256_cmp_ps::<_CMP_EQ_OQ>(cast(a), cast(b)))
+        unsafe { transmute(self.avx._mm256_cmp_ps::<_CMP_EQ_OQ>(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for equality.
     #[inline(always)]
     pub fn cmp_eq_f64x4(self, a: f64x4, b: f64x4) -> m64x4 {
-        cast(self.avx._mm256_cmp_pd::<_CMP_EQ_OQ>(cast(a), cast(b)))
+        unsafe { transmute(self.avx._mm256_cmp_pd::<_CMP_EQ_OQ>(cast(a), cast(b))) }
     }
 
     /// Compares the elements in each lane of `a` and `b` for inequality.
     #[inline(always)]
     pub fn cmp_not_eq_f32x8(self, a: f32x8, b: f32x8) -> m32x8 {
-        cast(self.avx._mm256_cmp_ps::<_CMP_NEQ_UQ>(cast(a), cast(b)))
+        unsafe { transmute(self.avx._mm256_cmp_ps::<_CMP_NEQ_UQ>(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for inequality.
     #[inline(always)]
     pub fn cmp_not_eq_f64x4(self, a: f64x4, b: f64x4) -> m64x4 {
-        cast(self.avx._mm256_cmp_pd::<_CMP_NEQ_UQ>(cast(a), cast(b)))
+        unsafe { transmute(self.avx._mm256_cmp_pd::<_CMP_NEQ_UQ>(cast(a), cast(b))) }
     }
 
     /// Compares the elements in each lane of `a` and `b` for greater-than.
     #[inline(always)]
     pub fn cmp_gt_f32x8(self, a: f32x8, b: f32x8) -> m32x8 {
-        cast(self.avx._mm256_cmp_ps::<_CMP_GT_OQ>(cast(a), cast(b)))
+        unsafe { transmute(self.avx._mm256_cmp_ps::<_CMP_GT_OQ>(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for greater-than.
     #[inline(always)]
     pub fn cmp_gt_f64x4(self, a: f64x4, b: f64x4) -> m64x4 {
-        cast(self.avx._mm256_cmp_pd::<_CMP_GT_OQ>(cast(a), cast(b)))
+        unsafe { transmute(self.avx._mm256_cmp_pd::<_CMP_GT_OQ>(cast(a), cast(b))) }
     }
 
     /// Compares the elements in each lane of `a` and `b` for greater-than-or-equal-to.
     #[inline(always)]
     pub fn cmp_ge_f32x8(self, a: f32x8, b: f32x8) -> m32x8 {
-        cast(self.avx._mm256_cmp_ps::<_CMP_GE_OQ>(cast(a), cast(b)))
+        unsafe { transmute(self.avx._mm256_cmp_ps::<_CMP_GE_OQ>(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for greater-than-or-equal-to.
     #[inline(always)]
     pub fn cmp_ge_f64x4(self, a: f64x4, b: f64x4) -> m64x4 {
-        cast(self.avx._mm256_cmp_pd::<_CMP_GE_OQ>(cast(a), cast(b)))
+        unsafe { transmute(self.avx._mm256_cmp_pd::<_CMP_GE_OQ>(cast(a), cast(b))) }
     }
 
     /// Compares the elements in each lane of `a` and `b` for not-greater-than.
     #[inline(always)]
     pub fn cmp_not_gt_f32x8(self, a: f32x8, b: f32x8) -> m32x8 {
-        cast(self.avx._mm256_cmp_ps::<_CMP_NGT_UQ>(cast(a), cast(b)))
+        unsafe { transmute(self.avx._mm256_cmp_ps::<_CMP_NGT_UQ>(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for not-greater-than.
     #[inline(always)]
     pub fn cmp_not_gt_f64x4(self, a: f64x4, b: f64x4) -> m64x4 {
-        cast(self.avx._mm256_cmp_pd::<_CMP_NGT_UQ>(cast(a), cast(b)))
+        unsafe { transmute(self.avx._mm256_cmp_pd::<_CMP_NGT_UQ>(cast(a), cast(b))) }
     }
 
     /// Compares the elements in each lane of `a` and `b` for not-greater-than-or-equal.
     #[inline(always)]
     pub fn cmp_not_ge_f32x8(self, a: f32x8, b: f32x8) -> m32x8 {
-        cast(self.avx._mm256_cmp_ps::<_CMP_NGE_UQ>(cast(a), cast(b)))
+        unsafe { transmute(self.avx._mm256_cmp_ps::<_CMP_NGE_UQ>(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for not-greater-than-or-equal.
     #[inline(always)]
     pub fn cmp_not_ge_f64x4(self, a: f64x4, b: f64x4) -> m64x4 {
-        cast(self.avx._mm256_cmp_pd::<_CMP_NGE_UQ>(cast(a), cast(b)))
+        unsafe { transmute(self.avx._mm256_cmp_pd::<_CMP_NGE_UQ>(cast(a), cast(b))) }
     }
 
     /// Compares the elements in each lane of `a` and `b` for less-than.
     #[inline(always)]
     pub fn cmp_lt_f32x8(self, a: f32x8, b: f32x8) -> m32x8 {
-        cast(self.avx._mm256_cmp_ps::<_CMP_LT_OQ>(cast(a), cast(b)))
+        unsafe { transmute(self.avx._mm256_cmp_ps::<_CMP_LT_OQ>(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for less-than.
     #[inline(always)]
     pub fn cmp_lt_f64x4(self, a: f64x4, b: f64x4) -> m64x4 {
-        cast(self.avx._mm256_cmp_pd::<_CMP_LT_OQ>(cast(a), cast(b)))
+        unsafe { transmute(self.avx._mm256_cmp_pd::<_CMP_LT_OQ>(cast(a), cast(b))) }
     }
 
     /// Compares the elements in each lane of `a` and `b` for less-than-or-equal-to.
     #[inline(always)]
     pub fn cmp_le_f32x8(self, a: f32x8, b: f32x8) -> m32x8 {
-        cast(self.avx._mm256_cmp_ps::<_CMP_LE_OQ>(cast(a), cast(b)))
+        unsafe { transmute(self.avx._mm256_cmp_ps::<_CMP_LE_OQ>(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for less-than-or-equal-to.
     #[inline(always)]
     pub fn cmp_le_f64x4(self, a: f64x4, b: f64x4) -> m64x4 {
-        cast(self.avx._mm256_cmp_pd::<_CMP_LE_OQ>(cast(a), cast(b)))
+        unsafe { transmute(self.avx._mm256_cmp_pd::<_CMP_LE_OQ>(cast(a), cast(b))) }
     }
 
     /// Compares the elements in each lane of `a` and `b` for not-less-than.
     #[inline(always)]
     pub fn cmp_not_lt_f32x8(self, a: f32x8, b: f32x8) -> m32x8 {
-        cast(self.avx._mm256_cmp_ps::<_CMP_NLT_UQ>(cast(a), cast(b)))
+        unsafe { transmute(self.avx._mm256_cmp_ps::<_CMP_NLT_UQ>(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for not-less-than.
     #[inline(always)]
     pub fn cmp_not_lt_f64x4(self, a: f64x4, b: f64x4) -> m64x4 {
-        cast(self.avx._mm256_cmp_pd::<_CMP_NLT_UQ>(cast(a), cast(b)))
+        unsafe { transmute(self.avx._mm256_cmp_pd::<_CMP_NLT_UQ>(cast(a), cast(b))) }
     }
 
     /// Compares the elements in each lane of `a` and `b` for not-less-than-or-equal.
     #[inline(always)]
     pub fn cmp_not_le_f32x8(self, a: f32x8, b: f32x8) -> m32x8 {
-        cast(self.avx._mm256_cmp_ps::<_CMP_NLE_UQ>(cast(a), cast(b)))
+        unsafe { transmute(self.avx._mm256_cmp_ps::<_CMP_NLE_UQ>(cast(a), cast(b))) }
     }
     /// Compares the elements in each lane of `a` and `b` for not-less-than-or-equal.
     #[inline(always)]
     pub fn cmp_not_le_f64x4(self, a: f64x4, b: f64x4) -> m64x4 {
-        cast(self.avx._mm256_cmp_pd::<_CMP_NLE_UQ>(cast(a), cast(b)))
+        unsafe { transmute(self.avx._mm256_cmp_pd::<_CMP_NLE_UQ>(cast(a), cast(b))) }
     }
 
     /// Checks if the elements in each lane of `a` are NaN.
     #[inline(always)]
     pub fn is_nan_f32x8(self, a: f32x8) -> m32x8 {
-        cast(self.avx._mm256_cmp_ps::<_CMP_UNORD_Q>(cast(a), cast(a)))
+        unsafe { transmute(self.avx._mm256_cmp_ps::<_CMP_UNORD_Q>(cast(a), cast(a))) }
     }
     /// Checks if the elements in each lane of `a` are NaN.
     #[inline(always)]
     pub fn is_nan_f64x4(self, a: f64x4) -> m64x4 {
-        cast(self.avx._mm256_cmp_pd::<_CMP_UNORD_Q>(cast(a), cast(a)))
+        unsafe { transmute(self.avx._mm256_cmp_pd::<_CMP_UNORD_Q>(cast(a), cast(a))) }
     }
 
     /// Checks if the elements in each lane of `a` are not NaN.
     #[inline(always)]
     pub fn is_not_nan_f32x8(self, a: f32x8) -> m32x8 {
-        cast(self.avx._mm256_cmp_ps::<_CMP_ORD_Q>(cast(a), cast(a)))
+        unsafe { transmute(self.avx._mm256_cmp_ps::<_CMP_ORD_Q>(cast(a), cast(a))) }
     }
     /// Checks if the elements in each lane of `a` are not NaN.
     #[inline(always)]
     pub fn is_not_nan_f64x4(self, a: f64x4) -> m64x4 {
-        cast(self.avx._mm256_cmp_pd::<_CMP_ORD_Q>(cast(a), cast(a)))
+        unsafe { transmute(self.avx._mm256_cmp_pd::<_CMP_ORD_Q>(cast(a), cast(a))) }
     }
 
     //-------------------------------------------------------------------------------
@@ -7217,7 +5904,7 @@ impl V3 {
     pub fn select_u8x32(self, mask: m8x32, if_true: u8x32, if_false: u8x32) -> u8x32 {
         cast(
             self.avx2
-                ._mm256_blendv_epi8(cast(if_false), cast(if_true), cast(mask)),
+                ._mm256_blendv_epi8(cast(if_false), cast(if_true), unsafe { transmute(mask) }),
         )
     }
     /// Combines `if_true` and `if_false`, selecting elements from `if_true` if the corresponding
@@ -7232,7 +5919,7 @@ impl V3 {
     pub fn select_u16x16(self, mask: m16x16, if_true: u16x16, if_false: u16x16) -> u16x16 {
         cast(
             self.avx2
-                ._mm256_blendv_epi8(cast(if_false), cast(if_true), cast(mask)),
+                ._mm256_blendv_epi8(cast(if_false), cast(if_true), unsafe { transmute(mask) }),
         )
     }
     /// Combines `if_true` and `if_false`, selecting elements from `if_true` if the corresponding
@@ -7247,7 +5934,7 @@ impl V3 {
     pub fn select_u32x8(self, mask: m32x8, if_true: u32x8, if_false: u32x8) -> u32x8 {
         cast(
             self.avx2
-                ._mm256_blendv_epi8(cast(if_false), cast(if_true), cast(mask)),
+                ._mm256_blendv_epi8(cast(if_false), cast(if_true), unsafe { transmute(mask) }),
         )
     }
     /// Combines `if_true` and `if_false`, selecting elements from `if_true` if the corresponding
@@ -7262,7 +5949,7 @@ impl V3 {
     pub fn select_f32x8(self, mask: m32x8, if_true: f32x8, if_false: f32x8) -> f32x8 {
         cast(
             self.avx
-                ._mm256_blendv_ps(cast(if_false), cast(if_true), cast(mask)),
+                ._mm256_blendv_ps(cast(if_false), cast(if_true), unsafe { transmute(mask) }),
         )
     }
     /// Combines `if_true` and `if_false`, selecting elements from `if_true` if the corresponding
@@ -7271,7 +5958,7 @@ impl V3 {
     pub fn select_u64x4(self, mask: m64x4, if_true: u64x4, if_false: u64x4) -> u64x4 {
         cast(
             self.avx2
-                ._mm256_blendv_epi8(cast(if_false), cast(if_true), cast(mask)),
+                ._mm256_blendv_epi8(cast(if_false), cast(if_true), unsafe { transmute(mask) }),
         )
     }
     /// Combines `if_true` and `if_false`, selecting elements from `if_true` if the corresponding
@@ -7286,7 +5973,7 @@ impl V3 {
     pub fn select_f64x4(self, mask: m64x4, if_true: f64x4, if_false: f64x4) -> f64x4 {
         cast(
             self.avx
-                ._mm256_blendv_pd(cast(if_false), cast(if_true), cast(mask)),
+                ._mm256_blendv_pd(cast(if_false), cast(if_true), unsafe { transmute(mask) }),
         )
     }
 }
@@ -10338,7 +9025,7 @@ mod tests {
                     lt_array[i] = m8::new(a_array[i] < b_array[i]);
                 }
 
-                assert_eq!(lt, cast(lt_array));
+                assert_eq!(lt, unsafe { transmute(lt_array) });
             }
             {
                 const N: usize = 8;
@@ -10355,7 +9042,7 @@ mod tests {
                     lt_array[i] = m16::new(a_array[i] < b_array[i]);
                 }
 
-                assert_eq!(lt, cast(lt_array));
+                assert_eq!(lt, unsafe { transmute(lt_array) });
             }
             {
                 const N: usize = 4;
@@ -10372,7 +9059,7 @@ mod tests {
                     lt_array[i] = m32::new(a_array[i] < b_array[i]);
                 }
 
-                assert_eq!(lt, cast(lt_array));
+                assert_eq!(lt, unsafe { transmute(lt_array) });
             }
             {
                 const N: usize = 2;
@@ -10389,7 +9076,7 @@ mod tests {
                     lt_array[i] = m64::new(a_array[i] < b_array[i]);
                 }
 
-                assert_eq!(lt, cast(lt_array));
+                assert_eq!(lt, unsafe { transmute(lt_array) });
             }
         }
     }

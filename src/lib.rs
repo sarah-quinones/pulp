@@ -1480,17 +1480,18 @@ unsafe fn split_mut_slice<T, U>(slice: &mut [T]) -> (&mut [U], &mut [T]) {
     )
 }
 
-#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+#[cfg(not(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64")))]
 #[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
 #[repr(u8)]
 enum ArchInner {
     Scalar = 0,
     // improves codegen for some reason
+    #[allow(dead_code)]
     Dummy = u8::MAX - 1,
 }
 
-#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+#[cfg(not(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64")))]
 impl ArchInner {
     #[inline]
     pub fn new() -> Self {
@@ -1506,6 +1507,8 @@ impl ArchInner {
     }
 }
 
+#[cfg(target_arch = "aarch64")]
+use aarch64::ArchInner;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use x86::ArchInner;
 
@@ -1524,7 +1527,7 @@ impl Arch {
                 inner: ArchInner::new(),
             })
         };
-        Self::__static_available().store(out as u8, ::core::sync::atomic::Ordering::Relaxed);
+        Self::__static_available().store(out, ::core::sync::atomic::Ordering::Relaxed);
         out
     }
 
@@ -1552,6 +1555,7 @@ impl Default for Arch {
 }
 
 #[derive(Debug, Clone, Copy)]
+#[repr(transparent)]
 pub struct Arch {
     inner: ArchInner,
 }
@@ -1649,3 +1653,1301 @@ pub mod core_arch;
 #[cfg_attr(docsrs, doc(cfg(any(target_arch = "x86", target_arch = "x86_64"))))]
 /// Low level x86 API.
 pub mod x86;
+
+#[cfg(target_arch = "aarch64")]
+#[cfg_attr(docsrs, doc(cfg(target_arch = "aarch64")))]
+/// Low level aarch64 API.
+pub mod aarch64;
+
+/// Mask type with 8 bits. Its bit either all ones or all zeros.
+#[derive(Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct m8(u8);
+/// Mask type with 16 bits. Its bit either all ones or all zeros.
+#[derive(Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct m16(u16);
+/// Mask type with 32 bits. Its bit either all ones or all zeros.
+#[derive(Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct m32(u32);
+/// Mask type with 64 bits. Its bit either all ones or all zeros.
+#[derive(Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct m64(u64);
+
+/// Bitmask type for 8 elements, used for mask operations on AVX512.
+#[derive(Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct b8(pub u8);
+/// Bitmask type for 16 elements, used for mask operations on AVX512.
+#[derive(Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct b16(pub u16);
+/// Bitmask type for 32 elements, used for mask operations on AVX512.
+#[derive(Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct b32(pub u32);
+/// Bitmask type for 64 elements, used for mask operations on AVX512.
+#[derive(Copy, Clone, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct b64(pub u64);
+
+impl core::ops::Not for b8 {
+    type Output = b8;
+    #[inline(always)]
+    fn not(self) -> Self::Output {
+        b8(!self.0)
+    }
+}
+impl core::ops::BitAnd for b8 {
+    type Output = b8;
+    #[inline(always)]
+    fn bitand(self, rhs: Self) -> Self::Output {
+        b8(self.0 & rhs.0)
+    }
+}
+impl core::ops::BitOr for b8 {
+    type Output = b8;
+    #[inline(always)]
+    fn bitor(self, rhs: Self) -> Self::Output {
+        b8(self.0 | rhs.0)
+    }
+}
+impl core::ops::BitXor for b8 {
+    type Output = b8;
+    #[inline(always)]
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        b8(self.0 ^ rhs.0)
+    }
+}
+
+impl core::ops::Not for b16 {
+    type Output = b16;
+    #[inline(always)]
+    fn not(self) -> Self::Output {
+        b16(!self.0)
+    }
+}
+impl core::ops::BitAnd for b16 {
+    type Output = b16;
+    #[inline(always)]
+    fn bitand(self, rhs: Self) -> Self::Output {
+        b16(self.0 & rhs.0)
+    }
+}
+impl core::ops::BitOr for b16 {
+    type Output = b16;
+    #[inline(always)]
+    fn bitor(self, rhs: Self) -> Self::Output {
+        b16(self.0 | rhs.0)
+    }
+}
+impl core::ops::BitXor for b16 {
+    type Output = b16;
+    #[inline(always)]
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        b16(self.0 ^ rhs.0)
+    }
+}
+
+impl core::ops::Not for b32 {
+    type Output = b32;
+    #[inline(always)]
+    fn not(self) -> Self::Output {
+        b32(!self.0)
+    }
+}
+impl core::ops::BitAnd for b32 {
+    type Output = b32;
+    #[inline(always)]
+    fn bitand(self, rhs: Self) -> Self::Output {
+        b32(self.0 & rhs.0)
+    }
+}
+impl core::ops::BitOr for b32 {
+    type Output = b32;
+    #[inline(always)]
+    fn bitor(self, rhs: Self) -> Self::Output {
+        b32(self.0 | rhs.0)
+    }
+}
+impl core::ops::BitXor for b32 {
+    type Output = b32;
+    #[inline(always)]
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        b32(self.0 ^ rhs.0)
+    }
+}
+
+impl core::ops::Not for b64 {
+    type Output = b64;
+    #[inline(always)]
+    fn not(self) -> Self::Output {
+        b64(!self.0)
+    }
+}
+impl core::ops::BitAnd for b64 {
+    type Output = b64;
+    #[inline(always)]
+    fn bitand(self, rhs: Self) -> Self::Output {
+        b64(self.0 & rhs.0)
+    }
+}
+impl core::ops::BitOr for b64 {
+    type Output = b64;
+    #[inline(always)]
+    fn bitor(self, rhs: Self) -> Self::Output {
+        b64(self.0 | rhs.0)
+    }
+}
+impl core::ops::BitXor for b64 {
+    type Output = b64;
+    #[inline(always)]
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        b64(self.0 ^ rhs.0)
+    }
+}
+
+impl Debug for b8 {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+        #[derive(Copy, Clone, Debug)]
+        struct b8(bool, bool, bool, bool, bool, bool, bool, bool);
+        b8(
+            ((self.0 >> 0) & 1) == 1,
+            ((self.0 >> 1) & 1) == 1,
+            ((self.0 >> 2) & 1) == 1,
+            ((self.0 >> 3) & 1) == 1,
+            ((self.0 >> 4) & 1) == 1,
+            ((self.0 >> 5) & 1) == 1,
+            ((self.0 >> 6) & 1) == 1,
+            ((self.0 >> 7) & 1) == 1,
+        )
+        .fmt(f)
+    }
+}
+impl Debug for b16 {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+        #[derive(Copy, Clone, Debug)]
+        struct b16(
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+        );
+        b16(
+            ((self.0 >> 00) & 1) == 1,
+            ((self.0 >> 01) & 1) == 1,
+            ((self.0 >> 02) & 1) == 1,
+            ((self.0 >> 03) & 1) == 1,
+            ((self.0 >> 04) & 1) == 1,
+            ((self.0 >> 05) & 1) == 1,
+            ((self.0 >> 06) & 1) == 1,
+            ((self.0 >> 07) & 1) == 1,
+            ((self.0 >> 08) & 1) == 1,
+            ((self.0 >> 09) & 1) == 1,
+            ((self.0 >> 10) & 1) == 1,
+            ((self.0 >> 11) & 1) == 1,
+            ((self.0 >> 12) & 1) == 1,
+            ((self.0 >> 13) & 1) == 1,
+            ((self.0 >> 14) & 1) == 1,
+            ((self.0 >> 15) & 1) == 1,
+        )
+        .fmt(f)
+    }
+}
+impl Debug for b32 {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+        #[derive(Copy, Clone, Debug)]
+        struct b32(
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+        );
+        b32(
+            ((self.0 >> 00) & 1) == 1,
+            ((self.0 >> 01) & 1) == 1,
+            ((self.0 >> 02) & 1) == 1,
+            ((self.0 >> 03) & 1) == 1,
+            ((self.0 >> 04) & 1) == 1,
+            ((self.0 >> 05) & 1) == 1,
+            ((self.0 >> 06) & 1) == 1,
+            ((self.0 >> 07) & 1) == 1,
+            ((self.0 >> 08) & 1) == 1,
+            ((self.0 >> 09) & 1) == 1,
+            ((self.0 >> 10) & 1) == 1,
+            ((self.0 >> 11) & 1) == 1,
+            ((self.0 >> 12) & 1) == 1,
+            ((self.0 >> 13) & 1) == 1,
+            ((self.0 >> 14) & 1) == 1,
+            ((self.0 >> 15) & 1) == 1,
+            ((self.0 >> 16) & 1) == 1,
+            ((self.0 >> 17) & 1) == 1,
+            ((self.0 >> 18) & 1) == 1,
+            ((self.0 >> 19) & 1) == 1,
+            ((self.0 >> 20) & 1) == 1,
+            ((self.0 >> 21) & 1) == 1,
+            ((self.0 >> 22) & 1) == 1,
+            ((self.0 >> 23) & 1) == 1,
+            ((self.0 >> 24) & 1) == 1,
+            ((self.0 >> 25) & 1) == 1,
+            ((self.0 >> 26) & 1) == 1,
+            ((self.0 >> 27) & 1) == 1,
+            ((self.0 >> 28) & 1) == 1,
+            ((self.0 >> 29) & 1) == 1,
+            ((self.0 >> 30) & 1) == 1,
+            ((self.0 >> 31) & 1) == 1,
+        )
+        .fmt(f)
+    }
+}
+impl Debug for b64 {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+        #[derive(Copy, Clone, Debug)]
+        struct b64(
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+            bool,
+        );
+        b64(
+            ((self.0 >> 00) & 1) == 1,
+            ((self.0 >> 01) & 1) == 1,
+            ((self.0 >> 02) & 1) == 1,
+            ((self.0 >> 03) & 1) == 1,
+            ((self.0 >> 04) & 1) == 1,
+            ((self.0 >> 05) & 1) == 1,
+            ((self.0 >> 06) & 1) == 1,
+            ((self.0 >> 07) & 1) == 1,
+            ((self.0 >> 08) & 1) == 1,
+            ((self.0 >> 09) & 1) == 1,
+            ((self.0 >> 10) & 1) == 1,
+            ((self.0 >> 11) & 1) == 1,
+            ((self.0 >> 12) & 1) == 1,
+            ((self.0 >> 13) & 1) == 1,
+            ((self.0 >> 14) & 1) == 1,
+            ((self.0 >> 15) & 1) == 1,
+            ((self.0 >> 16) & 1) == 1,
+            ((self.0 >> 17) & 1) == 1,
+            ((self.0 >> 18) & 1) == 1,
+            ((self.0 >> 19) & 1) == 1,
+            ((self.0 >> 20) & 1) == 1,
+            ((self.0 >> 21) & 1) == 1,
+            ((self.0 >> 22) & 1) == 1,
+            ((self.0 >> 23) & 1) == 1,
+            ((self.0 >> 24) & 1) == 1,
+            ((self.0 >> 25) & 1) == 1,
+            ((self.0 >> 26) & 1) == 1,
+            ((self.0 >> 27) & 1) == 1,
+            ((self.0 >> 28) & 1) == 1,
+            ((self.0 >> 29) & 1) == 1,
+            ((self.0 >> 30) & 1) == 1,
+            ((self.0 >> 31) & 1) == 1,
+            ((self.0 >> 32) & 1) == 1,
+            ((self.0 >> 33) & 1) == 1,
+            ((self.0 >> 34) & 1) == 1,
+            ((self.0 >> 35) & 1) == 1,
+            ((self.0 >> 36) & 1) == 1,
+            ((self.0 >> 37) & 1) == 1,
+            ((self.0 >> 38) & 1) == 1,
+            ((self.0 >> 39) & 1) == 1,
+            ((self.0 >> 40) & 1) == 1,
+            ((self.0 >> 41) & 1) == 1,
+            ((self.0 >> 42) & 1) == 1,
+            ((self.0 >> 43) & 1) == 1,
+            ((self.0 >> 44) & 1) == 1,
+            ((self.0 >> 45) & 1) == 1,
+            ((self.0 >> 46) & 1) == 1,
+            ((self.0 >> 47) & 1) == 1,
+            ((self.0 >> 48) & 1) == 1,
+            ((self.0 >> 49) & 1) == 1,
+            ((self.0 >> 50) & 1) == 1,
+            ((self.0 >> 51) & 1) == 1,
+            ((self.0 >> 52) & 1) == 1,
+            ((self.0 >> 53) & 1) == 1,
+            ((self.0 >> 54) & 1) == 1,
+            ((self.0 >> 55) & 1) == 1,
+            ((self.0 >> 56) & 1) == 1,
+            ((self.0 >> 57) & 1) == 1,
+            ((self.0 >> 58) & 1) == 1,
+            ((self.0 >> 59) & 1) == 1,
+            ((self.0 >> 60) & 1) == 1,
+            ((self.0 >> 61) & 1) == 1,
+            ((self.0 >> 62) & 1) == 1,
+            ((self.0 >> 63) & 1) == 1,
+        )
+        .fmt(f)
+    }
+}
+
+impl Debug for m8 {
+    #[inline]
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+        self.is_set().fmt(f)
+    }
+}
+impl Debug for m16 {
+    #[inline]
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+        self.is_set().fmt(f)
+    }
+}
+impl Debug for m32 {
+    #[inline]
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+        self.is_set().fmt(f)
+    }
+}
+impl Debug for m64 {
+    #[inline]
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+        self.is_set().fmt(f)
+    }
+}
+
+impl m8 {
+    /// Returns a mask with all bits set one, if `flag` is true, otherwise returns a mask with all
+    /// bits set to zero.
+    #[inline(always)]
+    pub const fn new(flag: bool) -> Self {
+        Self(if flag { u8::MAX } else { 0 })
+    }
+
+    /// Returns `false` if the mask bits are all zero, otherwise returns `true`.
+    #[inline(always)]
+    pub const fn is_set(self) -> bool {
+        self.0 != 0
+    }
+}
+impl m16 {
+    /// Returns a mask with all bits set one, if `flag` is true, otherwise returns a mask with all
+    /// bits set to zero.
+    #[inline(always)]
+    pub const fn new(flag: bool) -> Self {
+        Self(if flag { u16::MAX } else { 0 })
+    }
+
+    /// Returns `false` if the mask bits are all zero, otherwise returns `true`.
+    #[inline(always)]
+    pub const fn is_set(self) -> bool {
+        self.0 != 0
+    }
+}
+impl m32 {
+    /// Returns a mask with all bits set one, if `flag` is true, otherwise returns a mask with all
+    /// bits set to zero.
+    #[inline(always)]
+    pub const fn new(flag: bool) -> Self {
+        Self(if flag { u32::MAX } else { 0 })
+    }
+
+    /// Returns `false` if the mask bits are all zero, otherwise returns `true`.
+    #[inline(always)]
+    pub const fn is_set(self) -> bool {
+        self.0 != 0
+    }
+}
+impl m64 {
+    /// Returns a mask with all bits set one, if `flag` is true, otherwise returns a mask with all
+    /// bits set to zero.
+    #[inline(always)]
+    pub const fn new(flag: bool) -> Self {
+        Self(if flag { u64::MAX } else { 0 })
+    }
+
+    /// Returns `false` if the mask bits are all zero, otherwise returns `true`.
+    #[inline(always)]
+    pub const fn is_set(self) -> bool {
+        self.0 != 0
+    }
+}
+
+/// A 128-bit SIMD vector with 16 elements of type [`i8`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct i8x16(
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+);
+/// A 256-bit SIMD vector with 32 elements of type [`i8`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct i8x32(
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+);
+/// A 512-bit SIMD vector with 64 elements of type [`i8`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct i8x64(
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+    pub i8,
+);
+
+/// A 128-bit SIMD vector with 16 elements of type [`u8`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct u8x16(
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+);
+/// A 256-bit SIMD vector with 32 elements of type [`u8`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct u8x32(
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+);
+/// A 512-bit SIMD vector with 64 elements of type [`u8`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct u8x64(
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+    pub u8,
+);
+
+/// A 128-bit SIMD vector with 16 elements of type [`m8`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct m8x16(
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+);
+/// A 256-bit SIMD vector with 32 elements of type [`m8`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct m8x32(
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+    pub m8,
+);
+
+/// A 128-bit SIMD vector with 8 elements of type [`i16`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct i16x8(
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+);
+/// A 256-bit SIMD vector with 16 elements of type [`i16`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct i16x16(
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+);
+/// A 512-bit SIMD vector with 32 elements of type [`i16`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct i16x32(
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+    pub i16,
+);
+
+/// A 128-bit SIMD vector with 8 elements of type [`u16`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct u16x8(
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+);
+/// A 256-bit SIMD vector with 16 elements of type [`u16`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct u16x16(
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+);
+/// A 512-bit SIMD vector with 32 elements of type [`u16`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct u16x32(
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+    pub u16,
+);
+
+/// A 128-bit SIMD vector with 8 elements of type [`m16`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct m16x8(
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+);
+/// A 256-bit SIMD vector with 16 elements of type [`m16`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct m16x16(
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+    pub m16,
+);
+
+/// A 128-bit SIMD vector with 4 elements of type [`f32`].
+#[derive(Debug, Copy, Clone, PartialEq)]
+#[repr(C)]
+pub struct f32x4(pub f32, pub f32, pub f32, pub f32);
+/// A 256-bit SIMD vector with 8 elements of type [`f32`].
+#[derive(Debug, Copy, Clone, PartialEq)]
+#[repr(C)]
+pub struct f32x8(
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+);
+/// A 512-bit SIMD vector with 16 elements of type [`f32`].
+#[derive(Debug, Copy, Clone, PartialEq)]
+#[repr(C)]
+pub struct f32x16(
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+    pub f32,
+);
+
+/// A 128-bit SIMD vector with 4 elements of type [`i32`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct i32x4(pub i32, pub i32, pub i32, pub i32);
+/// A 256-bit SIMD vector with 8 elements of type [`i32`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct i32x8(
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+);
+/// A 512-bit SIMD vector with 16 elements of type [`i32`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct i32x16(
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+    pub i32,
+);
+
+/// A 128-bit SIMD vector with 4 elements of type [`u32`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct u32x4(pub u32, pub u32, pub u32, pub u32);
+/// A 256-bit SIMD vector with 8 elements of type [`u32`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct u32x8(
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+);
+/// A 512-bit SIMD vector with 16 elements of type [`u32`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct u32x16(
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+    pub u32,
+);
+
+/// A 128-bit SIMD vector with 4 elements of type [`m32`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct m32x4(pub m32, pub m32, pub m32, pub m32);
+/// A 256-bit SIMD vector with 8 elements of type [`m32`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct m32x8(
+    pub m32,
+    pub m32,
+    pub m32,
+    pub m32,
+    pub m32,
+    pub m32,
+    pub m32,
+    pub m32,
+);
+
+/// A 128-bit SIMD vector with 2 elements of type [`f64`].
+#[derive(Debug, Copy, Clone, PartialEq)]
+#[repr(C)]
+pub struct f64x2(pub f64, pub f64);
+/// A 256-bit SIMD vector with 4 elements of type [`f64`].
+#[derive(Debug, Copy, Clone, PartialEq)]
+#[repr(C)]
+pub struct f64x4(pub f64, pub f64, pub f64, pub f64);
+/// A 512-bit SIMD vector with 8 elements of type [`f64`].
+#[derive(Debug, Copy, Clone, PartialEq)]
+#[repr(C)]
+pub struct f64x8(
+    pub f64,
+    pub f64,
+    pub f64,
+    pub f64,
+    pub f64,
+    pub f64,
+    pub f64,
+    pub f64,
+);
+
+/// A 128-bit SIMD vector with 2 elements of type [`i64`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct i64x2(pub i64, pub i64);
+/// A 256-bit SIMD vector with 4 elements of type [`i64`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct i64x4(pub i64, pub i64, pub i64, pub i64);
+/// A 512-bit SIMD vector with 8 elements of type [`i64`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct i64x8(
+    pub i64,
+    pub i64,
+    pub i64,
+    pub i64,
+    pub i64,
+    pub i64,
+    pub i64,
+    pub i64,
+);
+
+/// A 128-bit SIMD vector with 2 elements of type [`u64`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct u64x2(pub u64, pub u64);
+/// A 256-bit SIMD vector with 4 elements of type [`u64`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct u64x4(pub u64, pub u64, pub u64, pub u64);
+/// A 512-bit SIMD vector with 8 elements of type [`u64`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct u64x8(
+    pub u64,
+    pub u64,
+    pub u64,
+    pub u64,
+    pub u64,
+    pub u64,
+    pub u64,
+    pub u64,
+);
+
+/// A 128-bit SIMD vector with 2 elements of type [`m64`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct m64x2(pub m64, pub m64);
+/// A 256-bit SIMD vector with 4 elements of type [`m64`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct m64x4(pub m64, pub m64, pub m64, pub m64);
+
+unsafe impl Zeroable for m8 {}
+unsafe impl Zeroable for m16 {}
+unsafe impl Zeroable for m32 {}
+unsafe impl Zeroable for m64 {}
+unsafe impl Zeroable for b8 {}
+unsafe impl Pod for b8 {}
+unsafe impl Zeroable for b16 {}
+unsafe impl Pod for b16 {}
+unsafe impl Zeroable for b32 {}
+unsafe impl Pod for b32 {}
+unsafe impl Zeroable for b64 {}
+unsafe impl Pod for b64 {}
+
+unsafe impl Zeroable for i8x16 {}
+unsafe impl Zeroable for i8x32 {}
+unsafe impl Zeroable for i8x64 {}
+unsafe impl Pod for i8x16 {}
+unsafe impl Pod for i8x32 {}
+unsafe impl Pod for i8x64 {}
+unsafe impl Zeroable for u8x16 {}
+unsafe impl Zeroable for u8x32 {}
+unsafe impl Zeroable for u8x64 {}
+unsafe impl Pod for u8x16 {}
+unsafe impl Pod for u8x32 {}
+unsafe impl Pod for u8x64 {}
+unsafe impl Zeroable for m8x16 {}
+unsafe impl Zeroable for m8x32 {}
+
+unsafe impl Zeroable for i16x8 {}
+unsafe impl Zeroable for i16x16 {}
+unsafe impl Zeroable for i16x32 {}
+unsafe impl Pod for i16x8 {}
+unsafe impl Pod for i16x16 {}
+unsafe impl Pod for i16x32 {}
+unsafe impl Zeroable for u16x8 {}
+unsafe impl Zeroable for u16x16 {}
+unsafe impl Zeroable for u16x32 {}
+unsafe impl Pod for u16x8 {}
+unsafe impl Pod for u16x16 {}
+unsafe impl Pod for u16x32 {}
+unsafe impl Zeroable for m16x8 {}
+unsafe impl Zeroable for m16x16 {}
+
+unsafe impl Zeroable for f32x4 {}
+unsafe impl Zeroable for f32x8 {}
+unsafe impl Zeroable for f32x16 {}
+unsafe impl Pod for f32x4 {}
+unsafe impl Pod for f32x8 {}
+unsafe impl Pod for f32x16 {}
+unsafe impl Zeroable for i32x4 {}
+unsafe impl Zeroable for i32x8 {}
+unsafe impl Zeroable for i32x16 {}
+unsafe impl Pod for i32x4 {}
+unsafe impl Pod for i32x8 {}
+unsafe impl Pod for i32x16 {}
+unsafe impl Zeroable for u32x4 {}
+unsafe impl Zeroable for u32x8 {}
+unsafe impl Zeroable for u32x16 {}
+unsafe impl Pod for u32x4 {}
+unsafe impl Pod for u32x8 {}
+unsafe impl Pod for u32x16 {}
+unsafe impl Zeroable for m32x4 {}
+unsafe impl Zeroable for m32x8 {}
+
+unsafe impl Zeroable for f64x2 {}
+unsafe impl Zeroable for f64x4 {}
+unsafe impl Zeroable for f64x8 {}
+unsafe impl Pod for f64x2 {}
+unsafe impl Pod for f64x4 {}
+unsafe impl Pod for f64x8 {}
+unsafe impl Zeroable for i64x2 {}
+unsafe impl Zeroable for i64x4 {}
+unsafe impl Zeroable for i64x8 {}
+unsafe impl Pod for i64x2 {}
+unsafe impl Pod for i64x4 {}
+unsafe impl Pod for i64x8 {}
+unsafe impl Zeroable for u64x2 {}
+unsafe impl Zeroable for u64x4 {}
+unsafe impl Zeroable for u64x8 {}
+unsafe impl Pod for u64x2 {}
+unsafe impl Pod for u64x4 {}
+unsafe impl Pod for u64x8 {}
+unsafe impl Zeroable for m64x2 {}
+unsafe impl Zeroable for m64x4 {}
