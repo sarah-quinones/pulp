@@ -1975,7 +1975,7 @@ impl Neon {
     }
     #[inline(always)]
     pub fn reduce_sum_f64x2(self, a: f64x2) -> f64 {
-        unsafe { vaddvq_f64(transmute(a)) }
+        a.0 + a.1
     }
     #[inline(always)]
     pub fn reduce_product_f64x2(self, a: f64x2) -> f64 {
