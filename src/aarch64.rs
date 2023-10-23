@@ -753,6 +753,32 @@ impl Simd for Neon {
     }
 }
 
+#[cfg(miri)]
+unsafe fn vfmaq_f64(c: float64x2_t, a: float64x2_t, b: float64x2_t) -> float64x2_t {
+    let c: f64x2 = transmute(c);
+    let a: f64x2 = transmute(a);
+    let b: f64x2 = transmute(b);
+
+    transmute(f64x2(
+        f64::mul_add(a.0, b.0, c.0),
+        f64::mul_add(a.1, b.1, c.1),
+    ))
+}
+
+#[cfg(miri)]
+unsafe fn vfmaq_f32(c: float32x4_t, a: float32x4_t, b: float32x4_t) -> float32x4_t {
+    let c: f32x4 = transmute(c);
+    let a: f32x4 = transmute(a);
+    let b: f32x4 = transmute(b);
+
+    transmute(f32x4(
+        f32::mul_add(a.0, b.0, c.0),
+        f32::mul_add(a.1, b.1, c.1),
+        f32::mul_add(a.2, b.2, c.2),
+        f32::mul_add(a.3, b.3, c.3),
+    ))
+}
+
 impl Neon {
     //-------------------------------------------------------------------------------
     // splat
