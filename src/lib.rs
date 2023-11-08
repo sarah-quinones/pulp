@@ -4646,7 +4646,19 @@ mod tests {
         let aligned_sum = arch.dispatch(AlignedSum { slice: data });
         let wrong_aligned_sum = arch.dispatch(WrongAlignedSum { slice: data });
 
+        struct LaneCount;
+
+        impl WithSimd for LaneCount {
+            type Output = usize;
+
+            fn with_simd<S: Simd>(self, _: S) -> Self::Output {
+                core::mem::size_of::<S::f32s>() / core::mem::size_of::<f32>()
+            }
+        }
+
         assert_eq!(sum, aligned_sum);
-        assert_ne!(sum, wrong_aligned_sum);
+        if arch.dispatch(LaneCount) > 2 {
+            assert_ne!(sum, wrong_aligned_sum);
+        }
     }
 }
