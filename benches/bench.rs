@@ -1,6 +1,9 @@
 #![cfg_attr(feature = "nightly", feature(avx512_target_feature, is_sorted))]
 
+use std::iter::zip;
+
 use criterion::{criterion_group, criterion_main, Criterion};
+use pulp::*;
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 #[cfg(feature = "nightly")]
@@ -881,5 +884,234 @@ fn criterion_bench(criterion: &mut Criterion) {
     let _ = criterion;
 }
 
-criterion_group!(benches, criterion_bench);
+fn aligned_sum_vertical_bench(criterion: &mut Criterion) {
+    #[repr(align(128))]
+    #[derive(Copy, Clone, Debug)]
+    struct Aligned<T>(T);
+
+    use rand::{Rng, SeedableRng};
+
+    let mut rng = rand::rngs::StdRng::seed_from_u64(0);
+
+    let nan = f64::NAN;
+    const N: usize = 32190;
+    let data = core::array::from_fn::<f64, N, _>(|_| rng.gen());
+    let unaligned_data = Aligned(core::array::from_fn::<f64, { N + 3 }, _>(|i| {
+        if i < 3 {
+            nan
+        } else {
+            data[i - 3]
+        }
+    }));
+
+    let mut unaligned_dst = Aligned(core::array::from_fn::<f64, { N + 3 }, _>(|i| {
+        if i < 3 {
+            nan
+        } else {
+            data[i - 3]
+        }
+    }));
+    let lhs = &unaligned_data.0[3..];
+    let rhs = &unaligned_data.0[3..];
+    let dst = &mut unaligned_dst.0[3..];
+
+    let arch = Arch::new();
+
+    struct Sum<'a> {
+        lhs: &'a [f64],
+        rhs: &'a [f64],
+        dst: &'a mut [f64],
+    }
+    struct AlignedSum<'a> {
+        lhs: &'a [f64],
+        rhs: &'a [f64],
+        dst: &'a mut [f64],
+    }
+
+    impl WithSimd for Sum<'_> {
+        type Output = ();
+
+        #[inline(always)]
+        fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
+            let (lhs_head, lhs_tail) = S::f64s_as_simd(self.lhs);
+            let (rhs_head, rhs_tail) = S::f64s_as_simd(self.rhs);
+            let (dst_head, dst_tail) = S::f64s_as_mut_simd(self.dst);
+
+            for (dst, (lhs, rhs)) in zip(dst_head, zip(lhs_head, rhs_head)) {
+                *dst = simd.f64s_add(*lhs, *rhs);
+            }
+            simd.f64s_partial_store(
+                dst_tail,
+                simd.f64s_add(
+                    simd.f64s_partial_load(lhs_tail),
+                    simd.f64s_partial_load(rhs_tail),
+                ),
+            );
+        }
+    }
+
+    impl WithSimd for AlignedSum<'_> {
+        type Output = ();
+
+        #[inline(always)]
+        fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
+            let offset = simd.f64s_align_offset(self.dst.as_ptr(), self.dst.len());
+            let (lhs_head, lhs_body, lhs_tail) = simd.f64s_as_aligned_simd(self.lhs, offset);
+            let (rhs_head, rhs_body, rhs_tail) = simd.f64s_as_aligned_simd(self.rhs, offset);
+            let (mut dst_head, dst_body, mut dst_tail) =
+                simd.f64s_as_aligned_mut_simd(self.dst, offset);
+
+            let zero = simd.f64s_splat(0.0);
+            dst_head.write(simd.f64s_add(lhs_head.read_or(zero), rhs_head.read_or(zero)));
+            for (dst, (lhs, rhs)) in zip(dst_body, zip(lhs_body, rhs_body)) {
+                *dst = simd.f64s_add(*lhs, *rhs);
+            }
+            dst_tail.write(simd.f64s_add(lhs_tail.read_or(zero), rhs_tail.read_or(zero)));
+        }
+    }
+
+    criterion.bench_function("sum-vertical-unaligned", |bencher| {
+        bencher.iter(|| arch.dispatch(Sum { lhs, rhs, dst }));
+    });
+    criterion.bench_function("sum-vertical-aligned", |bencher| {
+        bencher.iter(|| arch.dispatch(AlignedSum { lhs, rhs, dst }));
+    });
+}
+
+fn aligned_sum_reduce_bench(criterion: &mut Criterion) {
+    #[repr(align(128))]
+    #[derive(Copy, Clone, Debug)]
+    struct Aligned<T>(T);
+
+    use rand::{Rng, SeedableRng};
+
+    let mut rng = rand::rngs::StdRng::seed_from_u64(0);
+
+    let nan = f64::NAN;
+    const N: usize = 32190;
+    let data = core::array::from_fn::<f64, N, _>(|_| rng.gen());
+    let unaligned_data = Aligned(core::array::from_fn::<f64, { N + 3 }, _>(|i| {
+        if i < 3 {
+            nan
+        } else {
+            data[i - 3]
+        }
+    }));
+    let data = &unaligned_data.0[3..];
+
+    let arch = Arch::new();
+
+    struct Sum<'a> {
+        slice: &'a [f64],
+    }
+    struct AlignedSum<'a> {
+        slice: &'a [f64],
+    }
+    struct WrongAlignedSum<'a> {
+        slice: &'a [f64],
+    }
+
+    impl WithSimd for Sum<'_> {
+        type Output = f64;
+
+        #[inline(always)]
+        fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
+            let mut sum0 = simd.f64s_splat(0.0);
+            let mut sum1 = simd.f64s_splat(0.0);
+            let mut sum2 = simd.f64s_splat(0.0);
+            let mut sum3 = simd.f64s_splat(0.0);
+
+            let (head, tail) = S::f64s_as_simd(self.slice);
+            let (head4, head1) = as_arrays::<4, _>(head);
+            for &[x0, x1, x2, x3] in head4 {
+                sum0 = simd.f64s_add(sum0, x0);
+                sum1 = simd.f64s_add(sum1, x1);
+                sum2 = simd.f64s_add(sum2, x2);
+                sum3 = simd.f64s_add(sum3, x3);
+            }
+            for &x0 in head1 {
+                sum0 = simd.f64s_add(sum0, x0);
+            }
+            sum0 = simd.f64s_add(sum0, simd.f64s_partial_load(tail));
+            sum0 = simd.f64s_add(simd.f64s_add(sum0, sum1), simd.f64s_add(sum2, sum3));
+
+            simd.f64s_reduce_sum(sum0)
+        }
+    }
+
+    impl WithSimd for AlignedSum<'_> {
+        type Output = f64;
+
+        #[inline(always)]
+        fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
+            let offset = simd.f64s_align_offset(self.slice.as_ptr(), self.slice.len());
+            let (prefix, body, suffix) = simd.f64s_as_aligned_simd(self.slice, offset);
+
+            let mut sum0 = prefix.read_or(simd.f64s_splat(0.0));
+            let mut sum1 = simd.f64s_splat(0.0);
+            let mut sum2 = simd.f64s_splat(0.0);
+            let mut sum3 = simd.f64s_splat(0.0);
+            let (body4, body1) = as_arrays::<4, _>(body);
+            for &[x0, x1, x2, x3] in body4 {
+                sum0 = simd.f64s_add(sum0, x0);
+                sum1 = simd.f64s_add(sum1, x1);
+                sum2 = simd.f64s_add(sum2, x2);
+                sum3 = simd.f64s_add(sum3, x3);
+            }
+            for &x0 in body1 {
+                sum0 = simd.f64s_add(sum0, x0);
+            }
+            sum0 = simd.f64s_add(sum0, suffix.read_or(simd.f64s_splat(0.0)));
+            sum0 = simd.f64s_add(simd.f64s_add(sum0, sum1), simd.f64s_add(sum2, sum3));
+
+            simd.f64s_reduce_sum(simd.f64s_rotate_left(sum0, offset.rotate_left_amount()))
+        }
+    }
+
+    impl WithSimd for WrongAlignedSum<'_> {
+        type Output = f64;
+
+        #[inline(always)]
+        fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
+            let offset = simd.f64s_align_offset(self.slice.as_ptr(), self.slice.len());
+            let (prefix, body, suffix) = simd.f64s_as_aligned_simd(self.slice, offset);
+
+            let mut sum0 = prefix.read_or(simd.f64s_splat(0.0));
+            let mut sum1 = simd.f64s_splat(0.0);
+            let mut sum2 = simd.f64s_splat(0.0);
+            let mut sum3 = simd.f64s_splat(0.0);
+            let (body4, body1) = as_arrays::<4, _>(body);
+            for &[x0, x1, x2, x3] in body4 {
+                sum0 = simd.f64s_add(sum0, x0);
+                sum1 = simd.f64s_add(sum1, x1);
+                sum2 = simd.f64s_add(sum2, x2);
+                sum3 = simd.f64s_add(sum3, x3);
+            }
+            for &x0 in body1 {
+                sum0 = simd.f64s_add(sum0, x0);
+            }
+            sum0 = simd.f64s_add(sum0, suffix.read_or(simd.f64s_splat(0.0)));
+            sum0 = simd.f64s_add(simd.f64s_add(sum0, sum1), simd.f64s_add(sum2, sum3));
+
+            simd.f64s_reduce_sum(sum0)
+        }
+    }
+
+    criterion.bench_function("sum-reduce-unaligned", |bencher| {
+        bencher.iter(|| arch.dispatch(Sum { slice: &data }));
+    });
+    criterion.bench_function("sum-reduce-aligned", |bencher| {
+        bencher.iter(|| arch.dispatch(AlignedSum { slice: &data }));
+    });
+    criterion.bench_function("sum-reduce-aligned-wrong", |bencher| {
+        bencher.iter(|| arch.dispatch(WrongAlignedSum { slice: &data }));
+    });
+}
+
+criterion_group!(
+    benches,
+    criterion_bench,
+    aligned_sum_reduce_bench,
+    aligned_sum_vertical_bench
+);
 criterion_main!(benches);

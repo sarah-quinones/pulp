@@ -112,6 +112,182 @@ pub unsafe fn _mm512_mask_storeu_epi32(mem_addr: *mut i32, mask: __mmask16, a: _
     );
 }
 
+// copied from the standard library
+#[inline(always)]
+unsafe fn avx2_pshufb(bytes: __m256i, idxs: __m256i) -> __m256i {
+    let mid = _mm256_set1_epi8(16i8);
+    let high = _mm256_set1_epi8(32i8);
+    // This is ordering sensitive, and LLVM will order these how you put them.
+    // Most AVX2 impls use ~5 "ports", and only 1 or 2 are capable of permutes.
+    // But the "compose" step will lower to ops that can also use at least 1 other port.
+    // So this tries to break up permutes so composition flows through "open" ports.
+    // Comparative benches should be done on multiple AVX2 CPUs before reordering this
+
+    let hihi = _mm256_permute2x128_si256::<0x11>(bytes, bytes);
+    let hi_shuf = _mm256_shuffle_epi8(
+        hihi, // duplicate the vector's top half
+        idxs, // so that using only 4 bits of an index still picks bytes 16-31
+    );
+    // A zero-fill during the compose step gives the "all-Neon-like" OOB-is-0 semantics
+    let compose = _mm256_blendv_epi8(_mm256_set1_epi8(0), hi_shuf, _mm256_cmpgt_epi8(high, idxs));
+    let lolo = _mm256_permute2x128_si256::<0x00>(bytes, bytes);
+    let lo_shuf = _mm256_shuffle_epi8(lolo, idxs);
+    // Repeat, then pick indices < 16, overwriting indices 0-15 from previous compose step
+    let compose = _mm256_blendv_epi8(compose, lo_shuf, _mm256_cmpgt_epi8(mid, idxs));
+    compose
+}
+
+static AVX2_ROTATE_IDX: [u8x32; 32] = [
+    u8x32(
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+        25, 26, 27, 28, 29, 30, 31,
+    ),
+    u8x32(
+        31, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
+        24, 25, 26, 27, 28, 29, 30,
+    ),
+    u8x32(
+        30, 31, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+        23, 24, 25, 26, 27, 28, 29,
+    ),
+    u8x32(
+        29, 30, 31, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+        22, 23, 24, 25, 26, 27, 28,
+    ),
+    u8x32(
+        28, 29, 30, 31, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+        21, 22, 23, 24, 25, 26, 27,
+    ),
+    u8x32(
+        27, 28, 29, 30, 31, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+        20, 21, 22, 23, 24, 25, 26,
+    ),
+    u8x32(
+        26, 27, 28, 29, 30, 31, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+        19, 20, 21, 22, 23, 24, 25,
+    ),
+    u8x32(
+        25, 26, 27, 28, 29, 30, 31, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+        18, 19, 20, 21, 22, 23, 24,
+    ),
+    u8x32(
+        24, 25, 26, 27, 28, 29, 30, 31, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+        17, 18, 19, 20, 21, 22, 23,
+    ),
+    u8x32(
+        23, 24, 25, 26, 27, 28, 29, 30, 31, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+        16, 17, 18, 19, 20, 21, 22,
+    ),
+    u8x32(
+        22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
+        15, 16, 17, 18, 19, 20, 21,
+    ),
+    u8x32(
+        21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
+        14, 15, 16, 17, 18, 19, 20,
+    ),
+    u8x32(
+        20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+        13, 14, 15, 16, 17, 18, 19,
+    ),
+    u8x32(
+        19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+        12, 13, 14, 15, 16, 17, 18,
+    ),
+    u8x32(
+        18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+        11, 12, 13, 14, 15, 16, 17,
+    ),
+    u8x32(
+        17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+        10, 11, 12, 13, 14, 15, 16,
+    ),
+    u8x32(
+        16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 0, 1, 2, 3, 4, 5, 6, 7, 8,
+        9, 10, 11, 12, 13, 14, 15,
+    ),
+    u8x32(
+        15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 0, 1, 2, 3, 4, 5, 6, 7,
+        8, 9, 10, 11, 12, 13, 14,
+    ),
+    u8x32(
+        14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 0, 1, 2, 3, 4, 5,
+        6, 7, 8, 9, 10, 11, 12, 13,
+    ),
+    u8x32(
+        13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 0, 1, 2, 3, 4,
+        5, 6, 7, 8, 9, 10, 11, 12,
+    ),
+    u8x32(
+        12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 0, 1, 2, 3,
+        4, 5, 6, 7, 8, 9, 10, 11,
+    ),
+    u8x32(
+        11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 0, 1,
+        2, 3, 4, 5, 6, 7, 8, 9, 10,
+    ),
+    u8x32(
+        10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 0,
+        1, 2, 3, 4, 5, 6, 7, 8, 9,
+    ),
+    u8x32(
+        9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+        0, 1, 2, 3, 4, 5, 6, 7, 8,
+    ),
+    u8x32(
+        8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
+        31, 0, 1, 2, 3, 4, 5, 6, 7,
+    ),
+    u8x32(
+        7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
+        30, 31, 0, 1, 2, 3, 4, 5, 6,
+    ),
+    u8x32(
+        6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
+        30, 31, 0, 1, 2, 3, 4, 5,
+    ),
+    u8x32(
+        5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28,
+        29, 30, 31, 0, 1, 2, 3, 4,
+    ),
+    u8x32(
+        4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27,
+        28, 29, 30, 31, 0, 1, 2, 3,
+    ),
+    u8x32(
+        3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
+        27, 28, 29, 30, 31, 0, 1, 2,
+    ),
+    u8x32(
+        2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
+        27, 28, 29, 30, 31, 0, 1,
+    ),
+    u8x32(
+        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+        26, 27, 28, 29, 30, 31, 0,
+    ),
+];
+
+#[cfg(feature = "nightly")]
+static AVX512_ROTATE_IDX: [u32x16; 16] = [
+    u32x16(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+    u32x16(15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14),
+    u32x16(14, 15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13),
+    u32x16(13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12),
+    u32x16(12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
+    u32x16(11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+    u32x16(10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9),
+    u32x16(9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7, 8),
+    u32x16(8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7),
+    u32x16(7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6),
+    u32x16(6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5),
+    u32x16(5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4),
+    u32x16(4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3),
+    u32x16(3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2),
+    u32x16(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1),
+    u32x16(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0),
+];
+
 impl Seal for V2 {}
 impl Seal for V3 {}
 #[cfg(feature = "nightly")]
@@ -1269,6 +1445,136 @@ impl Simd for V3 {
     fn u32s_greater_than_or_equal(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
         self.cmp_ge_u32x8(a, b)
     }
+
+    #[inline(always)]
+    fn u64s_less_than(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
+        self.cmp_lt_u64x4(a, b)
+    }
+
+    #[inline(always)]
+    fn u64s_greater_than(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
+        self.cmp_gt_u64x4(a, b)
+    }
+
+    #[inline(always)]
+    fn u64s_less_than_or_equal(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
+        self.cmp_le_u64x4(a, b)
+    }
+
+    #[inline(always)]
+    fn u64s_greater_than_or_equal(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
+        self.cmp_ge_u64x4(a, b)
+    }
+
+    #[inline(always)]
+    unsafe fn u32s_mask_load_ptr(
+        self,
+        mask: Self::m32s,
+        ptr: *const u32,
+        or: Self::u32s,
+    ) -> Self::u32s {
+        self.m32s_select_u32s(
+            mask,
+            transmute(_mm256_maskload_epi32(ptr as _, transmute(mask))),
+            transmute(or),
+        )
+    }
+    #[inline(always)]
+    unsafe fn c32s_mask_load_ptr(
+        self,
+        mask: Self::m32s,
+        ptr: *const c32,
+        or: Self::c32s,
+    ) -> Self::c32s {
+        self.m32s_select_f32s(
+            mask,
+            transmute(_mm256_maskload_ps(ptr as _, transmute(mask))),
+            transmute(or),
+        )
+    }
+    #[inline(always)]
+    unsafe fn u64s_mask_load_ptr(
+        self,
+        mask: Self::m64s,
+        ptr: *const u64,
+        or: Self::u64s,
+    ) -> Self::u64s {
+        self.m64s_select_u64s(
+            mask,
+            transmute(_mm256_maskload_epi64(ptr as _, transmute(mask))),
+            transmute(or),
+        )
+    }
+    #[inline(always)]
+    unsafe fn c64s_mask_load_ptr(
+        self,
+        mask: Self::m64s,
+        ptr: *const c64,
+        or: Self::c64s,
+    ) -> Self::c64s {
+        self.m64s_select_f64s(
+            mask,
+            transmute(_mm256_maskload_pd(ptr as _, transmute(mask))),
+            transmute(or),
+        )
+    }
+
+    #[inline(always)]
+    unsafe fn u32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut u32, values: Self::u32s) {
+        _mm256_maskstore_epi32(ptr as *mut i32, transmute(mask), transmute(values));
+    }
+    #[inline(always)]
+    unsafe fn c32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut c32, values: Self::c32s) {
+        _mm256_maskstore_ps(ptr as *mut f32, transmute(mask), transmute(values));
+    }
+    #[inline(always)]
+    unsafe fn u64s_mask_store_ptr(self, mask: Self::m64s, ptr: *mut u64, values: Self::u64s) {
+        _mm256_maskstore_epi64(ptr as *mut i64, transmute(mask), transmute(values));
+    }
+    #[inline(always)]
+    unsafe fn c64s_mask_store_ptr(self, mask: Self::m64s, ptr: *mut c64, values: Self::c64s) {
+        _mm256_maskstore_pd(ptr as *mut f64, transmute(mask), transmute(values));
+    }
+
+    #[inline(always)]
+    fn u32s_rotate_right(self, a: Self::u32s, amount: usize) -> Self::u32s {
+        unsafe {
+            transmute(avx2_pshufb(
+                transmute(a),
+                transmute(AVX2_ROTATE_IDX[4 * (amount % 8)]),
+            ))
+        }
+    }
+
+    #[inline(always)]
+    fn c32s_rotate_right(self, a: Self::c32s, amount: usize) -> Self::c32s {
+        unsafe {
+            transmute(avx2_pshufb(
+                transmute(a),
+                transmute(AVX2_ROTATE_IDX[8 * (amount % 4)]),
+            ))
+        }
+    }
+
+    #[inline(always)]
+    fn u64s_rotate_right(self, a: Self::u64s, amount: usize) -> Self::u64s {
+        unsafe {
+            transmute(avx2_pshufb(
+                transmute(a),
+                transmute(AVX2_ROTATE_IDX[8 * (amount % 4)]),
+            ))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_rotate_right(self, a: Self::c64s, amount: usize) -> Self::c64s {
+        unsafe {
+            transmute(avx2_pshufb(
+                transmute(a),
+                transmute(AVX2_ROTATE_IDX[16 * (amount % 2)]),
+            ))
+        }
+    }
 }
 
 #[cfg(feature = "nightly")]
@@ -1970,6 +2276,26 @@ impl Simd for V4 {
     }
 
     #[inline(always)]
+    fn u64s_less_than(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
+        self.cmp_lt_u64x8(a, b)
+    }
+
+    #[inline(always)]
+    fn u64s_greater_than(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
+        self.cmp_gt_u64x8(a, b)
+    }
+
+    #[inline(always)]
+    fn u64s_less_than_or_equal(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
+        self.cmp_le_u64x8(a, b)
+    }
+
+    #[inline(always)]
+    fn u64s_greater_than_or_equal(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
+        self.cmp_ge_u64x8(a, b)
+    }
+
+    #[inline(always)]
     fn u32s_less_than(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
         self.cmp_lt_u32x16(a, b)
     }
@@ -2021,6 +2347,100 @@ impl Simd for V4 {
     #[inline(always)]
     fn c64_scalar_conj_mul_add(self, a: c64, b: c64, c: c64) -> c64 {
         (*self).c64_scalar_conj_mul_add(a, b, c)
+    }
+
+    #[inline(always)]
+    unsafe fn u32s_mask_load_ptr(
+        self,
+        mask: Self::m32s,
+        ptr: *const u32,
+        or: Self::u32s,
+    ) -> Self::u32s {
+        transmute(_mm512_mask_loadu_epi32(transmute(or), mask.0, ptr as _))
+    }
+    #[inline(always)]
+    unsafe fn c32s_mask_load_ptr(
+        self,
+        mask: Self::m32s,
+        ptr: *const c32,
+        or: Self::c32s,
+    ) -> Self::c32s {
+        transmute(_mm512_mask_loadu_ps(transmute(or), mask.0, ptr as _))
+    }
+    #[inline(always)]
+    unsafe fn u64s_mask_load_ptr(
+        self,
+        mask: Self::m64s,
+        ptr: *const u64,
+        or: Self::u64s,
+    ) -> Self::u64s {
+        transmute(_mm512_mask_loadu_epi64(transmute(or), mask.0, ptr as _))
+    }
+    #[inline(always)]
+    unsafe fn c64s_mask_load_ptr(
+        self,
+        mask: Self::m64s,
+        ptr: *const c64,
+        or: Self::c64s,
+    ) -> Self::c64s {
+        transmute(_mm512_mask_loadu_pd(transmute(or), mask.0, ptr as _))
+    }
+
+    #[inline(always)]
+    unsafe fn u32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut u32, values: Self::u32s) {
+        _mm512_mask_storeu_epi32(ptr as *mut i32, mask.0, transmute(values));
+    }
+    #[inline(always)]
+    unsafe fn c32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut c32, values: Self::c32s) {
+        _mm512_mask_storeu_ps(ptr as *mut f32, mask.0, transmute(values));
+    }
+    #[inline(always)]
+    unsafe fn u64s_mask_store_ptr(self, mask: Self::m64s, ptr: *mut u64, values: Self::u64s) {
+        _mm512_mask_storeu_epi64(ptr as *mut i64, mask.0, transmute(values));
+    }
+    #[inline(always)]
+    unsafe fn c64s_mask_store_ptr(self, mask: Self::m64s, ptr: *mut c64, values: Self::c64s) {
+        _mm512_mask_storeu_pd(ptr as *mut f64, mask.0, transmute(values));
+    }
+
+    #[inline(always)]
+    fn u32s_rotate_right(self, a: Self::u32s, amount: usize) -> Self::u32s {
+        unsafe {
+            transmute(_mm512_permutexvar_epi32(
+                transmute(AVX512_ROTATE_IDX[amount % 16]),
+                transmute(a),
+            ))
+        }
+    }
+
+    #[inline(always)]
+    fn c32s_rotate_right(self, a: Self::c32s, amount: usize) -> Self::c32s {
+        unsafe {
+            transmute(_mm512_permutexvar_epi32(
+                transmute(AVX512_ROTATE_IDX[2 * (amount % 8)]),
+                transmute(a),
+            ))
+        }
+    }
+
+    #[inline(always)]
+    fn u64s_rotate_right(self, a: Self::u64s, amount: usize) -> Self::u64s {
+        unsafe {
+            transmute(_mm512_permutexvar_epi32(
+                transmute(AVX512_ROTATE_IDX[2 * (amount % 8)]),
+                transmute(a),
+            ))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_rotate_right(self, a: Self::c64s, amount: usize) -> Self::c64s {
+        unsafe {
+            transmute(_mm512_permutexvar_epi32(
+                transmute(AVX512_ROTATE_IDX[4 * (amount % 4)]),
+                transmute(a),
+            ))
+        }
     }
 }
 
@@ -9097,6 +9517,295 @@ mod tests {
                 simd.is_nan_f64x2(f64x2(0.0, f64::NAN)),
                 m64x2(m64::new(false), m64::new(true)),
             );
+        }
+    }
+
+    #[test]
+    fn test_aligned() {
+        #[repr(align(128))]
+        #[derive(Copy, Clone, Debug)]
+        struct Aligned<T>(T);
+
+        if let Some(simd) = V3::try_new() {
+            {
+                let data = Aligned([
+                    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+                    22, 23, 24, 25, 26, 27, 28, 29, 30, 31u32,
+                ]);
+                let data = data.0.as_slice();
+                let none = u32::MAX;
+                {
+                    // loading aligned data
+                    let offset = simd.u32s_align_offset(data.as_ptr(), data.len());
+                    let (prefix, body, suffix) = simd.u32s_as_aligned_simd(data, offset);
+                    assert_eq!(
+                        prefix.read_or(simd.u32s_splat(none)),
+                        u32x8(0, 1, 2, 3, 4, 5, 6, 7),
+                    );
+                    assert_eq!(
+                        body,
+                        [
+                            u32x8(8, 9, 10, 11, 12, 13, 14, 15),
+                            u32x8(16, 17, 18, 19, 20, 21, 22, 23),
+                        ],
+                    );
+                    assert_eq!(
+                        suffix.read_or(simd.u32s_splat(none)),
+                        u32x8(24, 25, 26, 27, 28, 29, 30, 31),
+                    );
+                }
+                {
+                    // loading aligned data with one chunk
+                    let data = &data[0..8];
+                    let offset = simd.u32s_align_offset(data.as_ptr(), data.len());
+                    let (prefix, body, suffix) = simd.u32s_as_aligned_simd(data, offset);
+                    assert_eq!(
+                        prefix.read_or(simd.u32s_splat(none)),
+                        u32x8(0, 1, 2, 3, 4, 5, 6, 7),
+                    );
+                    assert_eq!(body, []);
+                    assert_eq!(
+                        suffix.read_or(simd.u32s_splat(none)),
+                        u32x8(none, none, none, none, none, none, none, none),
+                    );
+                }
+                {
+                    // loading aligned data with one partial chunk
+                    let data = &data[0..3];
+                    let offset = simd.u32s_align_offset(data.as_ptr(), data.len());
+                    let (prefix, body, suffix) = simd.u32s_as_aligned_simd(data, offset);
+                    assert_eq!(
+                        prefix.read_or(simd.u32s_splat(none)),
+                        u32x8(0, 1, 2, none, none, none, none, none),
+                    );
+                    assert_eq!(body, []);
+                    assert_eq!(
+                        suffix.read_or(simd.u32s_splat(none)),
+                        u32x8(none, none, none, none, none, none, none, none),
+                    );
+                }
+                {
+                    // loading aligned data with two chunks
+                    let data = &data[0..16];
+                    let offset = simd.u32s_align_offset(data.as_ptr(), data.len());
+                    let (prefix, body, suffix) = simd.u32s_as_aligned_simd(data, offset);
+                    assert_eq!(
+                        prefix.read_or(simd.u32s_splat(none)),
+                        u32x8(0, 1, 2, 3, 4, 5, 6, 7),
+                    );
+                    assert_eq!(body, []);
+                    assert_eq!(
+                        suffix.read_or(simd.u32s_splat(none)),
+                        u32x8(8, 9, 10, 11, 12, 13, 14, 15),
+                    );
+                }
+                {
+                    // loading unaligned data
+                    let data = &data[3..];
+                    let offset = simd.u32s_align_offset(data.as_ptr(), data.len());
+                    let (prefix, body, suffix) = simd.u32s_as_aligned_simd(data, offset);
+                    assert_eq!(
+                        prefix.read_or(simd.u32s_splat(none)),
+                        u32x8(none, none, none, 3, 4, 5, 6, 7),
+                    );
+                    assert_eq!(
+                        body,
+                        [
+                            u32x8(8, 9, 10, 11, 12, 13, 14, 15),
+                            u32x8(16, 17, 18, 19, 20, 21, 22, 23),
+                        ],
+                    );
+                    assert_eq!(
+                        suffix.read_or(simd.u32s_splat(none)),
+                        u32x8(24, 25, 26, 27, 28, 29, 30, 31),
+                    );
+                }
+                {
+                    // loading unaligned data with one chunk
+                    let data = &data[3..11];
+                    let offset = simd.u32s_align_offset(data.as_ptr(), data.len());
+                    let (prefix, body, suffix) = simd.u32s_as_aligned_simd(data, offset);
+                    assert_eq!(
+                        prefix.read_or(simd.u32s_splat(none)),
+                        u32x8(none, none, none, 3, 4, 5, 6, 7),
+                    );
+                    assert_eq!(body, []);
+                    assert_eq!(
+                        suffix.read_or(simd.u32s_splat(none)),
+                        u32x8(8, 9, 10, none, none, none, none, none),
+                    );
+                }
+                {
+                    // loading unaligned data with one partial chunk
+                    let data = &data[3..6];
+                    let offset = simd.u32s_align_offset(data.as_ptr(), data.len());
+                    let (prefix, body, suffix) = simd.u32s_as_aligned_simd(data, offset);
+                    assert_eq!(
+                        prefix.read_or(simd.u32s_splat(none)),
+                        u32x8(none, none, none, 3, 4, 5, none, none),
+                    );
+                    assert_eq!(body, []);
+                    assert_eq!(
+                        suffix.read_or(simd.u32s_splat(none)),
+                        u32x8(none, none, none, none, none, none, none, none),
+                    );
+                }
+                {
+                    // loading unaligned data with two chunks
+                    let data = &data[3..19];
+                    let offset = simd.u32s_align_offset(data.as_ptr(), data.len());
+                    let (prefix, body, suffix) = simd.u32s_as_aligned_simd(data, offset);
+                    assert_eq!(
+                        prefix.read_or(simd.u32s_splat(none)),
+                        u32x8(none, none, none, 3, 4, 5, 6, 7),
+                    );
+                    assert_eq!(body, [u32x8(8, 9, 10, 11, 12, 13, 14, 15)]);
+                    assert_eq!(
+                        suffix.read_or(simd.u32s_splat(none)),
+                        u32x8(16, 17, 18, none, none, none, none, none),
+                    );
+                }
+            }
+
+            {
+                let data = Aligned(
+                    [
+                        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+                        21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31u32,
+                    ]
+                    .map(|i| i as f32),
+                );
+                let data = data.0.as_slice();
+                let none = c32 {
+                    re: 1312.0,
+                    im: 0.5,
+                };
+                {
+                    let data = bytemuck::cast_slice(data);
+                    let offset = simd.c32s_align_offset(data.as_ptr(), data.len());
+                    let (prefix, body, suffix) = simd.c32s_as_aligned_simd(data, offset);
+                    assert_eq!(
+                        prefix.read_or(simd.c32s_splat(none)),
+                        f32x8(0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0),
+                    );
+                    assert_eq!(
+                        body,
+                        [
+                            f32x8(8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0),
+                            f32x8(16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0),
+                        ],
+                    );
+                    assert_eq!(
+                        suffix.read_or(simd.c32s_splat(none)),
+                        f32x8(24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0),
+                    );
+                }
+                {
+                    let data = bytemuck::cast_slice(&data[1..31]);
+                    let offset = simd.c32s_align_offset(data.as_ptr(), data.len());
+                    let (prefix, body, suffix) = simd.c32s_as_aligned_simd(data, offset);
+                    assert_eq!(
+                        prefix.read_or(simd.c32s_splat(none)),
+                        f32x8(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0),
+                    );
+                    assert_eq!(
+                        body,
+                        [
+                            f32x8(9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0),
+                            f32x8(17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0),
+                        ],
+                    );
+                    assert_eq!(
+                        suffix.read_or(simd.c32s_splat(none)),
+                        f32x8(25.0, 26.0, 27.0, 28.0, 29.0, 30.0, none.re, none.im),
+                    );
+                }
+                {
+                    let data = bytemuck::cast_slice(&data[4..8]);
+                    let offset = simd.c32s_align_offset(data.as_ptr(), data.len());
+                    let (prefix, body, suffix) = simd.c32s_as_aligned_simd(data, offset);
+                    assert_eq!(
+                        prefix.read_or(simd.c32s_splat(none)),
+                        f32x8(none.re, none.im, none.re, none.im, 4.0, 5.0, 6.0, 7.0),
+                    );
+                    assert_eq!(body, []);
+                    assert_eq!(
+                        suffix.read_or(simd.c32s_splat(none)),
+                        f32x8(
+                            none.re, none.im, none.re, none.im, none.re, none.im, none.re, none.im
+                        ),
+                    );
+                }
+
+                {
+                    let data = bytemuck::cast_slice(&data[4..10]);
+                    let offset = simd.c32s_align_offset(data.as_ptr(), data.len());
+                    let (prefix, body, suffix) = simd.c32s_as_aligned_simd(data, offset);
+                    assert_eq!(
+                        prefix.read_or(simd.c32s_splat(none)),
+                        f32x8(none.re, none.im, none.re, none.im, 4.0, 5.0, 6.0, 7.0),
+                    );
+                    assert_eq!(body, []);
+                    assert_eq!(
+                        suffix.read_or(simd.c32s_splat(none)),
+                        f32x8(8.0, 9.0, none.re, none.im, none.re, none.im, none.re, none.im),
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_rotate() {
+        if let Some(simd) = V3::try_new() {
+            for amount in 0..128 {
+                let mut array = [0u32; 8];
+                for i in 0..8 {
+                    array[i] = 1000 + i as u32;
+                }
+
+                let rot: [u32; 8] = cast(simd.u32s_rotate_right(cast(array), amount));
+                for i in 0..8 {
+                    assert_eq!(rot[(i + amount) % 8], array[i]);
+                }
+            }
+            for amount in 0..128 {
+                let mut array = [0u64; 4];
+                for i in 0..4 {
+                    array[i] = 1000 + i as u64;
+                }
+
+                let rot: [u64; 4] = cast(simd.u64s_rotate_right(cast(array), amount));
+                for i in 0..4 {
+                    assert_eq!(rot[(i + amount) % 4], array[i]);
+                }
+            }
+        }
+
+        #[cfg(feature = "nightly")]
+        if let Some(simd) = V4::try_new() {
+            for amount in 0..128 {
+                let mut array = [0u32; 16];
+                for i in 0..16 {
+                    array[i] = 1000 + i as u32;
+                }
+
+                let rot: [u32; 16] = cast(simd.u32s_rotate_right(cast(array), amount));
+                for i in 0..16 {
+                    assert_eq!(rot[(i + amount) % 16], array[i]);
+                }
+            }
+            for amount in 0..128 {
+                let mut array = [0u64; 8];
+                for i in 0..8 {
+                    array[i] = 1000 + i as u64;
+                }
+
+                let rot: [u64; 8] = cast(simd.u64s_rotate_right(cast(array), amount));
+                for i in 0..8 {
+                    assert_eq!(rot[(i + amount) % 8], array[i]);
+                }
+            }
         }
     }
 }

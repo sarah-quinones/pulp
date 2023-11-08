@@ -19,6 +19,25 @@ internal_simd_type! {
 impl Seal for Neon {}
 impl Seal for NeonFcma {}
 
+static NEON_ROTATE_IDX: [u8x16; 16] = [
+    u8x16(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15),
+    u8x16(15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14),
+    u8x16(14, 15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13),
+    u8x16(13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12),
+    u8x16(12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
+    u8x16(11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+    u8x16(10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9),
+    u8x16(9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7, 8),
+    u8x16(8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7),
+    u8x16(7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6),
+    u8x16(6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5),
+    u8x16(5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4),
+    u8x16(4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3),
+    u8x16(3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2),
+    u8x16(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1),
+    u8x16(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0),
+];
+
 impl Simd for Neon {
     type m32s = m32x4;
     type f32s = f32x4;
@@ -750,6 +769,221 @@ impl Simd for Neon {
     #[inline(always)]
     fn c64s_reduce_sum(self, a: Self::c64s) -> c64 {
         cast(a)
+    }
+
+    #[inline(always)]
+    unsafe fn u32s_mask_load_ptr(
+        self,
+        mask: Self::m32s,
+        ptr: *const u32,
+        or: Self::u32s,
+    ) -> Self::u32s {
+        u32x4(
+            if mask.0.is_set() {
+                *ptr.wrapping_add(0)
+            } else {
+                or.0
+            },
+            if mask.1.is_set() {
+                *ptr.wrapping_add(1)
+            } else {
+                or.1
+            },
+            if mask.2.is_set() {
+                *ptr.wrapping_add(2)
+            } else {
+                or.2
+            },
+            if mask.3.is_set() {
+                *ptr.wrapping_add(3)
+            } else {
+                or.3
+            },
+        )
+    }
+
+    #[inline(always)]
+    unsafe fn c32s_mask_load_ptr(
+        self,
+        mask: Self::m32s,
+        ptr: *const c32,
+        or: Self::c32s,
+    ) -> Self::c32s {
+        let ptr = ptr as *const f32;
+        f32x4(
+            if mask.0.is_set() {
+                *ptr.wrapping_add(0)
+            } else {
+                or.0
+            },
+            if mask.1.is_set() {
+                *ptr.wrapping_add(1)
+            } else {
+                or.1
+            },
+            if mask.2.is_set() {
+                *ptr.wrapping_add(2)
+            } else {
+                or.2
+            },
+            if mask.3.is_set() {
+                *ptr.wrapping_add(3)
+            } else {
+                or.3
+            },
+        )
+    }
+
+    #[inline(always)]
+    unsafe fn u32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut u32, values: Self::u32s) {
+        if mask.0.is_set() {
+            *ptr.wrapping_add(0) = values.0
+        }
+        if mask.1.is_set() {
+            *ptr.wrapping_add(1) = values.1
+        }
+        if mask.2.is_set() {
+            *ptr.wrapping_add(2) = values.2
+        }
+        if mask.3.is_set() {
+            *ptr.wrapping_add(3) = values.3
+        }
+    }
+
+    #[inline(always)]
+    unsafe fn c32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut c32, values: Self::c32s) {
+        let ptr = ptr as *mut f32;
+        if mask.0.is_set() {
+            *ptr.wrapping_add(0) = values.0
+        }
+        if mask.1.is_set() {
+            *ptr.wrapping_add(1) = values.1
+        }
+        if mask.2.is_set() {
+            *ptr.wrapping_add(2) = values.2
+        }
+        if mask.3.is_set() {
+            *ptr.wrapping_add(3) = values.3
+        }
+    }
+
+    #[inline(always)]
+    unsafe fn u64s_mask_load_ptr(
+        self,
+        mask: Self::m64s,
+        ptr: *const u64,
+        or: Self::u64s,
+    ) -> Self::u64s {
+        u64x2(
+            if mask.0.is_set() {
+                *ptr.wrapping_add(0)
+            } else {
+                or.0
+            },
+            if mask.1.is_set() {
+                *ptr.wrapping_add(1)
+            } else {
+                or.1
+            },
+        )
+    }
+
+    #[inline(always)]
+    unsafe fn c64s_mask_load_ptr(
+        self,
+        mask: Self::m64s,
+        ptr: *const c64,
+        or: Self::c64s,
+    ) -> Self::c64s {
+        let ptr = ptr as *const f64;
+        f64x2(
+            if mask.0.is_set() {
+                *ptr.wrapping_add(0)
+            } else {
+                or.0
+            },
+            if mask.1.is_set() {
+                *ptr.wrapping_add(1)
+            } else {
+                or.1
+            },
+        )
+    }
+
+    #[inline(always)]
+    unsafe fn u64s_mask_store_ptr(self, mask: Self::m64s, ptr: *mut u64, values: Self::u64s) {
+        if mask.0.is_set() {
+            *ptr.wrapping_add(0) = values.0
+        }
+        if mask.1.is_set() {
+            *ptr.wrapping_add(1) = values.1
+        }
+    }
+
+    #[inline(always)]
+    unsafe fn c64s_mask_store_ptr(self, mask: Self::m64s, ptr: *mut c64, values: Self::c64s) {
+        let ptr = ptr as *mut f64;
+        if mask.0.is_set() {
+            *ptr.wrapping_add(0) = values.0
+        }
+        if mask.1.is_set() {
+            *ptr.wrapping_add(1) = values.1
+        }
+    }
+
+    #[inline(always)]
+    fn u64s_less_than(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
+        self.cmp_lt_u64x2(a, b)
+    }
+
+    #[inline(always)]
+    fn u64s_greater_than(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
+        self.cmp_gt_u64x2(a, b)
+    }
+
+    #[inline(always)]
+    fn u64s_less_than_or_equal(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
+        self.cmp_le_u64x2(a, b)
+    }
+
+    #[inline(always)]
+    fn u64s_greater_than_or_equal(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
+        self.cmp_ge_u64x2(a, b)
+    }
+
+    #[inline(always)]
+    fn u32s_rotate_right(self, a: Self::u32s, amount: usize) -> Self::u32s {
+        unsafe {
+            transmute(vqtbl1q_u8(
+                transmute(a),
+                transmute(NEON_ROTATE_IDX[4 * (amount % 4)]),
+            ))
+        }
+    }
+
+    #[inline(always)]
+    fn c32s_rotate_right(self, a: Self::c32s, amount: usize) -> Self::c32s {
+        unsafe {
+            transmute(vqtbl1q_u8(
+                transmute(a),
+                transmute(NEON_ROTATE_IDX[8 * (amount % 2)]),
+            ))
+        }
+    }
+
+    #[inline(always)]
+    fn u64s_rotate_right(self, a: Self::u64s, amount: usize) -> Self::u64s {
+        unsafe {
+            transmute(vqtbl1q_u8(
+                transmute(a),
+                transmute(NEON_ROTATE_IDX[8 * (amount % 2)]),
+            ))
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_rotate_right(self, a: Self::c64s, _amount: usize) -> Self::c64s {
+        a
     }
 }
 
@@ -2153,6 +2387,34 @@ mod tests {
             if let Some(simd) = Neon::try_new() {
                 let c = simd.c32s_conj_mul_add(a, b, acc);
                 assert_eq!(c, expected);
+            }
+        }
+    }
+
+    #[test]
+    fn test_rotate() {
+        if let Some(simd) = Neon::try_new() {
+            for amount in 0..128 {
+                let mut array = [0u32; 8];
+                for i in 0..8 {
+                    array[i] = 1000 + i as u32;
+                }
+
+                let rot: [u32; 8] = cast(simd.u32s_rotate_right(cast(array), amount));
+                for i in 0..8 {
+                    assert_eq!(rot[(i + amount) % 8], array[i]);
+                }
+            }
+            for amount in 0..128 {
+                let mut array = [0u64; 4];
+                for i in 0..4 {
+                    array[i] = 1000 + i as u64;
+                }
+
+                let rot: [u64; 4] = cast(simd.u64s_rotate_right(cast(array), amount));
+                for i in 0..4 {
+                    assert_eq!(rot[(i + amount) % 4], array[i]);
+                }
             }
         }
     }
