@@ -1,6 +1,6 @@
 [package]
 name = "pulp"
-version = "0.18.1"
+version = "0.18.2"
 edition = "2021"
 authors = ["sarah <>"]
 description = "Safe generic simd"
