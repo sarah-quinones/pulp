@@ -4563,11 +4563,11 @@ mod tests {
 
         use rand::{Rng, SeedableRng};
 
-        let mut rng = rand::rngs::StdRng::seed_from_u64(1);
+        let mut rng = rand::rngs::StdRng::seed_from_u64(2);
 
-        let nan = f64::NAN;
-        let data = core::array::from_fn::<f64, 33, _>(|_| rng.gen());
-        let unaligned_data = Aligned(core::array::from_fn::<f64, 36, _>(|i| {
+        let nan = f32::NAN;
+        let data = core::array::from_fn::<f32, 33, _>(|_| rng.gen());
+        let unaligned_data = Aligned(core::array::from_fn::<f32, 36, _>(|i| {
             if i < 3 {
                 nan
             } else {
@@ -4579,66 +4579,66 @@ mod tests {
         let arch = Arch::new();
 
         struct Sum<'a> {
-            slice: &'a [f64],
+            slice: &'a [f32],
         }
         struct AlignedSum<'a> {
-            slice: &'a [f64],
+            slice: &'a [f32],
         }
         struct WrongAlignedSum<'a> {
-            slice: &'a [f64],
+            slice: &'a [f32],
         }
 
         impl WithSimd for Sum<'_> {
-            type Output = f64;
+            type Output = f32;
 
             #[inline(always)]
             fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
-                let mut sum = simd.f64s_splat(0.0);
-                let (head, tail) = S::f64s_as_simd(self.slice);
+                let mut sum = simd.f32s_splat(0.0);
+                let (head, tail) = S::f32s_as_simd(self.slice);
 
                 for x in head {
-                    sum = simd.f64s_add(sum, *x);
+                    sum = simd.f32s_add(sum, *x);
                 }
-                sum = simd.f64s_add(sum, simd.f64s_partial_load(tail));
+                sum = simd.f32s_add(sum, simd.f32s_partial_load(tail));
 
-                bytemuck::cast_slice::<_, f64>(&[sum]).iter().sum()
+                bytemuck::cast_slice::<_, f32>(&[sum]).iter().sum()
             }
         }
 
         impl WithSimd for AlignedSum<'_> {
-            type Output = f64;
+            type Output = f32;
 
             #[inline(always)]
             fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
-                let offset = simd.f64s_align_offset(self.slice.as_ptr(), self.slice.len());
-                let (prefix, body, suffix) = simd.f64s_as_aligned_simd(self.slice, offset);
+                let offset = simd.f32s_align_offset(self.slice.as_ptr(), self.slice.len());
+                let (prefix, body, suffix) = simd.f32s_as_aligned_simd(self.slice, offset);
 
-                let mut sum = prefix.read_or(simd.f64s_splat(0.0));
+                let mut sum = prefix.read_or(simd.f32s_splat(0.0));
                 for x in body {
-                    sum = simd.f64s_add(sum, *x);
+                    sum = simd.f32s_add(sum, *x);
                 }
-                sum = simd.f64s_add(sum, suffix.read_or(simd.f64s_splat(0.0)));
-                let sum = simd.f64s_rotate_left(sum, offset.rotate_left_amount());
+                sum = simd.f32s_add(sum, suffix.read_or(simd.f32s_splat(0.0)));
+                let sum = simd.f32s_rotate_left(sum, offset.rotate_left_amount());
 
-                bytemuck::cast_slice::<_, f64>(&[sum]).iter().sum()
+                bytemuck::cast_slice::<_, f32>(&[sum]).iter().sum()
             }
         }
 
         impl WithSimd for WrongAlignedSum<'_> {
-            type Output = f64;
+            type Output = f32;
 
             #[inline(always)]
             fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
-                let offset = simd.f64s_align_offset(self.slice.as_ptr(), self.slice.len());
-                let (prefix, body, suffix) = simd.f64s_as_aligned_simd(self.slice, offset);
+                let offset = simd.f32s_align_offset(self.slice.as_ptr(), self.slice.len());
+                let (prefix, body, suffix) = simd.f32s_as_aligned_simd(self.slice, offset);
 
-                let mut sum = prefix.read_or(simd.f64s_splat(0.0));
+                let mut sum = prefix.read_or(simd.f32s_splat(0.0));
                 for x in body {
-                    sum = simd.f64s_add(sum, *x);
+                    sum = simd.f32s_add(sum, *x);
                 }
-                sum = simd.f64s_add(sum, suffix.read_or(simd.f64s_splat(0.0)));
+                sum = simd.f32s_add(sum, suffix.read_or(simd.f32s_splat(0.0)));
 
-                bytemuck::cast_slice::<_, f64>(&[sum]).iter().sum()
+                bytemuck::cast_slice::<_, f32>(&[sum]).iter().sum()
             }
         }
 
