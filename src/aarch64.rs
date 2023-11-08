@@ -771,6 +771,9 @@ impl Simd for Neon {
         cast(a)
     }
 
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
     #[inline(always)]
     unsafe fn u32s_mask_load_ptr(
         self,
@@ -802,6 +805,9 @@ impl Simd for Neon {
         )
     }
 
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
     #[inline(always)]
     unsafe fn c32s_mask_load_ptr(
         self,
@@ -834,6 +840,9 @@ impl Simd for Neon {
         )
     }
 
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
     #[inline(always)]
     unsafe fn u32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut u32, values: Self::u32s) {
         if mask.0.is_set() {
@@ -850,6 +859,9 @@ impl Simd for Neon {
         }
     }
 
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
     #[inline(always)]
     unsafe fn c32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut c32, values: Self::c32s) {
         let ptr = ptr as *mut f32;
@@ -867,6 +879,9 @@ impl Simd for Neon {
         }
     }
 
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
     #[inline(always)]
     unsafe fn u64s_mask_load_ptr(
         self,
@@ -888,6 +903,9 @@ impl Simd for Neon {
         )
     }
 
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
     #[inline(always)]
     unsafe fn c64s_mask_load_ptr(
         self,
@@ -910,6 +928,9 @@ impl Simd for Neon {
         )
     }
 
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
     #[inline(always)]
     unsafe fn u64s_mask_store_ptr(self, mask: Self::m64s, ptr: *mut u64, values: Self::u64s) {
         if mask.0.is_set() {
@@ -920,6 +941,9 @@ impl Simd for Neon {
         }
     }
 
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
     #[inline(always)]
     unsafe fn c64s_mask_store_ptr(self, mask: Self::m64s, ptr: *mut c64, values: Self::c64s) {
         let ptr = ptr as *mut f64;
@@ -2395,25 +2419,25 @@ mod tests {
     fn test_rotate() {
         if let Some(simd) = Neon::try_new() {
             for amount in 0..128 {
-                let mut array = [0u32; 8];
-                for i in 0..8 {
+                let mut array = [0u32; 4];
+                for i in 0..4 {
                     array[i] = 1000 + i as u32;
                 }
 
-                let rot: [u32; 8] = cast(simd.u32s_rotate_right(cast(array), amount));
-                for i in 0..8 {
-                    assert_eq!(rot[(i + amount) % 8], array[i]);
+                let rot: [u32; 4] = cast(simd.u32s_rotate_right(cast(array), amount));
+                for i in 0..4 {
+                    assert_eq!(rot[(i + amount) % 4], array[i]);
                 }
             }
             for amount in 0..128 {
-                let mut array = [0u64; 4];
-                for i in 0..4 {
+                let mut array = [0u64; 2];
+                for i in 0..2 {
                     array[i] = 1000 + i as u64;
                 }
 
-                let rot: [u64; 4] = cast(simd.u64s_rotate_right(cast(array), amount));
-                for i in 0..4 {
-                    assert_eq!(rot[(i + amount) % 4], array[i]);
+                let rot: [u64; 2] = cast(simd.u64s_rotate_right(cast(array), amount));
+                for i in 0..2 {
+                    assert_eq!(rot[(i + amount) % 2], array[i]);
                 }
             }
         }

@@ -59,7 +59,8 @@
     non_camel_case_types,
     clippy::zero_prefixed_literal,
     clippy::identity_op,
-    clippy::too_many_arguments
+    clippy::too_many_arguments,
+    clippy::type_complexity
 )]
 #![cfg_attr(feature = "nightly", feature(stdsimd), feature(avx512_target_feature))]
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -460,6 +461,10 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
         unsafe { split_mut_slice_aligned_like(self, slice, offset) }
     }
 
+    /// # Safety
+    ///
+    /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
+    /// [`core::ptr::read`].
     #[inline(always)]
     unsafe fn i32s_mask_load_ptr(
         self,
@@ -473,6 +478,10 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
             self.i32s_transmute_u32s(or),
         ))
     }
+    /// # Safety
+    ///
+    /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
+    /// [`core::ptr::read`].
     #[inline(always)]
     unsafe fn f32s_mask_load_ptr(
         self,
@@ -486,29 +495,57 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
             self.f32s_transmute_u32s(or),
         ))
     }
+    /// # Safety
+    ///
+    /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
+    /// [`core::ptr::read`].
     unsafe fn u32s_mask_load_ptr(
         self,
         mask: Self::m32s,
         ptr: *const u32,
         or: Self::u32s,
     ) -> Self::u32s;
+    /// # Safety
+    ///
+    /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
+    /// [`core::ptr::read`].
     unsafe fn c32s_mask_load_ptr(
         self,
         mask: Self::m32s,
         ptr: *const c32,
         or: Self::c32s,
     ) -> Self::c32s;
+    /// # Safety
+    ///
+    /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
+    /// [`core::ptr::write`].
     #[inline(always)]
     unsafe fn i32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut i32, values: Self::i32s) {
         self.u32s_mask_store_ptr(mask, ptr as *mut u32, self.i32s_transmute_u32s(values));
     }
+    /// # Safety
+    ///
+    /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
+    /// [`core::ptr::write`].
     #[inline(always)]
     unsafe fn f32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut f32, values: Self::f32s) {
         self.u32s_mask_store_ptr(mask, ptr as *mut u32, self.f32s_transmute_u32s(values));
     }
+    /// # Safety
+    ///
+    /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
+    /// [`core::ptr::write`].
     unsafe fn u32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut u32, values: Self::u32s);
+    /// # Safety
+    ///
+    /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
+    /// [`core::ptr::write`].
     unsafe fn c32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut c32, values: Self::c32s);
 
+    /// # Safety
+    ///
+    /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
+    /// [`core::ptr::read`].
     #[inline(always)]
     unsafe fn i64s_mask_load_ptr(
         self,
@@ -522,6 +559,10 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
             self.i64s_transmute_u64s(or),
         ))
     }
+    /// # Safety
+    ///
+    /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
+    /// [`core::ptr::read`].
     #[inline(always)]
     unsafe fn f64s_mask_load_ptr(
         self,
@@ -535,27 +576,51 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
             self.f64s_transmute_u64s(or),
         ))
     }
+    /// # Safety
+    ///
+    /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
+    /// [`core::ptr::read`].
     unsafe fn u64s_mask_load_ptr(
         self,
         mask: Self::m64s,
         ptr: *const u64,
         or: Self::u64s,
     ) -> Self::u64s;
+    /// # Safety
+    ///
+    /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
+    /// [`core::ptr::read`].
     unsafe fn c64s_mask_load_ptr(
         self,
         mask: Self::m64s,
         ptr: *const c64,
         or: Self::c64s,
     ) -> Self::c64s;
+    /// # Safety
+    ///
+    /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
+    /// [`core::ptr::write`].
     #[inline(always)]
     unsafe fn i64s_mask_store_ptr(self, mask: Self::m64s, ptr: *mut i64, values: Self::i64s) {
         self.u64s_mask_store_ptr(mask, ptr as *mut u64, self.i64s_transmute_u64s(values));
     }
+    /// # Safety
+    ///
+    /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
+    /// [`core::ptr::write`].
     #[inline(always)]
     unsafe fn f64s_mask_store_ptr(self, mask: Self::m64s, ptr: *mut f64, values: Self::f64s) {
         self.u64s_mask_store_ptr(mask, ptr as *mut u64, self.f64s_transmute_u64s(values));
     }
+    /// # Safety
+    ///
+    /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
+    /// [`core::ptr::write`].
     unsafe fn u64s_mask_store_ptr(self, mask: Self::m64s, ptr: *mut u64, values: Self::u64s);
+    /// # Safety
+    ///
+    /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
+    /// [`core::ptr::write`].
     unsafe fn c64s_mask_store_ptr(self, mask: Self::m64s, ptr: *mut c64, values: Self::c64s);
 
     fn u32s_partial_load(self, slice: &[u32]) -> Self::u32s;
