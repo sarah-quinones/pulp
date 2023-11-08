@@ -71,6 +71,7 @@ use core::fmt::Debug;
 use core::marker::PhantomData;
 use core::slice::{from_raw_parts, from_raw_parts_mut};
 use num_complex::Complex;
+use reborrow::*;
 use seal::Seal;
 
 pub type c32 = Complex<f32>;
@@ -2088,7 +2089,50 @@ pub struct SuffixMut<'a, T, S: Simd, Mask: Copy> {
     __marker: PhantomData<&'a mut T>,
 }
 
-use reborrow::*;
+impl<T, S: Simd> Prefix<'_, T, S, bool> {
+    #[inline(always)]
+    pub fn empty(simd: S) -> Self {
+        Self {
+            simd,
+            mask: false,
+            base: core::ptr::null(),
+            __marker: PhantomData,
+        }
+    }
+}
+impl<T, S: Simd> PrefixMut<'_, T, S, bool> {
+    #[inline(always)]
+    pub fn empty(simd: S) -> Self {
+        Self {
+            simd,
+            mask: false,
+            base: core::ptr::null_mut(),
+            __marker: PhantomData,
+        }
+    }
+}
+impl<T, S: Simd> SuffixMut<'_, T, S, bool> {
+    #[inline(always)]
+    pub fn empty(simd: S) -> Self {
+        Self {
+            simd,
+            mask: false,
+            base: core::ptr::null_mut(),
+            __marker: PhantomData,
+        }
+    }
+}
+impl<T, S: Simd> Suffix<'_, T, S, bool> {
+    #[inline(always)]
+    pub fn empty(simd: S) -> Self {
+        Self {
+            simd,
+            mask: false,
+            base: core::ptr::null(),
+            __marker: PhantomData,
+        }
+    }
+}
 
 impl<'short, T, S: Simd, Mask: Copy> ReborrowMut<'short> for SuffixMut<'_, T, S, Mask> {
     type Target = SuffixMut<'short, T, S, Mask>;
