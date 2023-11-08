@@ -2196,6 +2196,37 @@ pub trait Write: Read {
     fn write(&mut self, values: Self::Output);
 }
 
+impl<T: Copy + Debug> Read for &[T] {
+    type Output = T;
+    #[inline(always)]
+    fn read_or(&self, or: Self::Output) -> Self::Output {
+        if let [first, ..] = &**self {
+            *first
+        } else {
+            or
+        }
+    }
+}
+impl<T: Copy + Debug> Read for &mut [T] {
+    type Output = T;
+    #[inline(always)]
+    fn read_or(&self, or: Self::Output) -> Self::Output {
+        if let [first, ..] = &**self {
+            *first
+        } else {
+            or
+        }
+    }
+}
+impl<T: Copy + Debug> Write for &mut [T] {
+    #[inline(always)]
+    fn write(&mut self, values: Self::Output) {
+        if let [first, ..] = &mut **self {
+            *first = values
+        }
+    }
+}
+
 impl<T: Copy + Debug> Read for &T {
     type Output = T;
     #[inline(always)]
