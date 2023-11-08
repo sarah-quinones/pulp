@@ -4563,18 +4563,18 @@ mod tests {
 
         use rand::{Rng, SeedableRng};
 
-        let mut rng = rand::rngs::StdRng::seed_from_u64(0);
+        let mut rng = rand::rngs::StdRng::seed_from_u64(1);
 
         let nan = f64::NAN;
         let data = core::array::from_fn::<f64, 33, _>(|_| rng.gen());
-        let aligned_data = Aligned(data);
-        let unaligned_data = Aligned(core::array::from_fn::<f64, 35, _>(|i| {
+        let unaligned_data = Aligned(core::array::from_fn::<f64, 36, _>(|i| {
             if i < 3 {
                 nan
             } else {
                 data[i - 3]
             }
         }));
+        let data = &unaligned_data.0[3..];
 
         let arch = Arch::new();
 
@@ -4601,7 +4601,7 @@ mod tests {
                 }
                 sum = simd.f64s_add(sum, simd.f64s_partial_load(tail));
 
-                simd.f64s_reduce_sum(sum)
+                bytemuck::cast_slice::<_, f64>(&[sum]).iter().sum()
             }
         }
 
@@ -4618,8 +4618,9 @@ mod tests {
                     sum = simd.f64s_add(sum, *x);
                 }
                 sum = simd.f64s_add(sum, suffix.read_or(simd.f64s_splat(0.0)));
+                let sum = simd.f64s_rotate_left(sum, offset.rotate_left_amount());
 
-                simd.f64s_reduce_sum(simd.f64s_rotate_left(sum, offset.rotate_left_amount()))
+                bytemuck::cast_slice::<_, f64>(&[sum]).iter().sum()
             }
         }
 
@@ -4637,17 +4638,13 @@ mod tests {
                 }
                 sum = simd.f64s_add(sum, suffix.read_or(simd.f64s_splat(0.0)));
 
-                simd.f64s_reduce_sum(sum)
+                bytemuck::cast_slice::<_, f64>(&[sum]).iter().sum()
             }
         }
 
         let sum = arch.dispatch(Sum { slice: &data });
-        let aligned_sum = arch.dispatch(AlignedSum {
-            slice: &unaligned_data.0[1..],
-        });
-        let wrong_aligned_sum = arch.dispatch(WrongAlignedSum {
-            slice: &unaligned_data.0[1..],
-        });
+        let aligned_sum = arch.dispatch(AlignedSum { slice: &data });
+        let wrong_aligned_sum = arch.dispatch(WrongAlignedSum { slice: &data });
 
         assert_eq!(sum, aligned_sum);
         assert_ne!(sum, wrong_aligned_sum);
