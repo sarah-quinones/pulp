@@ -2428,6 +2428,9 @@ impl Simd for V4 {
     unsafe fn u32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut u32, values: Self::u32s) {
         _mm512_mask_storeu_epi32(ptr as *mut i32, mask.0, transmute(values));
     }
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
     #[inline(always)]
     unsafe fn c32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut c32, values: Self::c32s) {
         _mm512_mask_storeu_ps(ptr as *mut f32, mask.0, transmute(values));
@@ -9804,8 +9807,8 @@ mod tests {
         if let Some(simd) = V3::try_new() {
             for amount in 0..128 {
                 let mut array = [0u32; 8];
-                for i in 0..8 {
-                    array[i] = 1000 + i as u32;
+                for (i, dst) in array.iter_mut().enumerate() {
+                    *dst = 1000 + i as u32;
                 }
 
                 let rot: [u32; 8] = cast(simd.u32s_rotate_right(cast(array), amount));
@@ -9815,8 +9818,8 @@ mod tests {
             }
             for amount in 0..128 {
                 let mut array = [0u64; 4];
-                for i in 0..4 {
-                    array[i] = 1000 + i as u64;
+                for (i, dst) in array.iter_mut().enumerate() {
+                    *dst = 1000 + i as u64;
                 }
 
                 let rot: [u64; 4] = cast(simd.u64s_rotate_right(cast(array), amount));
@@ -9830,8 +9833,8 @@ mod tests {
         if let Some(simd) = V4::try_new() {
             for amount in 0..128 {
                 let mut array = [0u32; 16];
-                for i in 0..16 {
-                    array[i] = 1000 + i as u32;
+                for (i, dst) in array.iter_mut().enumerate() {
+                    *dst = 1000 + i as u32;
                 }
 
                 let rot: [u32; 16] = cast(simd.u32s_rotate_right(cast(array), amount));
@@ -9841,8 +9844,8 @@ mod tests {
             }
             for amount in 0..128 {
                 let mut array = [0u64; 8];
-                for i in 0..8 {
-                    array[i] = 1000 + i as u64;
+                for (i, dst) in array.iter_mut().enumerate() {
+                    *dst = 1000 + i as u64;
                 }
 
                 let rot: [u64; 8] = cast(simd.u64s_rotate_right(cast(array), amount));

@@ -4642,9 +4642,9 @@ mod tests {
             }
         }
 
-        let sum = arch.dispatch(Sum { slice: &data });
-        let aligned_sum = arch.dispatch(AlignedSum { slice: &data });
-        let wrong_aligned_sum = arch.dispatch(WrongAlignedSum { slice: &data });
+        let sum = arch.dispatch(Sum { slice: data });
+        let aligned_sum = arch.dispatch(AlignedSum { slice: data });
+        let wrong_aligned_sum = arch.dispatch(WrongAlignedSum { slice: data });
 
         assert_eq!(sum, aligned_sum);
         assert_ne!(sum, wrong_aligned_sum);

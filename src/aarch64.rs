@@ -2420,8 +2420,8 @@ mod tests {
         if let Some(simd) = Neon::try_new() {
             for amount in 0..128 {
                 let mut array = [0u32; 4];
-                for i in 0..4 {
-                    array[i] = 1000 + i as u32;
+                for (i, dst) in array.iter_mut().enumerate() {
+                    *dst = 1000 + i as u32;
                 }
 
                 let rot: [u32; 4] = cast(simd.u32s_rotate_right(cast(array), amount));
@@ -2431,8 +2431,8 @@ mod tests {
             }
             for amount in 0..128 {
                 let mut array = [0u64; 2];
-                for i in 0..2 {
-                    array[i] = 1000 + i as u64;
+                for (i, dst) in array.iter_mut().enumerate() {
+                    *dst = 1000 + i as u64;
                 }
 
                 let rot: [u64; 2] = cast(simd.u64s_rotate_right(cast(array), amount));

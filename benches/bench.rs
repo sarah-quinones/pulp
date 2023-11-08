@@ -858,6 +858,7 @@ mod nightly {
 }
 
 fn criterion_bench(criterion: &mut Criterion) {
+    let _ = &mut *criterion;
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     #[cfg(feature = "nightly")]
     if let Some(simd) = pulp::x86::V4::try_new() {
@@ -1098,13 +1099,13 @@ fn aligned_sum_reduce_bench(criterion: &mut Criterion) {
     }
 
     criterion.bench_function("sum-reduce-unaligned", |bencher| {
-        bencher.iter(|| arch.dispatch(Sum { slice: &data }));
+        bencher.iter(|| arch.dispatch(Sum { slice: data }));
     });
     criterion.bench_function("sum-reduce-aligned", |bencher| {
-        bencher.iter(|| arch.dispatch(AlignedSum { slice: &data }));
+        bencher.iter(|| arch.dispatch(AlignedSum { slice: data }));
     });
     criterion.bench_function("sum-reduce-aligned-wrong", |bencher| {
-        bencher.iter(|| arch.dispatch(WrongAlignedSum { slice: &data }));
+        bencher.iter(|| arch.dispatch(WrongAlignedSum { slice: data }));
     });
 }
 
