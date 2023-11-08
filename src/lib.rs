@@ -112,13 +112,13 @@ impl<F: NullaryFnOnce> WithSimd for F {
 }
 
 pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
-    type m32s: Debug + Copy + Send + Sync + 'static;
+    type m32s: Debug + Copy + Send + Sync + Zeroable + 'static;
     type f32s: Debug + Copy + Send + Sync + Pod + 'static;
     type c32s: Debug + Copy + Send + Sync + Pod + 'static;
     type i32s: Debug + Copy + Send + Sync + Pod + 'static;
     type u32s: Debug + Copy + Send + Sync + Pod + 'static;
 
-    type m64s: Debug + Copy + Send + Sync + 'static;
+    type m64s: Debug + Copy + Send + Sync + Zeroable + 'static;
     type f64s: Debug + Copy + Send + Sync + Pod + 'static;
     type c64s: Debug + Copy + Send + Sync + Pod + 'static;
     type i64s: Debug + Copy + Send + Sync + Pod + 'static;
@@ -2779,7 +2779,7 @@ impl<S: Simd> Debug for SuffixMut<'_, c64, S, S::m64s> {
 }
 
 #[derive(Debug)]
-pub struct Offset<Mask: Copy> {
+pub struct Offset<Mask> {
     prefix_mask: Mask,
     suffix_mask: Mask,
 
@@ -2790,7 +2790,21 @@ pub struct Offset<Mask: Copy> {
     suffix_len: usize,
 }
 
-impl<Mask: Copy> Offset<Mask> {
+impl Offset<bool> {
+    #[inline(always)]
+    pub fn unaligned(len: usize) -> Self {
+        Self {
+            prefix_mask: false,
+            suffix_mask: false,
+            prefix_offset: 0,
+            prefix_len: 0,
+            body_len: len,
+            suffix_len: 0,
+        }
+    }
+}
+
+impl<Mask> Offset<Mask> {
     #[inline(always)]
     pub fn rotate_left_amount(&self) -> usize {
         self.prefix_offset
