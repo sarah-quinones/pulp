@@ -2150,6 +2150,33 @@ impl<T, S: Simd> Suffix<'_, T, S, bool> {
     }
 }
 
+impl<'a, T, S: Simd, Mask: Copy> IntoConst for SuffixMut<'a, T, S, Mask> {
+    type Target = Suffix<'a, T, S, Mask>;
+
+    #[inline(always)]
+    fn into_const(self) -> Self::Target {
+        Suffix {
+            simd: self.simd,
+            mask: self.mask,
+            base: self.base,
+            __marker: PhantomData,
+        }
+    }
+}
+impl<'a, T, S: Simd, Mask: Copy> IntoConst for PrefixMut<'a, T, S, Mask> {
+    type Target = Prefix<'a, T, S, Mask>;
+
+    #[inline(always)]
+    fn into_const(self) -> Self::Target {
+        Prefix {
+            simd: self.simd,
+            mask: self.mask,
+            base: self.base,
+            __marker: PhantomData,
+        }
+    }
+}
+
 impl<'short, T, S: Simd, Mask: Copy> ReborrowMut<'short> for SuffixMut<'_, T, S, Mask> {
     type Target = SuffixMut<'short, T, S, Mask>;
 
