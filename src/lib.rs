@@ -267,6 +267,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     }
 
     #[inline(always)]
+    #[track_caller]
     fn i32s_as_aligned_simd(
         self,
         slice: &[i32],
@@ -279,6 +280,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
         unsafe { split_slice_aligned_like(self, slice, offset) }
     }
     #[inline(always)]
+    #[track_caller]
     fn f32s_as_aligned_simd(
         self,
         slice: &[f32],
@@ -291,6 +293,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
         unsafe { split_slice_aligned_like(self, slice, offset) }
     }
     #[inline(always)]
+    #[track_caller]
     fn u32s_as_aligned_simd(
         self,
         slice: &[u32],
@@ -303,6 +306,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
         unsafe { split_slice_aligned_like(self, slice, offset) }
     }
     #[inline(always)]
+    #[track_caller]
     fn c32s_as_aligned_simd(
         self,
         slice: &[c32],
@@ -316,6 +320,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     }
 
     #[inline(always)]
+    #[track_caller]
     fn i64s_as_aligned_simd(
         self,
         slice: &[i64],
@@ -328,6 +333,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
         unsafe { split_slice_aligned_like(self, slice, offset) }
     }
     #[inline(always)]
+    #[track_caller]
     fn f64s_as_aligned_simd(
         self,
         slice: &[f64],
@@ -340,6 +346,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
         unsafe { split_slice_aligned_like(self, slice, offset) }
     }
     #[inline(always)]
+    #[track_caller]
     fn u64s_as_aligned_simd(
         self,
         slice: &[u64],
@@ -352,6 +359,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
         unsafe { split_slice_aligned_like(self, slice, offset) }
     }
     #[inline(always)]
+    #[track_caller]
     fn c64s_as_aligned_simd(
         self,
         slice: &[c64],
@@ -365,6 +373,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     }
 
     #[inline(always)]
+    #[track_caller]
     fn i32s_as_aligned_mut_simd(
         self,
         slice: &mut [i32],
@@ -377,6 +386,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
         unsafe { split_mut_slice_aligned_like(self, slice, offset) }
     }
     #[inline(always)]
+    #[track_caller]
     fn f32s_as_aligned_mut_simd(
         self,
         slice: &mut [f32],
@@ -389,6 +399,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
         unsafe { split_mut_slice_aligned_like(self, slice, offset) }
     }
     #[inline(always)]
+    #[track_caller]
     fn u32s_as_aligned_mut_simd(
         self,
         slice: &mut [u32],
@@ -401,6 +412,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
         unsafe { split_mut_slice_aligned_like(self, slice, offset) }
     }
     #[inline(always)]
+    #[track_caller]
     fn c32s_as_aligned_mut_simd(
         self,
         slice: &mut [c32],
@@ -414,6 +426,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     }
 
     #[inline(always)]
+    #[track_caller]
     fn i64s_as_aligned_mut_simd(
         self,
         slice: &mut [i64],
@@ -426,6 +439,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
         unsafe { split_mut_slice_aligned_like(self, slice, offset) }
     }
     #[inline(always)]
+    #[track_caller]
     fn f64s_as_aligned_mut_simd(
         self,
         slice: &mut [f64],
@@ -438,6 +452,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
         unsafe { split_mut_slice_aligned_like(self, slice, offset) }
     }
     #[inline(always)]
+    #[track_caller]
     fn u64s_as_aligned_mut_simd(
         self,
         slice: &mut [u64],
@@ -450,6 +465,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
         unsafe { split_mut_slice_aligned_like(self, slice, offset) }
     }
     #[inline(always)]
+    #[track_caller]
     fn c64s_as_aligned_mut_simd(
         self,
         slice: &mut [c64],
@@ -3059,6 +3075,7 @@ fn align_offset_u32<S: Simd, T, U>(
 }
 
 #[inline(always)]
+#[track_caller]
 unsafe fn split_slice_aligned_like<S: Simd, Mask: Copy, T, U>(
     simd: S,
     slice: &[T],
@@ -3096,6 +3113,7 @@ unsafe fn split_slice_aligned_like<S: Simd, Mask: Copy, T, U>(
 }
 
 #[inline(always)]
+#[track_caller]
 unsafe fn split_mut_slice_aligned_like<S: Simd, Mask: Copy, T, U>(
     simd: S,
     slice: &mut [T],

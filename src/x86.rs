@@ -65,6 +65,117 @@ macro_rules! vps {
 #[target_feature(enable = "avx512cd")]
 #[target_feature(enable = "avx512dq")]
 #[target_feature(enable = "avx512vl")]
+pub unsafe fn _mm512_maskz_loadu_pd(k: __mmask8, mem_addr: *const f64) -> __m512i {
+    // this is copied from the standard library with added flags from V4.
+    // if the full flags are not provided, the function doesn't get inlined properly
+    let mut dst: __m512i;
+    core::arch::asm!(
+        vpl!("vmovupd {dst}{{{k}}} {{z}}"),
+        p = in(reg) mem_addr,
+        k = in(kreg) k,
+        dst = out(zmm_reg) dst,
+        options(pure, readonly, nostack)
+    );
+    dst
+}
+
+/// # Safety
+/// Same preconditions as the one in `std::arch`
+#[cfg(feature = "nightly")]
+#[inline]
+#[target_feature(enable = "sse")]
+#[target_feature(enable = "sse2")]
+#[target_feature(enable = "fxsr")]
+#[target_feature(enable = "sse3")]
+#[target_feature(enable = "ssse3")]
+#[target_feature(enable = "sse4.1")]
+#[target_feature(enable = "sse4.2")]
+#[target_feature(enable = "popcnt")]
+#[target_feature(enable = "avx")]
+#[target_feature(enable = "avx2")]
+#[target_feature(enable = "bmi1")]
+#[target_feature(enable = "bmi2")]
+#[target_feature(enable = "fma")]
+#[target_feature(enable = "lzcnt")]
+#[target_feature(enable = "avx512f")]
+#[target_feature(enable = "avx512bw")]
+#[target_feature(enable = "avx512cd")]
+#[target_feature(enable = "avx512dq")]
+#[target_feature(enable = "avx512vl")]
+pub unsafe fn _mm512_maskz_loadu_epi64(k: __mmask8, mem_addr: *const i64) -> __m512i {
+    // this is copied from the standard library with added flags from V4.
+    // if the full flags are not provided, the function doesn't get inlined properly
+    let mut dst: __m512i;
+    core::arch::asm!(
+        vpl!("vmovdqu64 {dst}{{{k}}} {{z}}"),
+        p = in(reg) mem_addr,
+        k = in(kreg) k,
+        dst = out(zmm_reg) dst,
+        options(pure, readonly, nostack)
+    );
+    dst
+}
+
+/// # Safety
+/// Same preconditions as the one in `std::arch`
+#[cfg(feature = "nightly")]
+#[inline]
+#[target_feature(enable = "sse")]
+#[target_feature(enable = "sse2")]
+#[target_feature(enable = "fxsr")]
+#[target_feature(enable = "sse3")]
+#[target_feature(enable = "ssse3")]
+#[target_feature(enable = "sse4.1")]
+#[target_feature(enable = "sse4.2")]
+#[target_feature(enable = "popcnt")]
+#[target_feature(enable = "avx")]
+#[target_feature(enable = "avx2")]
+#[target_feature(enable = "bmi1")]
+#[target_feature(enable = "bmi2")]
+#[target_feature(enable = "fma")]
+#[target_feature(enable = "lzcnt")]
+#[target_feature(enable = "avx512f")]
+#[target_feature(enable = "avx512bw")]
+#[target_feature(enable = "avx512cd")]
+#[target_feature(enable = "avx512dq")]
+#[target_feature(enable = "avx512vl")]
+pub unsafe fn _mm512_maskz_loadu_ps(k: __mmask16, mem_addr: *const f32) -> __m512i {
+    // this is copied from the standard library with added flags from V4.
+    // if the full flags are not provided, the function doesn't get inlined properly
+    let mut dst: __m512i;
+    core::arch::asm!(
+        vpl!("vmovups {dst}{{{k}}} {{z}}"),
+        p = in(reg) mem_addr,
+        k = in(kreg) k,
+        dst = out(zmm_reg) dst,
+        options(pure, readonly, nostack)
+    );
+    dst
+}
+
+/// # Safety
+/// Same preconditions as the one in `std::arch`
+#[cfg(feature = "nightly")]
+#[inline]
+#[target_feature(enable = "sse")]
+#[target_feature(enable = "sse2")]
+#[target_feature(enable = "fxsr")]
+#[target_feature(enable = "sse3")]
+#[target_feature(enable = "ssse3")]
+#[target_feature(enable = "sse4.1")]
+#[target_feature(enable = "sse4.2")]
+#[target_feature(enable = "popcnt")]
+#[target_feature(enable = "avx")]
+#[target_feature(enable = "avx2")]
+#[target_feature(enable = "bmi1")]
+#[target_feature(enable = "bmi2")]
+#[target_feature(enable = "fma")]
+#[target_feature(enable = "lzcnt")]
+#[target_feature(enable = "avx512f")]
+#[target_feature(enable = "avx512bw")]
+#[target_feature(enable = "avx512cd")]
+#[target_feature(enable = "avx512dq")]
+#[target_feature(enable = "avx512vl")]
 pub unsafe fn _mm512_maskz_loadu_epi32(k: __mmask16, mem_addr: *const i32) -> __m512i {
     // this is copied from the standard library with added flags from V4.
     // if the full flags are not provided, the function doesn't get inlined properly
@@ -77,6 +188,257 @@ pub unsafe fn _mm512_maskz_loadu_epi32(k: __mmask16, mem_addr: *const i32) -> __
         options(pure, readonly, nostack)
     );
     dst
+}
+
+/// # Safety
+/// Same preconditions as the one in `std::arch`
+#[cfg(feature = "nightly")]
+#[inline]
+#[target_feature(enable = "sse")]
+#[target_feature(enable = "sse2")]
+#[target_feature(enable = "fxsr")]
+#[target_feature(enable = "sse3")]
+#[target_feature(enable = "ssse3")]
+#[target_feature(enable = "sse4.1")]
+#[target_feature(enable = "sse4.2")]
+#[target_feature(enable = "popcnt")]
+#[target_feature(enable = "avx")]
+#[target_feature(enable = "avx2")]
+#[target_feature(enable = "bmi1")]
+#[target_feature(enable = "bmi2")]
+#[target_feature(enable = "fma")]
+#[target_feature(enable = "lzcnt")]
+#[target_feature(enable = "avx512f")]
+#[target_feature(enable = "avx512bw")]
+#[target_feature(enable = "avx512cd")]
+#[target_feature(enable = "avx512dq")]
+#[target_feature(enable = "avx512vl")]
+pub unsafe fn _mm512_mask_loadu_pd(mut src: __m512d, k: __mmask8, mem_addr: *const f64) -> __m512d {
+    // this is copied from the standard library with added flags from V4.
+    // if the full flags are not provided, the function doesn't get inlined properly
+    core::arch::asm!(
+        vpl!("vmovupd {dst}{{{k}}}"),
+        p = in(reg) mem_addr,
+        k = in(kreg) k,
+        dst = inout(zmm_reg) src,
+        options(pure, readonly, nostack)
+    );
+    src
+}
+
+/// # Safety
+/// Same preconditions as the one in `std::arch`
+#[cfg(feature = "nightly")]
+#[inline]
+#[target_feature(enable = "sse")]
+#[target_feature(enable = "sse2")]
+#[target_feature(enable = "fxsr")]
+#[target_feature(enable = "sse3")]
+#[target_feature(enable = "ssse3")]
+#[target_feature(enable = "sse4.1")]
+#[target_feature(enable = "sse4.2")]
+#[target_feature(enable = "popcnt")]
+#[target_feature(enable = "avx")]
+#[target_feature(enable = "avx2")]
+#[target_feature(enable = "bmi1")]
+#[target_feature(enable = "bmi2")]
+#[target_feature(enable = "fma")]
+#[target_feature(enable = "lzcnt")]
+#[target_feature(enable = "avx512f")]
+#[target_feature(enable = "avx512bw")]
+#[target_feature(enable = "avx512cd")]
+#[target_feature(enable = "avx512dq")]
+#[target_feature(enable = "avx512vl")]
+pub unsafe fn _mm512_mask_loadu_epi64(
+    mut src: __m512i,
+    k: __mmask8,
+    mem_addr: *const i64,
+) -> __m512i {
+    // this is copied from the standard library with added flags from V4.
+    // if the full flags are not provided, the function doesn't get inlined properly
+    core::arch::asm!(
+        vpl!("vmovdqu64 {dst}{{{k}}}"),
+        p = in(reg) mem_addr,
+        k = in(kreg) k,
+        dst = inout(zmm_reg) src,
+        options(pure, readonly, nostack)
+    );
+    src
+}
+
+/// # Safety
+/// Same preconditions as the one in `std::arch`
+#[cfg(feature = "nightly")]
+#[inline]
+#[target_feature(enable = "sse")]
+#[target_feature(enable = "sse2")]
+#[target_feature(enable = "fxsr")]
+#[target_feature(enable = "sse3")]
+#[target_feature(enable = "ssse3")]
+#[target_feature(enable = "sse4.1")]
+#[target_feature(enable = "sse4.2")]
+#[target_feature(enable = "popcnt")]
+#[target_feature(enable = "avx")]
+#[target_feature(enable = "avx2")]
+#[target_feature(enable = "bmi1")]
+#[target_feature(enable = "bmi2")]
+#[target_feature(enable = "fma")]
+#[target_feature(enable = "lzcnt")]
+#[target_feature(enable = "avx512f")]
+#[target_feature(enable = "avx512bw")]
+#[target_feature(enable = "avx512cd")]
+#[target_feature(enable = "avx512dq")]
+#[target_feature(enable = "avx512vl")]
+pub unsafe fn _mm512_mask_loadu_ps(mut src: __m512, k: __mmask16, mem_addr: *const f32) -> __m512 {
+    // this is copied from the standard library with added flags from V4.
+    // if the full flags are not provided, the function doesn't get inlined properly
+    core::arch::asm!(
+        vpl!("vmovups {dst}{{{k}}}"),
+        p = in(reg) mem_addr,
+        k = in(kreg) k,
+        dst = inout(zmm_reg) src,
+        options(pure, readonly, nostack)
+    );
+    src
+}
+
+/// # Safety
+/// Same preconditions as the one in `std::arch`
+#[cfg(feature = "nightly")]
+#[inline]
+#[target_feature(enable = "sse")]
+#[target_feature(enable = "sse2")]
+#[target_feature(enable = "fxsr")]
+#[target_feature(enable = "sse3")]
+#[target_feature(enable = "ssse3")]
+#[target_feature(enable = "sse4.1")]
+#[target_feature(enable = "sse4.2")]
+#[target_feature(enable = "popcnt")]
+#[target_feature(enable = "avx")]
+#[target_feature(enable = "avx2")]
+#[target_feature(enable = "bmi1")]
+#[target_feature(enable = "bmi2")]
+#[target_feature(enable = "fma")]
+#[target_feature(enable = "lzcnt")]
+#[target_feature(enable = "avx512f")]
+#[target_feature(enable = "avx512bw")]
+#[target_feature(enable = "avx512cd")]
+#[target_feature(enable = "avx512dq")]
+#[target_feature(enable = "avx512vl")]
+pub unsafe fn _mm512_mask_loadu_epi32(
+    mut src: __m512i,
+    k: __mmask16,
+    mem_addr: *const i32,
+) -> __m512i {
+    // this is copied from the standard library with added flags from V4.
+    // if the full flags are not provided, the function doesn't get inlined properly
+    core::arch::asm!(
+        vpl!("vmovdqu32 {dst}{{{k}}}"),
+        p = in(reg) mem_addr,
+        k = in(kreg) k,
+        dst = inout(zmm_reg) src,
+        options(pure, readonly, nostack)
+    );
+    src
+}
+
+/// # Safety
+/// Same preconditions as the one in `std::arch`
+#[cfg(feature = "nightly")]
+#[inline]
+#[target_feature(enable = "sse")]
+#[target_feature(enable = "sse2")]
+#[target_feature(enable = "fxsr")]
+#[target_feature(enable = "sse3")]
+#[target_feature(enable = "ssse3")]
+#[target_feature(enable = "sse4.1")]
+#[target_feature(enable = "sse4.2")]
+#[target_feature(enable = "popcnt")]
+#[target_feature(enable = "avx")]
+#[target_feature(enable = "avx2")]
+#[target_feature(enable = "bmi1")]
+#[target_feature(enable = "bmi2")]
+#[target_feature(enable = "fma")]
+#[target_feature(enable = "lzcnt")]
+#[target_feature(enable = "avx512f")]
+#[target_feature(enable = "avx512bw")]
+#[target_feature(enable = "avx512cd")]
+#[target_feature(enable = "avx512dq")]
+#[target_feature(enable = "avx512vl")]
+pub unsafe fn _mm512_mask_storeu_pd(mem_addr: *mut f64, mask: __mmask8, a: __m512i) {
+    core::arch::asm!(
+        vps!("vmovupd", "{{{mask}}}, {a}"),
+        p = in(reg) mem_addr,
+        mask = in(kreg) mask,
+        a = in(zmm_reg) a,
+        options(nostack)
+    );
+}
+
+/// # Safety
+/// Same preconditions as the one in `std::arch`
+#[cfg(feature = "nightly")]
+#[inline]
+#[target_feature(enable = "sse")]
+#[target_feature(enable = "sse2")]
+#[target_feature(enable = "fxsr")]
+#[target_feature(enable = "sse3")]
+#[target_feature(enable = "ssse3")]
+#[target_feature(enable = "sse4.1")]
+#[target_feature(enable = "sse4.2")]
+#[target_feature(enable = "popcnt")]
+#[target_feature(enable = "avx")]
+#[target_feature(enable = "avx2")]
+#[target_feature(enable = "bmi1")]
+#[target_feature(enable = "bmi2")]
+#[target_feature(enable = "fma")]
+#[target_feature(enable = "lzcnt")]
+#[target_feature(enable = "avx512f")]
+#[target_feature(enable = "avx512bw")]
+#[target_feature(enable = "avx512cd")]
+#[target_feature(enable = "avx512dq")]
+#[target_feature(enable = "avx512vl")]
+pub unsafe fn _mm512_mask_storeu_epi64(mem_addr: *mut i64, mask: __mmask8, a: __m512i) {
+    core::arch::asm!(
+        vps!("vmovdqu64", "{{{mask}}}, {a}"),
+        p = in(reg) mem_addr,
+        mask = in(kreg) mask,
+        a = in(zmm_reg) a,
+        options(nostack)
+    );
+}
+
+/// # Safety
+/// Same preconditions as the one in `std::arch`
+#[cfg(feature = "nightly")]
+#[inline]
+#[target_feature(enable = "sse")]
+#[target_feature(enable = "sse2")]
+#[target_feature(enable = "fxsr")]
+#[target_feature(enable = "sse3")]
+#[target_feature(enable = "ssse3")]
+#[target_feature(enable = "sse4.1")]
+#[target_feature(enable = "sse4.2")]
+#[target_feature(enable = "popcnt")]
+#[target_feature(enable = "avx")]
+#[target_feature(enable = "avx2")]
+#[target_feature(enable = "bmi1")]
+#[target_feature(enable = "bmi2")]
+#[target_feature(enable = "fma")]
+#[target_feature(enable = "lzcnt")]
+#[target_feature(enable = "avx512f")]
+#[target_feature(enable = "avx512bw")]
+#[target_feature(enable = "avx512cd")]
+#[target_feature(enable = "avx512dq")]
+#[target_feature(enable = "avx512vl")]
+pub unsafe fn _mm512_mask_storeu_ps(mem_addr: *mut f32, mask: __mmask16, a: __m512i) {
+    core::arch::asm!(
+        vps!("vmovups", "{{{mask}}}, {a}"),
+        p = in(reg) mem_addr,
+        mask = in(kreg) mask,
+        a = in(zmm_reg) a,
+        options(nostack)
+    );
 }
 
 /// # Safety
