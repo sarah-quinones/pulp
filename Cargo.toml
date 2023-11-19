@@ -1,34 +1,7 @@
-[package]
-name = "pulp"
-version = "0.18.4"
-edition = "2021"
-authors = ["sarah <>"]
-description = "Safe generic simd"
-readme = "README.md"
-repository = "https://github.com/sarah-ek/pulp/"
-license = "MIT"
-keywords = ["simd"]
+[workspace]
+members = [
+    "pulp",
+    "pulp-macro",
+]
 
-[dependencies]
-bytemuck = "1"
-num-complex = { version = "0.4.3", default-features = false, features = ["bytemuck"] }
-libm = { version = "0.2", default-features = false }
-reborrow = "0.5"
-
-[features]
-default = ["std"]
-std = []
-nightly = ["bytemuck/nightly_stdsimd"]
-
-[dev-dependencies]
-assert_approx_eq = "1.1.0"
-criterion = "0.4.0"
-rand = "0.8.5"
-
-[[bench]]
-name = "bench"
-harness = false
-
-[package.metadata.docs.rs]
-all-features = true
-rustdoc-args = ["--cfg", "docsrs"]
+resolver = "2"

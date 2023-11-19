@@ -69,10 +69,18 @@
 use bytemuck::{AnyBitPattern, NoUninit, Pod, Zeroable};
 use core::fmt::Debug;
 use core::marker::PhantomData;
+use core::mem::MaybeUninit;
 use core::slice::{from_raw_parts, from_raw_parts_mut};
 use num_complex::Complex;
 use reborrow::*;
 use seal::Seal;
+
+/// Requires the first non-lifetime generic parameter, as well as the function's
+/// first input parameter to be the SIMD type.
+/// Also currently requires that all the lifetimes be explicitly specified.
+#[cfg(feature = "macro")]
+#[cfg_attr(docsrs, doc(cfg(feature = "macro")))]
+pub use pulp_macro::with_simd;
 
 pub type c32 = Complex<f32>;
 pub type c64 = Complex<f64>;
@@ -136,11 +144,23 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
         unsafe { split_mut_slice(slice) }
     }
     #[inline(always)]
+    fn f32s_as_uninit_mut_simd(
+        slice: &mut [MaybeUninit<f32>],
+    ) -> (&mut [MaybeUninit<Self::f32s>], &mut [MaybeUninit<f32>]) {
+        unsafe { split_mut_slice(slice) }
+    }
+    #[inline(always)]
     fn c32s_as_simd(slice: &[c32]) -> (&[Self::c32s], &[c32]) {
         unsafe { split_slice(slice) }
     }
     #[inline(always)]
     fn c32s_as_mut_simd(slice: &mut [c32]) -> (&mut [Self::c32s], &mut [c32]) {
+        unsafe { split_mut_slice(slice) }
+    }
+    #[inline(always)]
+    fn c32s_as_uninit_mut_simd(
+        slice: &mut [MaybeUninit<c32>],
+    ) -> (&mut [MaybeUninit<Self::c32s>], &mut [MaybeUninit<c32>]) {
         unsafe { split_mut_slice(slice) }
     }
     #[inline(always)]
@@ -152,11 +172,23 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
         unsafe { split_mut_slice(slice) }
     }
     #[inline(always)]
+    fn i32s_as_uninit_mut_simd(
+        slice: &mut [MaybeUninit<i32>],
+    ) -> (&mut [MaybeUninit<Self::i32s>], &mut [MaybeUninit<i32>]) {
+        unsafe { split_mut_slice(slice) }
+    }
+    #[inline(always)]
     fn u32s_as_simd(slice: &[u32]) -> (&[Self::u32s], &[u32]) {
         unsafe { split_slice(slice) }
     }
     #[inline(always)]
     fn u32s_as_mut_simd(slice: &mut [u32]) -> (&mut [Self::u32s], &mut [u32]) {
+        unsafe { split_mut_slice(slice) }
+    }
+    #[inline(always)]
+    fn u32s_as_uninit_mut_simd(
+        slice: &mut [MaybeUninit<u32>],
+    ) -> (&mut [MaybeUninit<Self::u32s>], &mut [MaybeUninit<u32>]) {
         unsafe { split_mut_slice(slice) }
     }
     #[inline(always)]
@@ -168,11 +200,23 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
         unsafe { split_mut_slice(slice) }
     }
     #[inline(always)]
+    fn f64s_as_uninit_mut_simd(
+        slice: &mut [MaybeUninit<f64>],
+    ) -> (&mut [MaybeUninit<Self::f64s>], &mut [MaybeUninit<f64>]) {
+        unsafe { split_mut_slice(slice) }
+    }
+    #[inline(always)]
     fn c64s_as_simd(slice: &[c64]) -> (&[Self::c64s], &[c64]) {
         unsafe { split_slice(slice) }
     }
     #[inline(always)]
     fn c64s_as_mut_simd(slice: &mut [c64]) -> (&mut [Self::c64s], &mut [c64]) {
+        unsafe { split_mut_slice(slice) }
+    }
+    #[inline(always)]
+    fn c64s_as_uninit_mut_simd(
+        slice: &mut [MaybeUninit<c64>],
+    ) -> (&mut [MaybeUninit<Self::c64s>], &mut [MaybeUninit<c64>]) {
         unsafe { split_mut_slice(slice) }
     }
     #[inline(always)]
@@ -184,11 +228,23 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
         unsafe { split_mut_slice(slice) }
     }
     #[inline(always)]
+    fn i64s_as_uninit_mut_simd(
+        slice: &mut [MaybeUninit<i64>],
+    ) -> (&mut [MaybeUninit<Self::i64s>], &mut [MaybeUninit<i64>]) {
+        unsafe { split_mut_slice(slice) }
+    }
+    #[inline(always)]
     fn u64s_as_simd(slice: &[u64]) -> (&[Self::u64s], &[u64]) {
         unsafe { split_slice(slice) }
     }
     #[inline(always)]
     fn u64s_as_mut_simd(slice: &mut [u64]) -> (&mut [Self::u64s], &mut [u64]) {
+        unsafe { split_mut_slice(slice) }
+    }
+    #[inline(always)]
+    fn u64s_as_uninit_mut_simd(
+        slice: &mut [MaybeUninit<u64>],
+    ) -> (&mut [MaybeUninit<Self::u64s>], &mut [MaybeUninit<u64>]) {
         unsafe { split_mut_slice(slice) }
     }
 
@@ -474,6 +530,112 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
         PrefixMut<c64, Self, Self::m64s>,
         &mut [Self::c64s],
         SuffixMut<c64, Self, Self::m64s>,
+    ) {
+        unsafe { split_mut_slice_aligned_like(self, slice, offset) }
+    }
+
+    #[inline(always)]
+    #[track_caller]
+    fn i32s_as_aligned_uninit_mut_simd(
+        self,
+        slice: &mut [MaybeUninit<i32>],
+        offset: Offset<Self::m32s>,
+    ) -> (
+        PrefixMut<MaybeUninit<i32>, Self, Self::m32s>,
+        &mut [MaybeUninit<Self::i32s>],
+        SuffixMut<MaybeUninit<i32>, Self, Self::m32s>,
+    ) {
+        unsafe { split_mut_slice_aligned_like(self, slice, offset) }
+    }
+    #[inline(always)]
+    #[track_caller]
+    fn f32s_as_aligned_uninit_mut_simd(
+        self,
+        slice: &mut [MaybeUninit<f32>],
+        offset: Offset<Self::m32s>,
+    ) -> (
+        PrefixMut<MaybeUninit<f32>, Self, Self::m32s>,
+        &mut [MaybeUninit<Self::f32s>],
+        SuffixMut<MaybeUninit<f32>, Self, Self::m32s>,
+    ) {
+        unsafe { split_mut_slice_aligned_like(self, slice, offset) }
+    }
+    #[inline(always)]
+    #[track_caller]
+    fn u32s_as_aligned_uninit_mut_simd(
+        self,
+        slice: &mut [MaybeUninit<u32>],
+        offset: Offset<Self::m32s>,
+    ) -> (
+        PrefixMut<MaybeUninit<u32>, Self, Self::m32s>,
+        &mut [MaybeUninit<Self::u32s>],
+        SuffixMut<MaybeUninit<u32>, Self, Self::m32s>,
+    ) {
+        unsafe { split_mut_slice_aligned_like(self, slice, offset) }
+    }
+    #[inline(always)]
+    #[track_caller]
+    fn c32s_as_aligned_uninit_mut_simd(
+        self,
+        slice: &mut [MaybeUninit<c32>],
+        offset: Offset<Self::m32s>,
+    ) -> (
+        PrefixMut<MaybeUninit<c32>, Self, Self::m32s>,
+        &mut [MaybeUninit<Self::c32s>],
+        SuffixMut<MaybeUninit<c32>, Self, Self::m32s>,
+    ) {
+        unsafe { split_mut_slice_aligned_like(self, slice, offset) }
+    }
+
+    #[inline(always)]
+    #[track_caller]
+    fn i64s_as_aligned_uninit_mut_simd(
+        self,
+        slice: &mut [MaybeUninit<i64>],
+        offset: Offset<Self::m64s>,
+    ) -> (
+        PrefixMut<MaybeUninit<i64>, Self, Self::m64s>,
+        &mut [MaybeUninit<Self::i64s>],
+        SuffixMut<MaybeUninit<i64>, Self, Self::m64s>,
+    ) {
+        unsafe { split_mut_slice_aligned_like(self, slice, offset) }
+    }
+    #[inline(always)]
+    #[track_caller]
+    fn f64s_as_aligned_uninit_mut_simd(
+        self,
+        slice: &mut [MaybeUninit<f64>],
+        offset: Offset<Self::m64s>,
+    ) -> (
+        PrefixMut<MaybeUninit<f64>, Self, Self::m64s>,
+        &mut [MaybeUninit<Self::f64s>],
+        SuffixMut<MaybeUninit<f64>, Self, Self::m64s>,
+    ) {
+        unsafe { split_mut_slice_aligned_like(self, slice, offset) }
+    }
+    #[inline(always)]
+    #[track_caller]
+    fn u64s_as_aligned_uninit_mut_simd(
+        self,
+        slice: &mut [MaybeUninit<u64>],
+        offset: Offset<Self::m64s>,
+    ) -> (
+        PrefixMut<MaybeUninit<u64>, Self, Self::m64s>,
+        &mut [MaybeUninit<Self::u64s>],
+        SuffixMut<MaybeUninit<u64>, Self, Self::m64s>,
+    ) {
+        unsafe { split_mut_slice_aligned_like(self, slice, offset) }
+    }
+    #[inline(always)]
+    #[track_caller]
+    fn c64s_as_aligned_uninit_mut_simd(
+        self,
+        slice: &mut [MaybeUninit<c64>],
+        offset: Offset<Self::m64s>,
+    ) -> (
+        PrefixMut<MaybeUninit<c64>, Self, Self::m64s>,
+        &mut [MaybeUninit<Self::c64s>],
+        SuffixMut<MaybeUninit<c64>, Self, Self::m64s>,
     ) {
         unsafe { split_mut_slice_aligned_like(self, slice, offset) }
     }

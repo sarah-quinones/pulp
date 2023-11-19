@@ -57,3 +57,33 @@ for (i, x) in v.into_iter().enumerate() {
     assert_eq!(x, 3.0 * i as f64);
 }
 ```
+
+# Less boilerplate using `pulp::with_simd`
+
+Only available with the `macro` feature.
+
+Requires the first non-lifetime generic parameter, as well as the function's
+first input parameter to be the SIMD type.
+Also currently requires that all the lifetimes be explicitly specified.
+
+```rust
+#[pulp::with_simd(sum = pulp::Arch::new())]
+#[inline(always)]
+fn sum_with_simd<'a, S: Simd>(simd: S, v: &'a mut [f64]) {
+    let (head, tail) = S::f64s_as_mut_simd(v);
+    let three = simd.f64s_splat(3.0);
+    for x in head {
+        *x = simd.f64s_mul(three, *x);
+    }
+    for x in tail {
+        *x = *x * 3.0;
+    }
+}
+
+let mut v = (0..1000).map(|i| i as f64).collect::<Vec<_>>();
+sum(&mut v);
+
+for (i, x) in v.into_iter().enumerate() {
+    assert_eq!(x, 3.0 * i as f64);
+}
+```
