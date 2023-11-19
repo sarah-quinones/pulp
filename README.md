@@ -64,7 +64,6 @@ Only available with the `macro` feature.
 
 Requires the first non-lifetime generic parameter, as well as the function's
 first input parameter to be the SIMD type.
-Also currently requires that all the lifetimes be explicitly specified.
 
 ```rust
 #[pulp::with_simd(sum = pulp::Arch::new())]
