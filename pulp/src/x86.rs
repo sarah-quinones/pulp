@@ -3147,42 +3147,42 @@ impl Simd for V4_256 {
 
     #[inline(always)]
     fn f32s_reduce_sum(self, a: Self::f32s) -> f32 {
-        unsafe { (**self).f32s_reduce_sum(transmute(a)) }
+        (**self).f32s_reduce_sum(a)
     }
 
     #[inline(always)]
     fn f32s_reduce_product(self, a: Self::f32s) -> f32 {
-        unsafe { (**self).f32s_reduce_product(transmute(a)) }
+        (**self).f32s_reduce_product(a)
     }
 
     #[inline(always)]
     fn f32s_reduce_min(self, a: Self::f32s) -> f32 {
-        unsafe { (**self).f32s_reduce_min(transmute(a)) }
+        (**self).f32s_reduce_min(a)
     }
 
     #[inline(always)]
     fn f32s_reduce_max(self, a: Self::f32s) -> f32 {
-        unsafe { (**self).f32s_reduce_max(transmute(a)) }
+        (**self).f32s_reduce_max(a)
     }
 
     #[inline(always)]
     fn f64s_reduce_sum(self, a: Self::f64s) -> f64 {
-        unsafe { (**self).f64s_reduce_sum(transmute(a)) }
+        (**self).f64s_reduce_sum(a)
     }
 
     #[inline(always)]
     fn f64s_reduce_product(self, a: Self::f64s) -> f64 {
-        unsafe { (**self).f64s_reduce_product(transmute(a)) }
+        (**self).f64s_reduce_product(a)
     }
 
     #[inline(always)]
     fn f64s_reduce_min(self, a: Self::f64s) -> f64 {
-        unsafe { (**self).f64s_reduce_min(transmute(a)) }
+        (**self).f64s_reduce_min(a)
     }
 
     #[inline(always)]
     fn f64s_reduce_max(self, a: Self::f64s) -> f64 {
-        unsafe { (**self).f64s_reduce_max(transmute(a)) }
+        (**self).f64s_reduce_max(a)
     }
 
     type c32s = f32x8;
@@ -3272,7 +3272,7 @@ impl Simd for V4_256 {
     #[inline(always)]
     fn u32s_partial_load(self, slice: &[u32]) -> Self::u32s {
         unsafe {
-            let mask = transmute(V4_256_U32_MASKS[slice.len().min(16)]);
+            let mask = V4_256_U32_MASKS[slice.len().min(16)];
             transmute(_mm256_maskz_loadu_epi32(mask, slice.as_ptr() as _))
         }
     }
@@ -3280,7 +3280,7 @@ impl Simd for V4_256 {
     #[inline(always)]
     fn u32s_partial_store(self, slice: &mut [u32], values: Self::u32s) {
         unsafe {
-            let mask = transmute(V4_256_U32_MASKS[slice.len().min(16)]);
+            let mask = V4_256_U32_MASKS[slice.len().min(16)];
             _mm256_mask_storeu_epi32(slice.as_mut_ptr() as _, mask, transmute(values));
         }
     }
@@ -3288,7 +3288,7 @@ impl Simd for V4_256 {
     #[inline(always)]
     fn u64s_partial_load(self, slice: &[u64]) -> Self::u64s {
         unsafe {
-            let mask = transmute(V4_256_U32_MASKS[(2 * slice.len()).min(16)]);
+            let mask = V4_256_U32_MASKS[(2 * slice.len()).min(16)];
             transmute(_mm256_maskz_loadu_epi32(mask, slice.as_ptr() as _))
         }
     }
@@ -3296,7 +3296,7 @@ impl Simd for V4_256 {
     #[inline(always)]
     fn u64s_partial_store(self, slice: &mut [u64], values: Self::u64s) {
         unsafe {
-            let mask = transmute(V4_256_U32_MASKS[(2 * slice.len()).min(16)]);
+            let mask = V4_256_U32_MASKS[(2 * slice.len()).min(16)];
             _mm256_mask_storeu_epi32(slice.as_mut_ptr() as _, mask, transmute(values));
         }
     }
@@ -3304,7 +3304,7 @@ impl Simd for V4_256 {
     #[inline(always)]
     fn c64s_partial_load(self, slice: &[c64]) -> Self::c64s {
         unsafe {
-            let mask = transmute(V4_256_U32_MASKS[(4 * slice.len()).min(16)]);
+            let mask = V4_256_U32_MASKS[(4 * slice.len()).min(16)];
             transmute(_mm256_maskz_loadu_epi32(mask, slice.as_ptr() as _))
         }
     }
@@ -3312,7 +3312,7 @@ impl Simd for V4_256 {
     #[inline(always)]
     fn c64s_partial_store(self, slice: &mut [c64], values: Self::c64s) {
         unsafe {
-            let mask = transmute(V4_256_U32_MASKS[(4 * slice.len()).min(16)]);
+            let mask = V4_256_U32_MASKS[(4 * slice.len()).min(16)];
             _mm256_mask_storeu_epi32(slice.as_mut_ptr() as _, mask, transmute(values));
         }
     }
@@ -3321,7 +3321,7 @@ impl Simd for V4_256 {
     fn u32s_partial_load_last(self, slice: &[u32]) -> Self::u32s {
         unsafe {
             let len = slice.len();
-            let mask = transmute(V4_256_U32_LAST_MASKS[slice.len().min(16)]);
+            let mask = V4_256_U32_LAST_MASKS[slice.len().min(16)];
             transmute(_mm256_maskz_loadu_epi32(
                 mask,
                 slice.as_ptr().add(len).wrapping_sub(16) as _,
@@ -3333,7 +3333,7 @@ impl Simd for V4_256 {
     fn u32s_partial_store_last(self, slice: &mut [u32], values: Self::u32s) {
         unsafe {
             let len = slice.len();
-            let mask = transmute(V4_256_U32_LAST_MASKS[slice.len().min(16)]);
+            let mask = V4_256_U32_LAST_MASKS[slice.len().min(16)];
             _mm256_mask_storeu_epi32(
                 slice.as_mut_ptr().add(len).wrapping_sub(16) as _,
                 mask,
@@ -3346,7 +3346,7 @@ impl Simd for V4_256 {
     fn u64s_partial_load_last(self, slice: &[u64]) -> Self::u64s {
         unsafe {
             let len = slice.len();
-            let mask = transmute(V4_256_U32_LAST_MASKS[(2 * slice.len()).min(16)]);
+            let mask = V4_256_U32_LAST_MASKS[(2 * slice.len()).min(16)];
             transmute(_mm256_maskz_loadu_epi32(
                 mask,
                 slice.as_ptr().add(len).wrapping_sub(8) as _,
@@ -3358,7 +3358,7 @@ impl Simd for V4_256 {
     fn u64s_partial_store_last(self, slice: &mut [u64], values: Self::u64s) {
         unsafe {
             let len = slice.len();
-            let mask = transmute(V4_256_U32_LAST_MASKS[(2 * slice.len()).min(16)]);
+            let mask = V4_256_U32_LAST_MASKS[(2 * slice.len()).min(16)];
             _mm256_mask_storeu_epi32(
                 slice.as_mut_ptr().add(len).wrapping_sub(8) as _,
                 mask,
@@ -3371,7 +3371,7 @@ impl Simd for V4_256 {
     fn c64s_partial_load_last(self, slice: &[c64]) -> Self::c64s {
         unsafe {
             let len = slice.len();
-            let mask = transmute(V4_256_U32_LAST_MASKS[(4 * slice.len()).min(16)]);
+            let mask = V4_256_U32_LAST_MASKS[(4 * slice.len()).min(16)];
             transmute(_mm256_maskz_loadu_epi32(
                 mask,
                 slice.as_ptr().add(len).wrapping_sub(4) as _,
@@ -3383,7 +3383,7 @@ impl Simd for V4_256 {
     fn c64s_partial_store_last(self, slice: &mut [c64], values: Self::c64s) {
         unsafe {
             let len = slice.len();
-            let mask = transmute(V4_256_U32_LAST_MASKS[(4 * slice.len()).min(16)]);
+            let mask = V4_256_U32_LAST_MASKS[(4 * slice.len()).min(16)];
             _mm256_mask_storeu_epi32(
                 slice.as_mut_ptr().add(len).wrapping_sub(4) as _,
                 mask,
@@ -3439,7 +3439,7 @@ impl Simd for V4_256 {
 
     #[inline(always)]
     fn c32s_reduce_sum(self, a: Self::c32s) -> c32 {
-        unsafe { (**self).c32s_reduce_sum(transmute(a)) }
+        (**self).c32s_reduce_sum(a)
     }
 
     #[inline(always)]
@@ -3449,7 +3449,7 @@ impl Simd for V4_256 {
 
     #[inline(always)]
     fn c64s_reduce_sum(self, a: Self::c64s) -> c64 {
-        unsafe { (**self).c64s_reduce_sum(transmute(a)) }
+        (**self).c64s_reduce_sum(a)
     }
 
     #[inline(always)]
