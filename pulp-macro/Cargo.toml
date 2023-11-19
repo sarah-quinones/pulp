@@ -1,6 +1,6 @@
 [package]
 name = "pulp-macro"
-version = "0.18.4"
+version = "0.1.0"
 edition = "2021"
 authors = ["sarah <>"]
 description = "Safe generic simd"

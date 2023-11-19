@@ -1,6 +1,6 @@
 [package]
 name = "pulp"
-version = "0.18.4"
+version = "0.18.5"
 edition = "2021"
 authors = ["sarah <>"]
 description = "Safe generic simd"
@@ -10,7 +10,7 @@ license = "MIT"
 keywords = ["simd"]
 
 [dependencies]
-pulp-macro = { version = "0.18.4", path = "../pulp-macro", optional = true }
+pulp-macro = { version = "0.1.0", path = "../pulp-macro", optional = true }
 bytemuck = "1"
 num-complex = { version = "0.4.4", default-features = false, features = ["bytemuck"] }
 libm = { version = "0.2", default-features = false }
