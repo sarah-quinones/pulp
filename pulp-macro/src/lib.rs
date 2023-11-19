@@ -123,8 +123,8 @@ pub fn with_simd(
             ty: *param.ty,
         };
         struct_fields.named.push_value(field);
-        if let Some(comma) = &comma {
-            struct_fields.named.push_punct(comma.clone());
+        if let Some(comma) = comma {
+            struct_fields.named.push_punct(comma);
         }
     }
 
