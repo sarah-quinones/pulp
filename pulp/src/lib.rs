@@ -62,7 +62,11 @@
     clippy::too_many_arguments,
     clippy::type_complexity
 )]
-#![cfg_attr(feature = "nightly", feature(stdarch_x86_avx512), feature(avx512_target_feature))]
+#![cfg_attr(
+    feature = "nightly",
+    feature(stdarch_x86_avx512),
+    feature(avx512_target_feature)
+)]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
