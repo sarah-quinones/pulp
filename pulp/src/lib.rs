@@ -3710,6 +3710,7 @@ impl core::ops::BitXor for b64 {
 
 impl Debug for b8 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+        #[allow(dead_code)]
         #[derive(Copy, Clone, Debug)]
         struct b8(bool, bool, bool, bool, bool, bool, bool, bool);
         b8(
@@ -3727,6 +3728,7 @@ impl Debug for b8 {
 }
 impl Debug for b16 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+        #[allow(dead_code)]
         #[derive(Copy, Clone, Debug)]
         struct b16(
             bool,
@@ -3769,6 +3771,7 @@ impl Debug for b16 {
 }
 impl Debug for b32 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+        #[allow(dead_code)]
         #[derive(Copy, Clone, Debug)]
         struct b32(
             bool,
@@ -3843,6 +3846,7 @@ impl Debug for b32 {
 }
 impl Debug for b64 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+        #[allow(dead_code)]
         #[derive(Copy, Clone, Debug)]
         struct b64(
             bool,
