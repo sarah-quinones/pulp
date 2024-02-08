@@ -63,7 +63,7 @@
     clippy::type_complexity
 )]
 #![cfg_attr(
-    feature = "nightly",
+    all(feature = "nightly", any(target_arch = "x86", target_arch = "x86_64")),
     feature(stdarch_x86_avx512),
     feature(avx512_target_feature)
 )]
