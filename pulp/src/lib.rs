@@ -4774,6 +4774,11 @@ unsafe impl Zeroable for m8 {}
 unsafe impl Zeroable for m16 {}
 unsafe impl Zeroable for m32 {}
 unsafe impl Zeroable for m64 {}
+unsafe impl NoUninit for m8 {}
+unsafe impl NoUninit for m16 {}
+unsafe impl NoUninit for m32 {}
+unsafe impl NoUninit for m64 {}
+
 unsafe impl Zeroable for b8 {}
 unsafe impl Pod for b8 {}
 unsafe impl Zeroable for b16 {}
@@ -4797,6 +4802,8 @@ unsafe impl Pod for u8x32 {}
 unsafe impl Pod for u8x64 {}
 unsafe impl Zeroable for m8x16 {}
 unsafe impl Zeroable for m8x32 {}
+unsafe impl NoUninit for m8x16 {}
+unsafe impl NoUninit for m8x32 {}
 
 unsafe impl Zeroable for i16x8 {}
 unsafe impl Zeroable for i16x16 {}
@@ -4812,6 +4819,8 @@ unsafe impl Pod for u16x16 {}
 unsafe impl Pod for u16x32 {}
 unsafe impl Zeroable for m16x8 {}
 unsafe impl Zeroable for m16x16 {}
+unsafe impl NoUninit for m16x8 {}
+unsafe impl NoUninit for m16x16 {}
 
 unsafe impl Zeroable for f32x4 {}
 unsafe impl Zeroable for f32x8 {}
@@ -4833,6 +4842,8 @@ unsafe impl Pod for u32x8 {}
 unsafe impl Pod for u32x16 {}
 unsafe impl Zeroable for m32x4 {}
 unsafe impl Zeroable for m32x8 {}
+unsafe impl NoUninit for m32x4 {}
+unsafe impl NoUninit for m32x8 {}
 
 unsafe impl Zeroable for f64x2 {}
 unsafe impl Zeroable for f64x4 {}
@@ -4854,6 +4865,8 @@ unsafe impl Pod for u64x4 {}
 unsafe impl Pod for u64x8 {}
 unsafe impl Zeroable for m64x2 {}
 unsafe impl Zeroable for m64x4 {}
+unsafe impl NoUninit for m64x2 {}
+unsafe impl NoUninit for m64x4 {}
 
 #[cfg(test)]
 mod tests {
