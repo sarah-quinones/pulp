@@ -4844,6 +4844,8 @@ unsafe impl Zeroable for m32x4 {}
 unsafe impl Zeroable for m32x8 {}
 unsafe impl NoUninit for m32x4 {}
 unsafe impl NoUninit for m32x8 {}
+unsafe impl Pod for m32x4 {}
+unsafe impl Pod for m32x8 {}
 
 unsafe impl Zeroable for f64x2 {}
 unsafe impl Zeroable for f64x4 {}
@@ -4867,6 +4869,8 @@ unsafe impl Zeroable for m64x2 {}
 unsafe impl Zeroable for m64x4 {}
 unsafe impl NoUninit for m64x2 {}
 unsafe impl NoUninit for m64x4 {}
+unsafe impl Pod for m64x2 {}
+unsafe impl Pod for m64x4 {}
 
 #[cfg(test)]
 mod tests {
