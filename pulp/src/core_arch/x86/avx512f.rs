@@ -1,4 +1,3 @@
-use super::arch::{_MM_CMPINT_ENUM, _MM_MANTISSA_NORM_ENUM, _MM_MANTISSA_SIGN_ENUM, _MM_PERM_ENUM};
 use super::*;
 
 impl Avx512f {
