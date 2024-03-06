@@ -1,8 +1,8 @@
 use super::*;
 use crate::core_arch::internal_simd_type;
 use core::arch::aarch64::*;
-use core::mem::transmute;
 use core::arch::asm;
+use core::mem::transmute;
 
 internal_simd_type! {
     #[allow(missing_docs)]
