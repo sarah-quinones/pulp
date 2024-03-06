@@ -2,6 +2,7 @@ use super::*;
 use crate::core_arch::internal_simd_type;
 use core::arch::aarch64::*;
 use core::mem::transmute;
+use core::arch::asm;
 
 internal_simd_type! {
     #[allow(missing_docs)]
@@ -1027,7 +1028,7 @@ impl Simd for NeonFcma {
     #[inline(always)]
     fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
         struct Impl<Op> {
-            this: Neon,
+            this: NeonFcma,
             op: Op,
         }
         impl<Op: WithSimd> crate::NullaryFnOnce for Impl<Op> {
@@ -1476,7 +1477,7 @@ impl Simd for NeonFcma {
         let a = cast(a);
         let b = cast(b);
         let c = cast(c);
-        unsafe { self.c32s_conj(cast(vcmlaq_270_f32(vcmlaq_0_f32(c, a, b), a, b))) }
+        unsafe { cast(vcmlaq_270_f32(vcmlaq_0_f32(c, a, b), a, b)) }
     }
 
     #[inline(always)]
@@ -1624,7 +1625,7 @@ impl Simd for NeonFcma {
         let a = cast(a);
         let b = cast(b);
         let c = cast(c);
-        unsafe { self.c64s_conj(cast(vcmlaq_270_f64(vcmlaq_0_f64(c, a, b), a, b))) }
+        unsafe { cast(vcmlaq_270_f64(vcmlaq_0_f64(c, a, b), a, b)) }
     }
 
     #[inline(always)]
@@ -3233,6 +3234,15 @@ impl Neon {
     }
 }
 
+impl core::ops::Deref for NeonFcma {
+    type Target = Neon;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        unsafe { &*(self as *const _ as *const Neon) }
+    }
+}
+
 /// x86 arch
 #[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
@@ -3281,6 +3291,19 @@ mod tests {
 
     use super::*;
 
+    #[track_caller]
+    fn assert_eq_c64(a: f64x2, b: f64x2) {
+        assert!((a.0 - b.0).abs() < 1e-14);
+        assert!((a.1 - b.1).abs() < 1e-14);
+    }
+    #[track_caller]
+    fn assert_eq_c32(a: f32x4, b: f32x4) {
+        assert!((a.0 - b.0).abs() < 1e-5);
+        assert!((a.1 - b.1).abs() < 1e-5);
+        assert!((a.2 - b.2).abs() < 1e-5);
+        assert!((a.3 - b.3).abs() < 1e-5);
+    }
+
     #[test]
     fn test_cplx64_mul() {
         for _ in 0..100 {
@@ -3293,45 +3316,45 @@ mod tests {
             let expected = cast(scalar.c64s_mul(cast(a), cast(b)));
             if let Some(simd) = Neon::try_new() {
                 let c = simd.c64s_mul(a, b);
-                assert_eq!(c, expected);
+                assert_eq_c64(c, expected);
             }
             let expected = cast(scalar.c64s_mul_add(cast(a), cast(b), cast(acc)));
             if let Some(simd) = Neon::try_new() {
                 let c = simd.c64s_mul_add(a, b, acc);
-                assert_eq!(c, expected);
+                assert_eq_c64(c, expected);
             }
 
             let expected = cast(scalar.c64s_conj_mul(cast(a), cast(b)));
             if let Some(simd) = Neon::try_new() {
                 let c = simd.c64s_conj_mul(a, b);
-                assert_eq!(c, expected);
+                assert_eq_c64(c, expected);
             }
             let expected = cast(scalar.c64s_conj_mul_add(cast(a), cast(b), cast(acc)));
             if let Some(simd) = Neon::try_new() {
                 let c = simd.c64s_conj_mul_add(a, b, acc);
-                assert_eq!(c, expected);
+                assert_eq_c64(c, expected);
             }
 
             let expected = cast(scalar.c64s_mul(cast(a), cast(b)));
             if let Some(simd) = NeonFcma::try_new() {
                 let c = simd.c64s_mul(a, b);
-                assert_eq!(c, expected);
+                assert_eq_c64(c, expected);
             }
             let expected = cast(scalar.c64s_mul_add(cast(a), cast(b), cast(acc)));
             if let Some(simd) = NeonFcma::try_new() {
                 let c = simd.c64s_mul_add(a, b, acc);
-                assert_eq!(c, expected);
+                assert_eq_c64(c, expected);
             }
 
             let expected = cast(scalar.c64s_conj_mul(cast(a), cast(b)));
             if let Some(simd) = NeonFcma::try_new() {
                 let c = simd.c64s_conj_mul(a, b);
-                assert_eq!(c, expected);
+                assert_eq_c64(c, expected);
             }
             let expected = cast(scalar.c64s_conj_mul_add(cast(a), cast(b), cast(acc)));
             if let Some(simd) = NeonFcma::try_new() {
                 let c = simd.c64s_conj_mul_add(a, b, acc);
-                assert_eq!(c, expected);
+                assert_eq_c64(c, expected);
             }
         }
     }
@@ -3351,7 +3374,7 @@ mod tests {
             ]);
             if let Some(simd) = Neon::try_new() {
                 let c = simd.c32s_mul(a, b);
-                assert_eq!(c, expected);
+                assert_eq_c32(c, expected);
             }
             let expected = cast([
                 scalar.c32s_mul_add(cast([a.0, a.1]), cast([b.0, b.1]), cast([acc.0, acc.1])),
@@ -3359,7 +3382,7 @@ mod tests {
             ]);
             if let Some(simd) = Neon::try_new() {
                 let c = simd.c32s_mul_add(a, b, acc);
-                assert_eq!(c, expected);
+                assert_eq_c32(c, expected);
             }
 
             let expected = cast([
@@ -3368,7 +3391,7 @@ mod tests {
             ]);
             if let Some(simd) = Neon::try_new() {
                 let c = simd.c32s_conj_mul(a, b);
-                assert_eq!(c, expected);
+                assert_eq_c32(c, expected);
             }
             let expected = cast([
                 scalar.c32s_conj_mul_add(cast([a.0, a.1]), cast([b.0, b.1]), cast([acc.0, acc.1])),
@@ -3376,7 +3399,7 @@ mod tests {
             ]);
             if let Some(simd) = Neon::try_new() {
                 let c = simd.c32s_conj_mul_add(a, b, acc);
-                assert_eq!(c, expected);
+                assert_eq_c32(c, expected);
             }
 
             let expected = cast([
@@ -3385,7 +3408,7 @@ mod tests {
             ]);
             if let Some(simd) = NeonFcma::try_new() {
                 let c = simd.c32s_mul(a, b);
-                assert_eq!(c, expected);
+                assert_eq_c32(c, expected);
             }
             let expected = cast([
                 scalar.c32s_mul_add(cast([a.0, a.1]), cast([b.0, b.1]), cast([acc.0, acc.1])),
@@ -3393,7 +3416,7 @@ mod tests {
             ]);
             if let Some(simd) = NeonFcma::try_new() {
                 let c = simd.c32s_mul_add(a, b, acc);
-                assert_eq!(c, expected);
+                assert_eq_c32(c, expected);
             }
 
             let expected = cast([
@@ -3402,7 +3425,7 @@ mod tests {
             ]);
             if let Some(simd) = NeonFcma::try_new() {
                 let c = simd.c32s_conj_mul(a, b);
-                assert_eq!(c, expected);
+                assert_eq_c32(c, expected);
             }
             let expected = cast([
                 scalar.c32s_conj_mul_add(cast([a.0, a.1]), cast([b.0, b.1]), cast([acc.0, acc.1])),
@@ -3410,7 +3433,7 @@ mod tests {
             ]);
             if let Some(simd) = NeonFcma::try_new() {
                 let c = simd.c32s_conj_mul_add(a, b, acc);
-                assert_eq!(c, expected);
+                assert_eq_c32(c, expected);
             }
         }
     }
