@@ -10936,6 +10936,7 @@ impl Default for ArchInner {
     }
 }
 
+#[allow(unused_imports)]
 #[cfg(test)]
 mod tests {
     extern crate alloc;
