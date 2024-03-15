@@ -3243,7 +3243,7 @@ impl Simd for V4_256 {
             let ab = transmute(a);
             let xy = transmute(b);
 
-            let yx = _mm256_permute_pd::<0b01010101>(xy);
+            let yx = _mm256_permute_pd::<0b0101>(xy);
             let aa = _mm256_unpacklo_pd(ab, ab);
             let bb = _mm256_unpackhi_pd(ab, ab);
 
