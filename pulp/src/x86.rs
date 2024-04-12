@@ -2001,6 +2001,16 @@ impl Simd for V3 {
             ))
         }
     }
+
+    #[inline(always)]
+    fn c32s_swap_re_im(self, a: Self::c32s) -> Self::c32s {
+        unsafe { cast(_mm256_permute_ps::<0b10_11_00_01>(cast(a))) }
+    }
+
+    #[inline(always)]
+    fn c64s_swap_re_im(self, a: Self::c64s) -> Self::c64s {
+        unsafe { cast(_mm256_permute_pd::<0b0101>(cast(a))) }
+    }
 }
 
 #[cfg(feature = "nightly")]
@@ -2892,6 +2902,16 @@ impl Simd for V4 {
             ))
         }
     }
+
+    #[inline(always)]
+    fn c32s_swap_re_im(self, a: Self::c32s) -> Self::c32s {
+        unsafe { cast(_mm512_permute_ps::<0b10_11_00_01>(cast(a))) }
+    }
+
+    #[inline(always)]
+    fn c64s_swap_re_im(self, a: Self::c64s) -> Self::c64s {
+        unsafe { cast(_mm512_permute_pd::<0b01010101>(cast(a))) }
+    }
 }
 
 #[cfg(feature = "nightly")]
@@ -3657,6 +3677,16 @@ impl Simd for V4_256 {
                 transmute(a),
             ))
         }
+    }
+
+    #[inline(always)]
+    fn c32s_swap_re_im(self, a: Self::c32s) -> Self::c32s {
+        unsafe { cast(_mm256_permute_ps::<0b10_11_00_01>(cast(a))) }
+    }
+
+    #[inline(always)]
+    fn c64s_swap_re_im(self, a: Self::c64s) -> Self::c64s {
+        unsafe { cast(_mm256_permute_pd::<0b0101>(cast(a))) }
     }
 }
 

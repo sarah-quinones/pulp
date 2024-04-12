@@ -1204,6 +1204,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     fn c32s_splat(self, value: c32) -> Self::c32s;
     fn c32s_conj(self, a: Self::c32s) -> Self::c32s;
     fn c32s_neg(self, a: Self::c32s) -> Self::c32s;
+    fn c32s_swap_re_im(self, a: Self::c32s) -> Self::c32s;
     fn c32s_add(self, a: Self::c32s, b: Self::c32s) -> Self::c32s;
     fn c32s_sub(self, a: Self::c32s, b: Self::c32s) -> Self::c32s;
     /// Computes `a * b`
@@ -1355,6 +1356,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     fn c64s_splat(self, value: c64) -> Self::c64s;
     fn c64s_conj(self, a: Self::c64s) -> Self::c64s;
     fn c64s_neg(self, a: Self::c64s) -> Self::c64s;
+    fn c64s_swap_re_im(self, a: Self::c64s) -> Self::c64s;
     fn c64s_add(self, a: Self::c64s, b: Self::c64s) -> Self::c64s;
     fn c64s_sub(self, a: Self::c64s, b: Self::c64s) -> Self::c64s;
     /// Computes `a * b`
@@ -2028,6 +2030,11 @@ impl Simd for Scalar {
     }
 
     #[inline]
+    fn c32s_swap_re_im(self, a: Self::c32s) -> Self::c32s {
+        c32 { re: a.im, im: a.re }
+    }
+
+    #[inline]
     fn c32s_reduce_sum(self, a: Self::c32s) -> c32 {
         a
     }
@@ -2035,6 +2042,10 @@ impl Simd for Scalar {
     #[inline]
     fn c64s_neg(self, a: Self::c64s) -> Self::c64s {
         -a
+    }
+
+    fn c64s_swap_re_im(self, a: Self::c64s) -> Self::c64s {
+        c64 { re: a.im, im: a.re }
     }
 
     #[inline]
