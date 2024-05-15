@@ -79,13 +79,13 @@ unsafe fn vcmlaq_270_f32(mut acc: float32x4_t, lhs: float32x4_t, rhs: float32x4_
 internal_simd_type! {
     #[allow(missing_docs)]
     pub struct Neon {
-        neon: "neon",
+        pub neon: "neon",
     }
 
     #[allow(missing_docs)]
     pub struct NeonFcma {
-        neon: "neon",
-        fcma: "fcma",
+        pub neon: "neon",
+        pub fcma: "fcma",
     }
 }
 
