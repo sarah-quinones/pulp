@@ -3271,7 +3271,7 @@ impl Neon {
     }
 }
 
-/// x86 arch
+/// aarch64 arch
 #[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
 #[repr(u8)]
