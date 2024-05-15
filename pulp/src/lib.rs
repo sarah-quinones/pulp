@@ -67,6 +67,14 @@
     feature(stdarch_x86_avx512),
     feature(avx512_target_feature)
 )]
+#![cfg_attr(
+    all(feature = "nightly", any(target_arch = "aarch64")),
+    feature(stdarch_neon_i8mm),
+    feature(stdarch_neon_sm4),
+    feature(stdarch_neon_ftts),
+    feature(stdarch_neon_fcma),
+    feature(stdarch_neon_dotprod)
+)]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 

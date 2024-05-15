@@ -14,8 +14,6 @@ mod arch {
     pub use core::arch::mips::*;
     #[cfg(all(feature = "nightly", target_arch = "mips64"))]
     pub use core::arch::mips64::*;
-    #[cfg(all(feature = "nightly", target_arch = "nvptx"))]
-    pub use core::arch::nvptx::*;
     #[cfg(all(feature = "nightly", target_arch = "powerpc"))]
     pub use core::arch::powerpc::*;
     #[cfg(all(feature = "nightly", target_arch = "powerpc64"))]
