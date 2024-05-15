@@ -57,10 +57,12 @@
 
 #![allow(
     non_camel_case_types,
+    unknown_lints,
     clippy::zero_prefixed_literal,
     clippy::identity_op,
     clippy::too_many_arguments,
-    clippy::type_complexity
+    clippy::type_complexity,
+    clippy::missing_transmute_annotations
 )]
 #![cfg_attr(
     all(feature = "nightly", any(target_arch = "x86", target_arch = "x86_64")),
