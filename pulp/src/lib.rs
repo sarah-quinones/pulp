@@ -263,6 +263,119 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     }
 
     #[inline(always)]
+    fn f32s_as_rsimd(slice: &[f32]) -> (&[f32], &[Self::f32s]) {
+        unsafe { rsplit_slice(slice) }
+    }
+    #[inline(always)]
+    fn f32s_as_mut_rsimd(slice: &mut [f32]) -> (&mut [f32], &mut [Self::f32s]) {
+        unsafe { rsplit_mut_slice(slice) }
+    }
+    #[inline(always)]
+    fn f32s_as_uninit_mut_rsimd(
+        slice: &mut [MaybeUninit<f32>],
+    ) -> (&mut [MaybeUninit<f32>], &mut [MaybeUninit<Self::f32s>]) {
+        unsafe { rsplit_mut_slice(slice) }
+    }
+    #[inline(always)]
+    fn c32s_as_rsimd(slice: &[c32]) -> (&[c32], &[Self::c32s]) {
+        unsafe { rsplit_slice(slice) }
+    }
+    #[inline(always)]
+    fn c32s_as_mut_rsimd(slice: &mut [c32]) -> (&mut [c32], &mut [Self::c32s]) {
+        unsafe { rsplit_mut_slice(slice) }
+    }
+    #[inline(always)]
+    fn c32s_as_uninit_mut_rsimd(
+        slice: &mut [MaybeUninit<c32>],
+    ) -> (&mut [MaybeUninit<c32>], &mut [MaybeUninit<Self::c32s>]) {
+        unsafe { rsplit_mut_slice(slice) }
+    }
+    #[inline(always)]
+    fn i32s_as_rsimd(slice: &[i32]) -> (&[i32], &[Self::i32s]) {
+        unsafe { rsplit_slice(slice) }
+    }
+    #[inline(always)]
+    fn i32s_as_mut_rsimd(slice: &mut [i32]) -> (&mut [i32], &mut [Self::i32s]) {
+        unsafe { rsplit_mut_slice(slice) }
+    }
+    #[inline(always)]
+    fn i32s_as_uninit_mut_rsimd(
+        slice: &mut [MaybeUninit<i32>],
+    ) -> (&mut [MaybeUninit<i32>], &mut [MaybeUninit<Self::i32s>]) {
+        unsafe { rsplit_mut_slice(slice) }
+    }
+    #[inline(always)]
+    fn u32s_as_rsimd(slice: &[u32]) -> (&[u32], &[Self::u32s]) {
+        unsafe { rsplit_slice(slice) }
+    }
+    #[inline(always)]
+    fn u32s_as_mut_rsimd(slice: &mut [u32]) -> (&mut [u32], &mut [Self::u32s]) {
+        unsafe { rsplit_mut_slice(slice) }
+    }
+    #[inline(always)]
+    fn u32s_as_uninit_mut_rsimd(
+        slice: &mut [MaybeUninit<u32>],
+    ) -> (&mut [MaybeUninit<u32>], &mut [MaybeUninit<Self::u32s>]) {
+        unsafe { rsplit_mut_slice(slice) }
+    }
+    #[inline(always)]
+    fn f64s_as_rsimd(slice: &[f64]) -> (&[f64], &[Self::f64s]) {
+        unsafe { rsplit_slice(slice) }
+    }
+    #[inline(always)]
+    fn f64s_as_mut_rsimd(slice: &mut [f64]) -> (&mut [f64], &mut [Self::f64s]) {
+        unsafe { rsplit_mut_slice(slice) }
+    }
+    #[inline(always)]
+    fn f64s_as_uninit_mut_rsimd(
+        slice: &mut [MaybeUninit<f64>],
+    ) -> (&mut [MaybeUninit<f64>], &mut [MaybeUninit<Self::f64s>]) {
+        unsafe { rsplit_mut_slice(slice) }
+    }
+    #[inline(always)]
+    fn c64s_as_rsimd(slice: &[c64]) -> (&[c64], &[Self::c64s]) {
+        unsafe { rsplit_slice(slice) }
+    }
+    #[inline(always)]
+    fn c64s_as_mut_rsimd(slice: &mut [c64]) -> (&mut [c64], &mut [Self::c64s]) {
+        unsafe { rsplit_mut_slice(slice) }
+    }
+    #[inline(always)]
+    fn c64s_as_uninit_mut_rsimd(
+        slice: &mut [MaybeUninit<c64>],
+    ) -> (&mut [MaybeUninit<c64>], &mut [MaybeUninit<Self::c64s>]) {
+        unsafe { rsplit_mut_slice(slice) }
+    }
+    #[inline(always)]
+    fn i64s_as_rsimd(slice: &[i64]) -> (&[i64], &[Self::i64s]) {
+        unsafe { rsplit_slice(slice) }
+    }
+    #[inline(always)]
+    fn i64s_as_mut_rsimd(slice: &mut [i64]) -> (&mut [i64], &mut [Self::i64s]) {
+        unsafe { rsplit_mut_slice(slice) }
+    }
+    #[inline(always)]
+    fn i64s_as_uninit_mut_rsimd(
+        slice: &mut [MaybeUninit<i64>],
+    ) -> (&mut [MaybeUninit<i64>], &mut [MaybeUninit<Self::i64s>]) {
+        unsafe { rsplit_mut_slice(slice) }
+    }
+    #[inline(always)]
+    fn u64s_as_rsimd(slice: &[u64]) -> (&[u64], &[Self::u64s]) {
+        unsafe { rsplit_slice(slice) }
+    }
+    #[inline(always)]
+    fn u64s_as_mut_rsimd(slice: &mut [u64]) -> (&mut [u64], &mut [Self::u64s]) {
+        unsafe { rsplit_mut_slice(slice) }
+    }
+    #[inline(always)]
+    fn u64s_as_uninit_mut_rsimd(
+        slice: &mut [MaybeUninit<u64>],
+    ) -> (&mut [MaybeUninit<u64>], &mut [MaybeUninit<Self::u64s>]) {
+        unsafe { rsplit_mut_slice(slice) }
+    }
+
+    #[inline(always)]
     fn i32s_align_offset(self, ptr: *const i32, len: usize) -> Offset<Self::m32s> {
         align_offset_u32::<Self, i32, Self::i32s>(
             self,
@@ -3397,6 +3510,42 @@ unsafe fn split_mut_slice<T, U>(slice: &mut [T]) -> (&mut [U], &mut [T]) {
     (
         from_raw_parts_mut(data as *mut U, div),
         from_raw_parts_mut(data.add(len - rem), rem),
+    )
+}
+
+#[inline(always)]
+unsafe fn rsplit_slice<T, U>(slice: &[T]) -> (&[T], &[U]) {
+    assert_eq!(core::mem::size_of::<U>() % core::mem::size_of::<T>(), 0);
+    assert_eq!(core::mem::align_of::<U>(), core::mem::align_of::<T>());
+
+    let chunk_size = core::mem::size_of::<U>() / core::mem::size_of::<T>();
+
+    let len = slice.len();
+    let data = slice.as_ptr();
+
+    let div = len / chunk_size;
+    let rem = len % chunk_size;
+    (
+        from_raw_parts(data, rem),
+        from_raw_parts(data.add(rem) as *const U, div),
+    )
+}
+
+#[inline(always)]
+unsafe fn rsplit_mut_slice<T, U>(slice: &mut [T]) -> (&mut [T], &mut [U]) {
+    assert_eq!(core::mem::size_of::<U>() % core::mem::size_of::<T>(), 0);
+    assert_eq!(core::mem::align_of::<U>(), core::mem::align_of::<T>());
+
+    let chunk_size = core::mem::size_of::<U>() / core::mem::size_of::<T>();
+
+    let len = slice.len();
+    let data = slice.as_mut_ptr();
+
+    let div = len / chunk_size;
+    let rem = len % chunk_size;
+    (
+        from_raw_parts_mut(data, rem),
+        from_raw_parts_mut(data.add(rem) as *mut U, div),
     )
 }
 
