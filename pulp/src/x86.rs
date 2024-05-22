@@ -1888,6 +1888,22 @@ impl Simd for V3 {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
+    unsafe fn f32s_mask_load_ptr(
+        self,
+        mask: Self::m32s,
+        ptr: *const f32,
+        or: Self::f32s,
+    ) -> Self::f32s {
+        self.m32s_select_f32s(
+            mask,
+            transmute(_mm256_maskload_ps(ptr as _, transmute(mask))),
+            or,
+        )
+    }
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
     unsafe fn c32s_mask_load_ptr(
         self,
         mask: Self::m32s,
@@ -1920,6 +1936,22 @@ impl Simd for V3 {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
+    unsafe fn f64s_mask_load_ptr(
+        self,
+        mask: Self::m64s,
+        ptr: *const f64,
+        or: Self::f64s,
+    ) -> Self::f64s {
+        self.m64s_select_f64s(
+            mask,
+            transmute(_mm256_maskload_pd(ptr as _, transmute(mask))),
+            or,
+        )
+    }
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
     unsafe fn c64s_mask_load_ptr(
         self,
         mask: Self::m64s,
@@ -1944,6 +1976,13 @@ impl Simd for V3 {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
+    unsafe fn f32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut f32, values: Self::f32s) {
+        _mm256_maskstore_ps(ptr as *mut f32, transmute(mask), transmute(values));
+    }
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
     unsafe fn c32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut c32, values: Self::c32s) {
         _mm256_maskstore_ps(ptr as *mut f32, transmute(mask), transmute(values));
     }
@@ -1953,6 +1992,13 @@ impl Simd for V3 {
     #[inline(always)]
     unsafe fn u64s_mask_store_ptr(self, mask: Self::m64s, ptr: *mut u64, values: Self::u64s) {
         _mm256_maskstore_epi64(ptr as *mut i64, transmute(mask), transmute(values));
+    }
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
+    unsafe fn f64s_mask_store_ptr(self, mask: Self::m64s, ptr: *mut f64, values: Self::f64s) {
+        _mm256_maskstore_pd(ptr as *mut f64, transmute(mask), transmute(values));
     }
     /// # Safety
     ///
@@ -2801,6 +2847,18 @@ impl Simd for V4 {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
+    unsafe fn f32s_mask_load_ptr(
+        self,
+        mask: Self::m32s,
+        ptr: *const f32,
+        or: Self::f32s,
+    ) -> Self::f32s {
+        transmute(_mm512_mask_loadu_ps(transmute(or), mask.0, ptr as _))
+    }
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
     unsafe fn c32s_mask_load_ptr(
         self,
         mask: Self::m32s,
@@ -2820,6 +2878,18 @@ impl Simd for V4 {
         or: Self::u64s,
     ) -> Self::u64s {
         transmute(_mm512_mask_loadu_epi64(transmute(or), mask.0, ptr as _))
+    }
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
+    unsafe fn f64s_mask_load_ptr(
+        self,
+        mask: Self::m64s,
+        ptr: *const f64,
+        or: Self::f64s,
+    ) -> Self::f64s {
+        transmute(_mm512_mask_loadu_pd(transmute(or), mask.0, ptr as _))
     }
     /// # Safety
     ///
@@ -2845,6 +2915,13 @@ impl Simd for V4 {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
+    unsafe fn f32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut f32, values: Self::f32s) {
+        _mm512_mask_storeu_ps(ptr as *mut f32, mask.0, transmute(values));
+    }
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
     unsafe fn c32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut c32, values: Self::c32s) {
         _mm512_mask_storeu_ps(ptr as *mut f32, mask.0, transmute(values));
     }
@@ -2854,6 +2931,13 @@ impl Simd for V4 {
     #[inline(always)]
     unsafe fn u64s_mask_store_ptr(self, mask: Self::m64s, ptr: *mut u64, values: Self::u64s) {
         _mm512_mask_storeu_epi64(ptr as *mut i64, mask.0, transmute(values));
+    }
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
+    unsafe fn f64s_mask_store_ptr(self, mask: Self::m64s, ptr: *mut f64, values: Self::f64s) {
+        _mm512_mask_storeu_pd(ptr as *mut f64, mask.0, transmute(values));
     }
     /// # Safety
     ///
@@ -3577,6 +3661,18 @@ impl Simd for V4_256 {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
+    unsafe fn f32s_mask_load_ptr(
+        self,
+        mask: Self::m32s,
+        ptr: *const f32,
+        or: Self::f32s,
+    ) -> Self::f32s {
+        transmute(_mm256_mask_loadu_ps(transmute(or), mask.0, ptr as _))
+    }
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
     unsafe fn c32s_mask_load_ptr(
         self,
         mask: Self::m32s,
@@ -3596,6 +3692,18 @@ impl Simd for V4_256 {
         or: Self::u64s,
     ) -> Self::u64s {
         transmute(_mm256_mask_loadu_epi64(transmute(or), mask.0, ptr as _))
+    }
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
+    unsafe fn f64s_mask_load_ptr(
+        self,
+        mask: Self::m64s,
+        ptr: *const f64,
+        or: Self::f64s,
+    ) -> Self::f64s {
+        transmute(_mm256_mask_loadu_pd(transmute(or), mask.0, ptr as _))
     }
     /// # Safety
     ///
@@ -3621,6 +3729,13 @@ impl Simd for V4_256 {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
+    unsafe fn f32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut f32, values: Self::f32s) {
+        _mm256_mask_storeu_ps(ptr as *mut f32, mask.0, transmute(values));
+    }
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
     unsafe fn c32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut c32, values: Self::c32s) {
         _mm256_mask_storeu_ps(ptr as *mut f32, mask.0, transmute(values));
     }
@@ -3630,6 +3745,13 @@ impl Simd for V4_256 {
     #[inline(always)]
     unsafe fn u64s_mask_store_ptr(self, mask: Self::m64s, ptr: *mut u64, values: Self::u64s) {
         _mm256_mask_storeu_epi64(ptr as *mut i64, mask.0, transmute(values));
+    }
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
+    unsafe fn f64s_mask_store_ptr(self, mask: Self::m64s, ptr: *mut f64, values: Self::f64s) {
+        _mm256_mask_storeu_pd(ptr as *mut f64, mask.0, transmute(values));
     }
     /// # Safety
     ///
