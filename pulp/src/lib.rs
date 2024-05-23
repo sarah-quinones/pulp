@@ -3634,6 +3634,7 @@ use x86::ScalarArchInner;
 
 #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
 #[repr(u8)]
+#[derive(Debug, Clone, Copy)]
 enum ScalarArchInner {
     Scalar = 0,
     // improves codegen for some reason
