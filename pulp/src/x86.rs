@@ -2002,7 +2002,7 @@ impl Simd for V3 {
     /// See the trait-level safety documentation.
     #[inline(always)]
     unsafe fn f32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut f32, values: Self::f32s) {
-        _mm256_maskstore_ps(ptr as *mut f32, transmute(mask), transmute(values));
+        _mm256_maskstore_ps(ptr, transmute(mask), transmute(values));
     }
     /// # Safety
     ///
@@ -2023,7 +2023,7 @@ impl Simd for V3 {
     /// See the trait-level safety documentation.
     #[inline(always)]
     unsafe fn f64s_mask_store_ptr(self, mask: Self::m64s, ptr: *mut f64, values: Self::f64s) {
-        _mm256_maskstore_pd(ptr as *mut f64, transmute(mask), transmute(values));
+        _mm256_maskstore_pd(ptr, transmute(mask), transmute(values));
     }
     /// # Safety
     ///
