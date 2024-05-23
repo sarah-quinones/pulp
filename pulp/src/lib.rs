@@ -3209,6 +3209,13 @@ pub struct Offset<Mask> {
     suffix_len: usize,
 }
 
+impl Offset<bool> {
+    #[inline]
+    pub fn unaligned(len: usize) -> Self {
+        Scalar::new().i32s_align_offset(core::ptr::null(), len)
+    }
+}
+
 impl<Mask> Offset<Mask> {
     #[inline(always)]
     pub fn rotate_left_amount(&self) -> usize {
