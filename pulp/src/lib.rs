@@ -2916,272 +2916,406 @@ impl<S: Simd> Write for SuffixMut<'_, u64, S, S::m64s> {
 
 impl<S: Simd> Debug for Prefix<'_, u32, S, S::m32s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || self.read_or(self.simd.u32s_splat(0)).fmt(f),
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Prefix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for Suffix<'_, u32, S, S::m32s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || self.read_or(self.simd.u32s_splat(0)).fmt(f),
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Suffix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for Prefix<'_, i32, S, S::m32s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || self.read_or(self.simd.i32s_splat(0)).fmt(f),
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Prefix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for Suffix<'_, i32, S, S::m32s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || self.read_or(self.simd.i32s_splat(0)).fmt(f),
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Suffix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for Prefix<'_, f32, S, S::m32s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || self.read_or(self.simd.f32s_splat(0.0)).fmt(f),
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Prefix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for Suffix<'_, f32, S, S::m32s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || self.read_or(self.simd.f32s_splat(0.0)).fmt(f),
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Suffix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for Prefix<'_, c32, S, S::m32s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || {
-                self.read_or(self.simd.c32s_splat(c32 { re: 0.0, im: 0.0 }))
-                    .fmt(f)
-            },
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Prefix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for Suffix<'_, c32, S, S::m32s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || {
-                self.read_or(self.simd.c32s_splat(c32 { re: 0.0, im: 0.0 }))
-                    .fmt(f)
-            },
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Suffix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for Prefix<'_, u64, S, S::m64s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || self.read_or(self.simd.u64s_splat(0)).fmt(f),
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Prefix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for Suffix<'_, u64, S, S::m64s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || self.read_or(self.simd.u64s_splat(0)).fmt(f),
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Suffix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for Prefix<'_, i64, S, S::m64s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || self.read_or(self.simd.i64s_splat(0)).fmt(f),
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Prefix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for Suffix<'_, i64, S, S::m64s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || self.read_or(self.simd.i64s_splat(0)).fmt(f),
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Suffix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for Prefix<'_, f64, S, S::m64s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || self.read_or(self.simd.f64s_splat(0.0)).fmt(f),
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Prefix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for Suffix<'_, f64, S, S::m64s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || self.read_or(self.simd.f64s_splat(0.0)).fmt(f),
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Suffix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for Prefix<'_, c64, S, S::m64s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || {
-                self.read_or(self.simd.c64s_splat(c64 { re: 0.0, im: 0.0 }))
-                    .fmt(f)
-            },
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Prefix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for Suffix<'_, c64, S, S::m64s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || {
-                self.read_or(self.simd.c64s_splat(c64 { re: 0.0, im: 0.0 }))
-                    .fmt(f)
-            },
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Suffix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 
 impl<S: Simd> Debug for PrefixMut<'_, u32, S, S::m32s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || self.read_or(self.simd.u32s_splat(0)).fmt(f),
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Prefix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for SuffixMut<'_, u32, S, S::m32s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || self.read_or(self.simd.u32s_splat(0)).fmt(f),
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Suffix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for PrefixMut<'_, i32, S, S::m32s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || self.read_or(self.simd.i32s_splat(0)).fmt(f),
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Prefix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for SuffixMut<'_, i32, S, S::m32s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || self.read_or(self.simd.i32s_splat(0)).fmt(f),
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Suffix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for PrefixMut<'_, f32, S, S::m32s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || self.read_or(self.simd.f32s_splat(0.0)).fmt(f),
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Prefix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for SuffixMut<'_, f32, S, S::m32s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || self.read_or(self.simd.f32s_splat(0.0)).fmt(f),
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Suffix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for PrefixMut<'_, c32, S, S::m32s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || {
-                self.read_or(self.simd.c32s_splat(c32 { re: 0.0, im: 0.0 }))
-                    .fmt(f)
-            },
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Prefix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for SuffixMut<'_, c32, S, S::m32s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || {
-                self.read_or(self.simd.c32s_splat(c32 { re: 0.0, im: 0.0 }))
-                    .fmt(f)
-            },
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Suffix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for PrefixMut<'_, u64, S, S::m64s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || self.read_or(self.simd.u64s_splat(0)).fmt(f),
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Prefix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for SuffixMut<'_, u64, S, S::m64s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || self.read_or(self.simd.u64s_splat(0)).fmt(f),
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Suffix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for PrefixMut<'_, i64, S, S::m64s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || self.read_or(self.simd.i64s_splat(0)).fmt(f),
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Prefix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for SuffixMut<'_, i64, S, S::m64s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || self.read_or(self.simd.i64s_splat(0)).fmt(f),
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Suffix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for PrefixMut<'_, f64, S, S::m64s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || self.read_or(self.simd.f64s_splat(0.0)).fmt(f),
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Prefix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for SuffixMut<'_, f64, S, S::m64s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || self.read_or(self.simd.f64s_splat(0.0)).fmt(f),
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Suffix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for PrefixMut<'_, c64, S, S::m64s> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
+        let val = self.simd.vectorize(
             #[inline(always)]
-            || {
-                self.read_or(self.simd.c64s_splat(c64 { re: 0.0, im: 0.0 }))
-                    .fmt(f)
-            },
-        )
+            || self.read_or(unsafe { core::mem::zeroed() }),
+        );
+        let ptr = self.base;
+        f.debug_struct("Prefix")
+            .field("value", &val)
+            .field("base", &ptr)
+            .finish()
     }
 }
 impl<S: Simd> Debug for SuffixMut<'_, c64, S, S::m64s> {
@@ -3197,6 +3331,7 @@ impl<S: Simd> Debug for SuffixMut<'_, c64, S, S::m64s> {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct Offset<Mask> {
     prefix_mask: Mask,
     suffix_mask: Mask,
@@ -3205,8 +3340,9 @@ pub struct Offset<Mask> {
 
     prefix_len: usize,
     body_len: usize,
-    simd_body_len: usize,
     suffix_len: usize,
+    simd_body_len: usize,
+    total_len: usize,
 }
 
 impl Offset<bool> {
@@ -3276,8 +3412,9 @@ fn align_offset_u64_impl<S: Simd, T, U>(
         prefix_offset,
         prefix_len,
         body_len,
-        simd_body_len: body_len / chunk_size,
         suffix_len,
+        total_len: len,
+        simd_body_len: body_len / chunk_size,
     }
 }
 
@@ -3323,6 +3460,7 @@ fn align_offset_u32_impl<S: Simd, T, U>(
         body_len,
         simd_body_len: body_len / chunk_size,
         suffix_len,
+        total_len: len,
     }
 }
 
@@ -3412,10 +3550,7 @@ unsafe fn split_slice_aligned_like<S: Simd, Mask: Copy, T, U>(
     assert_eq!(core::mem::size_of::<U>() % core::mem::size_of::<T>(), 0);
     assert_eq!(core::mem::align_of::<U>(), core::mem::align_of::<T>());
 
-    assert_eq!(
-        slice.len(),
-        offset.prefix_len + offset.body_len + offset.suffix_len
-    );
+    assert_eq!(slice.len(), offset.total_len);
 
     let data = slice.as_ptr();
 
@@ -3449,10 +3584,7 @@ unsafe fn split_mut_slice_aligned_like<S: Simd, Mask: Copy, T, U>(
     assert_eq!(core::mem::size_of::<U>() % core::mem::size_of::<T>(), 0);
     assert_eq!(core::mem::align_of::<U>(), core::mem::align_of::<T>());
 
-    assert_eq!(
-        slice.len(),
-        offset.prefix_len + offset.body_len + offset.suffix_len
-    );
+    assert_eq!(slice.len(), offset.total_len);
 
     let data = slice.as_mut_ptr();
     let chunk_size = core::mem::size_of::<U>() / core::mem::size_of::<T>();
