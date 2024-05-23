@@ -2303,20 +2303,34 @@ impl Simd for V3Scalar {
 
     #[inline(always)]
     fn f64s_mul_add_e(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
-        f64::mul_add(a, b, c)
+        self.f64_scalar_mul_add_e(a, b, c)
     }
     #[inline(always)]
     fn f64_scalar_mul_add_e(self, a: f64, b: f64, c: f64) -> f64 {
-        f64::mul_add(a, b, c)
+        #[cfg(feature = "std")]
+        {
+            f64::mul_add(a, b, c)
+        }
+        #[cfg(not(feature = "std"))]
+        {
+            libm::fma(a, b, c)
+        }
     }
 
     #[inline(always)]
     fn f32s_mul_add_e(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
-        f32::mul_add(a, b, c)
+        self.f32_scalar_mul_add_e(a, b, c)
     }
     #[inline(always)]
     fn f32_scalar_mul_add_e(self, a: f32, b: f32, c: f32) -> f32 {
-        f32::mul_add(a, b, c)
+        #[cfg(feature = "std")]
+        {
+            f32::mul_add(a, b, c)
+        }
+        #[cfg(not(feature = "std"))]
+        {
+            libm::fmaf(a, b, c)
+        }
     }
 
     #[inline(always)]
