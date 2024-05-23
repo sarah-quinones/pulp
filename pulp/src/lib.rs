@@ -3616,10 +3616,70 @@ impl Default for Arch {
     }
 }
 
+impl Default for ScalarArch {
+    #[inline]
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 #[repr(transparent)]
 pub struct Arch {
     inner: ArchInner,
+}
+
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+use x86::ScalarArchInner;
+
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+#[repr(u8)]
+enum ArchInner {
+    Scalar = 0,
+    // improves codegen for some reason
+    #[allow(dead_code)]
+    Dummy = u8::MAX - 1,
+}
+
+#[derive(Debug, Clone, Copy)]
+#[repr(transparent)]
+pub struct ScalarArch {
+    inner: ScalarArchInner,
+}
+
+impl ScalarArch {
+    #[inline(always)]
+    fn __static_available() -> &'static ::core::sync::atomic::AtomicU8 {
+        static AVAILABLE: ::core::sync::atomic::AtomicU8 =
+            ::core::sync::atomic::AtomicU8::new(u8::MAX);
+        &AVAILABLE
+    }
+
+    #[inline(never)]
+    fn __detect_is_available() -> u8 {
+        let out = unsafe {
+            core::mem::transmute(Self {
+                inner: ScalarArchInner::new(),
+            })
+        };
+        Self::__static_available().store(out, ::core::sync::atomic::Ordering::Relaxed);
+        out
+    }
+
+    #[inline(always)]
+    pub fn new() -> Self {
+        let mut available =
+            Self::__static_available().load(::core::sync::atomic::Ordering::Relaxed);
+        if available == u8::MAX {
+            available = Self::__detect_is_available();
+        }
+
+        unsafe { core::mem::transmute(available) }
+    }
+    #[inline(always)]
+    pub fn dispatch<Op: WithSimd>(self, op: Op) -> Op::Output {
+        self.inner.dispatch(op)
+    }
 }
 
 #[doc(hidden)]

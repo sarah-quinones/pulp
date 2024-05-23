@@ -663,6 +663,7 @@ static AVX512_256_ROTATE_IDX: [u32x8; 8] = [
 
 impl Seal for V2 {}
 impl Seal for V3 {}
+impl Seal for V3Scalar {}
 #[cfg(feature = "nightly")]
 impl Seal for V4 {}
 #[cfg(feature = "nightly")]
@@ -735,6 +736,30 @@ internal_simd_type! {
     ///  - Fused multiply-accumulate instructions, such as [`V3::mul_add_f32x4`].
     #[allow(missing_docs)]
     pub struct V3 {
+        pub sse: "sse",
+        pub sse2: "sse2",
+        pub fxsr: "fxsr",
+        pub sse3: "sse3",
+        pub ssse3: "ssse3",
+        pub sse4_1: "sse4.1",
+        pub sse4_2: "sse4.2",
+        pub popcnt: "popcnt",
+        pub avx: "avx",
+        pub avx2: "avx2",
+        pub bmi1: "bmi1",
+        pub bmi2: "bmi2",
+        pub fma: "fma",
+        pub lzcnt: "lzcnt",
+    }
+
+    /// AVX instruction set using only scalar instructions.
+    ///
+    /// Notable additions over [`V2`] include:
+    ///  - Instructions operating on 256-bit SIMD vectors.
+    ///  - Shift functions with a separate shift per lane, such as [`V3::shl_dyn_u32x4`].
+    ///  - Fused multiply-accumulate instructions, such as [`V3::mul_add_f32x4`].
+    #[allow(missing_docs)]
+    pub struct V3Scalar {
         pub sse: "sse",
         pub sse2: "sse2",
         pub fxsr: "fxsr",
@@ -2056,6 +2081,839 @@ impl Simd for V3 {
     #[inline(always)]
     fn c64s_swap_re_im(self, a: Self::c64s) -> Self::c64s {
         unsafe { cast(_mm256_permute_pd::<0b0101>(cast(a))) }
+    }
+}
+
+impl Simd for V3Scalar {
+    type m32s = bool;
+    type f32s = f32;
+    type i32s = i32;
+    type u32s = u32;
+
+    type m64s = bool;
+    type f64s = f64;
+    type i64s = i64;
+    type u64s = u64;
+
+    type c32s = crate::c32;
+    type c64s = crate::c64;
+
+    #[inline(always)]
+    fn m32s_not(self, a: Self::m32s) -> Self::m32s {
+        !a
+    }
+    #[inline(always)]
+    fn m32s_and(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
+        a && b
+    }
+    #[inline(always)]
+    fn m32s_or(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
+        a || b
+    }
+    #[inline(always)]
+    fn m32s_xor(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
+        a ^ b
+    }
+
+    #[inline(always)]
+    fn m64s_not(self, a: Self::m64s) -> Self::m64s {
+        !a
+    }
+    #[inline(always)]
+    fn m64s_and(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
+        a && b
+    }
+    #[inline(always)]
+    fn m64s_or(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
+        a || b
+    }
+    #[inline(always)]
+    fn m64s_xor(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
+        a ^ b
+    }
+
+    #[inline(always)]
+    fn u32s_not(self, a: Self::u32s) -> Self::u32s {
+        !a
+    }
+    #[inline(always)]
+    fn u32s_and(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+        a & b
+    }
+    #[inline(always)]
+    fn u32s_or(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+        a | b
+    }
+    #[inline(always)]
+    fn u32s_xor(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+        a ^ b
+    }
+
+    #[inline(always)]
+    fn u64s_not(self, a: Self::u64s) -> Self::u64s {
+        !a
+    }
+    #[inline(always)]
+    fn u64s_and(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+        a & b
+    }
+    #[inline(always)]
+    fn u64s_or(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+        a | b
+    }
+    #[inline(always)]
+    fn u64s_xor(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+        a ^ b
+    }
+
+    #[inline(always)]
+    fn f32s_splat(self, value: f32) -> Self::f32s {
+        value
+    }
+    #[inline(always)]
+    fn f32s_add(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+        a + b
+    }
+    #[inline(always)]
+    fn f32s_sub(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+        a - b
+    }
+    #[inline(always)]
+    fn f32s_mul(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+        a * b
+    }
+    #[inline(always)]
+    fn f32s_div(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+        a / b
+    }
+    #[inline(always)]
+    fn f32s_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
+        a == b
+    }
+    #[inline(always)]
+    fn f32s_less_than(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
+        a < b
+    }
+    #[inline(always)]
+    fn f32s_less_than_or_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
+        a <= b
+    }
+
+    #[inline(always)]
+    fn f64s_splat(self, value: f64) -> Self::f64s {
+        value
+    }
+    #[inline(always)]
+    fn f64s_add(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+        a + b
+    }
+    #[inline(always)]
+    fn f64s_sub(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+        a - b
+    }
+    #[inline(always)]
+    fn f64s_mul(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+        a * b
+    }
+    #[inline(always)]
+    fn f64s_div(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+        a / b
+    }
+    #[inline(always)]
+    fn f64s_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
+        a == b
+    }
+    #[inline(always)]
+    fn f64s_less_than(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
+        a < b
+    }
+    #[inline(always)]
+    fn f64s_less_than_or_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
+        a <= b
+    }
+
+    #[inline(always)]
+    fn m32s_select_u32s(
+        self,
+        mask: Self::m32s,
+        if_true: Self::u32s,
+        if_false: Self::u32s,
+    ) -> Self::u32s {
+        if mask {
+            if_true
+        } else {
+            if_false
+        }
+    }
+    #[inline(always)]
+    fn m64s_select_u64s(
+        self,
+        mask: Self::m64s,
+        if_true: Self::u64s,
+        if_false: Self::u64s,
+    ) -> Self::u64s {
+        if mask {
+            if_true
+        } else {
+            if_false
+        }
+    }
+
+    #[inline(always)]
+    fn f32s_min(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+        f32::min(a, b)
+    }
+    #[inline(always)]
+    fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+        f32::max(a, b)
+    }
+    #[inline(always)]
+    fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+        f64::min(a, b)
+    }
+    #[inline(always)]
+    fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+        f64::max(a, b)
+    }
+    #[inline(always)]
+    fn u32s_splat(self, value: u32) -> Self::u32s {
+        value
+    }
+    #[inline(always)]
+    fn u64s_splat(self, value: u64) -> Self::u64s {
+        value
+    }
+
+    #[inline(always)]
+    fn u32s_add(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+        a + b
+    }
+    #[inline(always)]
+    fn u32s_sub(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+        a - b
+    }
+    #[inline(always)]
+    fn u64s_add(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+        a + b
+    }
+    #[inline(always)]
+    fn u64s_sub(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+        a - b
+    }
+
+    #[inline(always)]
+    fn f64s_mul_add_e(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+        f64::mul_add(a, b, c)
+    }
+    #[inline(always)]
+    fn f64_scalar_mul_add_e(self, a: f64, b: f64, c: f64) -> f64 {
+        f64::mul_add(a, b, c)
+    }
+
+    #[inline(always)]
+    fn f32s_mul_add_e(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+        f32::mul_add(a, b, c)
+    }
+    #[inline(always)]
+    fn f32_scalar_mul_add_e(self, a: f32, b: f32, c: f32) -> f32 {
+        f32::mul_add(a, b, c)
+    }
+
+    #[inline(always)]
+    fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
+        struct Impl<Op> {
+            this: V3Scalar,
+            op: Op,
+        }
+        impl<Op: WithSimd> crate::NullaryFnOnce for Impl<Op> {
+            type Output = Op::Output;
+
+            #[inline(always)]
+            fn call(self) -> Self::Output {
+                self.op.with_simd(self.this)
+            }
+        }
+        self.vectorize(Impl { this: self, op })
+    }
+
+    #[inline(always)]
+    fn f32s_reduce_sum(self, a: Self::f32s) -> f32 {
+        a
+    }
+
+    #[inline(always)]
+    fn f32s_reduce_product(self, a: Self::f32s) -> f32 {
+        a
+    }
+
+    #[inline(always)]
+    fn f32s_reduce_min(self, a: Self::f32s) -> f32 {
+        a
+    }
+
+    #[inline(always)]
+    fn f32s_reduce_max(self, a: Self::f32s) -> f32 {
+        a
+    }
+
+    #[inline(always)]
+    fn f64s_reduce_sum(self, a: Self::f64s) -> f64 {
+        a
+    }
+
+    #[inline(always)]
+    fn f64s_reduce_product(self, a: Self::f64s) -> f64 {
+        a
+    }
+
+    #[inline(always)]
+    fn f64s_reduce_min(self, a: Self::f64s) -> f64 {
+        a
+    }
+
+    #[inline(always)]
+    fn f64s_reduce_max(self, a: Self::f64s) -> f64 {
+        a
+    }
+
+    #[inline(always)]
+    fn c32s_splat(self, value: c32) -> Self::c32s {
+        value
+    }
+    #[inline(always)]
+    fn c32s_add(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+        a + b
+    }
+    #[inline(always)]
+    fn c32s_sub(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+        a - b
+    }
+
+    #[inline(always)]
+    fn c32s_mul(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+        self.c32_scalar_mul(a, b)
+    }
+    #[inline(always)]
+    fn c32_scalar_mul(self, a: c32, b: c32) -> c32 {
+        let a_re = a.re;
+        let a_im = a.im;
+        let b_re = b.re;
+        let b_im = b.im;
+
+        let re = self.f32_scalar_mul_add(a_re, b_re, -a_im * b_im);
+        let im = self.f32_scalar_mul_add(a_re, b_im, a_im * b_re);
+
+        c32 { re, im }
+    }
+    #[inline(always)]
+    fn c32_scalar_mul_add(self, a: c32, b: c32, c: c32) -> c32 {
+        let a_re = a.re;
+        let a_im = a.im;
+        let b_re = b.re;
+        let b_im = b.im;
+        let c_re = c.re;
+        let c_im = c.im;
+
+        let re = self.f32_scalar_mul_add(a_re, b_re, self.f32_scalar_mul_add(-a_im, b_im, c_re));
+        let im = self.f32_scalar_mul_add(a_re, b_im, self.f32_scalar_mul_add(a_im, b_re, c_im));
+
+        c32 { re, im }
+    }
+    #[inline(always)]
+    fn c32_scalar_conj_mul(self, a: c32, b: c32) -> c32 {
+        let a_re = a.re;
+        let a_im = a.im;
+        let b_re = b.re;
+        let b_im = b.im;
+
+        let re = self.f32_scalar_mul_add(a_re, b_re, a_im * b_im);
+        let im = self.f32_scalar_mul_add(a_re, b_im, -a_im * b_re);
+
+        c32 { re, im }
+    }
+    #[inline(always)]
+    fn c32_scalar_conj_mul_add(self, a: c32, b: c32, c: c32) -> c32 {
+        let a_re = a.re;
+        let a_im = a.im;
+        let b_re = b.re;
+        let b_im = b.im;
+        let c_re = c.re;
+        let c_im = c.im;
+
+        let re = self.f32_scalar_mul_add(a_re, b_re, self.f32_scalar_mul_add(a_im, b_im, c_re));
+        let im = self.f32_scalar_mul_add(a_re, b_im, self.f32_scalar_mul_add(-a_im, b_re, c_im));
+
+        c32 { re, im }
+    }
+
+    #[inline(always)]
+    fn c64_scalar_mul(self, a: c64, b: c64) -> c64 {
+        let a_re = a.re;
+        let a_im = a.im;
+        let b_re = b.re;
+        let b_im = b.im;
+
+        let re = self.f64_scalar_mul_add(a_re, b_re, -a_im * b_im);
+        let im = self.f64_scalar_mul_add(a_re, b_im, a_im * b_re);
+
+        c64 { re, im }
+    }
+    #[inline(always)]
+    fn c64_scalar_mul_add(self, a: c64, b: c64, c: c64) -> c64 {
+        let a_re = a.re;
+        let a_im = a.im;
+        let b_re = b.re;
+        let b_im = b.im;
+        let c_re = c.re;
+        let c_im = c.im;
+
+        let re = self.f64_scalar_mul_add(a_re, b_re, self.f64_scalar_mul_add(-a_im, b_im, c_re));
+        let im = self.f64_scalar_mul_add(a_re, b_im, self.f64_scalar_mul_add(a_im, b_re, c_im));
+
+        c64 { re, im }
+    }
+    #[inline(always)]
+    fn c64_scalar_conj_mul(self, a: c64, b: c64) -> c64 {
+        let a_re = a.re;
+        let a_im = a.im;
+        let b_re = b.re;
+        let b_im = b.im;
+
+        let re = self.f64_scalar_mul_add(a_re, b_re, a_im * b_im);
+        let im = self.f64_scalar_mul_add(a_re, b_im, -a_im * b_re);
+
+        c64 { re, im }
+    }
+    #[inline(always)]
+    fn c64_scalar_conj_mul_add(self, a: c64, b: c64, c: c64) -> c64 {
+        let a_re = a.re;
+        let a_im = a.im;
+        let b_re = b.re;
+        let b_im = b.im;
+        let c_re = c.re;
+        let c_im = c.im;
+
+        let re = self.f64_scalar_mul_add(a_re, b_re, self.f64_scalar_mul_add(a_im, b_im, c_re));
+        let im = self.f64_scalar_mul_add(a_re, b_im, self.f64_scalar_mul_add(-a_im, b_re, c_im));
+
+        c64 { re, im }
+    }
+
+    #[inline(always)]
+    fn f32s_mul_add(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+        self.f32s_mul_add_e(a, b, c)
+    }
+    #[inline(always)]
+    fn f64s_mul_add(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+        self.f64s_mul_add_e(a, b, c)
+    }
+
+    #[inline(always)]
+    fn c64s_splat(self, value: c64) -> Self::c64s {
+        unsafe { cast(_mm256_broadcast_pd(&*(&value as *const _ as *const _))) }
+    }
+    #[inline(always)]
+    fn c64s_add(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+        a + b
+    }
+    #[inline(always)]
+    fn c64s_sub(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+        a - b
+    }
+
+    #[inline(always)]
+    fn c64s_mul(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+        self.c64_scalar_mul(a, b)
+    }
+
+    #[inline(always)]
+    fn c32s_abs2(self, a: Self::c32s) -> Self::c32s {
+        let val = a.re * a.re + a.im * a.im;
+        c32 { re: val, im: val }
+    }
+
+    #[inline(always)]
+    fn c64s_abs2(self, a: Self::c64s) -> Self::c64s {
+        let val = a.re * a.re + a.im * a.im;
+        c64 { re: val, im: val }
+    }
+
+    #[inline(always)]
+    fn u32s_partial_load(self, slice: &[u32]) -> Self::u32s {
+        slice.first().copied().unwrap_or(0)
+    }
+
+    #[inline(always)]
+    fn u32s_partial_store(self, slice: &mut [u32], values: Self::u32s) {
+        if let Some(first) = slice.first_mut() {
+            *first = values
+        }
+    }
+
+    #[inline(always)]
+    fn u64s_partial_load(self, slice: &[u64]) -> Self::u64s {
+        slice.first().copied().unwrap_or(0)
+    }
+
+    #[inline(always)]
+    fn u64s_partial_store(self, slice: &mut [u64], values: Self::u64s) {
+        if let Some(first) = slice.first_mut() {
+            *first = values
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_partial_load(self, slice: &[c64]) -> Self::c64s {
+        slice.first().copied().unwrap_or(c64 { re: 0.0, im: 0.0 })
+    }
+
+    #[inline(always)]
+    fn c64s_partial_store(self, slice: &mut [c64], values: Self::c64s) {
+        if let Some(first) = slice.first_mut() {
+            *first = values
+        }
+    }
+
+    #[inline(always)]
+    fn u32s_partial_load_last(self, slice: &[u32]) -> Self::u32s {
+        slice.first().copied().unwrap_or(0)
+    }
+
+    #[inline(always)]
+    fn u32s_partial_store_last(self, slice: &mut [u32], values: Self::u32s) {
+        if let Some(first) = slice.first_mut() {
+            *first = values
+        }
+    }
+
+    #[inline(always)]
+    fn u64s_partial_load_last(self, slice: &[u64]) -> Self::u64s {
+        slice.first().copied().unwrap_or(0)
+    }
+
+    #[inline(always)]
+    fn u64s_partial_store_last(self, slice: &mut [u64], values: Self::u64s) {
+        if let Some(first) = slice.first_mut() {
+            *first = values
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_partial_load_last(self, slice: &[c64]) -> Self::c64s {
+        slice.first().copied().unwrap_or(c64 { re: 0.0, im: 0.0 })
+    }
+
+    #[inline(always)]
+    fn c64s_partial_store_last(self, slice: &mut [c64], values: Self::c64s) {
+        if let Some(first) = slice.first_mut() {
+            *first = values
+        }
+    }
+
+    #[inline(always)]
+    fn c32s_conj(self, a: Self::c32s) -> Self::c32s {
+        c32 {
+            re: a.re,
+            im: -a.im,
+        }
+    }
+
+    #[inline(always)]
+    fn c32s_conj_mul(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+        self.c32_scalar_conj_mul(a, b)
+    }
+
+    #[inline(always)]
+    fn c32s_mul_add(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+        self.c32_scalar_mul_add(a, b, c)
+    }
+
+    #[inline(always)]
+    fn c32s_conj_mul_add(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+        self.c32_scalar_conj_mul_add(a, b, c)
+    }
+
+    #[inline(always)]
+    fn c64s_conj(self, a: Self::c64s) -> Self::c64s {
+        c64 {
+            re: a.re,
+            im: -a.im,
+        }
+    }
+
+    #[inline(always)]
+    fn c64s_conj_mul(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+        self.c64_scalar_conj_mul(a, b)
+    }
+
+    #[inline(always)]
+    fn c64s_mul_add(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+        self.c64_scalar_mul_add(a, b, c)
+    }
+
+    #[inline(always)]
+    fn c64s_conj_mul_add(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+        self.c64_scalar_conj_mul_add(a, b, c)
+    }
+
+    #[inline(always)]
+    fn c32s_neg(self, a: Self::c32s) -> Self::c32s {
+        -a
+    }
+
+    #[inline(always)]
+    fn c32s_reduce_sum(self, a: Self::c32s) -> c32 {
+        a
+    }
+
+    #[inline(always)]
+    fn c64s_neg(self, a: Self::c64s) -> Self::c64s {
+        -a
+    }
+
+    #[inline(always)]
+    fn c64s_reduce_sum(self, a: Self::c64s) -> c64 {
+        a
+    }
+
+    #[inline(always)]
+    fn u32s_wrapping_dyn_shl(self, a: Self::u32s, amount: Self::u32s) -> Self::u32s {
+        a.wrapping_shl(amount)
+    }
+
+    #[inline(always)]
+    fn u32s_wrapping_dyn_shr(self, a: Self::u32s, amount: Self::u32s) -> Self::u32s {
+        a.wrapping_shr(amount)
+    }
+
+    #[inline(always)]
+    fn u32s_widening_mul(self, a: Self::u32s, b: Self::u32s) -> (Self::u32s, Self::u32s) {
+        let c = a as u64 * b as u64;
+        let lo = c as u32;
+        let hi = (c >> 32) as u32;
+        (lo, hi)
+    }
+
+    #[inline(always)]
+    fn u32s_less_than(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+        a < b
+    }
+
+    #[inline(always)]
+    fn u32s_greater_than(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+        a > b
+    }
+
+    #[inline(always)]
+    fn u32s_less_than_or_equal(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+        a <= b
+    }
+
+    #[inline(always)]
+    fn u32s_greater_than_or_equal(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+        a >= b
+    }
+
+    #[inline(always)]
+    fn u64s_less_than(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
+        a < b
+    }
+
+    #[inline(always)]
+    fn u64s_greater_than(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
+        a > b
+    }
+
+    #[inline(always)]
+    fn u64s_less_than_or_equal(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
+        a <= b
+    }
+
+    #[inline(always)]
+    fn u64s_greater_than_or_equal(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
+        a >= b
+    }
+
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
+    unsafe fn u32s_mask_load_ptr(
+        self,
+        mask: Self::m32s,
+        ptr: *const u32,
+        or: Self::u32s,
+    ) -> Self::u32s {
+        if mask {
+            *ptr
+        } else {
+            or
+        }
+    }
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
+    unsafe fn f32s_mask_load_ptr(
+        self,
+        mask: Self::m32s,
+        ptr: *const f32,
+        or: Self::f32s,
+    ) -> Self::f32s {
+        if mask {
+            *ptr
+        } else {
+            or
+        }
+    }
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
+    unsafe fn c32s_mask_load_ptr(
+        self,
+        mask: Self::m32s,
+        ptr: *const c32,
+        or: Self::c32s,
+    ) -> Self::c32s {
+        if mask {
+            *ptr
+        } else {
+            or
+        }
+    }
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
+    unsafe fn u64s_mask_load_ptr(
+        self,
+        mask: Self::m64s,
+        ptr: *const u64,
+        or: Self::u64s,
+    ) -> Self::u64s {
+        if mask {
+            *ptr
+        } else {
+            or
+        }
+    }
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
+    unsafe fn f64s_mask_load_ptr(
+        self,
+        mask: Self::m64s,
+        ptr: *const f64,
+        or: Self::f64s,
+    ) -> Self::f64s {
+        if mask {
+            *ptr
+        } else {
+            or
+        }
+    }
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
+    unsafe fn c64s_mask_load_ptr(
+        self,
+        mask: Self::m64s,
+        ptr: *const c64,
+        or: Self::c64s,
+    ) -> Self::c64s {
+        if mask {
+            *ptr
+        } else {
+            or
+        }
+    }
+
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
+    unsafe fn u32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut u32, values: Self::u32s) {
+        if mask {
+            *ptr = values
+        }
+    }
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
+    unsafe fn f32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut f32, values: Self::f32s) {
+        if mask {
+            *ptr = values
+        }
+    }
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
+    unsafe fn c32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut c32, values: Self::c32s) {
+        if mask {
+            *ptr = values
+        }
+    }
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
+    unsafe fn u64s_mask_store_ptr(self, mask: Self::m64s, ptr: *mut u64, values: Self::u64s) {
+        if mask {
+            *ptr = values
+        }
+    }
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
+    unsafe fn f64s_mask_store_ptr(self, mask: Self::m64s, ptr: *mut f64, values: Self::f64s) {
+        if mask {
+            *ptr = values
+        }
+    }
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
+    unsafe fn c64s_mask_store_ptr(self, mask: Self::m64s, ptr: *mut c64, values: Self::c64s) {
+        if mask {
+            *ptr = values
+        }
+    }
+
+    #[inline(always)]
+    fn u32s_rotate_right(self, a: Self::u32s, _amount: usize) -> Self::u32s {
+        a
+    }
+
+    #[inline(always)]
+    fn c32s_rotate_right(self, a: Self::c32s, _amount: usize) -> Self::c32s {
+        a
+    }
+
+    #[inline(always)]
+    fn u64s_rotate_right(self, a: Self::u64s, _amount: usize) -> Self::u64s {
+        a
+    }
+
+    #[inline(always)]
+    fn c64s_rotate_right(self, a: Self::c64s, _amount: usize) -> Self::c64s {
+        a
+    }
+
+    #[inline(always)]
+    fn c32s_swap_re_im(self, a: Self::c32s) -> Self::c32s {
+        c32 { re: a.im, im: a.re }
+    }
+
+    #[inline(always)]
+    fn c64s_swap_re_im(self, a: Self::c64s) -> Self::c64s {
+        c64 { re: a.im, im: a.re }
     }
 }
 
@@ -11054,6 +11912,20 @@ pub(crate) enum ArchInner {
     Dummy = u8::MAX - 1,
 }
 
+/// x86 arch
+#[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
+#[repr(u8)]
+pub(crate) enum ScalarArchInner {
+    // msrv(1.66) discriminants on non-unit variants
+    Scalar = 0,
+    V3 = 1,
+
+    // improves codegen for some reason
+    #[allow(dead_code)]
+    Dummy = u8::MAX - 1,
+}
+
 impl ArchInner {
     /// Detects the best available instruction set.
     #[inline]
@@ -11082,6 +11954,34 @@ impl ArchInner {
 }
 
 impl Default for ArchInner {
+    #[inline]
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl ScalarArchInner {
+    /// Detects the best available instruction set.
+    #[inline]
+    pub fn new() -> Self {
+        if V3Scalar::try_new().is_some() {
+            return Self::V3;
+        }
+        Self::Scalar
+    }
+
+    /// Detects the best available instruction set.
+    #[inline(always)]
+    pub fn dispatch<Op: WithSimd>(self, op: Op) -> Op::Output {
+        match self {
+            ScalarArchInner::V3 => Simd::vectorize(unsafe { V3Scalar::new_unchecked() }, op),
+            ScalarArchInner::Scalar => Simd::vectorize(Scalar::new(), op),
+            ScalarArchInner::Dummy => unsafe { core::hint::unreachable_unchecked() },
+        }
+    }
+}
+
+impl Default for ScalarArchInner {
     #[inline]
     fn default() -> Self {
         Self::new()
