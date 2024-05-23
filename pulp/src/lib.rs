@@ -3652,8 +3652,8 @@ impl ScalarArchInner {
     #[inline(always)]
     pub fn dispatch<Op: WithSimd>(self, op: Op) -> Op::Output {
         match self {
-            ArchInner::Scalar => crate::Scalar::new().vectorize(op),
-            ArchInner::Dummy => unsafe { core::hint::unreachable_unchecked() },
+            ScalarArchInner::Scalar => crate::Scalar::new().vectorize(op),
+            ScalarArchInner::Dummy => unsafe { core::hint::unreachable_unchecked() },
         }
     }
 }
