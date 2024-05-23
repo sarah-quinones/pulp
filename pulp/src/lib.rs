@@ -3205,27 +3205,19 @@ pub struct Offset<Mask> {
 
     prefix_len: usize,
     body_len: usize,
+    simd_body_len: usize,
     suffix_len: usize,
-}
-
-impl Offset<bool> {
-    #[inline(always)]
-    pub fn unaligned(len: usize) -> Self {
-        Self {
-            prefix_mask: false,
-            suffix_mask: false,
-            prefix_offset: 0,
-            prefix_len: 0,
-            body_len: len,
-            suffix_len: 0,
-        }
-    }
 }
 
 impl<Mask> Offset<Mask> {
     #[inline(always)]
     pub fn rotate_left_amount(&self) -> usize {
         self.prefix_offset
+    }
+
+    #[inline(always)]
+    pub fn simd_body_len(&self) -> usize {
+        self.simd_body_len
     }
 }
 
@@ -3277,6 +3269,7 @@ fn align_offset_u64_impl<S: Simd, T, U>(
         prefix_offset,
         prefix_len,
         body_len,
+        simd_body_len: body_len / chunk_size,
         suffix_len,
     }
 }
@@ -3321,6 +3314,7 @@ fn align_offset_u32_impl<S: Simd, T, U>(
         prefix_offset,
         prefix_len,
         body_len,
+        simd_body_len: body_len / chunk_size,
         suffix_len,
     }
 }
@@ -3417,7 +3411,6 @@ unsafe fn split_slice_aligned_like<S: Simd, Mask: Copy, T, U>(
     );
 
     let data = slice.as_ptr();
-    let chunk_size = core::mem::size_of::<U>() / core::mem::size_of::<T>();
 
     (
         Prefix {
@@ -3428,7 +3421,7 @@ unsafe fn split_slice_aligned_like<S: Simd, Mask: Copy, T, U>(
         },
         from_raw_parts(
             data.add(offset.prefix_len) as *const U,
-            offset.body_len / chunk_size,
+            offset.simd_body_len,
         ),
         Suffix {
             simd,
