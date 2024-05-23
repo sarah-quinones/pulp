@@ -3642,7 +3642,7 @@ enum ScalarArchInner {
 }
 
 #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
-impl ArchInner {
+impl ScalarArchInner {
     #[inline]
     pub fn new() -> Self {
         Self::Scalar
