@@ -3641,6 +3641,22 @@ enum ScalarArchInner {
     Dummy = u8::MAX - 1,
 }
 
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+impl ArchInner {
+    #[inline]
+    pub fn new() -> Self {
+        Self::Scalar
+    }
+
+    #[inline(always)]
+    pub fn dispatch<Op: WithSimd>(self, op: Op) -> Op::Output {
+        match self {
+            ArchInner::Scalar => crate::Scalar::new().vectorize(op),
+            ArchInner::Dummy => unsafe { core::hint::unreachable_unchecked() },
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 #[repr(transparent)]
 pub struct ScalarArch {
