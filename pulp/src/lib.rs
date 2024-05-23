@@ -3362,6 +3362,19 @@ impl<Mask> Offset<Mask> {
     pub fn simd_body_len(&self) -> usize {
         self.simd_body_len
     }
+    #[inline(always)]
+    pub fn prefix_len(&self) -> usize {
+        self.prefix_len
+    }
+    #[inline(always)]
+    pub fn suffix_len(&self) -> usize {
+        self.suffix_len
+    }
+
+    #[inline(always)]
+    pub fn len(&self) -> usize {
+        self.total_len
+    }
 }
 
 impl<Mask: Copy> Clone for Offset<Mask> {
