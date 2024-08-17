@@ -2206,7 +2206,7 @@ impl Avx512f {
         fn _mm512_mask_testn_epi64_mask(k: __mmask8, a: __m512i, b: __m512i) -> __mmask8;
         unsafe fn _mm512_stream_ps(mem_addr: *mut f32, a: __m512);
         unsafe fn _mm512_stream_pd(mem_addr: *mut f64, a: __m512d);
-        unsafe fn _mm512_stream_si512(mem_addr: *mut i64, a: __m512i);
+        unsafe fn _mm512_stream_si512(mem_addr: *mut i32, a: __m512i);
         fn _mm512_set_ps(
             e0: f32,
             e1: f32,
