@@ -151,7 +151,7 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn u32s_partial_load(self, slice: &[u32]) -> Self::u32s {
+    fn partial_load_u32s(self, slice: &[u32]) -> Self::u32s {
         match slice.len() {
             0 => u32x4(0, 0, 0, 0),
             1 => u32x4(slice[0], 0, 0, 0),
@@ -162,7 +162,7 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn u32s_partial_store(self, slice: &mut [u32], values: Self::u32s) {
+    fn partial_store_u32s(self, slice: &mut [u32], values: Self::u32s) {
         match slice.len() {
             0 => {}
             1 => {
@@ -187,7 +187,7 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn u64s_partial_load(self, slice: &[u64]) -> Self::u64s {
+    fn partial_load_u64s(self, slice: &[u64]) -> Self::u64s {
         match slice.len() {
             0 => u64x2(0, 0),
             1 => u64x2(slice[0], 0),
@@ -196,7 +196,7 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn u64s_partial_store(self, slice: &mut [u64], values: Self::u64s) {
+    fn partial_store_u64s(self, slice: &mut [u64], values: Self::u64s) {
         match slice.len() {
             0 => {}
             1 => {
@@ -210,7 +210,7 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn u32s_partial_load_last(self, slice: &[u32]) -> Self::u32s {
+    fn partial_load_last_u32s(self, slice: &[u32]) -> Self::u32s {
         match slice.len() {
             0 => u32x4(0, 0, 0, 0),
             1 => u32x4(0, 0, 0, slice[0]),
@@ -224,7 +224,7 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn u32s_partial_store_last(self, slice: &mut [u32], values: Self::u32s) {
+    fn partial_store_last_u32s(self, slice: &mut [u32], values: Self::u32s) {
         match slice.len() {
             0 => {}
             1 => {
@@ -251,7 +251,7 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn u64s_partial_load_last(self, slice: &[u64]) -> Self::u64s {
+    fn partial_load_last_u64s(self, slice: &[u64]) -> Self::u64s {
         match slice.len() {
             0 => u64x2(0, 0),
             1 => u64x2(0, slice[0]),
@@ -263,7 +263,7 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn u64s_partial_store_last(self, slice: &mut [u64], values: Self::u64s) {
+    fn partial_store_last_u64s(self, slice: &mut [u64], values: Self::u64s) {
         match slice.len() {
             0 => {}
             1 => {
@@ -279,87 +279,87 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn m32s_not(self, a: Self::m32s) -> Self::m32s {
+    fn not_m32s(self, a: Self::m32s) -> Self::m32s {
         self.not_m32x4(a)
     }
 
     #[inline(always)]
-    fn m32s_and(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
+    fn and_m32s(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
         self.and_m32x4(a, b)
     }
 
     #[inline(always)]
-    fn m32s_or(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
+    fn or_m32s(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
         self.or_m32x4(a, b)
     }
 
     #[inline(always)]
-    fn m32s_xor(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
+    fn xor_m32s(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
         self.xor_m32x4(a, b)
     }
 
     #[inline(always)]
-    fn m64s_not(self, a: Self::m64s) -> Self::m64s {
+    fn not_m64s(self, a: Self::m64s) -> Self::m64s {
         self.not_m64x2(a)
     }
 
     #[inline(always)]
-    fn m64s_and(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
+    fn and_m64s(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
         self.and_m64x2(a, b)
     }
 
     #[inline(always)]
-    fn m64s_or(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
+    fn or_m64s(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
         self.or_m64x2(a, b)
     }
 
     #[inline(always)]
-    fn m64s_xor(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
+    fn xor_m64s(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
         self.xor_m64x2(a, b)
     }
 
     #[inline(always)]
-    fn u32s_not(self, a: Self::u32s) -> Self::u32s {
+    fn not_u32s(self, a: Self::u32s) -> Self::u32s {
         self.not_u32x4(a)
     }
 
     #[inline(always)]
-    fn u32s_and(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+    fn and_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
         self.and_u32x4(a, b)
     }
 
     #[inline(always)]
-    fn u32s_or(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+    fn or_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
         self.or_u32x4(a, b)
     }
 
     #[inline(always)]
-    fn u32s_xor(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+    fn xor_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
         self.xor_u32x4(a, b)
     }
 
     #[inline(always)]
-    fn u64s_not(self, a: Self::u64s) -> Self::u64s {
+    fn not_u64s(self, a: Self::u64s) -> Self::u64s {
         self.not_u64x2(a)
     }
 
     #[inline(always)]
-    fn u64s_and(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+    fn and_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
         self.and_u64x2(a, b)
     }
 
     #[inline(always)]
-    fn u64s_or(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+    fn or_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
         self.or_u64x2(a, b)
     }
 
     #[inline(always)]
-    fn u64s_xor(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+    fn xor_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
         self.xor_u64x2(a, b)
     }
 
     #[inline(always)]
-    fn m32s_select_u32s(
+    fn select_u32s_m32s(
         self,
         mask: Self::m32s,
         if_true: Self::u32s,
@@ -369,7 +369,7 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn m64s_select_u64s(
+    fn select_u64s_m64s(
         self,
         mask: Self::m64s,
         if_true: Self::u64s,
@@ -379,47 +379,47 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn u32s_splat(self, value: u32) -> Self::u32s {
+    fn splat_u32s(self, value: u32) -> Self::u32s {
         self.splat_u32x4(value)
     }
 
     #[inline(always)]
-    fn u32s_add(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+    fn add_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
         self.wrapping_add_u32x4(a, b)
     }
 
     #[inline(always)]
-    fn u32s_sub(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+    fn sub_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
         self.wrapping_sub_u32x4(a, b)
     }
 
     #[inline(always)]
-    fn u32s_less_than(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+    fn less_than_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
         self.cmp_lt_u32x4(a, b)
     }
 
     #[inline(always)]
-    fn u32s_greater_than(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+    fn greater_than_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
         self.cmp_gt_u32x4(a, b)
     }
 
     #[inline(always)]
-    fn u32s_less_than_or_equal(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+    fn less_than_or_equal_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
         self.cmp_le_u32x4(a, b)
     }
 
     #[inline(always)]
-    fn u32s_greater_than_or_equal(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+    fn greater_than_or_equal_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
         self.cmp_ge_u32x4(a, b)
     }
 
     #[inline(always)]
-    fn u32s_wrapping_dyn_shl(self, a: Self::u32s, amount: Self::u32s) -> Self::u32s {
+    fn wrapping_dyn_shl_u32s(self, a: Self::u32s, amount: Self::u32s) -> Self::u32s {
         self.shl_dyn_u32x4(a, self.and_i32x4(cast(amount), self.splat_i32x4(32 - 1)))
     }
 
     #[inline(always)]
-    fn u32s_wrapping_dyn_shr(self, a: Self::u32s, amount: Self::u32s) -> Self::u32s {
+    fn wrapping_dyn_shr_u32s(self, a: Self::u32s, amount: Self::u32s) -> Self::u32s {
         u32x4(
             a.0 >> amount.0,
             a.1 >> amount.1,
@@ -429,7 +429,7 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn u32s_widening_mul(self, a: Self::u32s, b: Self::u32s) -> (Self::u32s, Self::u32s) {
+    fn widening_mul_u32s(self, a: Self::u32s, b: Self::u32s) -> (Self::u32s, Self::u32s) {
         #[inline(always)]
         fn widen_mul(a: u32, b: u32) -> (u32, u32) {
             let a = a as u64;
@@ -448,122 +448,122 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn u64s_splat(self, value: u64) -> Self::u64s {
+    fn splat_u64s(self, value: u64) -> Self::u64s {
         self.splat_u64x2(value)
     }
 
     #[inline(always)]
-    fn u64s_add(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+    fn add_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
         self.wrapping_add_u64x2(a, b)
     }
 
     #[inline(always)]
-    fn u64s_sub(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+    fn sub_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
         self.wrapping_sub_u64x2(a, b)
     }
 
     #[inline(always)]
-    fn f32s_splat(self, value: f32) -> Self::f32s {
+    fn splat_f32s(self, value: f32) -> Self::f32s {
         self.splat_f32x4(value)
     }
 
     #[inline(always)]
-    fn f32s_add(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+    fn add_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
         self.add_f32x4(a, b)
     }
 
     #[inline(always)]
-    fn f32s_sub(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+    fn sub_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
         self.sub_f32x4(a, b)
     }
 
     #[inline(always)]
-    fn f32s_mul(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+    fn mul_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
         self.mul_f32x4(a, b)
     }
 
     #[inline(always)]
-    fn f32s_div(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+    fn div_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
         self.div_f32x4(a, b)
     }
 
     #[inline(always)]
-    fn f32s_mul_add(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+    fn mul_add_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
         self.mul_add_f32x4(a, b, c)
     }
 
     #[inline(always)]
-    fn f32s_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
+    fn equal_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
         self.cmp_eq_f32x4(a, b)
     }
 
     #[inline(always)]
-    fn f32s_less_than(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
+    fn less_than_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
         self.cmp_lt_f32x4(a, b)
     }
 
     #[inline(always)]
-    fn f32s_less_than_or_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
+    fn less_than_or_equal_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
         self.cmp_le_f32x4(a, b)
     }
 
     #[inline(always)]
-    fn f32s_min(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+    fn min_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
         self.min_f32x4(a, b)
     }
 
     #[inline(always)]
-    fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+    fn max_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
         self.max_f32x4(a, b)
     }
 
     #[inline(always)]
-    fn f32s_reduce_sum(self, a: Self::f32s) -> f32 {
+    fn reduce_sum_f32s(self, a: Self::f32s) -> f32 {
         self.reduce_sum_f32x4(a)
     }
 
     #[inline(always)]
-    fn f32s_reduce_product(self, a: Self::f32s) -> f32 {
+    fn reduce_product_f32s(self, a: Self::f32s) -> f32 {
         self.reduce_product_f32x4(a)
     }
 
     #[inline(always)]
-    fn f32s_reduce_min(self, a: Self::f32s) -> f32 {
+    fn reduce_min_f32s(self, a: Self::f32s) -> f32 {
         self.reduce_min_f32x4(a)
     }
 
     #[inline(always)]
-    fn f32s_reduce_max(self, a: Self::f32s) -> f32 {
+    fn reduce_max_f32s(self, a: Self::f32s) -> f32 {
         self.reduce_max_f32x4(a)
     }
 
     #[inline(always)]
-    fn c32s_splat(self, value: c32) -> Self::c32s {
+    fn splat_c32s(self, value: c32) -> Self::c32s {
         cast([value; 2])
     }
 
     #[inline(always)]
-    fn c32s_conj(self, a: Self::c32s) -> Self::c32s {
-        self.f32s_xor(a, self.c32s_splat(c32 { re: 0.0, im: -0.0 }))
+    fn conj_c32s(self, a: Self::c32s) -> Self::c32s {
+        self.xor_f32s(a, self.splat_c32s(c32 { re: 0.0, im: -0.0 }))
     }
 
     #[inline(always)]
-    fn c32s_neg(self, a: Self::c32s) -> Self::c32s {
-        self.f32s_xor(a, self.f32s_splat(-0.0))
+    fn neg_c32s(self, a: Self::c32s) -> Self::c32s {
+        self.xor_f32s(a, self.splat_f32s(-0.0))
     }
 
     #[inline(always)]
-    fn c32s_add(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+    fn add_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
         self.add_f32x4(a, b)
     }
 
     #[inline(always)]
-    fn c32s_sub(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+    fn sub_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
         self.sub_f32x4(a, b)
     }
 
     #[inline(always)]
-    fn c32s_mul(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+    fn mul_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
         unsafe {
             let ab = transmute(a);
             let xy = transmute(b);
@@ -582,7 +582,7 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn c32s_conj_mul(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+    fn conj_mul_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
         unsafe {
             let ab = transmute(a);
             let xy = transmute(b);
@@ -601,7 +601,7 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn c32s_mul_add(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+    fn mul_add_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
         unsafe {
             let ab = transmute(a);
             let xy = transmute(b);
@@ -620,7 +620,7 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn c32s_conj_mul_add(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+    fn conj_mul_add_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
         unsafe {
             let ab = transmute(a);
             let xy = transmute(b);
@@ -639,16 +639,16 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn c32s_abs2(self, a: Self::c32s) -> Self::c32s {
+    fn abs2_c32s(self, a: Self::c32s) -> Self::c32s {
         unsafe {
-            let sqr = self.f32s_mul(a, a);
+            let sqr = self.mul_f32s(a, a);
             let sqr_rev = transmute(vrev64q_f32(transmute(sqr)));
-            self.f32s_add(sqr, sqr_rev)
+            self.add_f32s(sqr, sqr_rev)
         }
     }
 
     #[inline(always)]
-    fn c32s_reduce_sum(self, a: Self::c32s) -> c32 {
+    fn reduce_sum_c32s(self, a: Self::c32s) -> c32 {
         unsafe {
             // a0 a1 a2 a3
             let a = transmute(a);
@@ -656,112 +656,112 @@ impl Simd for Neon {
             let hi = vcombine_u64(vget_high_u64(a), vget_low_u64(a));
 
             // a0+a2 a1+a3 _ _
-            cast_lossy(self.f32s_add(transmute(a), transmute(hi)))
+            cast_lossy(self.add_f32s(transmute(a), transmute(hi)))
         }
     }
 
     #[inline(always)]
-    fn f64s_splat(self, value: f64) -> Self::f64s {
+    fn splat_f64s(self, value: f64) -> Self::f64s {
         self.splat_f64x2(value)
     }
 
     #[inline(always)]
-    fn f64s_add(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+    fn add_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
         self.add_f64x2(a, b)
     }
 
     #[inline(always)]
-    fn f64s_sub(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+    fn sub_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
         self.sub_f64x2(a, b)
     }
 
     #[inline(always)]
-    fn f64s_mul(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+    fn mul_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
         self.mul_f64x2(a, b)
     }
 
     #[inline(always)]
-    fn f64s_div(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+    fn div_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
         self.div_f64x2(a, b)
     }
 
     #[inline(always)]
-    fn f64s_mul_add(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+    fn mul_add_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
         self.mul_add_f64x2(a, b, c)
     }
 
     #[inline(always)]
-    fn f64s_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
+    fn equal_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
         self.cmp_eq_f64x2(a, b)
     }
 
     #[inline(always)]
-    fn f64s_less_than(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
+    fn less_than_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
         self.cmp_lt_f64x2(a, b)
     }
 
     #[inline(always)]
-    fn f64s_less_than_or_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
+    fn less_than_or_equal_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
         self.cmp_le_f64x2(a, b)
     }
 
     #[inline(always)]
-    fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+    fn min_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
         self.min_f64x2(a, b)
     }
 
     #[inline(always)]
-    fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+    fn max_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
         self.max_f64x2(a, b)
     }
 
     #[inline(always)]
-    fn f64s_reduce_sum(self, a: Self::f64s) -> f64 {
+    fn reduce_sum_f64s(self, a: Self::f64s) -> f64 {
         self.reduce_sum_f64x2(a)
     }
 
     #[inline(always)]
-    fn f64s_reduce_product(self, a: Self::f64s) -> f64 {
+    fn reduce_product_f64s(self, a: Self::f64s) -> f64 {
         self.reduce_product_f64x2(a)
     }
 
     #[inline(always)]
-    fn f64s_reduce_min(self, a: Self::f64s) -> f64 {
+    fn reduce_min_f64s(self, a: Self::f64s) -> f64 {
         self.reduce_min_f64x2(a)
     }
 
     #[inline(always)]
-    fn f64s_reduce_max(self, a: Self::f64s) -> f64 {
+    fn reduce_max_f64s(self, a: Self::f64s) -> f64 {
         self.reduce_max_f64x2(a)
     }
 
     #[inline(always)]
-    fn c64s_splat(self, value: c64) -> Self::c64s {
+    fn splat_c64s(self, value: c64) -> Self::c64s {
         cast(value)
     }
 
     #[inline(always)]
-    fn c64s_conj(self, a: Self::c64s) -> Self::c64s {
-        self.f64s_xor(a, self.c64s_splat(c64 { re: 0.0, im: -0.0 }))
+    fn conj_c64s(self, a: Self::c64s) -> Self::c64s {
+        self.xor_f64s(a, self.splat_c64s(c64 { re: 0.0, im: -0.0 }))
     }
 
     #[inline(always)]
-    fn c64s_neg(self, a: Self::c64s) -> Self::c64s {
-        self.f64s_xor(a, self.f64s_splat(-0.0))
+    fn neg_c64s(self, a: Self::c64s) -> Self::c64s {
+        self.xor_f64s(a, self.splat_f64s(-0.0))
     }
 
     #[inline(always)]
-    fn c64s_add(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
-        self.f64s_add(a, b)
+    fn add_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+        self.add_f64s(a, b)
     }
 
     #[inline(always)]
-    fn c64s_sub(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
-        self.f64s_sub(a, b)
+    fn sub_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+        self.sub_f64s(a, b)
     }
 
     #[inline(always)]
-    fn c64s_mul(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+    fn mul_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
         unsafe {
             let ab = transmute(a);
             let xy = transmute(b);
@@ -780,7 +780,7 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn c64s_conj_mul(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+    fn conj_mul_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
         unsafe {
             let ab = transmute(a);
             let xy = transmute(b);
@@ -799,7 +799,7 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn c64s_mul_add(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+    fn mul_add_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
         unsafe {
             let ab = transmute(a);
             let xy = transmute(b);
@@ -818,7 +818,7 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn c64s_conj_mul_add(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+    fn conj_mul_add_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
         unsafe {
             let ab = transmute(a);
             let xy = transmute(b);
@@ -837,19 +837,31 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn c64s_abs2(self, a: Self::c64s) -> Self::c64s {
+    fn abs2_c64s(self, a: Self::c64s) -> Self::c64s {
         unsafe {
-            let sqr = self.f64s_mul(a, a);
+            let sqr = self.mul_f64s(a, a);
             let sqr_rev = transmute(vcombine_u64(
                 vget_high_u64(transmute(sqr)),
                 vget_low_u64(transmute(sqr)),
             ));
-            self.f64s_add(sqr, sqr_rev)
+            self.add_f64s(sqr, sqr_rev)
         }
     }
 
     #[inline(always)]
-    fn c64s_reduce_sum(self, a: Self::c64s) -> c64 {
+    fn abs_max_c64s(self, a: Self::c64s) -> Self::c64s {
+        unsafe {
+            let sqr = self.max_f64s(a, a);
+            let sqr_rev = transmute(vcombine_u64(
+                vget_high_u64(transmute(sqr)),
+                vget_low_u64(transmute(sqr)),
+            ));
+            self.max_f64s(sqr, sqr_rev)
+        }
+    }
+
+    #[inline(always)]
+    fn reduce_sum_c64s(self, a: Self::c64s) -> c64 {
         cast(a)
     }
 
@@ -857,32 +869,27 @@ impl Simd for Neon {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn u32s_mask_load_ptr(
-        self,
-        mask: Self::m32s,
-        ptr: *const u32,
-        or: Self::u32s,
-    ) -> Self::u32s {
+    unsafe fn mask_load_ptr_u32s(self, mask: Self::m32s, ptr: *const u32) -> Self::u32s {
         u32x4(
             if mask.0.is_set() {
                 *ptr.wrapping_add(0)
             } else {
-                or.0
+                core::mem::zeroed()
             },
             if mask.1.is_set() {
                 *ptr.wrapping_add(1)
             } else {
-                or.1
+                core::mem::zeroed()
             },
             if mask.2.is_set() {
                 *ptr.wrapping_add(2)
             } else {
-                or.2
+                core::mem::zeroed()
             },
             if mask.3.is_set() {
                 *ptr.wrapping_add(3)
             } else {
-                or.3
+                core::mem::zeroed()
             },
         )
     }
@@ -891,33 +898,28 @@ impl Simd for Neon {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn c32s_mask_load_ptr(
-        self,
-        mask: Self::m32s,
-        ptr: *const c32,
-        or: Self::c32s,
-    ) -> Self::c32s {
+    unsafe fn mask_load_ptr_c32s(self, mask: Self::m32s, ptr: *const c32) -> Self::c32s {
         let ptr = ptr as *const f32;
         f32x4(
             if mask.0.is_set() {
                 *ptr.wrapping_add(0)
             } else {
-                or.0
+                core::mem::zeroed()
             },
             if mask.1.is_set() {
                 *ptr.wrapping_add(1)
             } else {
-                or.1
+                core::mem::zeroed()
             },
             if mask.2.is_set() {
                 *ptr.wrapping_add(2)
             } else {
-                or.2
+                core::mem::zeroed()
             },
             if mask.3.is_set() {
                 *ptr.wrapping_add(3)
             } else {
-                or.3
+                core::mem::zeroed()
             },
         )
     }
@@ -926,7 +928,7 @@ impl Simd for Neon {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn u32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut u32, values: Self::u32s) {
+    unsafe fn mask_store_ptr_u32s(self, mask: Self::m32s, ptr: *mut u32, values: Self::u32s) {
         if mask.0.is_set() {
             *ptr.wrapping_add(0) = values.0
         }
@@ -945,7 +947,7 @@ impl Simd for Neon {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn c32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut c32, values: Self::c32s) {
+    unsafe fn mask_store_ptr_c32s(self, mask: Self::m32s, ptr: *mut c32, values: Self::c32s) {
         let ptr = ptr as *mut f32;
         if mask.0.is_set() {
             *ptr.wrapping_add(0) = values.0
@@ -965,22 +967,17 @@ impl Simd for Neon {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn u64s_mask_load_ptr(
-        self,
-        mask: Self::m64s,
-        ptr: *const u64,
-        or: Self::u64s,
-    ) -> Self::u64s {
+    unsafe fn mask_load_ptr_u64s(self, mask: Self::m64s, ptr: *const u64) -> Self::u64s {
         u64x2(
             if mask.0.is_set() {
                 *ptr.wrapping_add(0)
             } else {
-                or.0
+                core::mem::zeroed()
             },
             if mask.1.is_set() {
                 *ptr.wrapping_add(1)
             } else {
-                or.1
+                core::mem::zeroed()
             },
         )
     }
@@ -989,23 +986,18 @@ impl Simd for Neon {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn c64s_mask_load_ptr(
-        self,
-        mask: Self::m64s,
-        ptr: *const c64,
-        or: Self::c64s,
-    ) -> Self::c64s {
+    unsafe fn mask_load_ptr_c64s(self, mask: Self::m64s, ptr: *const c64) -> Self::c64s {
         let ptr = ptr as *const f64;
         f64x2(
             if mask.0.is_set() {
                 *ptr.wrapping_add(0)
             } else {
-                or.0
+                core::mem::zeroed()
             },
             if mask.1.is_set() {
                 *ptr.wrapping_add(1)
             } else {
-                or.1
+                core::mem::zeroed()
             },
         )
     }
@@ -1014,7 +1006,7 @@ impl Simd for Neon {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn u64s_mask_store_ptr(self, mask: Self::m64s, ptr: *mut u64, values: Self::u64s) {
+    unsafe fn mask_store_ptr_u64s(self, mask: Self::m64s, ptr: *mut u64, values: Self::u64s) {
         if mask.0.is_set() {
             *ptr.wrapping_add(0) = values.0
         }
@@ -1027,7 +1019,7 @@ impl Simd for Neon {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn c64s_mask_store_ptr(self, mask: Self::m64s, ptr: *mut c64, values: Self::c64s) {
+    unsafe fn mask_store_ptr_c64s(self, mask: Self::m64s, ptr: *mut c64, values: Self::c64s) {
         let ptr = ptr as *mut f64;
         if mask.0.is_set() {
             *ptr.wrapping_add(0) = values.0
@@ -1038,27 +1030,27 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn u64s_less_than(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
+    fn less_than_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
         self.cmp_lt_u64x2(a, b)
     }
 
     #[inline(always)]
-    fn u64s_greater_than(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
+    fn greater_than_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
         self.cmp_gt_u64x2(a, b)
     }
 
     #[inline(always)]
-    fn u64s_less_than_or_equal(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
+    fn less_than_or_equal_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
         self.cmp_le_u64x2(a, b)
     }
 
     #[inline(always)]
-    fn u64s_greater_than_or_equal(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
+    fn greater_than_or_equal_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
         self.cmp_ge_u64x2(a, b)
     }
 
     #[inline(always)]
-    fn u32s_rotate_right(self, a: Self::u32s, amount: usize) -> Self::u32s {
+    fn rotate_right_u32s(self, a: Self::u32s, amount: usize) -> Self::u32s {
         unsafe {
             transmute(vqtbl1q_u8(
                 transmute(a),
@@ -1068,7 +1060,7 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn c32s_rotate_right(self, a: Self::c32s, amount: usize) -> Self::c32s {
+    fn rotate_right_c32s(self, a: Self::c32s, amount: usize) -> Self::c32s {
         unsafe {
             transmute(vqtbl1q_u8(
                 transmute(a),
@@ -1078,7 +1070,7 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn u64s_rotate_right(self, a: Self::u64s, amount: usize) -> Self::u64s {
+    fn rotate_right_u64s(self, a: Self::u64s, amount: usize) -> Self::u64s {
         unsafe {
             transmute(vqtbl1q_u8(
                 transmute(a),
@@ -1088,16 +1080,16 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn c64s_rotate_right(self, a: Self::c64s, _amount: usize) -> Self::c64s {
+    fn rotate_right_c64s(self, a: Self::c64s, _amount: usize) -> Self::c64s {
         a
     }
 
     #[inline(always)]
-    fn c32s_swap_re_im(self, a: Self::c32s) -> Self::c32s {
+    fn swap_re_im_c32s(self, a: Self::c32s) -> Self::c32s {
         unsafe { transmute(vrev64q_f32(transmute(a))) }
     }
     #[inline(always)]
-    fn c64s_swap_re_im(self, a: Self::c64s) -> Self::c64s {
+    fn swap_re_im_c64s(self, a: Self::c64s) -> Self::c64s {
         unsafe {
             transmute(vcombine_u64(
                 vget_high_u64(transmute(a)),
@@ -1138,7 +1130,7 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
-    fn u32s_partial_load(self, slice: &[u32]) -> Self::u32s {
+    fn partial_load_u32s(self, slice: &[u32]) -> Self::u32s {
         match slice.len() {
             0 => u32x4(0, 0, 0, 0),
             1 => u32x4(slice[0], 0, 0, 0),
@@ -1149,7 +1141,7 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
-    fn u32s_partial_store(self, slice: &mut [u32], values: Self::u32s) {
+    fn partial_store_u32s(self, slice: &mut [u32], values: Self::u32s) {
         match slice.len() {
             0 => {}
             1 => {
@@ -1174,7 +1166,7 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
-    fn u64s_partial_load(self, slice: &[u64]) -> Self::u64s {
+    fn partial_load_u64s(self, slice: &[u64]) -> Self::u64s {
         match slice.len() {
             0 => u64x2(0, 0),
             1 => u64x2(slice[0], 0),
@@ -1183,7 +1175,7 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
-    fn u64s_partial_store(self, slice: &mut [u64], values: Self::u64s) {
+    fn partial_store_u64s(self, slice: &mut [u64], values: Self::u64s) {
         match slice.len() {
             0 => {}
             1 => {
@@ -1197,7 +1189,7 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
-    fn u32s_partial_load_last(self, slice: &[u32]) -> Self::u32s {
+    fn partial_load_last_u32s(self, slice: &[u32]) -> Self::u32s {
         match slice.len() {
             0 => u32x4(0, 0, 0, 0),
             1 => u32x4(0, 0, 0, slice[0]),
@@ -1211,7 +1203,7 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
-    fn u32s_partial_store_last(self, slice: &mut [u32], values: Self::u32s) {
+    fn partial_store_last_u32s(self, slice: &mut [u32], values: Self::u32s) {
         match slice.len() {
             0 => {}
             1 => {
@@ -1238,7 +1230,7 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
-    fn u64s_partial_load_last(self, slice: &[u64]) -> Self::u64s {
+    fn partial_load_last_u64s(self, slice: &[u64]) -> Self::u64s {
         match slice.len() {
             0 => u64x2(0, 0),
             1 => u64x2(0, slice[0]),
@@ -1250,7 +1242,7 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
-    fn u64s_partial_store_last(self, slice: &mut [u64], values: Self::u64s) {
+    fn partial_store_last_u64s(self, slice: &mut [u64], values: Self::u64s) {
         match slice.len() {
             0 => {}
             1 => {
@@ -1266,87 +1258,87 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
-    fn m32s_not(self, a: Self::m32s) -> Self::m32s {
+    fn not_m32s(self, a: Self::m32s) -> Self::m32s {
         self.not_m32x4(a)
     }
 
     #[inline(always)]
-    fn m32s_and(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
+    fn and_m32s(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
         self.and_m32x4(a, b)
     }
 
     #[inline(always)]
-    fn m32s_or(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
+    fn or_m32s(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
         self.or_m32x4(a, b)
     }
 
     #[inline(always)]
-    fn m32s_xor(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
+    fn xor_m32s(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
         self.xor_m32x4(a, b)
     }
 
     #[inline(always)]
-    fn m64s_not(self, a: Self::m64s) -> Self::m64s {
+    fn not_m64s(self, a: Self::m64s) -> Self::m64s {
         self.not_m64x2(a)
     }
 
     #[inline(always)]
-    fn m64s_and(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
+    fn and_m64s(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
         self.and_m64x2(a, b)
     }
 
     #[inline(always)]
-    fn m64s_or(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
+    fn or_m64s(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
         self.or_m64x2(a, b)
     }
 
     #[inline(always)]
-    fn m64s_xor(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
+    fn xor_m64s(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
         self.xor_m64x2(a, b)
     }
 
     #[inline(always)]
-    fn u32s_not(self, a: Self::u32s) -> Self::u32s {
+    fn not_u32s(self, a: Self::u32s) -> Self::u32s {
         self.not_u32x4(a)
     }
 
     #[inline(always)]
-    fn u32s_and(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+    fn and_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
         self.and_u32x4(a, b)
     }
 
     #[inline(always)]
-    fn u32s_or(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+    fn or_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
         self.or_u32x4(a, b)
     }
 
     #[inline(always)]
-    fn u32s_xor(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+    fn xor_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
         self.xor_u32x4(a, b)
     }
 
     #[inline(always)]
-    fn u64s_not(self, a: Self::u64s) -> Self::u64s {
+    fn not_u64s(self, a: Self::u64s) -> Self::u64s {
         self.not_u64x2(a)
     }
 
     #[inline(always)]
-    fn u64s_and(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+    fn and_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
         self.and_u64x2(a, b)
     }
 
     #[inline(always)]
-    fn u64s_or(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+    fn or_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
         self.or_u64x2(a, b)
     }
 
     #[inline(always)]
-    fn u64s_xor(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+    fn xor_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
         self.xor_u64x2(a, b)
     }
 
     #[inline(always)]
-    fn m32s_select_u32s(
+    fn select_u32s_m32s(
         self,
         mask: Self::m32s,
         if_true: Self::u32s,
@@ -1356,7 +1348,7 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
-    fn m64s_select_u64s(
+    fn select_u64s_m64s(
         self,
         mask: Self::m64s,
         if_true: Self::u64s,
@@ -1366,47 +1358,47 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
-    fn u32s_splat(self, value: u32) -> Self::u32s {
+    fn splat_u32s(self, value: u32) -> Self::u32s {
         self.splat_u32x4(value)
     }
 
     #[inline(always)]
-    fn u32s_add(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+    fn add_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
         self.wrapping_add_u32x4(a, b)
     }
 
     #[inline(always)]
-    fn u32s_sub(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
+    fn sub_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
         self.wrapping_sub_u32x4(a, b)
     }
 
     #[inline(always)]
-    fn u32s_less_than(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+    fn less_than_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
         self.cmp_lt_u32x4(a, b)
     }
 
     #[inline(always)]
-    fn u32s_greater_than(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+    fn greater_than_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
         self.cmp_gt_u32x4(a, b)
     }
 
     #[inline(always)]
-    fn u32s_less_than_or_equal(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+    fn less_than_or_equal_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
         self.cmp_le_u32x4(a, b)
     }
 
     #[inline(always)]
-    fn u32s_greater_than_or_equal(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
+    fn greater_than_or_equal_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
         self.cmp_ge_u32x4(a, b)
     }
 
     #[inline(always)]
-    fn u32s_wrapping_dyn_shl(self, a: Self::u32s, amount: Self::u32s) -> Self::u32s {
+    fn wrapping_dyn_shl_u32s(self, a: Self::u32s, amount: Self::u32s) -> Self::u32s {
         self.shl_dyn_u32x4(a, self.and_i32x4(cast(amount), self.splat_i32x4(32 - 1)))
     }
 
     #[inline(always)]
-    fn u32s_wrapping_dyn_shr(self, a: Self::u32s, amount: Self::u32s) -> Self::u32s {
+    fn wrapping_dyn_shr_u32s(self, a: Self::u32s, amount: Self::u32s) -> Self::u32s {
         u32x4(
             a.0 >> amount.0,
             a.1 >> amount.1,
@@ -1416,7 +1408,7 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
-    fn u32s_widening_mul(self, a: Self::u32s, b: Self::u32s) -> (Self::u32s, Self::u32s) {
+    fn widening_mul_u32s(self, a: Self::u32s, b: Self::u32s) -> (Self::u32s, Self::u32s) {
         #[inline(always)]
         fn widen_mul(a: u32, b: u32) -> (u32, u32) {
             let a = a as u64;
@@ -1435,132 +1427,132 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
-    fn u64s_splat(self, value: u64) -> Self::u64s {
+    fn splat_u64s(self, value: u64) -> Self::u64s {
         self.splat_u64x2(value)
     }
 
     #[inline(always)]
-    fn u64s_add(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+    fn add_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
         self.wrapping_add_u64x2(a, b)
     }
 
     #[inline(always)]
-    fn u64s_sub(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
+    fn sub_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
         self.wrapping_sub_u64x2(a, b)
     }
 
     #[inline(always)]
-    fn f32s_splat(self, value: f32) -> Self::f32s {
+    fn splat_f32s(self, value: f32) -> Self::f32s {
         self.splat_f32x4(value)
     }
 
     #[inline(always)]
-    fn f32s_add(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+    fn add_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
         self.add_f32x4(a, b)
     }
 
     #[inline(always)]
-    fn f32s_sub(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+    fn sub_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
         self.sub_f32x4(a, b)
     }
 
     #[inline(always)]
-    fn f32s_mul(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+    fn mul_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
         self.mul_f32x4(a, b)
     }
 
     #[inline(always)]
-    fn f32s_div(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+    fn div_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
         self.div_f32x4(a, b)
     }
 
     #[inline(always)]
-    fn f32s_mul_add(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+    fn mul_add_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
         self.mul_add_f32x4(a, b, c)
     }
 
     #[inline(always)]
-    fn f32s_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
+    fn equal_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
         self.cmp_eq_f32x4(a, b)
     }
 
     #[inline(always)]
-    fn f32s_less_than(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
+    fn less_than_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
         self.cmp_lt_f32x4(a, b)
     }
 
     #[inline(always)]
-    fn f32s_less_than_or_equal(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
+    fn less_than_or_equal_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
         self.cmp_le_f32x4(a, b)
     }
 
     #[inline(always)]
-    fn f32s_min(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+    fn min_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
         self.min_f32x4(a, b)
     }
 
     #[inline(always)]
-    fn f32s_max(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
+    fn max_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
         self.max_f32x4(a, b)
     }
 
     #[inline(always)]
-    fn f32s_reduce_sum(self, a: Self::f32s) -> f32 {
+    fn reduce_sum_f32s(self, a: Self::f32s) -> f32 {
         self.reduce_sum_f32x4(a)
     }
 
     #[inline(always)]
-    fn f32s_reduce_product(self, a: Self::f32s) -> f32 {
+    fn reduce_product_f32s(self, a: Self::f32s) -> f32 {
         self.reduce_product_f32x4(a)
     }
 
     #[inline(always)]
-    fn f32s_reduce_min(self, a: Self::f32s) -> f32 {
+    fn reduce_min_f32s(self, a: Self::f32s) -> f32 {
         self.reduce_min_f32x4(a)
     }
 
     #[inline(always)]
-    fn f32s_reduce_max(self, a: Self::f32s) -> f32 {
+    fn reduce_max_f32s(self, a: Self::f32s) -> f32 {
         self.reduce_max_f32x4(a)
     }
 
     #[inline(always)]
-    fn c32s_splat(self, value: c32) -> Self::c32s {
+    fn splat_c32s(self, value: c32) -> Self::c32s {
         cast([value; 2])
     }
 
     #[inline(always)]
-    fn c32s_conj(self, a: Self::c32s) -> Self::c32s {
-        self.f32s_xor(a, self.c32s_splat(c32 { re: 0.0, im: -0.0 }))
+    fn conj_c32s(self, a: Self::c32s) -> Self::c32s {
+        self.xor_f32s(a, self.splat_c32s(c32 { re: 0.0, im: -0.0 }))
     }
 
     #[inline(always)]
-    fn c32s_neg(self, a: Self::c32s) -> Self::c32s {
-        self.f32s_xor(a, self.f32s_splat(-0.0))
+    fn neg_c32s(self, a: Self::c32s) -> Self::c32s {
+        self.xor_f32s(a, self.splat_f32s(-0.0))
     }
 
     #[inline(always)]
-    fn c32s_add(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+    fn add_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
         self.add_f32x4(a, b)
     }
 
     #[inline(always)]
-    fn c32s_sub(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+    fn sub_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
         self.sub_f32x4(a, b)
     }
 
     #[inline(always)]
-    fn c32s_mul(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
-        self.c32s_mul_add(a, b, self.f32s_splat(0.0))
+    fn mul_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+        self.mul_add_c32s(a, b, self.splat_f32s(0.0))
     }
 
     #[inline(always)]
-    fn c32s_conj_mul(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
-        self.c32s_conj_mul_add(a, b, self.f32s_splat(0.0))
+    fn conj_mul_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+        self.conj_mul_add_c32s(a, b, self.splat_f32s(0.0))
     }
 
     #[inline(always)]
-    fn c32s_mul_add(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+    fn mul_add_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
         let a = cast(a);
         let b = cast(b);
         let c = cast(c);
@@ -1568,7 +1560,7 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
-    fn c32s_conj_mul_add(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+    fn conj_mul_add_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
         let a = cast(a);
         let b = cast(b);
         let c = cast(c);
@@ -1576,16 +1568,25 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
-    fn c32s_abs2(self, a: Self::c32s) -> Self::c32s {
+    fn abs2_c32s(self, a: Self::c32s) -> Self::c32s {
         unsafe {
-            let sqr = self.f32s_mul(a, a);
+            let sqr = self.mul_f32s(a, a);
             let sqr_rev = transmute(vrev64q_f32(transmute(sqr)));
-            self.f32s_add(sqr, sqr_rev)
+            self.add_f32s(sqr, sqr_rev)
         }
     }
 
     #[inline(always)]
-    fn c32s_reduce_sum(self, a: Self::c32s) -> c32 {
+    fn abs_max_c32s(self, a: Self::c32s) -> Self::c32s {
+        unsafe {
+            let max = self.max_f32s(a, a);
+            let max_rev = transmute(vrev64q_f32(transmute(max)));
+            self.max_f32s(max, max_rev)
+        }
+    }
+
+    #[inline(always)]
+    fn reduce_sum_c32s(self, a: Self::c32s) -> c32 {
         unsafe {
             // a0 a1 a2 a3
             let a = transmute(a);
@@ -1593,122 +1594,122 @@ impl Simd for NeonFcma {
             let hi = vcombine_u64(vget_high_u64(a), vget_low_u64(a));
 
             // a0+a2 a1+a3 _ _
-            cast_lossy(self.f32s_add(transmute(a), transmute(hi)))
+            cast_lossy(self.add_f32s(transmute(a), transmute(hi)))
         }
     }
 
     #[inline(always)]
-    fn f64s_splat(self, value: f64) -> Self::f64s {
+    fn splat_f64s(self, value: f64) -> Self::f64s {
         self.splat_f64x2(value)
     }
 
     #[inline(always)]
-    fn f64s_add(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+    fn add_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
         self.add_f64x2(a, b)
     }
 
     #[inline(always)]
-    fn f64s_sub(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+    fn sub_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
         self.sub_f64x2(a, b)
     }
 
     #[inline(always)]
-    fn f64s_mul(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+    fn mul_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
         self.mul_f64x2(a, b)
     }
 
     #[inline(always)]
-    fn f64s_div(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+    fn div_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
         self.div_f64x2(a, b)
     }
 
     #[inline(always)]
-    fn f64s_mul_add(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+    fn mul_add_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
         self.mul_add_f64x2(a, b, c)
     }
 
     #[inline(always)]
-    fn f64s_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
+    fn equal_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
         self.cmp_eq_f64x2(a, b)
     }
 
     #[inline(always)]
-    fn f64s_less_than(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
+    fn less_than_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
         self.cmp_lt_f64x2(a, b)
     }
 
     #[inline(always)]
-    fn f64s_less_than_or_equal(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
+    fn less_than_or_equal_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
         self.cmp_le_f64x2(a, b)
     }
 
     #[inline(always)]
-    fn f64s_min(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+    fn min_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
         self.min_f64x2(a, b)
     }
 
     #[inline(always)]
-    fn f64s_max(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
+    fn max_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
         self.max_f64x2(a, b)
     }
 
     #[inline(always)]
-    fn f64s_reduce_sum(self, a: Self::f64s) -> f64 {
+    fn reduce_sum_f64s(self, a: Self::f64s) -> f64 {
         self.reduce_sum_f64x2(a)
     }
 
     #[inline(always)]
-    fn f64s_reduce_product(self, a: Self::f64s) -> f64 {
+    fn reduce_product_f64s(self, a: Self::f64s) -> f64 {
         self.reduce_product_f64x2(a)
     }
 
     #[inline(always)]
-    fn f64s_reduce_min(self, a: Self::f64s) -> f64 {
+    fn reduce_min_f64s(self, a: Self::f64s) -> f64 {
         self.reduce_min_f64x2(a)
     }
 
     #[inline(always)]
-    fn f64s_reduce_max(self, a: Self::f64s) -> f64 {
+    fn reduce_max_f64s(self, a: Self::f64s) -> f64 {
         self.reduce_max_f64x2(a)
     }
 
     #[inline(always)]
-    fn c64s_splat(self, value: c64) -> Self::c64s {
+    fn splat_c64s(self, value: c64) -> Self::c64s {
         cast(value)
     }
 
     #[inline(always)]
-    fn c64s_conj(self, a: Self::c64s) -> Self::c64s {
-        self.f64s_xor(a, self.c64s_splat(c64 { re: 0.0, im: -0.0 }))
+    fn conj_c64s(self, a: Self::c64s) -> Self::c64s {
+        self.xor_f64s(a, self.splat_c64s(c64 { re: 0.0, im: -0.0 }))
     }
 
     #[inline(always)]
-    fn c64s_neg(self, a: Self::c64s) -> Self::c64s {
-        self.f64s_xor(a, self.f64s_splat(-0.0))
+    fn neg_c64s(self, a: Self::c64s) -> Self::c64s {
+        self.xor_f64s(a, self.splat_f64s(-0.0))
     }
 
     #[inline(always)]
-    fn c64s_add(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
-        self.f64s_add(a, b)
+    fn add_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+        self.add_f64s(a, b)
     }
 
     #[inline(always)]
-    fn c64s_sub(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
-        self.f64s_sub(a, b)
+    fn sub_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+        self.sub_f64s(a, b)
     }
 
     #[inline(always)]
-    fn c64s_mul(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
-        self.c64s_mul_add(a, b, self.f64s_splat(0.0))
+    fn mul_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+        self.mul_add_c64s(a, b, self.splat_f64s(0.0))
     }
 
     #[inline(always)]
-    fn c64s_conj_mul(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
-        self.c64s_conj_mul_add(a, b, self.f64s_splat(0.0))
+    fn conj_mul_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+        self.conj_mul_add_c64s(a, b, self.splat_f64s(0.0))
     }
 
     #[inline(always)]
-    fn c64s_mul_add(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+    fn mul_add_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
         let a = cast(a);
         let b = cast(b);
         let c = cast(c);
@@ -1716,7 +1717,7 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
-    fn c64s_conj_mul_add(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+    fn conj_mul_add_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
         let a = cast(a);
         let b = cast(b);
         let c = cast(c);
@@ -1724,19 +1725,19 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
-    fn c64s_abs2(self, a: Self::c64s) -> Self::c64s {
+    fn abs2_c64s(self, a: Self::c64s) -> Self::c64s {
         unsafe {
-            let sqr = self.f64s_mul(a, a);
+            let sqr = self.mul_f64s(a, a);
             let sqr_rev = transmute(vcombine_u64(
                 vget_high_u64(transmute(sqr)),
                 vget_low_u64(transmute(sqr)),
             ));
-            self.f64s_add(sqr, sqr_rev)
+            self.add_f64s(sqr, sqr_rev)
         }
     }
 
     #[inline(always)]
-    fn c64s_reduce_sum(self, a: Self::c64s) -> c64 {
+    fn reduce_sum_c64s(self, a: Self::c64s) -> c64 {
         cast(a)
     }
 
@@ -1744,32 +1745,27 @@ impl Simd for NeonFcma {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn u32s_mask_load_ptr(
-        self,
-        mask: Self::m32s,
-        ptr: *const u32,
-        or: Self::u32s,
-    ) -> Self::u32s {
+    unsafe fn mask_load_ptr_u32s(self, mask: Self::m32s, ptr: *const u32) -> Self::u32s {
         u32x4(
             if mask.0.is_set() {
                 *ptr.wrapping_add(0)
             } else {
-                or.0
+                core::mem::zeroed()
             },
             if mask.1.is_set() {
                 *ptr.wrapping_add(1)
             } else {
-                or.1
+                core::mem::zeroed()
             },
             if mask.2.is_set() {
                 *ptr.wrapping_add(2)
             } else {
-                or.2
+                core::mem::zeroed()
             },
             if mask.3.is_set() {
                 *ptr.wrapping_add(3)
             } else {
-                or.3
+                core::mem::zeroed()
             },
         )
     }
@@ -1778,33 +1774,28 @@ impl Simd for NeonFcma {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn c32s_mask_load_ptr(
-        self,
-        mask: Self::m32s,
-        ptr: *const c32,
-        or: Self::c32s,
-    ) -> Self::c32s {
+    unsafe fn mask_load_ptr_c32s(self, mask: Self::m32s, ptr: *const c32) -> Self::c32s {
         let ptr = ptr as *const f32;
         f32x4(
             if mask.0.is_set() {
                 *ptr.wrapping_add(0)
             } else {
-                or.0
+                core::mem::zeroed()
             },
             if mask.1.is_set() {
                 *ptr.wrapping_add(1)
             } else {
-                or.1
+                core::mem::zeroed()
             },
             if mask.2.is_set() {
                 *ptr.wrapping_add(2)
             } else {
-                or.2
+                core::mem::zeroed()
             },
             if mask.3.is_set() {
                 *ptr.wrapping_add(3)
             } else {
-                or.3
+                core::mem::zeroed()
             },
         )
     }
@@ -1813,7 +1804,7 @@ impl Simd for NeonFcma {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn u32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut u32, values: Self::u32s) {
+    unsafe fn mask_store_ptr_u32s(self, mask: Self::m32s, ptr: *mut u32, values: Self::u32s) {
         if mask.0.is_set() {
             *ptr.wrapping_add(0) = values.0
         }
@@ -1832,7 +1823,7 @@ impl Simd for NeonFcma {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn c32s_mask_store_ptr(self, mask: Self::m32s, ptr: *mut c32, values: Self::c32s) {
+    unsafe fn mask_store_ptr_c32s(self, mask: Self::m32s, ptr: *mut c32, values: Self::c32s) {
         let ptr = ptr as *mut f32;
         if mask.0.is_set() {
             *ptr.wrapping_add(0) = values.0
@@ -1852,22 +1843,17 @@ impl Simd for NeonFcma {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn u64s_mask_load_ptr(
-        self,
-        mask: Self::m64s,
-        ptr: *const u64,
-        or: Self::u64s,
-    ) -> Self::u64s {
+    unsafe fn mask_load_ptr_u64s(self, mask: Self::m64s, ptr: *const u64) -> Self::u64s {
         u64x2(
             if mask.0.is_set() {
                 *ptr.wrapping_add(0)
             } else {
-                or.0
+                core::mem::zeroed()
             },
             if mask.1.is_set() {
                 *ptr.wrapping_add(1)
             } else {
-                or.1
+                core::mem::zeroed()
             },
         )
     }
@@ -1876,23 +1862,18 @@ impl Simd for NeonFcma {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn c64s_mask_load_ptr(
-        self,
-        mask: Self::m64s,
-        ptr: *const c64,
-        or: Self::c64s,
-    ) -> Self::c64s {
+    unsafe fn mask_load_ptr_c64s(self, mask: Self::m64s, ptr: *const c64) -> Self::c64s {
         let ptr = ptr as *const f64;
         f64x2(
             if mask.0.is_set() {
                 *ptr.wrapping_add(0)
             } else {
-                or.0
+                core::mem::zeroed()
             },
             if mask.1.is_set() {
                 *ptr.wrapping_add(1)
             } else {
-                or.1
+                core::mem::zeroed()
             },
         )
     }
@@ -1901,7 +1882,7 @@ impl Simd for NeonFcma {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn u64s_mask_store_ptr(self, mask: Self::m64s, ptr: *mut u64, values: Self::u64s) {
+    unsafe fn mask_store_ptr_u64s(self, mask: Self::m64s, ptr: *mut u64, values: Self::u64s) {
         if mask.0.is_set() {
             *ptr.wrapping_add(0) = values.0
         }
@@ -1914,7 +1895,7 @@ impl Simd for NeonFcma {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn c64s_mask_store_ptr(self, mask: Self::m64s, ptr: *mut c64, values: Self::c64s) {
+    unsafe fn mask_store_ptr_c64s(self, mask: Self::m64s, ptr: *mut c64, values: Self::c64s) {
         let ptr = ptr as *mut f64;
         if mask.0.is_set() {
             *ptr.wrapping_add(0) = values.0
@@ -1925,27 +1906,27 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
-    fn u64s_less_than(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
+    fn less_than_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
         self.cmp_lt_u64x2(a, b)
     }
 
     #[inline(always)]
-    fn u64s_greater_than(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
+    fn greater_than_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
         self.cmp_gt_u64x2(a, b)
     }
 
     #[inline(always)]
-    fn u64s_less_than_or_equal(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
+    fn less_than_or_equal_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
         self.cmp_le_u64x2(a, b)
     }
 
     #[inline(always)]
-    fn u64s_greater_than_or_equal(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
+    fn greater_than_or_equal_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
         self.cmp_ge_u64x2(a, b)
     }
 
     #[inline(always)]
-    fn u32s_rotate_right(self, a: Self::u32s, amount: usize) -> Self::u32s {
+    fn rotate_right_u32s(self, a: Self::u32s, amount: usize) -> Self::u32s {
         unsafe {
             transmute(vqtbl1q_u8(
                 transmute(a),
@@ -1955,7 +1936,7 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
-    fn c32s_rotate_right(self, a: Self::c32s, amount: usize) -> Self::c32s {
+    fn rotate_right_c32s(self, a: Self::c32s, amount: usize) -> Self::c32s {
         unsafe {
             transmute(vqtbl1q_u8(
                 transmute(a),
@@ -1965,7 +1946,7 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
-    fn u64s_rotate_right(self, a: Self::u64s, amount: usize) -> Self::u64s {
+    fn rotate_right_u64s(self, a: Self::u64s, amount: usize) -> Self::u64s {
         unsafe {
             transmute(vqtbl1q_u8(
                 transmute(a),
@@ -1975,16 +1956,16 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
-    fn c64s_rotate_right(self, a: Self::c64s, _amount: usize) -> Self::c64s {
+    fn rotate_right_c64s(self, a: Self::c64s, _amount: usize) -> Self::c64s {
         a
     }
 
     #[inline(always)]
-    fn c32s_swap_re_im(self, a: Self::c32s) -> Self::c32s {
+    fn swap_re_im_c32s(self, a: Self::c32s) -> Self::c32s {
         unsafe { transmute(vrev64q_f32(transmute(a))) }
     }
     #[inline(always)]
-    fn c64s_swap_re_im(self, a: Self::c64s) -> Self::c64s {
+    fn swap_re_im_c64s(self, a: Self::c64s) -> Self::c64s {
         unsafe {
             transmute(vcombine_u64(
                 vget_high_u64(transmute(a)),
@@ -3341,47 +3322,47 @@ mod tests {
 
             let scalar = Scalar::new();
 
-            let expected = cast(scalar.c64s_mul(cast(a), cast(b)));
+            let expected = cast(scalar.mul_c64s(cast(a), cast(b)));
             if let Some(simd) = Neon::try_new() {
-                let c = simd.c64s_mul(a, b);
+                let c = simd.mul_c64s(a, b);
                 assert_eq_c64(c, expected);
             }
-            let expected = cast(scalar.c64s_mul_add(cast(a), cast(b), cast(acc)));
+            let expected = cast(scalar.mul_add_c64s(cast(a), cast(b), cast(acc)));
             if let Some(simd) = Neon::try_new() {
-                let c = simd.c64s_mul_add(a, b, acc);
+                let c = simd.mul_add_c64s(a, b, acc);
                 assert_eq_c64(c, expected);
             }
 
-            let expected = cast(scalar.c64s_conj_mul(cast(a), cast(b)));
+            let expected = cast(scalar.conj_mul_c64s(cast(a), cast(b)));
             if let Some(simd) = Neon::try_new() {
-                let c = simd.c64s_conj_mul(a, b);
+                let c = simd.conj_mul_c64s(a, b);
                 assert_eq_c64(c, expected);
             }
-            let expected = cast(scalar.c64s_conj_mul_add(cast(a), cast(b), cast(acc)));
+            let expected = cast(scalar.conj_mul_add_c64s(cast(a), cast(b), cast(acc)));
             if let Some(simd) = Neon::try_new() {
-                let c = simd.c64s_conj_mul_add(a, b, acc);
+                let c = simd.conj_mul_add_c64s(a, b, acc);
                 assert_eq_c64(c, expected);
             }
 
-            let expected = cast(scalar.c64s_mul(cast(a), cast(b)));
+            let expected = cast(scalar.mul_c64s(cast(a), cast(b)));
             if let Some(simd) = NeonFcma::try_new() {
-                let c = simd.c64s_mul(a, b);
+                let c = simd.mul_c64s(a, b);
                 assert_eq_c64(c, expected);
             }
-            let expected = cast(scalar.c64s_mul_add(cast(a), cast(b), cast(acc)));
+            let expected = cast(scalar.mul_add_c64s(cast(a), cast(b), cast(acc)));
             if let Some(simd) = NeonFcma::try_new() {
-                let c = simd.c64s_mul_add(a, b, acc);
+                let c = simd.mul_add_c64s(a, b, acc);
                 assert_eq_c64(c, expected);
             }
 
-            let expected = cast(scalar.c64s_conj_mul(cast(a), cast(b)));
+            let expected = cast(scalar.conj_mul_c64s(cast(a), cast(b)));
             if let Some(simd) = NeonFcma::try_new() {
-                let c = simd.c64s_conj_mul(a, b);
+                let c = simd.conj_mul_c64s(a, b);
                 assert_eq_c64(c, expected);
             }
-            let expected = cast(scalar.c64s_conj_mul_add(cast(a), cast(b), cast(acc)));
+            let expected = cast(scalar.conj_mul_add_c64s(cast(a), cast(b), cast(acc)));
             if let Some(simd) = NeonFcma::try_new() {
-                let c = simd.c64s_conj_mul_add(a, b, acc);
+                let c = simd.conj_mul_add_c64s(a, b, acc);
                 assert_eq_c64(c, expected);
             }
         }
@@ -3397,70 +3378,70 @@ mod tests {
             let scalar = Scalar::new();
 
             let expected = cast([
-                scalar.c32s_mul(cast([a.0, a.1]), cast([b.0, b.1])),
-                scalar.c32s_mul(cast([a.2, a.3]), cast([b.2, b.3])),
+                scalar.mul_c32s(cast([a.0, a.1]), cast([b.0, b.1])),
+                scalar.mul_c32s(cast([a.2, a.3]), cast([b.2, b.3])),
             ]);
             if let Some(simd) = Neon::try_new() {
-                let c = simd.c32s_mul(a, b);
+                let c = simd.mul_c32s(a, b);
                 assert_eq_c32(c, expected);
             }
             let expected = cast([
-                scalar.c32s_mul_add(cast([a.0, a.1]), cast([b.0, b.1]), cast([acc.0, acc.1])),
-                scalar.c32s_mul_add(cast([a.2, a.3]), cast([b.2, b.3]), cast([acc.2, acc.3])),
+                scalar.mul_add_c32s(cast([a.0, a.1]), cast([b.0, b.1]), cast([acc.0, acc.1])),
+                scalar.mul_add_c32s(cast([a.2, a.3]), cast([b.2, b.3]), cast([acc.2, acc.3])),
             ]);
             if let Some(simd) = Neon::try_new() {
-                let c = simd.c32s_mul_add(a, b, acc);
+                let c = simd.mul_add_c32s(a, b, acc);
                 assert_eq_c32(c, expected);
             }
 
             let expected = cast([
-                scalar.c32s_conj_mul(cast([a.0, a.1]), cast([b.0, b.1])),
-                scalar.c32s_conj_mul(cast([a.2, a.3]), cast([b.2, b.3])),
+                scalar.conj_mul_c32s(cast([a.0, a.1]), cast([b.0, b.1])),
+                scalar.conj_mul_c32s(cast([a.2, a.3]), cast([b.2, b.3])),
             ]);
             if let Some(simd) = Neon::try_new() {
-                let c = simd.c32s_conj_mul(a, b);
+                let c = simd.conj_mul_c32s(a, b);
                 assert_eq_c32(c, expected);
             }
             let expected = cast([
-                scalar.c32s_conj_mul_add(cast([a.0, a.1]), cast([b.0, b.1]), cast([acc.0, acc.1])),
-                scalar.c32s_conj_mul_add(cast([a.2, a.3]), cast([b.2, b.3]), cast([acc.2, acc.3])),
+                scalar.conj_mul_add_c32s(cast([a.0, a.1]), cast([b.0, b.1]), cast([acc.0, acc.1])),
+                scalar.conj_mul_add_c32s(cast([a.2, a.3]), cast([b.2, b.3]), cast([acc.2, acc.3])),
             ]);
             if let Some(simd) = Neon::try_new() {
-                let c = simd.c32s_conj_mul_add(a, b, acc);
+                let c = simd.conj_mul_add_c32s(a, b, acc);
                 assert_eq_c32(c, expected);
             }
 
             let expected = cast([
-                scalar.c32s_mul(cast([a.0, a.1]), cast([b.0, b.1])),
-                scalar.c32s_mul(cast([a.2, a.3]), cast([b.2, b.3])),
+                scalar.mul_c32s(cast([a.0, a.1]), cast([b.0, b.1])),
+                scalar.mul_c32s(cast([a.2, a.3]), cast([b.2, b.3])),
             ]);
             if let Some(simd) = NeonFcma::try_new() {
-                let c = simd.c32s_mul(a, b);
+                let c = simd.mul_c32s(a, b);
                 assert_eq_c32(c, expected);
             }
             let expected = cast([
-                scalar.c32s_mul_add(cast([a.0, a.1]), cast([b.0, b.1]), cast([acc.0, acc.1])),
-                scalar.c32s_mul_add(cast([a.2, a.3]), cast([b.2, b.3]), cast([acc.2, acc.3])),
+                scalar.mul_add_c32s(cast([a.0, a.1]), cast([b.0, b.1]), cast([acc.0, acc.1])),
+                scalar.mul_add_c32s(cast([a.2, a.3]), cast([b.2, b.3]), cast([acc.2, acc.3])),
             ]);
             if let Some(simd) = NeonFcma::try_new() {
-                let c = simd.c32s_mul_add(a, b, acc);
+                let c = simd.mul_add_c32s(a, b, acc);
                 assert_eq_c32(c, expected);
             }
 
             let expected = cast([
-                scalar.c32s_conj_mul(cast([a.0, a.1]), cast([b.0, b.1])),
-                scalar.c32s_conj_mul(cast([a.2, a.3]), cast([b.2, b.3])),
+                scalar.conj_mul_c32s(cast([a.0, a.1]), cast([b.0, b.1])),
+                scalar.conj_mul_c32s(cast([a.2, a.3]), cast([b.2, b.3])),
             ]);
             if let Some(simd) = NeonFcma::try_new() {
-                let c = simd.c32s_conj_mul(a, b);
+                let c = simd.conj_mul_c32s(a, b);
                 assert_eq_c32(c, expected);
             }
             let expected = cast([
-                scalar.c32s_conj_mul_add(cast([a.0, a.1]), cast([b.0, b.1]), cast([acc.0, acc.1])),
-                scalar.c32s_conj_mul_add(cast([a.2, a.3]), cast([b.2, b.3]), cast([acc.2, acc.3])),
+                scalar.conj_mul_add_c32s(cast([a.0, a.1]), cast([b.0, b.1]), cast([acc.0, acc.1])),
+                scalar.conj_mul_add_c32s(cast([a.2, a.3]), cast([b.2, b.3]), cast([acc.2, acc.3])),
             ]);
             if let Some(simd) = NeonFcma::try_new() {
-                let c = simd.c32s_conj_mul_add(a, b, acc);
+                let c = simd.conj_mul_add_c32s(a, b, acc);
                 assert_eq_c32(c, expected);
             }
         }
@@ -3475,7 +3456,7 @@ mod tests {
                     *dst = 1000 + i as u32;
                 }
 
-                let rot: [u32; 4] = cast(simd.u32s_rotate_right(cast(array), amount));
+                let rot: [u32; 4] = cast(simd.rotate_right_u32s(cast(array), amount));
                 for i in 0..4 {
                     assert_eq!(rot[(i + amount) % 4], array[i]);
                 }
@@ -3486,7 +3467,7 @@ mod tests {
                     *dst = 1000 + i as u64;
                 }
 
-                let rot: [u64; 2] = cast(simd.u64s_rotate_right(cast(array), amount));
+                let rot: [u64; 2] = cast(simd.rotate_right_u64s(cast(array), amount));
                 for i in 0..2 {
                     assert_eq!(rot[(i + amount) % 2], array[i]);
                 }
