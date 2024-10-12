@@ -648,6 +648,15 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
+    fn abs_max_c32s(self, a: Self::c32s) -> Self::c32s {
+        unsafe {
+            let max = self.max_f32s(a, a);
+            let max_rev = transmute(vrev64q_f32(transmute(max)));
+            self.max_f32s(max, max_rev)
+        }
+    }
+
+    #[inline(always)]
     fn reduce_sum_c32s(self, a: Self::c32s) -> c32 {
         unsafe {
             // a0 a1 a2 a3
@@ -1733,6 +1742,18 @@ impl Simd for NeonFcma {
                 vget_low_u64(transmute(sqr)),
             ));
             self.add_f64s(sqr, sqr_rev)
+        }
+    }
+
+    #[inline(always)]
+    fn abs_max_c64s(self, a: Self::c64s) -> Self::c64s {
+        unsafe {
+            let sqr = self.max_f64s(a, a);
+            let sqr_rev = transmute(vcombine_u64(
+                vget_high_u64(transmute(sqr)),
+                vget_low_u64(transmute(sqr)),
+            ));
+            self.max_f64s(sqr, sqr_rev)
         }
     }
 
