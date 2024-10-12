@@ -135,13 +135,13 @@ impl<F: NullaryFnOnce> WithSimd for F {
 }
 
 pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
-    type m32s: Debug + Copy + Send + Sync + Zeroable + 'static;
+    type m32s: Debug + Copy + Send + Sync + Zeroable + NoUninit + 'static;
     type f32s: Debug + Copy + Send + Sync + Pod + 'static;
     type c32s: Debug + Copy + Send + Sync + Pod + 'static;
     type i32s: Debug + Copy + Send + Sync + Pod + 'static;
     type u32s: Debug + Copy + Send + Sync + Pod + 'static;
 
-    type m64s: Debug + Copy + Send + Sync + Zeroable + 'static;
+    type m64s: Debug + Copy + Send + Sync + Zeroable + NoUninit + 'static;
     type f64s: Debug + Copy + Send + Sync + Pod + 'static;
     type c64s: Debug + Copy + Send + Sync + Pod + 'static;
     type i64s: Debug + Copy + Send + Sync + Pod + 'static;
@@ -983,6 +983,53 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     #[inline(always)]
     fn partial_store_last_c64s(self, slice: &mut [c64], values: Self::c64s) {
         self.partial_store_last_f64s(bytemuck::cast_slice_mut(slice), cast(values))
+    }
+
+    #[inline(always)]
+    fn first_true_m32s(self, mask: Self::m32s) -> usize {
+        if const { size_of::<Self::m32s>() == size_of::<Self::u32s>() } {
+            let mask: Self::u32s = bytemuck::cast(mask);
+            let slice = bytemuck::cast_slice::<Self::u32s, u32>(core::slice::from_ref(&mask));
+            let mut i = 0;
+            for &x in slice.iter() {
+                if x != 0 {
+                    break;
+                }
+                i += 1;
+            }
+            i
+        } else if const { size_of::<Self::m32s>() == size_of::<u8>() } {
+            let mask: u8 = bytemuck::cast(mask);
+            mask.leading_zeros() as usize
+        } else if const { size_of::<Self::m32s>() == size_of::<u16>() } {
+            let mask: u16 = bytemuck::cast(mask);
+            mask.leading_zeros() as usize
+        } else {
+            panic!()
+        }
+    }
+    #[inline(always)]
+    fn first_true_m64s(self, mask: Self::m64s) -> usize {
+        if const { size_of::<Self::m64s>() == size_of::<Self::u64s>() } {
+            let mask: Self::u64s = bytemuck::cast(mask);
+            let slice = bytemuck::cast_slice::<Self::u64s, u64>(core::slice::from_ref(&mask));
+            let mut i = 0;
+            for &x in slice.iter() {
+                if x != 0 {
+                    break;
+                }
+                i += 1;
+            }
+            i
+        } else if const { size_of::<Self::m64s>() == size_of::<u8>() } {
+            let mask: u8 = bytemuck::cast(mask);
+            mask.leading_zeros() as usize
+        } else if const { size_of::<Self::m64s>() == size_of::<u16>() } {
+            let mask: u16 = bytemuck::cast(mask);
+            mask.leading_zeros() as usize
+        } else {
+            panic!()
+        }
     }
 
     #[inline(always)]
@@ -2384,6 +2431,24 @@ impl Simd for Scalar {
         let re = if a.re > a.im { a.re } else { a.im };
         let im = re;
         Complex { re, im }
+    }
+
+    #[inline(always)]
+    fn first_true_m32s(self, mask: Self::m32s) -> usize {
+        if mask {
+            0
+        } else {
+            1
+        }
+    }
+
+    #[inline(always)]
+    fn first_true_m64s(self, mask: Self::m64s) -> usize {
+        if mask {
+            0
+        } else {
+            1
+        }
     }
 }
 
