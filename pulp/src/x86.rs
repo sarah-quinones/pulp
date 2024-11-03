@@ -11996,7 +11996,7 @@ mod tests {
         let arch = Arch::new();
 
         struct TimesThree<'a>(&'a mut [f64]);
-        impl<'a> WithSimd for TimesThree<'a> {
+        impl WithSimd for TimesThree<'_> {
             type Output = ();
 
             #[inline(always)]
