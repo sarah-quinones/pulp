@@ -10,7 +10,7 @@ fn masked(bencher: Bencher, PlotArg(n): PlotArg) {
 
         let dst: &mut [f64; 7] = (&mut dst[1..]).try_into().unwrap();
         let src: &[f64; 7] = (&src[1..]).try_into().unwrap();
-        let offset = simd.f64s_align_offset(dst.as_ptr(), dst.len());
+        let offset = simd.align_offset_f64s(dst.as_ptr(), dst.len());
 
         bencher.bench(|| {
             struct Impl<'a> {
@@ -35,11 +35,11 @@ fn masked(bencher: Bencher, PlotArg(n): PlotArg) {
                     } = self;
 
                     let (mut dst_prefix, _, mut dst_suffix) =
-                        simd.f64s_as_aligned_mut_simd(dst, offset);
-                    let (src_prefix, _, src_suffix) = simd.f64s_as_aligned_simd(src, offset);
+                        simd.as_aligned_mut_simd_f64s(dst, offset);
+                    let (src_prefix, _, src_suffix) = simd.as_aligned_simd_f64s(src, offset);
                     for _ in 0..n {
-                        dst_prefix.write(src_prefix.read_or(simd.splat_f64x4(0.0)));
-                        dst_suffix.write(src_suffix.read_or(simd.splat_f64x4(0.0)));
+                        dst_prefix.write(src_prefix.read());
+                        dst_suffix.write(src_suffix.read());
                         core::hint::black_box((&mut dst_prefix, &mut dst_suffix));
                     }
                 }
