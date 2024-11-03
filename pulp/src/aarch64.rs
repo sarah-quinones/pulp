@@ -210,7 +210,7 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn partial_load_last_u32s(self, slice: &[u32]) -> Self::u32s {
+    fn partial_load_head_shfl_u32s(self, slice: &[u32]) -> Self::u32s {
         match slice.len() {
             0 => u32x4(0, 0, 0, 0),
             1 => u32x4(0, 0, 0, slice[0]),
@@ -224,7 +224,7 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn partial_store_last_u32s(self, slice: &mut [u32], values: Self::u32s) {
+    fn partial_store_head_shfl_u32s(self, slice: &mut [u32], values: Self::u32s) {
         match slice.len() {
             0 => {}
             1 => {
@@ -251,7 +251,7 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn partial_load_last_u64s(self, slice: &[u64]) -> Self::u64s {
+    fn partial_load_head_shfl_u64s(self, slice: &[u64]) -> Self::u64s {
         match slice.len() {
             0 => u64x2(0, 0),
             1 => u64x2(0, slice[0]),
@@ -263,7 +263,7 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn partial_store_last_u64s(self, slice: &mut [u64], values: Self::u64s) {
+    fn partial_store_head_shfl_u64s(self, slice: &mut [u64], values: Self::u64s) {
         match slice.len() {
             0 => {}
             1 => {
@@ -1198,7 +1198,7 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
-    fn partial_load_last_u32s(self, slice: &[u32]) -> Self::u32s {
+    fn partial_load_head_shfl_u32s(self, slice: &[u32]) -> Self::u32s {
         match slice.len() {
             0 => u32x4(0, 0, 0, 0),
             1 => u32x4(0, 0, 0, slice[0]),
@@ -1212,7 +1212,7 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
-    fn partial_store_last_u32s(self, slice: &mut [u32], values: Self::u32s) {
+    fn partial_store_head_shfl_u32s(self, slice: &mut [u32], values: Self::u32s) {
         match slice.len() {
             0 => {}
             1 => {
@@ -1239,7 +1239,7 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
-    fn partial_load_last_u64s(self, slice: &[u64]) -> Self::u64s {
+    fn partial_load_head_shfl_u64s(self, slice: &[u64]) -> Self::u64s {
         match slice.len() {
             0 => u64x2(0, 0),
             1 => u64x2(0, slice[0]),
@@ -1251,7 +1251,7 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
-    fn partial_store_last_u64s(self, slice: &mut [u64], values: Self::u64s) {
+    fn partial_store_head_shfl_u64s(self, slice: &mut [u64], values: Self::u64s) {
         match slice.len() {
             0 => {}
             1 => {

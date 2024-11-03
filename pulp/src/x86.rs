@@ -1315,22 +1315,22 @@ impl Simd for V3 {
     }
 
     #[inline(always)]
-    fn partial_load_last_u32s(self, slice: &[u32]) -> Self::u32s {
+    fn partial_load_head_shfl_u32s(self, slice: &[u32]) -> Self::u32s {
         unsafe { avx_load_last_u32s(slice) }
     }
 
     #[inline(always)]
-    fn partial_store_last_u32s(self, slice: &mut [u32], values: Self::u32s) {
+    fn partial_store_head_shfl_u32s(self, slice: &mut [u32], values: Self::u32s) {
         unsafe { avx_store_last_u32s(slice, values) }
     }
 
     #[inline(always)]
-    fn partial_load_last_u64s(self, slice: &[u64]) -> Self::u64s {
+    fn partial_load_head_shfl_u64s(self, slice: &[u64]) -> Self::u64s {
         unsafe { cast(avx_load_last_u32s(bytemuck::cast_slice(slice))) }
     }
 
     #[inline(always)]
-    fn partial_store_last_u64s(self, slice: &mut [u64], values: Self::u64s) {
+    fn partial_store_head_shfl_u64s(self, slice: &mut [u64], values: Self::u64s) {
         unsafe { avx_store_last_u32s(bytemuck::cast_slice_mut(slice), cast(values)) }
     }
 
@@ -2183,36 +2183,36 @@ impl Simd for V3Scalar {
     }
 
     #[inline(always)]
-    fn partial_load_last_u32s(self, slice: &[u32]) -> Self::u32s {
+    fn partial_load_head_shfl_u32s(self, slice: &[u32]) -> Self::u32s {
         slice.first().copied().unwrap_or(0)
     }
 
     #[inline(always)]
-    fn partial_store_last_u32s(self, slice: &mut [u32], values: Self::u32s) {
+    fn partial_store_head_shfl_u32s(self, slice: &mut [u32], values: Self::u32s) {
         if let Some(first) = slice.first_mut() {
             *first = values
         }
     }
 
     #[inline(always)]
-    fn partial_load_last_u64s(self, slice: &[u64]) -> Self::u64s {
+    fn partial_load_head_shfl_u64s(self, slice: &[u64]) -> Self::u64s {
         slice.first().copied().unwrap_or(0)
     }
 
     #[inline(always)]
-    fn partial_store_last_u64s(self, slice: &mut [u64], values: Self::u64s) {
+    fn partial_store_head_shfl_u64s(self, slice: &mut [u64], values: Self::u64s) {
         if let Some(first) = slice.first_mut() {
             *first = values
         }
     }
 
     #[inline(always)]
-    fn partial_load_last_c64s(self, slice: &[c64]) -> Self::c64s {
+    fn partial_load_head_shfl_c64s(self, slice: &[c64]) -> Self::c64s {
         slice.first().copied().unwrap_or(c64 { re: 0.0, im: 0.0 })
     }
 
     #[inline(always)]
-    fn partial_store_last_c64s(self, slice: &mut [c64], values: Self::c64s) {
+    fn partial_store_head_shfl_c64s(self, slice: &mut [c64], values: Self::c64s) {
         if let Some(first) = slice.first_mut() {
             *first = values
         }
@@ -2953,22 +2953,22 @@ impl Simd for V4 {
     }
 
     #[inline(always)]
-    fn partial_load_last_u32s(self, slice: &[u32]) -> Self::u32s {
+    fn partial_load_head_shfl_u32s(self, slice: &[u32]) -> Self::u32s {
         unsafe { avx512_load_last_u32s(slice) }
     }
 
     #[inline(always)]
-    fn partial_store_last_u32s(self, slice: &mut [u32], values: Self::u32s) {
+    fn partial_store_head_shfl_u32s(self, slice: &mut [u32], values: Self::u32s) {
         unsafe { avx512_store_last_u32s(slice, values) }
     }
 
     #[inline(always)]
-    fn partial_load_last_u64s(self, slice: &[u64]) -> Self::u64s {
+    fn partial_load_head_shfl_u64s(self, slice: &[u64]) -> Self::u64s {
         unsafe { cast(avx512_load_last_u32s(bytemuck::cast_slice(slice))) }
     }
 
     #[inline(always)]
-    fn partial_store_last_u64s(self, slice: &mut [u64], values: Self::u64s) {
+    fn partial_store_head_shfl_u64s(self, slice: &mut [u64], values: Self::u64s) {
         unsafe { avx512_store_last_u32s(bytemuck::cast_slice_mut(slice), cast(values)) }
     }
 
@@ -3752,22 +3752,22 @@ impl Simd for V4_256 {
     }
 
     #[inline(always)]
-    fn partial_load_last_u32s(self, slice: &[u32]) -> Self::u32s {
+    fn partial_load_head_shfl_u32s(self, slice: &[u32]) -> Self::u32s {
         unsafe { avx_load_last_u32s(slice) }
     }
 
     #[inline(always)]
-    fn partial_store_last_u32s(self, slice: &mut [u32], values: Self::u32s) {
+    fn partial_store_head_shfl_u32s(self, slice: &mut [u32], values: Self::u32s) {
         unsafe { avx_store_last_u32s(slice, values) }
     }
 
     #[inline(always)]
-    fn partial_load_last_u64s(self, slice: &[u64]) -> Self::u64s {
+    fn partial_load_head_shfl_u64s(self, slice: &[u64]) -> Self::u64s {
         unsafe { cast(avx_load_last_u32s(bytemuck::cast_slice(slice))) }
     }
 
     #[inline(always)]
-    fn partial_store_last_u64s(self, slice: &mut [u64], values: Self::u64s) {
+    fn partial_store_head_shfl_u64s(self, slice: &mut [u64], values: Self::u64s) {
         unsafe { avx_store_last_u32s(bytemuck::cast_slice_mut(slice), cast(values)) }
     }
 
@@ -12694,7 +12694,7 @@ mod tests {
                 let src = &src[..n];
                 let dst = &mut dst[..n];
 
-                simd.partial_store_last_f32s(dst, simd.partial_load_last_f32s(src));
+                simd.partial_store_head_shfl_f32s(dst, simd.partial_load_head_shfl_f32s(src));
 
                 assert_eq!(src, dst);
             }
@@ -12709,7 +12709,7 @@ mod tests {
                 let src = &src[..n];
                 let dst = &mut dst[..n];
 
-                simd.partial_store_last_f32s(dst, simd.partial_load_last_f32s(src));
+                simd.partial_store_head_shfl_f32s(dst, simd.partial_load_head_shfl_f32s(src));
 
                 assert_eq!(src, dst);
             }
@@ -12725,7 +12725,7 @@ mod tests {
                 let src = &src[..n];
                 let dst = &mut dst[..n];
 
-                simd.partial_store_last_f32s(dst, simd.partial_load_last_f32s(src));
+                simd.partial_store_head_shfl_f32s(dst, simd.partial_load_head_shfl_f32s(src));
 
                 assert_eq!(src, dst);
             }
