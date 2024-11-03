@@ -73,6 +73,7 @@ unsafe fn avx_store_last_u32s(slice: &mut [u32], value: u32x8) {
 
 #[target_feature(enable = "avx512f")]
 #[target_feature(enable = "avx512vl")]
+#[cfg(feature = "nightly")]
 #[inline]
 unsafe fn avx512_load_u32s(slice: &[u32]) -> u32x16 {
     let ret: __m512;
@@ -91,6 +92,7 @@ unsafe fn avx512_load_u32s(slice: &[u32]) -> u32x16 {
 
 #[target_feature(enable = "avx512f")]
 #[target_feature(enable = "avx512vl")]
+#[cfg(feature = "nightly")]
 #[inline]
 unsafe fn avx512_load_last_u32s(slice: &[u32]) -> u32x16 {
     let ret: __m512;
@@ -109,6 +111,7 @@ unsafe fn avx512_load_last_u32s(slice: &[u32]) -> u32x16 {
 
 #[target_feature(enable = "avx512f")]
 #[target_feature(enable = "avx512vl")]
+#[cfg(feature = "nightly")]
 #[inline]
 unsafe fn avx512_store_u32s(slice: &mut [u32], value: u32x16) {
     let f = STORE[slice.len().min(16)];
@@ -124,6 +127,7 @@ unsafe fn avx512_store_u32s(slice: &mut [u32], value: u32x16) {
 
 #[target_feature(enable = "avx512f")]
 #[target_feature(enable = "avx512vl")]
+#[cfg(feature = "nightly")]
 #[inline]
 unsafe fn avx512_store_last_u32s(slice: &mut [u32], value: u32x16) {
     let f = RSTORE[slice.len().min(16)];
