@@ -3446,6 +3446,11 @@ impl<Mask> Offset<Mask> {
     pub fn len(&self) -> usize {
         self.total_len
     }
+
+    #[inline(always)]
+    pub fn is_empty(&self) -> bool {
+        self.total_len == 0
+    }
 }
 
 impl<Mask: Copy> Clone for Offset<Mask> {
