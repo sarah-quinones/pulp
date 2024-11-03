@@ -58,18 +58,6 @@ pub struct Rdseed {
 __impl!(Rdseed, "rdseed");
 #[derive(Clone, Copy)]
 #[repr(transparent)]
-pub struct Tsc {
-    __private: (),
-}
-__impl!(Tsc, "tsc");
-#[derive(Clone, Copy)]
-#[repr(transparent)]
-pub struct Mmx {
-    __private: (),
-}
-__impl!(Mmx, "mmx");
-#[derive(Clone, Copy)]
-#[repr(transparent)]
 pub struct Sse {
     __private: (),
 }
@@ -218,12 +206,6 @@ pub struct Rtm {
     __private: (),
 }
 __impl!(Rtm, "rtm");
-#[derive(Clone, Copy)]
-#[repr(transparent)]
-pub struct Abm {
-    __private: (),
-}
-__impl!(Abm, "abm");
 
 // nightly features
 #[cfg(feature = "nightly")]
