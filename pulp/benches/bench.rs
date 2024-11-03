@@ -1,4 +1,4 @@
-#![cfg_attr(feature = "nightly", feature(avx512_target_feature, is_sorted))]
+#![cfg_attr(feature = "nightly", feature(avx512_target_feature))]
 
 use std::iter::zip;
 
@@ -934,18 +934,18 @@ fn aligned_sum_vertical_bench(criterion: &mut Criterion) {
 
         #[inline(always)]
         fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
-            let (lhs_head, lhs_tail) = S::f64s_as_simd(self.lhs);
-            let (rhs_head, rhs_tail) = S::f64s_as_simd(self.rhs);
-            let (dst_head, dst_tail) = S::f64s_as_mut_simd(self.dst);
+            let (lhs_head, lhs_tail) = S::as_simd_f64s(self.lhs);
+            let (rhs_head, rhs_tail) = S::as_simd_f64s(self.rhs);
+            let (dst_head, dst_tail) = S::as_mut_simd_f64s(self.dst);
 
             for (dst, (lhs, rhs)) in zip(dst_head, zip(lhs_head, rhs_head)) {
-                *dst = simd.f64s_add(*lhs, *rhs);
+                *dst = simd.add_f64s(*lhs, *rhs);
             }
-            simd.f64s_partial_store(
+            simd.partial_store_f64s(
                 dst_tail,
-                simd.f64s_add(
-                    simd.f64s_partial_load(lhs_tail),
-                    simd.f64s_partial_load(rhs_tail),
+                simd.add_f64s(
+                    simd.partial_load_f64s(lhs_tail),
+                    simd.partial_load_f64s(rhs_tail),
                 ),
             );
         }
@@ -956,18 +956,17 @@ fn aligned_sum_vertical_bench(criterion: &mut Criterion) {
 
         #[inline(always)]
         fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
-            let offset = simd.f64s_align_offset(self.dst.as_ptr(), self.dst.len());
-            let (lhs_head, lhs_body, lhs_tail) = simd.f64s_as_aligned_simd(self.lhs, offset);
-            let (rhs_head, rhs_body, rhs_tail) = simd.f64s_as_aligned_simd(self.rhs, offset);
+            let offset = simd.align_offset_f64s(self.dst.as_ptr(), self.dst.len());
+            let (lhs_head, lhs_body, lhs_tail) = simd.as_aligned_simd_f64s(self.lhs, offset);
+            let (rhs_head, rhs_body, rhs_tail) = simd.as_aligned_simd_f64s(self.rhs, offset);
             let (mut dst_head, dst_body, mut dst_tail) =
-                simd.f64s_as_aligned_mut_simd(self.dst, offset);
+                simd.as_aligned_mut_simd_f64s(self.dst, offset);
 
-            let zero = simd.f64s_splat(0.0);
-            dst_head.write(simd.f64s_add(lhs_head.read_or(zero), rhs_head.read_or(zero)));
+            dst_head.write(simd.add_f64s(lhs_head.read(), rhs_head.read()));
             for (dst, (lhs, rhs)) in zip(dst_body, zip(lhs_body, rhs_body)) {
-                *dst = simd.f64s_add(*lhs, *rhs);
+                *dst = simd.add_f64s(*lhs, *rhs);
             }
-            dst_tail.write(simd.f64s_add(lhs_tail.read_or(zero), rhs_tail.read_or(zero)));
+            dst_tail.write(simd.add_f64s(lhs_tail.read(), rhs_tail.read()));
         }
     }
 
@@ -1017,26 +1016,26 @@ fn aligned_sum_reduce_bench(criterion: &mut Criterion) {
 
         #[inline(always)]
         fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
-            let mut sum0 = simd.f64s_splat(0.0);
-            let mut sum1 = simd.f64s_splat(0.0);
-            let mut sum2 = simd.f64s_splat(0.0);
-            let mut sum3 = simd.f64s_splat(0.0);
+            let mut sum0 = simd.splat_f64s(0.0);
+            let mut sum1 = simd.splat_f64s(0.0);
+            let mut sum2 = simd.splat_f64s(0.0);
+            let mut sum3 = simd.splat_f64s(0.0);
 
-            let (head, tail) = S::f64s_as_simd(self.slice);
+            let (head, tail) = S::as_simd_f64s(self.slice);
             let (head4, head1) = as_arrays::<4, _>(head);
             for &[x0, x1, x2, x3] in head4 {
-                sum0 = simd.f64s_add(sum0, x0);
-                sum1 = simd.f64s_add(sum1, x1);
-                sum2 = simd.f64s_add(sum2, x2);
-                sum3 = simd.f64s_add(sum3, x3);
+                sum0 = simd.add_f64s(sum0, x0);
+                sum1 = simd.add_f64s(sum1, x1);
+                sum2 = simd.add_f64s(sum2, x2);
+                sum3 = simd.add_f64s(sum3, x3);
             }
             for &x0 in head1 {
-                sum0 = simd.f64s_add(sum0, x0);
+                sum0 = simd.add_f64s(sum0, x0);
             }
-            sum0 = simd.f64s_add(sum0, simd.f64s_partial_load(tail));
-            sum0 = simd.f64s_add(simd.f64s_add(sum0, sum1), simd.f64s_add(sum2, sum3));
+            sum0 = simd.add_f64s(sum0, simd.partial_load_f64s(tail));
+            sum0 = simd.add_f64s(simd.add_f64s(sum0, sum1), simd.add_f64s(sum2, sum3));
 
-            simd.f64s_reduce_sum(sum0)
+            simd.reduce_sum_f64s(sum0)
         }
     }
 
@@ -1045,27 +1044,27 @@ fn aligned_sum_reduce_bench(criterion: &mut Criterion) {
 
         #[inline(always)]
         fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
-            let offset = simd.f64s_align_offset(self.slice.as_ptr(), self.slice.len());
-            let (prefix, body, suffix) = simd.f64s_as_aligned_simd(self.slice, offset);
+            let offset = simd.align_offset_f64s(self.slice.as_ptr(), self.slice.len());
+            let (prefix, body, suffix) = simd.as_aligned_simd_f64s(self.slice, offset);
 
-            let mut sum0 = prefix.read_or(simd.f64s_splat(0.0));
-            let mut sum1 = simd.f64s_splat(0.0);
-            let mut sum2 = simd.f64s_splat(0.0);
-            let mut sum3 = simd.f64s_splat(0.0);
+            let mut sum0 = prefix.read();
+            let mut sum1 = simd.splat_f64s(0.0);
+            let mut sum2 = simd.splat_f64s(0.0);
+            let mut sum3 = simd.splat_f64s(0.0);
             let (body4, body1) = as_arrays::<4, _>(body);
             for &[x0, x1, x2, x3] in body4 {
-                sum0 = simd.f64s_add(sum0, x0);
-                sum1 = simd.f64s_add(sum1, x1);
-                sum2 = simd.f64s_add(sum2, x2);
-                sum3 = simd.f64s_add(sum3, x3);
+                sum0 = simd.add_f64s(sum0, x0);
+                sum1 = simd.add_f64s(sum1, x1);
+                sum2 = simd.add_f64s(sum2, x2);
+                sum3 = simd.add_f64s(sum3, x3);
             }
             for &x0 in body1 {
-                sum0 = simd.f64s_add(sum0, x0);
+                sum0 = simd.add_f64s(sum0, x0);
             }
-            sum0 = simd.f64s_add(sum0, suffix.read_or(simd.f64s_splat(0.0)));
-            sum0 = simd.f64s_add(simd.f64s_add(sum0, sum1), simd.f64s_add(sum2, sum3));
+            sum0 = simd.add_f64s(sum0, suffix.read());
+            sum0 = simd.add_f64s(simd.add_f64s(sum0, sum1), simd.add_f64s(sum2, sum3));
 
-            simd.f64s_reduce_sum(simd.f64s_rotate_left(sum0, offset.rotate_left_amount()))
+            simd.reduce_sum_f64s(simd.rotate_left_f64s(sum0, offset.rotate_left_amount()))
         }
     }
 
@@ -1074,27 +1073,27 @@ fn aligned_sum_reduce_bench(criterion: &mut Criterion) {
 
         #[inline(always)]
         fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
-            let offset = simd.f64s_align_offset(self.slice.as_ptr(), self.slice.len());
-            let (prefix, body, suffix) = simd.f64s_as_aligned_simd(self.slice, offset);
+            let offset = simd.align_offset_f64s(self.slice.as_ptr(), self.slice.len());
+            let (prefix, body, suffix) = simd.as_aligned_simd_f64s(self.slice, offset);
 
-            let mut sum0 = prefix.read_or(simd.f64s_splat(0.0));
-            let mut sum1 = simd.f64s_splat(0.0);
-            let mut sum2 = simd.f64s_splat(0.0);
-            let mut sum3 = simd.f64s_splat(0.0);
+            let mut sum0 = prefix.read();
+            let mut sum1 = simd.splat_f64s(0.0);
+            let mut sum2 = simd.splat_f64s(0.0);
+            let mut sum3 = simd.splat_f64s(0.0);
             let (body4, body1) = as_arrays::<4, _>(body);
             for &[x0, x1, x2, x3] in body4 {
-                sum0 = simd.f64s_add(sum0, x0);
-                sum1 = simd.f64s_add(sum1, x1);
-                sum2 = simd.f64s_add(sum2, x2);
-                sum3 = simd.f64s_add(sum3, x3);
+                sum0 = simd.add_f64s(sum0, x0);
+                sum1 = simd.add_f64s(sum1, x1);
+                sum2 = simd.add_f64s(sum2, x2);
+                sum3 = simd.add_f64s(sum3, x3);
             }
             for &x0 in body1 {
-                sum0 = simd.f64s_add(sum0, x0);
+                sum0 = simd.add_f64s(sum0, x0);
             }
-            sum0 = simd.f64s_add(sum0, suffix.read_or(simd.f64s_splat(0.0)));
-            sum0 = simd.f64s_add(simd.f64s_add(sum0, sum1), simd.f64s_add(sum2, sum3));
+            sum0 = simd.add_f64s(sum0, suffix.read());
+            sum0 = simd.add_f64s(simd.add_f64s(sum0, sum1), simd.add_f64s(sum2, sum3));
 
-            simd.f64s_reduce_sum(sum0)
+            simd.reduce_sum_f64s(sum0)
         }
     }
 
