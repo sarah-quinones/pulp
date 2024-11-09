@@ -1097,26 +1097,12 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 
     #[inline(always)]
     fn tail_mask_f64s(self, len: usize) -> Self::m64s {
-        let iota: Self::u64s = const {
-            unsafe {
-                core::mem::transmute_copy(&[
-                    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-                    22, 23, 24, 25, 26, 27, 28, 29, 30, 31u64,
-                ])
-            }
-        };
+        let iota: Self::u64s = const { unsafe { core::mem::transmute_copy(&<[u64; 1]>::IOTA) } };
         self.less_than_u64s(iota, self.splat_u64s(len as u64))
     }
     #[inline(always)]
     fn tail_mask_f32s(self, len: usize) -> Self::m32s {
-        let iota: Self::u32s = const {
-            unsafe {
-                core::mem::transmute_copy(&[
-                    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-                    22, 23, 24, 25, 26, 27, 28, 29, 30, 31u32,
-                ])
-            }
-        };
+        let iota: Self::u32s = const { unsafe { core::mem::transmute_copy(&<[u32; 1]>::IOTA) } };
         self.less_than_u32s(iota, self.splat_u32s(len as u32))
     }
     #[inline(always)]
@@ -1130,26 +1116,12 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 
     #[inline(always)]
     fn head_mask_f64s(self, len: usize) -> Self::m64s {
-        let iota: Self::u64s = const {
-            unsafe {
-                core::mem::transmute_copy(&[
-                    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-                    22, 23, 24, 25, 26, 27, 28, 29, 30, 31u64,
-                ])
-            }
-        };
+        let iota: Self::u64s = const { unsafe { core::mem::transmute_copy(&<[u64; 1]>::IOTA) } };
         self.greater_than_or_equal_u64s(iota, self.splat_u64s(len as u64))
     }
     #[inline(always)]
     fn head_mask_f32s(self, len: usize) -> Self::m32s {
-        let iota: Self::u32s = const {
-            unsafe {
-                core::mem::transmute_copy(&[
-                    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-                    22, 23, 24, 25, 26, 27, 28, 29, 30, 31u32,
-                ])
-            }
-        };
+        let iota: Self::u32s = const { unsafe { core::mem::transmute_copy(&<[u32; 1]>::IOTA) } };
         self.greater_than_or_equal_u32s(iota, self.splat_u32s(len as u32))
     }
     #[inline(always)]
@@ -5399,6 +5371,38 @@ unsafe impl Zeroable for m64x4 {}
 unsafe impl NoUninit for m64x2 {}
 unsafe impl NoUninit for m64x4 {}
 
+pub trait Iota {
+    type Seq: 'static;
+    const IOTA: &'static Self::Seq;
+}
+
+impl<const N: usize> Iota for [u32; N] {
+    type Seq = [[u32; N]; 32];
+
+    const IOTA: &'static Self::Seq = &{
+        let mut iota = [[0u32; N]; 32];
+        let mut i = 0;
+        while i < 32 {
+            iota[i] = [i as u32; N];
+            i += 1;
+        }
+        iota
+    };
+}
+impl<const N: usize> Iota for [u64; N] {
+    type Seq = [[u64; N]; 32];
+
+    const IOTA: &'static Self::Seq = &{
+        let mut iota = [[0u64; N]; 32];
+        let mut i = 0;
+        while i < 32 {
+            iota[i] = [i as u64; N];
+            i += 1;
+        }
+        iota
+    };
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -5512,6 +5516,7 @@ mod tests {
 
     #[test]
     fn test_interleave() {
+        #[cfg(target_arch = "x86_64")]
         if let Some(simd) = x86::V3::try_new() {
             {
                 let src = [f64x4(0.0, 0.1, 1.0, 1.1), f64x4(2.0, 2.1, 3.0, 3.1)];
