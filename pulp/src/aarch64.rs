@@ -3580,9 +3580,9 @@ mod tests {
         if let Some(simd) = Neon::try_new() {
             {
                 let src = [f64x2(0.0, 0.1), f64x2(1.0, 1.1)];
-                let dst = simd.deinterleave_shfl_f64sx2(src);
+                let dst = simd.deinterleave_shfl_f64s(src);
                 assert_eq!(dst[1], simd.add_f64x2(dst[0], simd.splat_f64x2(0.1)));
-                assert_eq!(src, simd.interleave_shfl_f64sx2(dst));
+                assert_eq!(src, simd.interleave_shfl_f64s(dst));
             }
             {
                 let src = [
@@ -3591,17 +3591,17 @@ mod tests {
                     f64x2(1.0, 1.1),
                     f64x2(1.2, 1.3),
                 ];
-                let dst = simd.deinterleave_shfl_f64sx4(src);
+                let dst = simd.deinterleave_shfl_f64s(src);
                 assert_eq!(dst[1], simd.add_f64x2(dst[0], simd.splat_f64x2(0.1)));
                 assert_eq!(dst[2], simd.add_f64x2(dst[0], simd.splat_f64x2(0.2)));
                 assert_eq!(dst[3], simd.add_f64x2(dst[0], simd.splat_f64x2(0.3)));
-                assert_eq!(src, simd.interleave_shfl_f64sx4(dst));
+                assert_eq!(src, simd.interleave_shfl_f64s(dst));
             }
             {
                 let src = [f32x4(0.0, 0.1, 1.0, 1.1), f32x4(2.0, 2.1, 3.0, 3.1)];
-                let dst = simd.deinterleave_shfl_f32sx2(src);
+                let dst = simd.deinterleave_shfl_f32s(src);
                 assert_eq!(dst[1], simd.add_f32x4(dst[0], simd.splat_f32x4(0.1)));
-                assert_eq!(src, simd.interleave_shfl_f32sx2(dst));
+                assert_eq!(src, simd.interleave_shfl_f32s(dst));
             }
             {
                 let src = [
@@ -3610,11 +3610,11 @@ mod tests {
                     f32x4(2.0, 2.1, 2.2, 2.3),
                     f32x4(3.0, 3.1, 3.2, 3.3),
                 ];
-                let dst = simd.deinterleave_shfl_f32sx4(src);
+                let dst = simd.deinterleave_shfl_f32s(src);
                 assert_eq!(dst[1], simd.add_f32x4(dst[0], simd.splat_f32x4(0.1)));
                 assert_eq!(dst[2], simd.add_f32x4(dst[0], simd.splat_f32x4(0.2)));
                 assert_eq!(dst[3], simd.add_f32x4(dst[0], simd.splat_f32x4(0.3)));
-                assert_eq!(src, simd.interleave_shfl_f32sx4(dst));
+                assert_eq!(src, simd.interleave_shfl_f32s(dst));
             }
         }
     }
