@@ -134,6 +134,52 @@ impl<F: NullaryFnOnce> WithSimd for F {
     }
 }
 
+// a0,0 ... a0,m-1
+// ...
+// an-1,0 ... an-1,m-1
+#[inline(always)]
+fn interleave_fallback<Unit: Pod, Reg: Pod, AoSReg: Pod>(x: AoSReg) -> AoSReg {
+    const { assert!(size_of::<AoSReg>() % size_of::<Reg>() == 0) };
+    const { assert!(size_of::<Reg>() % size_of::<Unit>() == 0) };
+    let mut y = x;
+
+    let n = const { size_of::<AoSReg>() / size_of::<Reg>() };
+    let m = const { size_of::<Reg>() / size_of::<Unit>() };
+
+    unsafe {
+        let y = (&mut y) as *mut _ as *mut Unit;
+        let x = (&x) as *const _ as *const Unit;
+        for j in 0..m {
+            for i in 0..n {
+                *y.add(i + n * j) = *x.add(j + i * m);
+            }
+        }
+    }
+
+    y
+}
+
+#[inline(always)]
+fn deinterleave_fallback<Unit: Pod, Reg: Pod, AoSReg: Pod>(y: AoSReg) -> AoSReg {
+    const { assert!(size_of::<AoSReg>() % size_of::<Reg>() == 0) };
+    const { assert!(size_of::<Reg>() % size_of::<Unit>() == 0) };
+    let mut x = y;
+
+    let n = const { size_of::<AoSReg>() / size_of::<Reg>() };
+    let m = const { size_of::<Reg>() / size_of::<Unit>() };
+
+    unsafe {
+        let y = (&y) as *const _ as *const Unit;
+        let x = (&mut x) as *mut _ as *mut Unit;
+        for j in 0..m {
+            for i in 0..n {
+                *x.add(j + i * m) = *y.add(i + n * j);
+            }
+        }
+    }
+
+    x
+}
 pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     type m32s: Debug + Copy + Send + Sync + Zeroable + NoUninit + 'static;
     type f32s: Debug + Copy + Send + Sync + Pod + 'static;
@@ -883,15 +929,22 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     fn partial_load_head_shfl_u64s(self, slice: &[u64]) -> Self::u64s;
     fn partial_store_head_shfl_u64s(self, slice: &mut [u64], values: Self::u64s);
 
-    fn interleave_shfl_f64sx2(self, values: [Self::f64s; 2]) -> [Self::f64s; 2];
-    fn interleave_shfl_f64sx4(self, values: [Self::f64s; 4]) -> [Self::f64s; 4];
-    fn deinterleave_shfl_f64sx2(self, values: [Self::f64s; 2]) -> [Self::f64s; 2];
-    fn deinterleave_shfl_f64sx4(self, values: [Self::f64s; 4]) -> [Self::f64s; 4];
-
-    fn interleave_shfl_f32sx2(self, values: [Self::f32s; 2]) -> [Self::f32s; 2];
-    fn interleave_shfl_f32sx4(self, values: [Self::f32s; 4]) -> [Self::f32s; 4];
-    fn deinterleave_shfl_f32sx2(self, values: [Self::f32s; 2]) -> [Self::f32s; 2];
-    fn deinterleave_shfl_f32sx4(self, values: [Self::f32s; 4]) -> [Self::f32s; 4];
+    #[inline(always)]
+    fn deinterleave_shfl_f64s<T: Pod>(self, values: T) -> T {
+        deinterleave_fallback::<f64, Self::f64s, T>(values)
+    }
+    #[inline(always)]
+    fn interleave_shfl_f64s<T: Pod>(self, values: T) -> T {
+        interleave_fallback::<f64, Self::f64s, T>(values)
+    }
+    #[inline(always)]
+    fn deinterleave_shfl_f32s<T: Pod>(self, values: T) -> T {
+        deinterleave_fallback::<f32, Self::f32s, T>(values)
+    }
+    #[inline(always)]
+    fn interleave_shfl_f32s<T: Pod>(self, values: T) -> T {
+        interleave_fallback::<f32, Self::f32s, T>(values)
+    }
 
     #[inline(always)]
     fn partial_load_i32s(self, slice: &[i32]) -> Self::i32s {
@@ -2459,40 +2512,6 @@ impl Simd for Scalar {
         } else {
             1
         }
-    }
-
-    #[inline(always)]
-    fn interleave_shfl_f64sx2(self, values: [Self::f64s; 2]) -> [Self::f64s; 2] {
-        values
-    }
-    #[inline(always)]
-    fn interleave_shfl_f64sx4(self, values: [Self::f64s; 4]) -> [Self::f64s; 4] {
-        values
-    }
-    #[inline(always)]
-    fn deinterleave_shfl_f64sx2(self, values: [Self::f64s; 2]) -> [Self::f64s; 2] {
-        values
-    }
-    #[inline(always)]
-    fn deinterleave_shfl_f64sx4(self, values: [Self::f64s; 4]) -> [Self::f64s; 4] {
-        values
-    }
-
-    #[inline(always)]
-    fn interleave_shfl_f32sx2(self, values: [Self::f32s; 2]) -> [Self::f32s; 2] {
-        values
-    }
-    #[inline(always)]
-    fn interleave_shfl_f32sx4(self, values: [Self::f32s; 4]) -> [Self::f32s; 4] {
-        values
-    }
-    #[inline(always)]
-    fn deinterleave_shfl_f32sx2(self, values: [Self::f32s; 2]) -> [Self::f32s; 2] {
-        values
-    }
-    #[inline(always)]
-    fn deinterleave_shfl_f32sx4(self, values: [Self::f32s; 4]) -> [Self::f32s; 4] {
-        values
     }
 }
 
@@ -5488,6 +5507,31 @@ mod tests {
         assert_eq!(sum, aligned_sum);
         if arch.dispatch(LaneCount) > 2 {
             assert_ne!(sum, wrong_aligned_sum);
+        }
+    }
+
+    #[test]
+    fn test_interleave() {
+        if let Some(simd) = x86::V3::try_new() {
+            {
+                let src = [f64x4(0.0, 0.1, 1.0, 1.1), f64x4(2.0, 2.1, 3.0, 3.1)];
+                let dst = deinterleave_fallback::<f64, f64x4, [f64x4; 2]>(src);
+                assert_eq!(dst[1], simd.add_f64x4(dst[0], simd.splat_f64x4(0.1)));
+                assert_eq!(src, interleave_fallback::<f64, f64x4, [f64x4; 2]>(dst));
+            }
+            {
+                let src = [
+                    f64x4(0.0, 0.1, 0.2, 0.3),
+                    f64x4(1.0, 1.1, 1.2, 1.3),
+                    f64x4(2.0, 2.1, 2.2, 2.3),
+                    f64x4(3.0, 3.1, 3.2, 3.3),
+                ];
+                let dst = deinterleave_fallback::<f64, f64x4, [f64x4; 4]>(src);
+                assert_eq!(dst[1], simd.add_f64x4(dst[0], simd.splat_f64x4(0.1)));
+                assert_eq!(dst[2], simd.add_f64x4(dst[0], simd.splat_f64x4(0.2)));
+                assert_eq!(dst[3], simd.add_f64x4(dst[0], simd.splat_f64x4(0.3)));
+                assert_eq!(src, interleave_fallback::<f64, f64x4, [f64x4; 4]>(dst));
+            }
         }
     }
 }
