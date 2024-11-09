@@ -1666,6 +1666,111 @@ impl Simd for V3 {
     fn swap_re_im_c64s(self, a: Self::c64s) -> Self::c64s {
         unsafe { cast(_mm256_permute_pd::<0b0101>(cast(a))) }
     }
+
+    #[inline(always)]
+    fn interleave_shfl_f64sx2(self, values: [Self::f64s; 2]) -> [Self::f64s; 2] {
+        cast([
+            self.avx
+                ._mm256_unpacklo_pd(cast(values[0]), cast(values[1])),
+            self.avx
+                ._mm256_unpackhi_pd(cast(values[0]), cast(values[1])),
+        ])
+    }
+    #[inline(always)]
+    fn interleave_shfl_f64sx4(self, values: [Self::f64s; 4]) -> [Self::f64s; 4] {
+        // a0 b0 c0 d0
+        // a1 b1 c1 d1
+        // a2 b2 c2 d2
+        // a3 b3 c3 d3
+
+        // a0 a1 c0 c1
+        // b0 b1 d0 d1
+        // a2 a3 c2 c3
+        // b2 b3 d2 d3
+        let values: [__m256d; 4] = cast([
+            self.interleave_shfl_f64sx2([values[0], values[1]]),
+            self.interleave_shfl_f64sx2([values[2], values[3]]),
+        ]);
+
+        // a0 a1 a2 a3
+        // b0 b1 b2 b3
+        // c0 c1 c2 c3
+        // d0 d1 d2 d3
+        cast([
+            self.avx
+                ._mm256_permute2f128_pd::<0b0010_0000>(values[0], values[2]),
+            self.avx
+                ._mm256_permute2f128_pd::<0b0010_0000>(values[1], values[3]),
+            self.avx
+                ._mm256_permute2f128_pd::<0b0011_0001>(values[0], values[2]),
+            self.avx
+                ._mm256_permute2f128_pd::<0b0011_0001>(values[1], values[3]),
+        ])
+    }
+
+    #[inline(always)]
+    fn interleave_shfl_f32sx2(self, values: [Self::f32s; 2]) -> [Self::f32s; 2] {
+        // a0 b0 a1 b1 a2 b2 a3 b3
+        // a4 b4 a5 b5 a6 b6 a7 b7
+
+        // a0 a4 b0 b4 a2 a6 b2 b6
+        // a1 a5 b1 b5 a3 a7 b3 b7
+
+        // a0 a4 a1 a5 a2 a6 a3 a7
+        // b0 b4 b1 b5 b2 b6 b3 b7
+        cast(
+            self.interleave_shfl_f64sx2(cast([
+                self.avx
+                    ._mm256_unpacklo_ps(cast(values[0]), cast(values[1])),
+                self.avx
+                    ._mm256_unpackhi_ps(cast(values[0]), cast(values[1])),
+            ])),
+        )
+    }
+    #[inline(always)]
+    fn interleave_shfl_f32sx4(self, values: [Self::f32s; 4]) -> [Self::f32s; 4] {
+        // a0 b0 c0 d0 a1 b1 c1 d1
+        // a2 b2 c2 d2 a3 b3 c3 d3
+        // a4 b4 c4 d4 a5 b5 c5 d5
+        // a6 b6 c6 d6 a7 b7 c7 d7
+
+        // a0 a2 c0 c2 a1 a3 c1 c3
+        // b0 b2 d0 d2 b1 b3 d1 d3
+        // a4 a6 c4 c6 a5 a7 c5 c7
+        // b4 b6 d4 d6 b5 b7 d5 d7
+        let values: [__m256d; 4] = cast([
+            self.interleave_shfl_f32sx2([values[0], values[1]]),
+            self.interleave_shfl_f32sx2([values[2], values[3]]),
+        ]);
+
+        let values = [
+            self.interleave_shfl_f64sx2(cast([values[0], values[2]])),
+            self.interleave_shfl_f64sx2(cast([values[1], values[3]])),
+        ];
+
+        // a0 a2 a4 a6 a1 a3 a5 a7
+        // b0 b2 b4 b6 b1 b3 b5 b7
+        // c0 c2 c4 c6 c1 c3 c5 c7
+        // d0 d2 d4 d6 d1 d3 d5 d7
+        cast([values[0][0], values[1][0], values[0][1], values[1][1]])
+    }
+
+    #[inline(always)]
+    fn deinterleave_shfl_f64sx2(self, values: [Self::f64s; 2]) -> [Self::f64s; 2] {
+        self.interleave_shfl_f64sx2(values)
+    }
+    #[inline(always)]
+    fn deinterleave_shfl_f64sx4(self, values: [Self::f64s; 4]) -> [Self::f64s; 4] {
+        self.interleave_shfl_f64sx4(values)
+    }
+    #[inline(always)]
+    fn deinterleave_shfl_f32sx2(self, values: [Self::f32s; 2]) -> [Self::f32s; 2] {
+        self.interleave_shfl_f32sx2(values)
+    }
+    #[inline(always)]
+    fn deinterleave_shfl_f32sx4(self, values: [Self::f32s; 4]) -> [Self::f32s; 4] {
+        self.interleave_shfl_f32sx4(values)
+    }
 }
 
 impl Simd for V3Scalar {
@@ -2496,6 +2601,40 @@ impl Simd for V3Scalar {
     #[inline(always)]
     fn swap_re_im_c64s(self, a: Self::c64s) -> Self::c64s {
         c64 { re: a.im, im: a.re }
+    }
+
+    #[inline(always)]
+    fn interleave_shfl_f64sx2(self, values: [Self::f64s; 2]) -> [Self::f64s; 2] {
+        values
+    }
+    #[inline(always)]
+    fn interleave_shfl_f64sx4(self, values: [Self::f64s; 4]) -> [Self::f64s; 4] {
+        values
+    }
+    #[inline(always)]
+    fn deinterleave_shfl_f64sx2(self, values: [Self::f64s; 2]) -> [Self::f64s; 2] {
+        values
+    }
+    #[inline(always)]
+    fn deinterleave_shfl_f64sx4(self, values: [Self::f64s; 4]) -> [Self::f64s; 4] {
+        values
+    }
+
+    #[inline(always)]
+    fn interleave_shfl_f32sx2(self, values: [Self::f32s; 2]) -> [Self::f32s; 2] {
+        values
+    }
+    #[inline(always)]
+    fn interleave_shfl_f32sx4(self, values: [Self::f32s; 4]) -> [Self::f32s; 4] {
+        values
+    }
+    #[inline(always)]
+    fn deinterleave_shfl_f32sx2(self, values: [Self::f32s; 2]) -> [Self::f32s; 2] {
+        values
+    }
+    #[inline(always)]
+    fn deinterleave_shfl_f32sx4(self, values: [Self::f32s; 4]) -> [Self::f32s; 4] {
+        values
     }
 }
 
@@ -3358,6 +3497,132 @@ impl Simd for V4 {
     fn head_mask_f32s(self, len: usize) -> Self::m32s {
         unsafe { transmute(V4_U32_LAST_MASKS[len.min(16)]) }
     }
+
+    #[inline(always)]
+    fn interleave_shfl_f64sx2(self, values: [Self::f64s; 2]) -> [Self::f64s; 2] {
+        cast([
+            self.avx512f
+                ._mm512_unpacklo_pd(cast(values[0]), cast(values[1])),
+            self.avx512f
+                ._mm512_unpackhi_pd(cast(values[0]), cast(values[1])),
+        ])
+    }
+    #[inline(always)]
+    fn interleave_shfl_f64sx4(self, values: [Self::f64s; 4]) -> [Self::f64s; 4] {
+        // a0 b0 c0 d0 a1 b1 c1 d1
+        // a2 b2 c2 d2 a3 b3 c3 d3
+        // a4 b4 c4 d4 a5 b5 c5 d5
+        // a6 b6 c6 d6 a7 b7 c7 d7
+
+        // a0 a2 c0 c2 a1 a3 c1 c3
+        // b0 b2 d0 d2 b1 b3 d1 d3
+        // a4 a6 c4 c6 a5 a7 c5 c7
+        // b4 b6 d4 d6 b5 b7 d5 d7
+        let values: [__m512d; 4] = cast([
+            self.interleave_shfl_f64sx2([values[0], values[1]]),
+            self.interleave_shfl_f64sx2([values[2], values[3]]),
+        ]);
+
+        // a0 a2 a1 a3 a4 a6 a5 a7
+        // b0 b2 b1 b3 b4 b6 b5 b7
+        // c0 c2 c1 c3 c4 c6 c5 c7
+        // d0 d2 d1 d3 d4 d6 d5 d7
+        cast([
+            self.avx512f
+                ._mm512_shuffle_f64x2::<0b10_00_10_00>(values[0], values[2]),
+            self.avx512f
+                ._mm512_shuffle_f64x2::<0b10_00_10_00>(values[1], values[3]),
+            self.avx512f
+                ._mm512_shuffle_f64x2::<0b11_01_11_01>(values[0], values[2]),
+            self.avx512f
+                ._mm512_shuffle_f64x2::<0b11_01_11_01>(values[1], values[3]),
+        ])
+    }
+
+    #[inline(always)]
+    fn interleave_shfl_f32sx2(self, values: [Self::f32s; 2]) -> [Self::f32s; 2] {
+        cast(
+            self.interleave_shfl_f64sx2(cast([
+                self.avx512f
+                    ._mm512_unpacklo_ps(cast(values[0]), cast(values[1])),
+                self.avx512f
+                    ._mm512_unpackhi_ps(cast(values[0]), cast(values[1])),
+            ])),
+        )
+    }
+    #[inline(always)]
+    fn interleave_shfl_f32sx4(self, values: [Self::f32s; 4]) -> [Self::f32s; 4] {
+        // a0 b0 c0 d0 a1 b1 c1 d1
+        // a2 b2 c2 d2 a3 b3 c3 d3
+        // a4 b4 c4 d4 a5 b5 c5 d5
+        // a6 b6 c6 d6 a7 b7 c7 d7
+
+        // a0 a2 c0 c2 a1 a3 c1 c3
+        // b0 b2 d0 d2 b1 b3 d1 d3
+        // a4 a6 c4 c6 a5 a7 c5 c7
+        // b4 b6 d4 d6 b5 b7 d5 d7
+        let values: [__m512d; 4] = cast([
+            self.interleave_shfl_f32sx2([values[0], values[1]]),
+            self.interleave_shfl_f32sx2([values[2], values[3]]),
+        ]);
+
+        let values = [
+            self.interleave_shfl_f64sx2(cast([values[0], values[2]])),
+            self.interleave_shfl_f64sx2(cast([values[1], values[3]])),
+        ];
+
+        // a0 a2 a4 a6 a1 a3 a5 a7
+        // b0 b2 b4 b6 b1 b3 b5 b7
+        // c0 c2 c4 c6 c1 c3 c5 c7
+        // d0 d2 d4 d6 d1 d3 d5 d7
+        cast([values[0][0], values[1][0], values[0][1], values[1][1]])
+    }
+
+    #[inline(always)]
+    fn deinterleave_shfl_f64sx2(self, values: [Self::f64s; 2]) -> [Self::f64s; 2] {
+        self.interleave_shfl_f64sx2(values)
+    }
+    #[inline(always)]
+    fn deinterleave_shfl_f64sx4(self, values: [Self::f64s; 4]) -> [Self::f64s; 4] {
+        let values: [__m512d; 4] = cast(values);
+
+        let values = [
+            self.avx512f
+                ._mm512_shuffle_f64x2::<0b10_00_10_00>(values[0], values[2]),
+            self.avx512f
+                ._mm512_shuffle_f64x2::<0b10_00_10_00>(values[1], values[3]),
+            self.avx512f
+                ._mm512_shuffle_f64x2::<0b11_01_11_01>(values[0], values[2]),
+            self.avx512f
+                ._mm512_shuffle_f64x2::<0b11_01_11_01>(values[1], values[3]),
+        ];
+
+        let values = [
+            self.avx512f
+                ._mm512_shuffle_f64x2::<0b10_00_10_00>(values[0], values[2]),
+            self.avx512f
+                ._mm512_shuffle_f64x2::<0b10_00_10_00>(values[1], values[3]),
+            self.avx512f
+                ._mm512_shuffle_f64x2::<0b11_01_11_01>(values[0], values[2]),
+            self.avx512f
+                ._mm512_shuffle_f64x2::<0b11_01_11_01>(values[1], values[3]),
+        ];
+
+        let values: [Self::f64s; 4] = cast(values);
+
+        cast([
+            self.deinterleave_shfl_f64sx2([values[0], values[1]]),
+            self.deinterleave_shfl_f64sx2([values[2], values[3]]),
+        ])
+    }
+    #[inline(always)]
+    fn deinterleave_shfl_f32sx2(self, values: [Self::f32s; 2]) -> [Self::f32s; 2] {
+        self.interleave_shfl_f32sx2(values)
+    }
+    #[inline(always)]
+    fn deinterleave_shfl_f32sx4(self, values: [Self::f32s; 4]) -> [Self::f32s; 4] {
+        self.interleave_shfl_f32sx4(values)
+    }
 }
 
 #[cfg(feature = "nightly")]
@@ -4093,6 +4358,40 @@ impl Simd for V4_256 {
     #[inline(always)]
     fn head_mask_f32s(self, len: usize) -> Self::m32s {
         unsafe { transmute(V4_256_U32_LAST_MASKS[len.min(8)]) }
+    }
+
+    #[inline(always)]
+    fn interleave_shfl_f64sx2(self, values: [Self::f64s; 2]) -> [Self::f64s; 2] {
+        (**self).interleave_shfl_f64sx2(values)
+    }
+    #[inline(always)]
+    fn interleave_shfl_f64sx4(self, values: [Self::f64s; 4]) -> [Self::f64s; 4] {
+        (**self).interleave_shfl_f64sx4(values)
+    }
+    #[inline(always)]
+    fn interleave_shfl_f32sx2(self, values: [Self::f32s; 2]) -> [Self::f32s; 2] {
+        (**self).interleave_shfl_f32sx2(values)
+    }
+    #[inline(always)]
+    fn interleave_shfl_f32sx4(self, values: [Self::f32s; 4]) -> [Self::f32s; 4] {
+        (**self).interleave_shfl_f32sx4(values)
+    }
+
+    #[inline(always)]
+    fn deinterleave_shfl_f64sx2(self, values: [Self::f64s; 2]) -> [Self::f64s; 2] {
+        (**self).deinterleave_shfl_f64sx2(values)
+    }
+    #[inline(always)]
+    fn deinterleave_shfl_f64sx4(self, values: [Self::f64s; 4]) -> [Self::f64s; 4] {
+        (**self).deinterleave_shfl_f64sx4(values)
+    }
+    #[inline(always)]
+    fn deinterleave_shfl_f32sx2(self, values: [Self::f32s; 2]) -> [Self::f32s; 2] {
+        (**self).deinterleave_shfl_f32sx2(values)
+    }
+    #[inline(always)]
+    fn deinterleave_shfl_f32sx4(self, values: [Self::f32s; 4]) -> [Self::f32s; 4] {
+        (**self).deinterleave_shfl_f32sx4(values)
     }
 }
 
@@ -12732,6 +13031,118 @@ mod tests {
                 simd.partial_store_head_shfl_f32s(dst, simd.partial_load_head_shfl_f32s(src));
 
                 assert_eq!(src, dst);
+            }
+        }
+    }
+
+    #[test]
+    fn test_interleave() {
+        if let Some(simd) = V3::try_new() {
+            {
+                let src = [f64x4(0.0, 0.1, 1.0, 1.1), f64x4(2.0, 2.1, 3.0, 3.1)];
+                let dst = simd.interleave_shfl_f64sx2(src);
+                assert_eq!(dst[1], simd.add_f64x4(dst[0], simd.splat_f64x4(0.1)));
+                assert_eq!(src, simd.deinterleave_shfl_f64sx2(dst));
+            }
+            {
+                let src = [
+                    f64x4(0.0, 0.1, 0.2, 0.3),
+                    f64x4(1.0, 1.1, 1.2, 1.3),
+                    f64x4(2.0, 2.1, 2.2, 2.3),
+                    f64x4(3.0, 3.1, 3.2, 3.3),
+                ];
+                let dst = simd.interleave_shfl_f64sx4(src);
+                assert_eq!(dst[1], simd.add_f64x4(dst[0], simd.splat_f64x4(0.1)));
+                assert_eq!(dst[2], simd.add_f64x4(dst[0], simd.splat_f64x4(0.2)));
+                assert_eq!(dst[3], simd.add_f64x4(dst[0], simd.splat_f64x4(0.3)));
+                assert_eq!(src, simd.deinterleave_shfl_f64sx4(dst));
+            }
+            {
+                let src = [
+                    f32x8(0.0, 0.1, 1.0, 1.1, 2.0, 2.1, 3.0, 3.1),
+                    f32x8(4.0, 4.1, 5.0, 5.1, 6.0, 6.1, 7.0, 7.1),
+                ];
+                let dst = simd.interleave_shfl_f32sx2(src);
+                assert_eq!(dst[1], simd.add_f32x8(dst[0], simd.splat_f32x8(0.1)));
+                assert_eq!(src, simd.deinterleave_shfl_f32sx2(dst));
+            }
+            {
+                let src = [
+                    f32x8(0.0, 0.1, 0.2, 0.3, 1.0, 1.1, 1.2, 1.3),
+                    f32x8(2.0, 2.1, 2.2, 2.3, 3.0, 3.1, 3.2, 3.3),
+                    f32x8(4.0, 4.1, 4.2, 4.3, 5.0, 5.1, 5.2, 5.3),
+                    f32x8(6.0, 6.1, 6.2, 6.3, 7.0, 7.1, 7.2, 7.3),
+                ];
+                let dst = simd.interleave_shfl_f32sx4(src);
+                assert_eq!(dst[1], simd.add_f32x8(dst[0], simd.splat_f32x8(0.1)));
+                assert_eq!(dst[2], simd.add_f32x8(dst[0], simd.splat_f32x8(0.2)));
+                assert_eq!(dst[3], simd.add_f32x8(dst[0], simd.splat_f32x8(0.3)));
+                assert_eq!(src, simd.deinterleave_shfl_f32sx4(dst));
+            }
+        }
+        if let Some(simd) = V4::try_new() {
+            {
+                let src = [
+                    f64x8(0.0, 0.1, 1.0, 1.1, 2.0, 2.1, 3.0, 3.1),
+                    f64x8(4.0, 4.1, 5.0, 5.1, 6.0, 6.1, 7.0, 7.1),
+                ];
+                let dst = simd.interleave_shfl_f64sx2(src);
+                assert_eq!(dst[1], simd.add_f64x8(dst[0], simd.splat_f64x8(0.1)));
+                assert_eq!(src, simd.deinterleave_shfl_f64sx2(dst));
+            }
+            {
+                let src = [
+                    f64x8(0.0, 0.1, 0.2, 0.3, 1.0, 1.1, 1.2, 1.3),
+                    f64x8(2.0, 2.1, 2.2, 2.3, 3.0, 3.1, 3.2, 3.3),
+                    f64x8(4.0, 4.1, 4.2, 4.3, 5.0, 5.1, 5.2, 5.3),
+                    f64x8(6.0, 6.1, 6.2, 6.3, 7.0, 7.1, 7.2, 7.3),
+                ];
+                let dst = simd.interleave_shfl_f64sx4(src);
+                assert_eq!(dst[1], simd.add_f64x8(dst[0], simd.splat_f64x8(0.1)));
+                assert_eq!(dst[2], simd.add_f64x8(dst[0], simd.splat_f64x8(0.2)));
+                assert_eq!(dst[3], simd.add_f64x8(dst[0], simd.splat_f64x8(0.3)));
+                assert_eq!(src, simd.deinterleave_shfl_f64sx4(dst));
+            }
+
+            {
+                let src = [
+                    f32x16(
+                        0.0, 0.1, 1.0, 1.1, 2.0, 2.1, 3.0, 3.1, 4.0, 4.1, 5.0, 5.1, 6.0, 6.1, 7.0,
+                        7.1,
+                    ),
+                    f32x16(
+                        8.0, 8.1, 9.0, 9.1, 10.0, 10.1, 11.0, 11.1, 12.0, 12.1, 13.0, 13.1, 14.0,
+                        14.1, 15.0, 15.1,
+                    ),
+                ];
+                let dst = simd.interleave_shfl_f32sx2(src);
+                assert_eq!(dst[1], simd.add_f32x16(dst[0], simd.splat_f32x16(0.1)));
+                assert_eq!(src, simd.deinterleave_shfl_f32sx2(dst));
+            }
+            {
+                let src = [
+                    f32x16(
+                        0.0, 0.1, 0.2, 0.3, 1.0, 1.1, 1.2, 1.3, 2.0, 2.1, 2.2, 2.3, 3.0, 3.1, 3.2,
+                        3.3,
+                    ),
+                    f32x16(
+                        4.0, 4.1, 4.2, 4.3, 5.0, 5.1, 5.2, 5.3, 6.0, 6.1, 6.2, 6.3, 7.0, 7.1, 7.2,
+                        7.3,
+                    ),
+                    f32x16(
+                        8.0, 8.1, 8.2, 8.3, 9.0, 9.1, 9.2, 9.3, 10.0, 10.1, 10.2, 10.3, 11.0, 11.1,
+                        11.2, 11.3,
+                    ),
+                    f32x16(
+                        12.0, 12.1, 12.2, 12.3, 13.0, 13.1, 13.2, 13.3, 14.0, 14.1, 14.2, 14.3,
+                        15.0, 15.1, 15.2, 15.3,
+                    ),
+                ];
+                let dst = simd.interleave_shfl_f32sx4(src);
+                assert_eq!(dst[1], simd.add_f32x16(dst[0], simd.splat_f32x16(0.1)));
+                assert_eq!(dst[2], simd.add_f32x16(dst[0], simd.splat_f32x16(0.2)));
+                assert_eq!(dst[3], simd.add_f32x16(dst[0], simd.splat_f32x16(0.3)));
+                assert_eq!(src, simd.deinterleave_shfl_f32sx4(dst));
             }
         }
     }

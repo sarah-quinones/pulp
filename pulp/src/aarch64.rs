@@ -1106,6 +1106,55 @@ impl Simd for Neon {
             ))
         }
     }
+
+    #[inline(always)]
+    fn interleave_shfl_f64sx2(self, values: [Self::f64s; 2]) -> [Self::f64s; 2] {
+        unsafe { transmute(vld2q_f64((&values) as *const _ as *const f64)) }
+    }
+    #[inline(always)]
+    fn interleave_shfl_f64sx4(self, values: [Self::f64s; 4]) -> [Self::f64s; 4] {
+        unsafe { transmute(vld4q_f64((&values) as *const _ as *const f64)) }
+    }
+    #[inline(always)]
+    fn deinterleave_shfl_f64sx2(self, values: [Self::f64s; 2]) -> [Self::f64s; 2] {
+        unsafe {
+            let mut out: [Self::f64s; 2] = core::mem::zeroed();
+            vst2q_f64((&mut out) as *mut _ as *mut f64, transmute(values));
+            out
+        }
+    }
+    #[inline(always)]
+    fn deinterleave_shfl_f64sx4(self, values: [Self::f64s; 4]) -> [Self::f64s; 4] {
+        unsafe {
+            let mut out: [Self::f64s; 4] = core::mem::zeroed();
+            vst4q_f64((&mut out) as *mut _ as *mut f64, transmute(values));
+            out
+        }
+    }
+    #[inline(always)]
+    fn interleave_shfl_f32sx2(self, values: [Self::f32s; 2]) -> [Self::f32s; 2] {
+        unsafe { transmute(vld2q_f32((&values) as *const _ as *const f32)) }
+    }
+    #[inline(always)]
+    fn interleave_shfl_f32sx4(self, values: [Self::f32s; 4]) -> [Self::f32s; 4] {
+        unsafe { transmute(vld4q_f32((&values) as *const _ as *const f32)) }
+    }
+    #[inline(always)]
+    fn deinterleave_shfl_f32sx2(self, values: [Self::f32s; 2]) -> [Self::f32s; 2] {
+        unsafe {
+            let mut out: [Self::f32s; 2] = core::mem::zeroed();
+            vst2q_f32((&mut out) as *mut _ as *mut f32, transmute(values));
+            out
+        }
+    }
+    #[inline(always)]
+    fn deinterleave_shfl_f32sx4(self, values: [Self::f32s; 4]) -> [Self::f32s; 4] {
+        unsafe {
+            let mut out: [Self::f32s; 4] = core::mem::zeroed();
+            vst4q_f32((&mut out) as *mut _ as *mut f32, transmute(values));
+            out
+        }
+    }
 }
 
 impl Simd for NeonFcma {
@@ -1993,6 +2042,40 @@ impl Simd for NeonFcma {
                 vget_low_u64(transmute(a)),
             ))
         }
+    }
+
+    #[inline(always)]
+    fn interleave_shfl_f64sx2(self, values: [Self::f64s; 2]) -> [Self::f64s; 2] {
+        (*self).interleave_shfl_f64sx2(values)
+    }
+    #[inline(always)]
+    fn interleave_shfl_f64sx4(self, values: [Self::f64s; 4]) -> [Self::f64s; 4] {
+        (*self).interleave_shfl_f64sx4(values)
+    }
+    #[inline(always)]
+    fn interleave_shfl_f32sx2(self, values: [Self::f32s; 2]) -> [Self::f32s; 2] {
+        (*self).interleave_shfl_f32sx2(values)
+    }
+    #[inline(always)]
+    fn interleave_shfl_f32sx4(self, values: [Self::f32s; 4]) -> [Self::f32s; 4] {
+        (*self).interleave_shfl_f32sx4(values)
+    }
+
+    #[inline(always)]
+    fn deinterleave_shfl_f64sx2(self, values: [Self::f64s; 2]) -> [Self::f64s; 2] {
+        (*self).deinterleave_shfl_f64sx2(values)
+    }
+    #[inline(always)]
+    fn deinterleave_shfl_f64sx4(self, values: [Self::f64s; 4]) -> [Self::f64s; 4] {
+        (*self).deinterleave_shfl_f64sx4(values)
+    }
+    #[inline(always)]
+    fn deinterleave_shfl_f32sx2(self, values: [Self::f32s; 2]) -> [Self::f32s; 2] {
+        (*self).deinterleave_shfl_f32sx2(values)
+    }
+    #[inline(always)]
+    fn deinterleave_shfl_f32sx4(self, values: [Self::f32s; 4]) -> [Self::f32s; 4] {
+        (*self).deinterleave_shfl_f32sx4(values)
     }
 }
 
@@ -3492,6 +3575,50 @@ mod tests {
                 for i in 0..2 {
                     assert_eq!(rot[(i + amount) % 2], array[i]);
                 }
+            }
+        }
+    }
+
+    #[test]
+    fn test_interleave() {
+        if let Some(simd) = Neon::try_new() {
+            {
+                let src = [f64x2(0.0, 0.1), f64x2(1.0, 1.1)];
+                let dst = simd.interleave_shfl_f64sx2(src);
+                assert_eq!(dst[1], simd.add_f64x2(dst[0], simd.splat_f64x2(0.1)));
+                assert_eq!(src, simd.deinterleave_shfl_f64sx2(dst));
+            }
+            {
+                let src = [
+                    f64x2(0.0, 0.1),
+                    f64x2(0.2, 0.3),
+                    f64x2(1.0, 1.1),
+                    f64x2(1.2, 1.3),
+                ];
+                let dst = simd.interleave_shfl_f64sx2(src);
+                assert_eq!(dst[1], simd.add_f64x2(dst[0], simd.splat_f64x2(0.1)));
+                assert_eq!(dst[2], simd.add_f64x2(dst[0], simd.splat_f64x2(0.2)));
+                assert_eq!(dst[3], simd.add_f64x2(dst[0], simd.splat_f64x2(0.3)));
+                assert_eq!(src, simd.deinterleave_shfl_f64sx2(dst));
+            }
+            {
+                let src = [f32x4(0.0, 0.1, 1.0, 1.1), f32x4(2.0, 2.1, 3.0, 3.1)];
+                let dst = simd.interleave_shfl_f32sx2(src);
+                assert_eq!(dst[1], simd.add_f32x4(dst[0], simd.splat_f32x4(0.1)));
+                assert_eq!(src, simd.deinterleave_shfl_f32sx2(dst));
+            }
+            {
+                let src = [
+                    f32x4(0.0, 0.1, 0.2, 0.3),
+                    f32x4(1.0, 1.1, 1.2, 1.3),
+                    f32x4(2.0, 2.1, 2.2, 2.3),
+                    f32x4(3.0, 3.1, 3.2, 3.3),
+                ];
+                let dst = simd.interleave_shfl_f32sx4(src);
+                assert_eq!(dst[1], simd.add_f32x4(dst[0], simd.splat_f32x4(0.1)));
+                assert_eq!(dst[2], simd.add_f32x4(dst[0], simd.splat_f32x4(0.2)));
+                assert_eq!(dst[3], simd.add_f32x4(dst[0], simd.splat_f32x4(0.3)));
+                assert_eq!(src, simd.deinterleave_shfl_f32sx4(dst));
             }
         }
     }

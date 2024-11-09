@@ -878,6 +878,21 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     fn partial_load_u64s(self, slice: &[u64]) -> Self::u64s;
     fn partial_store_u64s(self, slice: &mut [u64], values: Self::u64s);
 
+    fn partial_load_head_shfl_u32s(self, slice: &[u32]) -> Self::u32s;
+    fn partial_store_head_shfl_u32s(self, slice: &mut [u32], values: Self::u32s);
+    fn partial_load_head_shfl_u64s(self, slice: &[u64]) -> Self::u64s;
+    fn partial_store_head_shfl_u64s(self, slice: &mut [u64], values: Self::u64s);
+
+    fn interleave_shfl_f64sx2(self, values: [Self::f64s; 2]) -> [Self::f64s; 2];
+    fn interleave_shfl_f64sx4(self, values: [Self::f64s; 4]) -> [Self::f64s; 4];
+    fn deinterleave_shfl_f64sx2(self, values: [Self::f64s; 2]) -> [Self::f64s; 2];
+    fn deinterleave_shfl_f64sx4(self, values: [Self::f64s; 4]) -> [Self::f64s; 4];
+
+    fn interleave_shfl_f32sx2(self, values: [Self::f32s; 2]) -> [Self::f32s; 2];
+    fn interleave_shfl_f32sx4(self, values: [Self::f32s; 4]) -> [Self::f32s; 4];
+    fn deinterleave_shfl_f32sx2(self, values: [Self::f32s; 2]) -> [Self::f32s; 2];
+    fn deinterleave_shfl_f32sx4(self, values: [Self::f32s; 4]) -> [Self::f32s; 4];
+
     #[inline(always)]
     fn partial_load_i32s(self, slice: &[i32]) -> Self::i32s {
         cast(self.partial_load_u32s(bytemuck::cast_slice(slice)))
@@ -928,11 +943,6 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     fn partial_store_c64s(self, slice: &mut [c64], values: Self::c64s) {
         self.partial_store_f64s(bytemuck::cast_slice_mut(slice), cast(values))
     }
-
-    fn partial_load_head_shfl_u32s(self, slice: &[u32]) -> Self::u32s;
-    fn partial_store_head_shfl_u32s(self, slice: &mut [u32], values: Self::u32s);
-    fn partial_load_head_shfl_u64s(self, slice: &[u64]) -> Self::u64s;
-    fn partial_store_head_shfl_u64s(self, slice: &mut [u64], values: Self::u64s);
 
     #[inline(always)]
     fn partial_load_head_shfl_i32s(self, slice: &[i32]) -> Self::i32s {
@@ -2449,6 +2459,40 @@ impl Simd for Scalar {
         } else {
             1
         }
+    }
+
+    #[inline(always)]
+    fn interleave_shfl_f64sx2(self, values: [Self::f64s; 2]) -> [Self::f64s; 2] {
+        values
+    }
+    #[inline(always)]
+    fn interleave_shfl_f64sx4(self, values: [Self::f64s; 4]) -> [Self::f64s; 4] {
+        values
+    }
+    #[inline(always)]
+    fn deinterleave_shfl_f64sx2(self, values: [Self::f64s; 2]) -> [Self::f64s; 2] {
+        values
+    }
+    #[inline(always)]
+    fn deinterleave_shfl_f64sx4(self, values: [Self::f64s; 4]) -> [Self::f64s; 4] {
+        values
+    }
+
+    #[inline(always)]
+    fn interleave_shfl_f32sx2(self, values: [Self::f32s; 2]) -> [Self::f32s; 2] {
+        values
+    }
+    #[inline(always)]
+    fn interleave_shfl_f32sx4(self, values: [Self::f32s; 4]) -> [Self::f32s; 4] {
+        values
+    }
+    #[inline(always)]
+    fn deinterleave_shfl_f32sx2(self, values: [Self::f32s; 2]) -> [Self::f32s; 2] {
+        values
+    }
+    #[inline(always)]
+    fn deinterleave_shfl_f32sx4(self, values: [Self::f32s; 4]) -> [Self::f32s; 4] {
+        values
     }
 }
 
