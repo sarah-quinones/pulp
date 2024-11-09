@@ -13080,6 +13080,7 @@ mod tests {
                 assert_eq!(src, simd.deinterleave_shfl_f32sx4(dst));
             }
         }
+        #[cfg(feature = "nightly")]
         if let Some(simd) = V4::try_new() {
             {
                 let src = [

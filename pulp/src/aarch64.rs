@@ -3595,11 +3595,11 @@ mod tests {
                     f64x2(1.0, 1.1),
                     f64x2(1.2, 1.3),
                 ];
-                let dst = simd.interleave_shfl_f64sx2(src);
+                let dst = simd.interleave_shfl_f64sx4(src);
                 assert_eq!(dst[1], simd.add_f64x2(dst[0], simd.splat_f64x2(0.1)));
                 assert_eq!(dst[2], simd.add_f64x2(dst[0], simd.splat_f64x2(0.2)));
                 assert_eq!(dst[3], simd.add_f64x2(dst[0], simd.splat_f64x2(0.3)));
-                assert_eq!(src, simd.deinterleave_shfl_f64sx2(dst));
+                assert_eq!(src, simd.deinterleave_shfl_f64sx4(dst));
             }
             {
                 let src = [f32x4(0.0, 0.1, 1.0, 1.1), f32x4(2.0, 2.1, 3.0, 3.1)];
