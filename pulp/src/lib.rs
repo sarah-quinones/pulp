@@ -138,14 +138,15 @@ impl<F: NullaryFnOnce> WithSimd for F {
 // ...
 // an-1,0 ... an-1,m-1
 #[inline(always)]
-fn interleave_fallback<Unit: Pod, Reg: Pod, AosReg: Pod>(x: AosReg) -> AosReg {
+unsafe fn interleave_fallback<Unit: Pod, Reg: Pod, AosReg>(x: AosReg) -> AosReg {
     const { assert!(size_of::<AosReg>() % size_of::<Reg>() == 0) };
     const { assert!(size_of::<Reg>() % size_of::<Unit>() == 0) };
+    const { assert!(!core::mem::needs_drop::<AosReg>()) };
 
     if const { size_of::<AosReg>() == size_of::<Reg>() } {
         x
     } else {
-        let mut y = x;
+        let mut y = core::ptr::read(&x);
 
         let n = const { size_of::<AosReg>() / size_of::<Reg>() };
         let m = const { size_of::<Reg>() / size_of::<Unit>() };
@@ -165,14 +166,14 @@ fn interleave_fallback<Unit: Pod, Reg: Pod, AosReg: Pod>(x: AosReg) -> AosReg {
 }
 
 #[inline(always)]
-fn deinterleave_fallback<Unit: Pod, Reg: Pod, SoaReg: Pod>(y: SoaReg) -> SoaReg {
+unsafe fn deinterleave_fallback<Unit: Pod, Reg: Pod, SoaReg>(y: SoaReg) -> SoaReg {
     const { assert!(size_of::<SoaReg>() % size_of::<Reg>() == 0) };
     const { assert!(size_of::<Reg>() % size_of::<Unit>() == 0) };
 
     if const { size_of::<SoaReg>() == size_of::<Reg>() } {
         y
     } else {
-        let mut x = y;
+        let mut x = core::ptr::read(&y);
 
         let n = const { size_of::<SoaReg>() / size_of::<Reg>() };
         let m = const { size_of::<Reg>() / size_of::<Unit>() };
@@ -190,6 +191,10 @@ fn deinterleave_fallback<Unit: Pod, Reg: Pod, SoaReg: Pod>(y: SoaReg) -> SoaReg 
         x
     }
 }
+
+pub unsafe trait Interleave {}
+unsafe impl<T: Pod> Interleave for T {}
+
 pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     type m32s: Debug + Copy + Send + Sync + Zeroable + NoUninit + 'static;
     type f32s: Debug + Copy + Send + Sync + Pod + 'static;
@@ -940,20 +945,20 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     fn partial_store_last_u64s(self, slice: &mut [u64], values: Self::u64s);
 
     #[inline(always)]
-    fn deinterleave_shfl_f64s<T: Pod>(self, values: T) -> T {
-        deinterleave_fallback::<f64, Self::f64s, T>(values)
+    fn deinterleave_shfl_f64s<T: Interleave>(self, values: T) -> T {
+        unsafe { deinterleave_fallback::<f64, Self::f64s, T>(values) }
     }
     #[inline(always)]
-    fn interleave_shfl_f64s<T: Pod>(self, values: T) -> T {
-        interleave_fallback::<f64, Self::f64s, T>(values)
+    fn interleave_shfl_f64s<T: Interleave>(self, values: T) -> T {
+        unsafe { interleave_fallback::<f64, Self::f64s, T>(values) }
     }
     #[inline(always)]
-    fn deinterleave_shfl_f32s<T: Pod>(self, values: T) -> T {
-        deinterleave_fallback::<f32, Self::f32s, T>(values)
+    fn deinterleave_shfl_f32s<T: Interleave>(self, values: T) -> T {
+        unsafe { deinterleave_fallback::<f32, Self::f32s, T>(values) }
     }
     #[inline(always)]
-    fn interleave_shfl_f32s<T: Pod>(self, values: T) -> T {
-        interleave_fallback::<f32, Self::f32s, T>(values)
+    fn interleave_shfl_f32s<T: Interleave>(self, values: T) -> T {
+        unsafe { interleave_fallback::<f32, Self::f32s, T>(values) }
     }
 
     #[inline(always)]
@@ -1107,12 +1112,14 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 
     #[inline(always)]
     fn tail_mask_f64s(self, len: usize) -> Self::m64s {
-        let iota: Self::u64s = const { unsafe { core::mem::transmute_copy(&<[u64; 1]>::IOTA) } };
+        let iota: Self::u64s =
+            const { unsafe { core::mem::transmute_copy(&<f64 as Iota64>::IOTA) } };
         self.less_than_u64s(iota, self.splat_u64s(len as u64))
     }
     #[inline(always)]
     fn tail_mask_f32s(self, len: usize) -> Self::m32s {
-        let iota: Self::u32s = const { unsafe { core::mem::transmute_copy(&<[u32; 1]>::IOTA) } };
+        let iota: Self::u32s =
+            const { unsafe { core::mem::transmute_copy(&<f32 as Iota32>::IOTA) } };
         self.less_than_u32s(iota, self.splat_u32s(len as u32))
     }
     #[inline(always)]
@@ -1126,12 +1133,14 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 
     #[inline(always)]
     fn head_mask_f64s(self, len: usize) -> Self::m64s {
-        let iota: Self::u64s = const { unsafe { core::mem::transmute_copy(&<[u64; 1]>::IOTA) } };
+        let iota: Self::u64s =
+            const { unsafe { core::mem::transmute_copy(&<f64 as Iota64>::IOTA) } };
         self.greater_than_or_equal_u64s(iota, self.splat_u64s(len as u64))
     }
     #[inline(always)]
     fn head_mask_f32s(self, len: usize) -> Self::m32s {
-        let iota: Self::u32s = const { unsafe { core::mem::transmute_copy(&<[u32; 1]>::IOTA) } };
+        let iota: Self::u32s =
+            const { unsafe { core::mem::transmute_copy(&<f32 as Iota32>::IOTA) } };
         self.greater_than_or_equal_u32s(iota, self.splat_u32s(len as u32))
     }
     #[inline(always)]
@@ -1582,6 +1591,11 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     fn reduce_product_f64s(self, a: Self::f64s) -> f64;
     fn reduce_min_f64s(self, a: Self::f64s) -> f64;
     fn reduce_max_f64s(self, a: Self::f64s) -> f64;
+
+    fn reduce_min_c32s(self, a: Self::c32s) -> c32;
+    fn reduce_max_c32s(self, a: Self::c32s) -> c32;
+    fn reduce_min_c64s(self, a: Self::c64s) -> c64;
+    fn reduce_max_c64s(self, a: Self::c64s) -> c64;
 
     fn splat_c64s(self, value: c64) -> Self::c64s;
     fn conj_c64s(self, a: Self::c64s) -> Self::c64s;
@@ -2494,6 +2508,23 @@ impl Simd for Scalar {
         } else {
             1
         }
+    }
+
+    #[inline(always)]
+    fn reduce_min_c32s(self, a: Self::c32s) -> c32 {
+        a
+    }
+    #[inline(always)]
+    fn reduce_max_c32s(self, a: Self::c32s) -> c32 {
+        a
+    }
+    #[inline(always)]
+    fn reduce_min_c64s(self, a: Self::c64s) -> c64 {
+        a
+    }
+    #[inline(always)]
+    fn reduce_max_c64s(self, a: Self::c64s) -> c64 {
+        a
     }
 }
 
@@ -5381,32 +5412,44 @@ unsafe impl Zeroable for m64x4 {}
 unsafe impl NoUninit for m64x2 {}
 unsafe impl NoUninit for m64x4 {}
 
-pub trait Iota {
-    type Seq: 'static;
-    const IOTA: &'static Self::Seq;
+pub trait Iota32: Sized {
+    const IOTA: [core::mem::MaybeUninit<Self>; 32];
+}
+pub trait Iota64: Sized {
+    const IOTA: [core::mem::MaybeUninit<Self>; 32];
 }
 
-impl<const N: usize> Iota for [u32; N] {
-    type Seq = [[u32; N]; 32];
-
-    const IOTA: &'static Self::Seq = &{
-        let mut iota = [[0u32; N]; 32];
+impl<T> Iota32 for T {
+    const IOTA: [core::mem::MaybeUninit<Self>; 32] = {
+        let mut iota = [const { core::mem::MaybeUninit::uninit() }; 32];
         let mut i = 0;
         while i < 32 {
-            iota[i] = [i as u32; N];
+            let v = (&mut iota[i]) as *mut _ as *mut u32;
+
+            let mut j = 0;
+            while j < size_of::<T>() / size_of::<u32>() {
+                unsafe { *v.add(j) = i as u32 };
+                j += 1;
+            }
+
             i += 1;
         }
         iota
     };
 }
-impl<const N: usize> Iota for [u64; N] {
-    type Seq = [[u64; N]; 32];
-
-    const IOTA: &'static Self::Seq = &{
-        let mut iota = [[0u64; N]; 32];
+impl<T> Iota64 for T {
+    const IOTA: [core::mem::MaybeUninit<Self>; 32] = {
+        let mut iota = [const { core::mem::MaybeUninit::uninit() }; 32];
         let mut i = 0;
         while i < 32 {
-            iota[i] = [i as u64; N];
+            let v = (&mut iota[i]) as *mut _ as *mut u64;
+
+            let mut j = 0;
+            while j < size_of::<T>() / size_of::<u64>() {
+                unsafe { *v.add(j) = i as u64 };
+                j += 1;
+            }
+
             i += 1;
         }
         iota
@@ -5530,9 +5573,11 @@ mod tests {
         if let Some(simd) = x86::V3::try_new() {
             {
                 let src = [f64x4(0.0, 0.1, 1.0, 1.1), f64x4(2.0, 2.1, 3.0, 3.1)];
-                let dst = deinterleave_fallback::<f64, f64x4, [f64x4; 2]>(src);
+                let dst = unsafe { deinterleave_fallback::<f64, f64x4, [f64x4; 2]>(src) };
                 assert_eq!(dst[1], simd.add_f64x4(dst[0], simd.splat_f64x4(0.1)));
-                assert_eq!(src, interleave_fallback::<f64, f64x4, [f64x4; 2]>(dst));
+                assert_eq!(src, unsafe {
+                    interleave_fallback::<f64, f64x4, [f64x4; 2]>(dst)
+                });
             }
             {
                 let src = [
@@ -5541,11 +5586,13 @@ mod tests {
                     f64x4(2.0, 2.1, 2.2, 2.3),
                     f64x4(3.0, 3.1, 3.2, 3.3),
                 ];
-                let dst = deinterleave_fallback::<f64, f64x4, [f64x4; 4]>(src);
+                let dst = unsafe { deinterleave_fallback::<f64, f64x4, [f64x4; 4]>(src) };
                 assert_eq!(dst[1], simd.add_f64x4(dst[0], simd.splat_f64x4(0.1)));
                 assert_eq!(dst[2], simd.add_f64x4(dst[0], simd.splat_f64x4(0.2)));
                 assert_eq!(dst[3], simd.add_f64x4(dst[0], simd.splat_f64x4(0.3)));
-                assert_eq!(src, interleave_fallback::<f64, f64x4, [f64x4; 4]>(dst));
+                assert_eq!(src, unsafe {
+                    interleave_fallback::<f64, f64x4, [f64x4; 4]>(dst)
+                });
             }
         }
     }

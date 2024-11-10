@@ -670,6 +670,39 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
+    fn reduce_min_c32s(self, a: Self::c32s) -> c32 {
+        unsafe {
+            // a0 a1 a2 a3
+            let a = transmute(a);
+            // a2 a3 a2 a3
+            let hi = vcombine_u64(vget_high_u64(a), vget_low_u64(a));
+
+            // a0+a2 a1+a3 _ _
+            cast_lossy(self.min_f32s(transmute(a), transmute(hi)))
+        }
+    }
+    #[inline(always)]
+    fn reduce_max_c32s(self, a: Self::c32s) -> c32 {
+        unsafe {
+            // a0 a1 a2 a3
+            let a = transmute(a);
+            // a2 a3 a2 a3
+            let hi = vcombine_u64(vget_high_u64(a), vget_low_u64(a));
+
+            // a0+a2 a1+a3 _ _
+            cast_lossy(self.max_f32s(transmute(a), transmute(hi)))
+        }
+    }
+    #[inline(always)]
+    fn reduce_min_c64s(self, a: Self::c64s) -> c64 {
+        cast(a)
+    }
+    #[inline(always)]
+    fn reduce_max_c64s(self, a: Self::c64s) -> c64 {
+        cast(a)
+    }
+
+    #[inline(always)]
     fn splat_f64s(self, value: f64) -> Self::f64s {
         self.splat_f64x2(value)
     }
@@ -1108,29 +1141,38 @@ impl Simd for Neon {
     }
 
     #[inline(always)]
-    fn deinterleave_shfl_f64s<T: Pod>(self, values: T) -> T {
+    fn deinterleave_shfl_f64s<T: Interleave>(self, values: T) -> T {
         if const { size_of::<T>() == 2 * size_of::<Self::f32s>() } {
-            unsafe { bytemuck::cast(vld2q_f64((&values) as *const _ as *const f64)) }
+            unsafe { core::mem::transmute_copy(&vld2q_f64((&values) as *const _ as *const f64)) }
         } else if const { size_of::<T>() == 3 * size_of::<Self::f32s>() } {
-            unsafe { bytemuck::cast(vld3q_f64((&values) as *const _ as *const f64)) }
+            unsafe { core::mem::transmute_copy(&vld3q_f64((&values) as *const _ as *const f64)) }
         } else if const { size_of::<T>() == 4 * size_of::<Self::f32s>() } {
-            unsafe { bytemuck::cast(vld4q_f64((&values) as *const _ as *const f64)) }
+            unsafe { core::mem::transmute_copy(&vld4q_f64((&values) as *const _ as *const f64)) }
         } else {
-            deinterleave_fallback::<f64, Self::f64s, T>(values)
+            unsafe { deinterleave_fallback::<f64, Self::f64s, T>(values) }
         }
     }
 
     #[inline(always)]
-    fn interleave_shfl_f64s<T: Pod>(self, values: T) -> T {
+    fn interleave_shfl_f64s<T: Interleave>(self, values: T) -> T {
         unsafe {
             let mut out: T = core::mem::zeroed();
 
             if const { size_of::<T>() == 2 * size_of::<Self::f32s>() } {
-                vst2q_f64((&mut out) as *mut _ as *mut f64, bytemuck::cast(values));
+                vst2q_f64(
+                    (&mut out) as *mut _ as *mut f64,
+                    core::mem::transmute_copy(&values),
+                );
             } else if const { size_of::<T>() == 3 * size_of::<Self::f32s>() } {
-                vst3q_f64((&mut out) as *mut _ as *mut f64, bytemuck::cast(values));
+                vst3q_f64(
+                    (&mut out) as *mut _ as *mut f64,
+                    core::mem::transmute_copy(&values),
+                );
             } else if const { size_of::<T>() == 4 * size_of::<Self::f32s>() } {
-                vst4q_f64((&mut out) as *mut _ as *mut f64, bytemuck::cast(values));
+                vst4q_f64(
+                    (&mut out) as *mut _ as *mut f64,
+                    core::mem::transmute_copy(&values),
+                );
             } else {
                 return interleave_fallback::<f64, Self::f64s, T>(values);
             }
@@ -1139,28 +1181,37 @@ impl Simd for Neon {
         }
     }
     #[inline(always)]
-    fn deinterleave_shfl_f32s<T: Pod>(self, values: T) -> T {
+    fn deinterleave_shfl_f32s<T: Interleave>(self, values: T) -> T {
         if const { size_of::<T>() == 2 * size_of::<Self::f32s>() } {
-            unsafe { bytemuck::cast(vld2q_f32((&values) as *const _ as *const f32)) }
+            unsafe { core::mem::transmute_copy(&vld2q_f32((&values) as *const _ as *const f32)) }
         } else if const { size_of::<T>() == 3 * size_of::<Self::f32s>() } {
-            unsafe { bytemuck::cast(vld3q_f32((&values) as *const _ as *const f32)) }
+            unsafe { core::mem::transmute_copy(&vld3q_f32((&values) as *const _ as *const f32)) }
         } else if const { size_of::<T>() == 4 * size_of::<Self::f32s>() } {
-            unsafe { bytemuck::cast(vld4q_f32((&values) as *const _ as *const f32)) }
+            unsafe { core::mem::transmute_copy(&vld4q_f32((&values) as *const _ as *const f32)) }
         } else {
-            deinterleave_fallback::<f32, Self::f32s, T>(values)
+            unsafe { deinterleave_fallback::<f32, Self::f32s, T>(values) }
         }
     }
     #[inline(always)]
-    fn interleave_shfl_f32s<T: Pod>(self, values: T) -> T {
+    fn interleave_shfl_f32s<T: Interleave>(self, values: T) -> T {
         unsafe {
             let mut out: T = core::mem::zeroed();
 
             if const { size_of::<T>() == 2 * size_of::<Self::f32s>() } {
-                vst2q_f32((&mut out) as *mut _ as *mut f32, bytemuck::cast(values));
+                vst2q_f32(
+                    (&mut out) as *mut _ as *mut f32,
+                    core::mem::transmute_copy(&values),
+                );
             } else if const { size_of::<T>() == 3 * size_of::<Self::f32s>() } {
-                vst3q_f32((&mut out) as *mut _ as *mut f32, bytemuck::cast(values));
+                vst3q_f32(
+                    (&mut out) as *mut _ as *mut f32,
+                    core::mem::transmute_copy(&values),
+                );
             } else if const { size_of::<T>() == 4 * size_of::<Self::f32s>() } {
-                vst4q_f32((&mut out) as *mut _ as *mut f32, bytemuck::cast(values));
+                vst4q_f32(
+                    (&mut out) as *mut _ as *mut f32,
+                    core::mem::transmute_copy(&values),
+                );
             } else {
                 return interleave_fallback::<f32, Self::f32s, T>(values);
             }
@@ -1657,16 +1708,24 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
+    fn reduce_min_c32s(self, a: Self::c32s) -> c32 {
+        (*self).reduce_min_c32s(a)
+    }
+    #[inline(always)]
+    fn reduce_max_c32s(self, a: Self::c32s) -> c32 {
+        (*self).reduce_max_c32s(a)
+    }
+    #[inline(always)]
     fn reduce_sum_c32s(self, a: Self::c32s) -> c32 {
-        unsafe {
-            // a0 a1 a2 a3
-            let a = transmute(a);
-            // a2 a3 a2 a3
-            let hi = vcombine_u64(vget_high_u64(a), vget_low_u64(a));
-
-            // a0+a2 a1+a3 _ _
-            cast_lossy(self.add_f32s(transmute(a), transmute(hi)))
-        }
+        (*self).reduce_sum_c32s(a)
+    }
+    #[inline(always)]
+    fn reduce_min_c64s(self, a: Self::c64s) -> c64 {
+        cast(a)
+    }
+    #[inline(always)]
+    fn reduce_max_c64s(self, a: Self::c64s) -> c64 {
+        cast(a)
     }
 
     #[inline(always)]
@@ -2058,19 +2117,19 @@ impl Simd for NeonFcma {
     }
 
     #[inline(always)]
-    fn deinterleave_shfl_f64s<T: Pod>(self, values: T) -> T {
+    fn deinterleave_shfl_f64s<T: Interleave>(self, values: T) -> T {
         (*self).deinterleave_shfl_f64s(values)
     }
     #[inline(always)]
-    fn interleave_shfl_f64s<T: Pod>(self, values: T) -> T {
+    fn interleave_shfl_f64s<T: Interleave>(self, values: T) -> T {
         (*self).interleave_shfl_f64s(values)
     }
     #[inline(always)]
-    fn deinterleave_shfl_f32s<T: Pod>(self, values: T) -> T {
+    fn deinterleave_shfl_f32s<T: Interleave>(self, values: T) -> T {
         (*self).deinterleave_shfl_f32s(values)
     }
     #[inline(always)]
-    fn interleave_shfl_f32s<T: Pod>(self, values: T) -> T {
+    fn interleave_shfl_f32s<T: Interleave>(self, values: T) -> T {
         (*self).interleave_shfl_f32s(values)
     }
 }

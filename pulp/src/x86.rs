@@ -719,6 +719,45 @@ impl V2 {
     fn reduce_sum_c64s(self, a: f64x2) -> c64 {
         cast(a)
     }
+
+    #[inline(always)]
+    fn reduce_max_c32s(self, a: f32x4) -> c32 {
+        unsafe {
+            // a0 a1 a2 a3
+            let a: __m128 = transmute(a);
+            // a2 a3 a2 a3
+            let hi = _mm_movehl_ps(a, a);
+
+            // a0+a2 a1+a3 _ _
+            let r0 = _mm_max_ps(a, hi);
+
+            cast(_mm_cvtsd_f64(cast(r0)))
+        }
+    }
+
+    #[inline(always)]
+    fn reduce_max_c64s(self, a: f64x2) -> c64 {
+        cast(a)
+    }
+    #[inline(always)]
+    fn reduce_min_c32s(self, a: f32x4) -> c32 {
+        unsafe {
+            // a0 a1 a2 a3
+            let a: __m128 = transmute(a);
+            // a2 a3 a2 a3
+            let hi = _mm_movehl_ps(a, a);
+
+            // a0+a2 a1+a3 _ _
+            let r0 = _mm_min_ps(a, hi);
+
+            cast(_mm_cvtsd_f64(cast(r0)))
+        }
+    }
+
+    #[inline(always)]
+    fn reduce_min_c64s(self, a: f64x2) -> c64 {
+        cast(a)
+    }
 }
 
 impl Simd for V3 {
@@ -1458,6 +1497,11 @@ impl Simd for V3 {
     }
 
     #[inline(always)]
+    fn neg_c64s(self, a: Self::c64s) -> Self::c64s {
+        self.xor_f64s(a, self.splat_f64s(-0.0))
+    }
+
+    #[inline(always)]
     fn reduce_sum_c32s(self, a: Self::c32s) -> c32 {
         unsafe {
             let a: __m256 = transmute(a);
@@ -1465,18 +1509,44 @@ impl Simd for V3 {
             (*self).reduce_sum_c32s(transmute(r))
         }
     }
-
-    #[inline(always)]
-    fn neg_c64s(self, a: Self::c64s) -> Self::c64s {
-        self.xor_f64s(a, self.splat_f64s(-0.0))
-    }
-
     #[inline(always)]
     fn reduce_sum_c64s(self, a: Self::c64s) -> c64 {
         unsafe {
             let a: __m256d = transmute(a);
             let r = _mm_add_pd(_mm256_castpd256_pd128(a), _mm256_extractf128_pd::<1>(a));
             (*self).reduce_sum_c64s(transmute(r))
+        }
+    }
+    #[inline(always)]
+    fn reduce_min_c32s(self, a: Self::c32s) -> c32 {
+        unsafe {
+            let a: __m256 = transmute(a);
+            let r = _mm_min_ps(_mm256_castps256_ps128(a), _mm256_extractf128_ps::<1>(a));
+            (*self).reduce_min_c32s(transmute(r))
+        }
+    }
+    #[inline(always)]
+    fn reduce_min_c64s(self, a: Self::c64s) -> c64 {
+        unsafe {
+            let a: __m256d = transmute(a);
+            let r = _mm_min_pd(_mm256_castpd256_pd128(a), _mm256_extractf128_pd::<1>(a));
+            (*self).reduce_min_c64s(transmute(r))
+        }
+    }
+    #[inline(always)]
+    fn reduce_max_c32s(self, a: Self::c32s) -> c32 {
+        unsafe {
+            let a: __m256 = transmute(a);
+            let r = _mm_max_ps(_mm256_castps256_ps128(a), _mm256_extractf128_ps::<1>(a));
+            (*self).reduce_max_c32s(transmute(r))
+        }
+    }
+    #[inline(always)]
+    fn reduce_max_c64s(self, a: Self::c64s) -> c64 {
+        unsafe {
+            let a: __m256d = transmute(a);
+            let r = _mm_max_pd(_mm256_castpd256_pd128(a), _mm256_extractf128_pd::<1>(a));
+            (*self).reduce_max_c64s(transmute(r))
         }
     }
 
@@ -1672,17 +1742,19 @@ impl Simd for V3 {
     }
 
     #[inline(always)]
-    fn deinterleave_shfl_f64s<T: Pod>(self, values: T) -> T {
+    fn deinterleave_shfl_f64s<T: Interleave>(self, values: T) -> T {
         let avx = self.avx;
 
         if const { size_of::<T>() == 2 * size_of::<Self::f64s>() } {
-            let values: [__m256d; 2] = bytemuck::cast(values);
-            bytemuck::cast([
-                avx._mm256_unpacklo_pd(values[0], values[1]),
-                avx._mm256_unpackhi_pd(values[0], values[1]),
-            ])
+            let values: [__m256d; 2] = unsafe { core::mem::transmute_copy(&values) };
+            unsafe {
+                core::mem::transmute_copy(&[
+                    avx._mm256_unpacklo_pd(values[0], values[1]),
+                    avx._mm256_unpackhi_pd(values[0], values[1]),
+                ])
+            }
         } else if const { size_of::<T>() == 4 * size_of::<Self::f64s>() } {
-            let values: [__m256d; 4] = bytemuck::cast(values);
+            let values: [__m256d; 4] = unsafe { core::mem::transmute_copy(&values) };
 
             // a0 b0 c0 d0
             // a1 b1 c1 d1
@@ -1704,23 +1776,25 @@ impl Simd for V3 {
             // b0 b1 b2 b3
             // c0 c1 c2 c3
             // d0 d1 d2 d3
-            bytemuck::cast([
-                avx._mm256_permute2f128_pd::<0b0010_0000>(values[0], values[2]),
-                avx._mm256_permute2f128_pd::<0b0010_0000>(values[1], values[3]),
-                avx._mm256_permute2f128_pd::<0b0011_0001>(values[0], values[2]),
-                avx._mm256_permute2f128_pd::<0b0011_0001>(values[1], values[3]),
-            ])
+            unsafe {
+                core::mem::transmute_copy(&[
+                    avx._mm256_permute2f128_pd::<0b0010_0000>(values[0], values[2]),
+                    avx._mm256_permute2f128_pd::<0b0010_0000>(values[1], values[3]),
+                    avx._mm256_permute2f128_pd::<0b0011_0001>(values[0], values[2]),
+                    avx._mm256_permute2f128_pd::<0b0011_0001>(values[1], values[3]),
+                ])
+            }
         } else {
-            deinterleave_fallback::<f64, Self::f64s, T>(values)
+            unsafe { deinterleave_fallback::<f64, Self::f64s, T>(values) }
         }
     }
 
     #[inline(always)]
-    fn deinterleave_shfl_f32s<T: Pod>(self, values: T) -> T {
+    fn deinterleave_shfl_f32s<T: Interleave>(self, values: T) -> T {
         let avx = self.avx;
 
         if const { size_of::<T>() == 2 * size_of::<Self::f32s>() } {
-            let values: [__m256d; 2] = bytemuck::cast(values);
+            let values: [__m256d; 2] = unsafe { core::mem::transmute_copy(&values) };
             // a0 b0 a1 b1 a2 b2 a3 b3
             // a4 b4 a5 b5 a6 b6 a7 b7
 
@@ -1738,13 +1812,13 @@ impl Simd for V3 {
                 avx._mm256_unpackhi_pd(values[0], values[1]),
             ];
 
-            bytemuck::cast(values)
+            unsafe { core::mem::transmute_copy(&values) }
         } else if const { size_of::<T>() == 4 * size_of::<Self::f32s>() } {
             // a0 b0 c0 d0 a1 b1 c1 d1
             // a2 b2 c2 d2 a3 b3 c3 d3
             // a4 b4 c4 d4 a5 b5 c5 d5
             // a6 b6 c6 d6 a7 b7 c7 d7
-            let values: [__m256d; 4] = bytemuck::cast(values);
+            let values: [__m256d; 4] = unsafe { core::mem::transmute_copy(&values) };
 
             // a0 a2 c0 c2 a1 a3 c1 c3
             // b0 b2 d0 d2 b1 b3 d1 d3
@@ -1775,14 +1849,14 @@ impl Simd for V3 {
                 avx._mm256_unpackhi_pd(values[1], values[3]),
             ];
 
-            bytemuck::cast(values)
+            unsafe { core::mem::transmute_copy(&values) }
         } else {
-            deinterleave_fallback::<f32, Self::f32s, T>(values)
+            unsafe { deinterleave_fallback::<f32, Self::f32s, T>(values) }
         }
     }
 
     #[inline(always)]
-    fn interleave_shfl_f32s<T: Pod>(self, values: T) -> T {
+    fn interleave_shfl_f32s<T: Interleave>(self, values: T) -> T {
         if const {
             (size_of::<T>() == 2 * size_of::<Self::f32s>())
                 || (size_of::<T>() == 4 * size_of::<Self::f32s>())
@@ -1790,12 +1864,12 @@ impl Simd for V3 {
             // permutation is inverse of itself in this case
             self.deinterleave_shfl_f32s(values)
         } else {
-            interleave_fallback::<f32, Self::f32s, T>(values)
+            unsafe { interleave_fallback::<f32, Self::f32s, T>(values) }
         }
     }
 
     #[inline(always)]
-    fn interleave_shfl_f64s<T: Pod>(self, values: T) -> T {
+    fn interleave_shfl_f64s<T: Interleave>(self, values: T) -> T {
         if const {
             (size_of::<T>() == 2 * size_of::<Self::f64s>())
                 || (size_of::<T>() == 4 * size_of::<Self::f64s>())
@@ -1803,7 +1877,7 @@ impl Simd for V3 {
             // permutation is inverse of itself in this case
             self.deinterleave_shfl_f64s(values)
         } else {
-            interleave_fallback::<f64, Self::f64s, T>(values)
+            unsafe { interleave_fallback::<f64, Self::f64s, T>(values) }
         }
     }
 }
@@ -2637,6 +2711,23 @@ impl Simd for V3Scalar {
     fn swap_re_im_c64s(self, a: Self::c64s) -> Self::c64s {
         c64 { re: a.im, im: a.re }
     }
+
+    #[inline(always)]
+    fn reduce_min_c32s(self, a: Self::c32s) -> c32 {
+        a
+    }
+    #[inline(always)]
+    fn reduce_max_c32s(self, a: Self::c32s) -> c32 {
+        a
+    }
+    #[inline(always)]
+    fn reduce_min_c64s(self, a: Self::c64s) -> c64 {
+        a
+    }
+    #[inline(always)]
+    fn reduce_max_c64s(self, a: Self::c64s) -> c64 {
+        a
+    }
 }
 
 #[cfg(feature = "nightly")]
@@ -3230,6 +3321,10 @@ impl Simd for V4 {
     fn neg_c32s(self, a: Self::c32s) -> Self::c32s {
         self.xor_f32s(a, self.splat_f32s(-0.0))
     }
+    #[inline(always)]
+    fn neg_c64s(self, a: Self::c64s) -> Self::c64s {
+        self.xor_f64s(a, self.splat_f64s(-0.0))
+    }
 
     #[inline(always)]
     fn reduce_sum_c32s(self, a: Self::c32s) -> c32 {
@@ -3244,16 +3339,51 @@ impl Simd for V4 {
     }
 
     #[inline(always)]
-    fn neg_c64s(self, a: Self::c64s) -> Self::c64s {
-        self.xor_f64s(a, self.splat_f64s(-0.0))
-    }
-
-    #[inline(always)]
     fn reduce_sum_c64s(self, a: Self::c64s) -> c64 {
         unsafe {
             let a: __m512d = transmute(a);
             let r = _mm256_add_pd(_mm512_castpd512_pd256(a), _mm512_extractf64x4_pd::<1>(a));
             (*self).reduce_sum_c64s(transmute(r))
+        }
+    }
+    #[inline(always)]
+    fn reduce_min_c32s(self, a: Self::c32s) -> c32 {
+        unsafe {
+            let a: __m512 = transmute(a);
+            let r = _mm256_min_ps(
+                _mm512_castps512_ps256(a),
+                transmute(_mm512_extractf64x4_pd::<1>(transmute(a))),
+            );
+            (*self).reduce_min_c32s(transmute(r))
+        }
+    }
+
+    #[inline(always)]
+    fn reduce_min_c64s(self, a: Self::c64s) -> c64 {
+        unsafe {
+            let a: __m512d = transmute(a);
+            let r = _mm256_min_pd(_mm512_castpd512_pd256(a), _mm512_extractf64x4_pd::<1>(a));
+            (*self).reduce_min_c64s(transmute(r))
+        }
+    }
+    #[inline(always)]
+    fn reduce_max_c32s(self, a: Self::c32s) -> c32 {
+        unsafe {
+            let a: __m512 = transmute(a);
+            let r = _mm256_max_ps(
+                _mm512_castps512_ps256(a),
+                transmute(_mm512_extractf64x4_pd::<1>(transmute(a))),
+            );
+            (*self).reduce_max_c32s(transmute(r))
+        }
+    }
+
+    #[inline(always)]
+    fn reduce_max_c64s(self, a: Self::c64s) -> c64 {
+        unsafe {
+            let a: __m512d = transmute(a);
+            let r = _mm256_max_pd(_mm512_castpd512_pd256(a), _mm512_extractf64x4_pd::<1>(a));
+            (*self).reduce_max_c64s(transmute(r))
         }
     }
 
@@ -3500,17 +3630,19 @@ impl Simd for V4 {
     }
 
     #[inline(always)]
-    fn deinterleave_shfl_f64s<T: Pod>(self, values: T) -> T {
+    fn deinterleave_shfl_f64s<T: Interleave>(self, values: T) -> T {
         let avx = self.avx512f;
 
         if const { size_of::<T>() == 2 * size_of::<Self::f64s>() } {
-            let values: [__m512d; 2] = bytemuck::cast(values);
-            bytemuck::cast([
-                avx._mm512_unpacklo_pd(values[0], values[1]),
-                avx._mm512_unpackhi_pd(values[0], values[1]),
-            ])
+            let values: [__m512d; 2] = unsafe { core::mem::transmute_copy(&values) };
+            unsafe {
+                core::mem::transmute_copy(&[
+                    avx._mm512_unpacklo_pd(values[0], values[1]),
+                    avx._mm512_unpackhi_pd(values[0], values[1]),
+                ])
+            }
         } else if const { size_of::<T>() == 4 * size_of::<Self::f64s>() } {
-            let values: [__m512d; 4] = bytemuck::cast(values);
+            let values: [__m512d; 4] = unsafe { core::mem::transmute_copy(&values) };
 
             // a0 b0 c0 d0
             // a1 b1 c1 d1
@@ -3532,27 +3664,29 @@ impl Simd for V4 {
             // b0 b1 b2 b3
             // c0 c1 c2 c3
             // d0 d1 d2 d3
-            bytemuck::cast([
-                self.avx512f
-                    ._mm512_shuffle_f64x2::<0b10_00_10_00>(values[0], values[2]),
-                self.avx512f
-                    ._mm512_shuffle_f64x2::<0b10_00_10_00>(values[1], values[3]),
-                self.avx512f
-                    ._mm512_shuffle_f64x2::<0b11_01_11_01>(values[0], values[2]),
-                self.avx512f
-                    ._mm512_shuffle_f64x2::<0b11_01_11_01>(values[1], values[3]),
-            ])
+            unsafe {
+                core::mem::transmute_copy(&[
+                    self.avx512f
+                        ._mm512_shuffle_f64x2::<0b10_00_10_00>(values[0], values[2]),
+                    self.avx512f
+                        ._mm512_shuffle_f64x2::<0b10_00_10_00>(values[1], values[3]),
+                    self.avx512f
+                        ._mm512_shuffle_f64x2::<0b11_01_11_01>(values[0], values[2]),
+                    self.avx512f
+                        ._mm512_shuffle_f64x2::<0b11_01_11_01>(values[1], values[3]),
+                ])
+            }
         } else {
-            deinterleave_fallback::<f64, Self::f64s, T>(values)
+            unsafe { deinterleave_fallback::<f64, Self::f64s, T>(values) }
         }
     }
 
     #[inline(always)]
-    fn deinterleave_shfl_f32s<T: Pod>(self, values: T) -> T {
+    fn deinterleave_shfl_f32s<T: Interleave>(self, values: T) -> T {
         let avx = self.avx512f;
 
         if const { size_of::<T>() == 2 * size_of::<Self::f32s>() } {
-            let values: [__m512d; 2] = bytemuck::cast(values);
+            let values: [__m512d; 2] = unsafe { core::mem::transmute_copy(&values) };
             // a0 b0 a1 b1 a2 b2 a3 b3
             // a4 b4 a5 b5 a6 b6 a7 b7
 
@@ -3570,13 +3704,13 @@ impl Simd for V4 {
                 avx._mm512_unpackhi_pd(values[0], values[1]),
             ];
 
-            bytemuck::cast(values)
+            unsafe { core::mem::transmute_copy(&values) }
         } else if const { size_of::<T>() == 4 * size_of::<Self::f32s>() } {
             // a0 b0 c0 d0 a1 b1 c1 d1
             // a2 b2 c2 d2 a3 b3 c3 d3
             // a4 b4 c4 d4 a5 b5 c5 d5
             // a6 b6 c6 d6 a7 b7 c7 d7
-            let values: [__m512d; 4] = bytemuck::cast(values);
+            let values: [__m512d; 4] = unsafe { core::mem::transmute_copy(&values) };
 
             // a0 a2 c0 c2 a1 a3 c1 c3
             // b0 b2 d0 d2 b1 b3 d1 d3
@@ -3607,14 +3741,14 @@ impl Simd for V4 {
                 avx._mm512_unpackhi_pd(values[1], values[3]),
             ];
 
-            bytemuck::cast(values)
+            unsafe { core::mem::transmute_copy(&values) }
         } else {
-            deinterleave_fallback::<f32, Self::f32s, T>(values)
+            unsafe { deinterleave_fallback::<f32, Self::f32s, T>(values) }
         }
     }
 
     #[inline(always)]
-    fn interleave_shfl_f32s<T: Pod>(self, values: T) -> T {
+    fn interleave_shfl_f32s<T: Interleave>(self, values: T) -> T {
         if const {
             (size_of::<T>() == 2 * size_of::<Self::f32s>())
                 || (size_of::<T>() == 4 * size_of::<Self::f32s>())
@@ -3622,14 +3756,14 @@ impl Simd for V4 {
             // permutation is inverse of itself in this case
             self.deinterleave_shfl_f32s(values)
         } else {
-            interleave_fallback::<f32, Self::f32s, T>(values)
+            unsafe { interleave_fallback::<f32, Self::f32s, T>(values) }
         }
     }
 
     #[inline(always)]
-    fn interleave_shfl_f64s<T: Pod>(self, values: T) -> T {
+    fn interleave_shfl_f64s<T: Interleave>(self, values: T) -> T {
         if const { size_of::<T>() == 4 * size_of::<Self::f64s>() } {
-            let values: [__m512d; 4] = bytemuck::cast(values);
+            let values: [__m512d; 4] = unsafe { core::mem::transmute_copy(&values) };
             let avx = self.avx512f;
 
             let values = [
@@ -3646,17 +3780,19 @@ impl Simd for V4 {
                 avx._mm512_shuffle_f64x2::<0b11_01_11_01>(values[1], values[3]),
             ];
 
-            bytemuck::cast([
-                avx._mm512_unpacklo_pd(values[0], values[1]),
-                avx._mm512_unpackhi_pd(values[0], values[1]),
-                avx._mm512_unpacklo_pd(values[2], values[3]),
-                avx._mm512_unpackhi_pd(values[2], values[3]),
-            ])
+            unsafe {
+                core::mem::transmute_copy(&[
+                    avx._mm512_unpacklo_pd(values[0], values[1]),
+                    avx._mm512_unpackhi_pd(values[0], values[1]),
+                    avx._mm512_unpacklo_pd(values[2], values[3]),
+                    avx._mm512_unpackhi_pd(values[2], values[3]),
+                ])
+            }
         } else if const { size_of::<T>() == 2 * size_of::<Self::f64s>() } {
             // permutation is inverse of itself in this case
             self.deinterleave_shfl_f64s(values)
         } else {
-            interleave_fallback::<f64, Self::f64s, T>(values)
+            unsafe { interleave_fallback::<f64, Self::f64s, T>(values) }
         }
     }
 }
@@ -4120,6 +4256,10 @@ impl Simd for V4_256 {
     fn neg_c32s(self, a: Self::c32s) -> Self::c32s {
         self.xor_f32s(a, self.splat_f32s(-0.0))
     }
+    #[inline(always)]
+    fn neg_c64s(self, a: Self::c64s) -> Self::c64s {
+        self.xor_f64s(a, self.splat_f64s(-0.0))
+    }
 
     #[inline(always)]
     fn reduce_sum_c32s(self, a: Self::c32s) -> c32 {
@@ -4127,13 +4267,28 @@ impl Simd for V4_256 {
     }
 
     #[inline(always)]
-    fn neg_c64s(self, a: Self::c64s) -> Self::c64s {
-        self.xor_f64s(a, self.splat_f64s(-0.0))
+    fn reduce_sum_c64s(self, a: Self::c64s) -> c64 {
+        (**self).reduce_sum_c64s(a)
     }
 
     #[inline(always)]
-    fn reduce_sum_c64s(self, a: Self::c64s) -> c64 {
-        (**self).reduce_sum_c64s(a)
+    fn reduce_min_c32s(self, a: Self::c32s) -> c32 {
+        (**self).reduce_min_c32s(a)
+    }
+
+    #[inline(always)]
+    fn reduce_min_c64s(self, a: Self::c64s) -> c64 {
+        (**self).reduce_min_c64s(a)
+    }
+
+    #[inline(always)]
+    fn reduce_max_c32s(self, a: Self::c32s) -> c32 {
+        (**self).reduce_max_c32s(a)
+    }
+
+    #[inline(always)]
+    fn reduce_max_c64s(self, a: Self::c64s) -> c64 {
+        (**self).reduce_max_c64s(a)
     }
 
     #[inline(always)]
@@ -4397,20 +4552,20 @@ impl Simd for V4_256 {
     }
 
     #[inline(always)]
-    fn deinterleave_shfl_f64s<T: Pod>(self, values: T) -> T {
+    fn deinterleave_shfl_f64s<T: Interleave>(self, values: T) -> T {
         (**self).deinterleave_shfl_f64s(values)
     }
     #[inline(always)]
-    fn deinterleave_shfl_f32s<T: Pod>(self, values: T) -> T {
+    fn deinterleave_shfl_f32s<T: Interleave>(self, values: T) -> T {
         (**self).deinterleave_shfl_f32s(values)
     }
 
     #[inline(always)]
-    fn interleave_shfl_f64s<T: Pod>(self, values: T) -> T {
+    fn interleave_shfl_f64s<T: Interleave>(self, values: T) -> T {
         (**self).interleave_shfl_f64s(values)
     }
     #[inline(always)]
-    fn interleave_shfl_f32s<T: Pod>(self, values: T) -> T {
+    fn interleave_shfl_f32s<T: Interleave>(self, values: T) -> T {
         (**self).interleave_shfl_f32s(values)
     }
 }
