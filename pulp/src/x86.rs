@@ -30,7 +30,7 @@ unsafe fn avx_load_u32s(slice: &[u32]) -> u32x8 {
 #[inline]
 unsafe fn avx_load_last_u32s(slice: &[u32]) -> u32x8 {
     let ret: __m256;
-    let f = RLOAD[slice.len().min(8)];
+    let f = RLOAD_AVX[slice.len().min(8)];
 
     core::arch::asm! {
         "call {f}",
@@ -54,13 +54,14 @@ unsafe fn avx_store_u32s(slice: &mut [u32], value: u32x8) {
 
         in("rax") slice.as_mut_ptr(),
         inout("ymm0") cast::<_, __m256>(value) => _,
+        out("ymm1") _,
     };
 }
 
 #[target_feature(enable = "avx2")]
 #[inline]
 unsafe fn avx_store_last_u32s(slice: &mut [u32], value: u32x8) {
-    let f = RSTORE[slice.len().min(8)];
+    let f = RSTORE_AVX[slice.len().min(8)];
 
     core::arch::asm! {
         "call {f}",
@@ -68,6 +69,7 @@ unsafe fn avx_store_last_u32s(slice: &mut [u32], value: u32x8) {
 
         in("rax") slice.as_mut_ptr(),
         inout("ymm0") cast::<_, __m256>(value) => _,
+        out("ymm1") _,
     };
 }
 
@@ -96,7 +98,7 @@ unsafe fn avx512_load_u32s(slice: &[u32]) -> u32x16 {
 #[inline]
 unsafe fn avx512_load_last_u32s(slice: &[u32]) -> u32x16 {
     let ret: __m512;
-    let f = RLOAD[slice.len().min(16)];
+    let f = RLOAD_AVX512[slice.len().min(16)];
 
     core::arch::asm! {
         "call {f}",
@@ -122,6 +124,7 @@ unsafe fn avx512_store_u32s(slice: &mut [u32], value: u32x16) {
 
         in("rax") slice.as_mut_ptr(),
         inout("zmm0") cast::<_, __m512>(value) => _,
+        out("zmm1") _,
     };
 }
 
@@ -130,7 +133,7 @@ unsafe fn avx512_store_u32s(slice: &mut [u32], value: u32x16) {
 #[cfg(feature = "nightly")]
 #[inline]
 unsafe fn avx512_store_last_u32s(slice: &mut [u32], value: u32x16) {
-    let f = RSTORE[slice.len().min(16)];
+    let f = RSTORE_AVX512[slice.len().min(16)];
 
     core::arch::asm! {
         "call {f}",
@@ -138,6 +141,7 @@ unsafe fn avx512_store_last_u32s(slice: &mut [u32], value: u32x16) {
 
         in("rax") slice.as_mut_ptr(),
         inout("zmm0") cast::<_, __m512>(value) => _,
+        out("zmm1") _,
     };
 }
 
@@ -1319,22 +1323,22 @@ impl Simd for V3 {
     }
 
     #[inline(always)]
-    fn partial_load_head_shfl_u32s(self, slice: &[u32]) -> Self::u32s {
+    fn partial_load_head_u32s(self, slice: &[u32]) -> Self::u32s {
         unsafe { avx_load_last_u32s(slice) }
     }
 
     #[inline(always)]
-    fn partial_store_head_shfl_u32s(self, slice: &mut [u32], values: Self::u32s) {
+    fn partial_store_head_u32s(self, slice: &mut [u32], values: Self::u32s) {
         unsafe { avx_store_last_u32s(slice, values) }
     }
 
     #[inline(always)]
-    fn partial_load_head_shfl_u64s(self, slice: &[u64]) -> Self::u64s {
+    fn partial_load_head_u64s(self, slice: &[u64]) -> Self::u64s {
         unsafe { cast(avx_load_last_u32s(bytemuck::cast_slice(slice))) }
     }
 
     #[inline(always)]
-    fn partial_store_head_shfl_u64s(self, slice: &mut [u64], values: Self::u64s) {
+    fn partial_store_head_u64s(self, slice: &mut [u64], values: Self::u64s) {
         unsafe { avx_store_last_u32s(bytemuck::cast_slice_mut(slice), cast(values)) }
     }
 
@@ -2323,36 +2327,36 @@ impl Simd for V3Scalar {
     }
 
     #[inline(always)]
-    fn partial_load_head_shfl_u32s(self, slice: &[u32]) -> Self::u32s {
+    fn partial_load_head_u32s(self, slice: &[u32]) -> Self::u32s {
         slice.first().copied().unwrap_or(0)
     }
 
     #[inline(always)]
-    fn partial_store_head_shfl_u32s(self, slice: &mut [u32], values: Self::u32s) {
+    fn partial_store_head_u32s(self, slice: &mut [u32], values: Self::u32s) {
         if let Some(first) = slice.first_mut() {
             *first = values
         }
     }
 
     #[inline(always)]
-    fn partial_load_head_shfl_u64s(self, slice: &[u64]) -> Self::u64s {
+    fn partial_load_head_u64s(self, slice: &[u64]) -> Self::u64s {
         slice.first().copied().unwrap_or(0)
     }
 
     #[inline(always)]
-    fn partial_store_head_shfl_u64s(self, slice: &mut [u64], values: Self::u64s) {
+    fn partial_store_head_u64s(self, slice: &mut [u64], values: Self::u64s) {
         if let Some(first) = slice.first_mut() {
             *first = values
         }
     }
 
     #[inline(always)]
-    fn partial_load_head_shfl_c64s(self, slice: &[c64]) -> Self::c64s {
+    fn partial_load_head_c64s(self, slice: &[c64]) -> Self::c64s {
         slice.first().copied().unwrap_or(c64 { re: 0.0, im: 0.0 })
     }
 
     #[inline(always)]
-    fn partial_store_head_shfl_c64s(self, slice: &mut [c64], values: Self::c64s) {
+    fn partial_store_head_c64s(self, slice: &mut [c64], values: Self::c64s) {
         if let Some(first) = slice.first_mut() {
             *first = values
         }
@@ -3093,22 +3097,22 @@ impl Simd for V4 {
     }
 
     #[inline(always)]
-    fn partial_load_head_shfl_u32s(self, slice: &[u32]) -> Self::u32s {
+    fn partial_load_head_u32s(self, slice: &[u32]) -> Self::u32s {
         unsafe { avx512_load_last_u32s(slice) }
     }
 
     #[inline(always)]
-    fn partial_store_head_shfl_u32s(self, slice: &mut [u32], values: Self::u32s) {
+    fn partial_store_head_u32s(self, slice: &mut [u32], values: Self::u32s) {
         unsafe { avx512_store_last_u32s(slice, values) }
     }
 
     #[inline(always)]
-    fn partial_load_head_shfl_u64s(self, slice: &[u64]) -> Self::u64s {
+    fn partial_load_head_u64s(self, slice: &[u64]) -> Self::u64s {
         unsafe { cast(avx512_load_last_u32s(bytemuck::cast_slice(slice))) }
     }
 
     #[inline(always)]
-    fn partial_store_head_shfl_u64s(self, slice: &mut [u64], values: Self::u64s) {
+    fn partial_store_head_u64s(self, slice: &mut [u64], values: Self::u64s) {
         unsafe { avx512_store_last_u32s(bytemuck::cast_slice_mut(slice), cast(values)) }
     }
 
@@ -4053,22 +4057,22 @@ impl Simd for V4_256 {
     }
 
     #[inline(always)]
-    fn partial_load_head_shfl_u32s(self, slice: &[u32]) -> Self::u32s {
+    fn partial_load_head_u32s(self, slice: &[u32]) -> Self::u32s {
         unsafe { avx_load_last_u32s(slice) }
     }
 
     #[inline(always)]
-    fn partial_store_head_shfl_u32s(self, slice: &mut [u32], values: Self::u32s) {
+    fn partial_store_head_u32s(self, slice: &mut [u32], values: Self::u32s) {
         unsafe { avx_store_last_u32s(slice, values) }
     }
 
     #[inline(always)]
-    fn partial_load_head_shfl_u64s(self, slice: &[u64]) -> Self::u64s {
+    fn partial_load_head_u64s(self, slice: &[u64]) -> Self::u64s {
         unsafe { cast(avx_load_last_u32s(bytemuck::cast_slice(slice))) }
     }
 
     #[inline(always)]
-    fn partial_store_head_shfl_u64s(self, slice: &mut [u64], values: Self::u64s) {
+    fn partial_store_head_u64s(self, slice: &mut [u64], values: Self::u64s) {
         unsafe { avx_store_last_u32s(bytemuck::cast_slice_mut(slice), cast(values)) }
     }
 
@@ -11750,24 +11754,6 @@ unsafe extern "C" {
     fn libpulp_v0_19_load_f32x15(_: NoCall);
     fn libpulp_v0_19_load_f32x16(_: NoCall);
 
-    fn libpulp_v0_19_rload_f32x0(_: NoCall);
-    fn libpulp_v0_19_rload_f32x1(_: NoCall);
-    fn libpulp_v0_19_rload_f32x2(_: NoCall);
-    fn libpulp_v0_19_rload_f32x3(_: NoCall);
-    fn libpulp_v0_19_rload_f32x4(_: NoCall);
-    fn libpulp_v0_19_rload_f32x5(_: NoCall);
-    fn libpulp_v0_19_rload_f32x6(_: NoCall);
-    fn libpulp_v0_19_rload_f32x7(_: NoCall);
-    fn libpulp_v0_19_rload_f32x8(_: NoCall);
-    fn libpulp_v0_19_rload_f32x9(_: NoCall);
-    fn libpulp_v0_19_rload_f32x10(_: NoCall);
-    fn libpulp_v0_19_rload_f32x11(_: NoCall);
-    fn libpulp_v0_19_rload_f32x12(_: NoCall);
-    fn libpulp_v0_19_rload_f32x13(_: NoCall);
-    fn libpulp_v0_19_rload_f32x14(_: NoCall);
-    fn libpulp_v0_19_rload_f32x15(_: NoCall);
-    fn libpulp_v0_19_rload_f32x16(_: NoCall);
-
     fn libpulp_v0_19_store_f32x0(_: NoCall);
     fn libpulp_v0_19_store_f32x1(_: NoCall);
     fn libpulp_v0_19_store_f32x2(_: NoCall);
@@ -11786,23 +11772,61 @@ unsafe extern "C" {
     fn libpulp_v0_19_store_f32x15(_: NoCall);
     fn libpulp_v0_19_store_f32x16(_: NoCall);
 
-    fn libpulp_v0_19_rstore_f32x0(_: NoCall);
-    fn libpulp_v0_19_rstore_f32x1(_: NoCall);
-    fn libpulp_v0_19_rstore_f32x2(_: NoCall);
-    fn libpulp_v0_19_rstore_f32x3(_: NoCall);
-    fn libpulp_v0_19_rstore_f32x4(_: NoCall);
-    fn libpulp_v0_19_rstore_f32x5(_: NoCall);
-    fn libpulp_v0_19_rstore_f32x6(_: NoCall);
-    fn libpulp_v0_19_rstore_f32x7(_: NoCall);
-    fn libpulp_v0_19_rstore_f32x8(_: NoCall);
-    fn libpulp_v0_19_rstore_f32x9(_: NoCall);
-    fn libpulp_v0_19_rstore_f32x10(_: NoCall);
-    fn libpulp_v0_19_rstore_f32x11(_: NoCall);
-    fn libpulp_v0_19_rstore_f32x12(_: NoCall);
-    fn libpulp_v0_19_rstore_f32x13(_: NoCall);
-    fn libpulp_v0_19_rstore_f32x14(_: NoCall);
-    fn libpulp_v0_19_rstore_f32x15(_: NoCall);
-    fn libpulp_v0_19_rstore_f32x16(_: NoCall);
+    fn libpulp_v0_19_rload_avx_f32x0(_: NoCall);
+    fn libpulp_v0_19_rload_avx_f32x1(_: NoCall);
+    fn libpulp_v0_19_rload_avx_f32x2(_: NoCall);
+    fn libpulp_v0_19_rload_avx_f32x3(_: NoCall);
+    fn libpulp_v0_19_rload_avx_f32x4(_: NoCall);
+    fn libpulp_v0_19_rload_avx_f32x5(_: NoCall);
+    fn libpulp_v0_19_rload_avx_f32x6(_: NoCall);
+    fn libpulp_v0_19_rload_avx_f32x7(_: NoCall);
+    fn libpulp_v0_19_rload_avx_f32x8(_: NoCall);
+
+    fn libpulp_v0_19_rstore_avx_f32x0(_: NoCall);
+    fn libpulp_v0_19_rstore_avx_f32x1(_: NoCall);
+    fn libpulp_v0_19_rstore_avx_f32x2(_: NoCall);
+    fn libpulp_v0_19_rstore_avx_f32x3(_: NoCall);
+    fn libpulp_v0_19_rstore_avx_f32x4(_: NoCall);
+    fn libpulp_v0_19_rstore_avx_f32x5(_: NoCall);
+    fn libpulp_v0_19_rstore_avx_f32x6(_: NoCall);
+    fn libpulp_v0_19_rstore_avx_f32x7(_: NoCall);
+    fn libpulp_v0_19_rstore_avx_f32x8(_: NoCall);
+
+    fn libpulp_v0_19_rload_avx512_f32x0(_: NoCall);
+    fn libpulp_v0_19_rload_avx512_f32x1(_: NoCall);
+    fn libpulp_v0_19_rload_avx512_f32x2(_: NoCall);
+    fn libpulp_v0_19_rload_avx512_f32x3(_: NoCall);
+    fn libpulp_v0_19_rload_avx512_f32x4(_: NoCall);
+    fn libpulp_v0_19_rload_avx512_f32x5(_: NoCall);
+    fn libpulp_v0_19_rload_avx512_f32x6(_: NoCall);
+    fn libpulp_v0_19_rload_avx512_f32x7(_: NoCall);
+    fn libpulp_v0_19_rload_avx512_f32x8(_: NoCall);
+    fn libpulp_v0_19_rload_avx512_f32x9(_: NoCall);
+    fn libpulp_v0_19_rload_avx512_f32x10(_: NoCall);
+    fn libpulp_v0_19_rload_avx512_f32x11(_: NoCall);
+    fn libpulp_v0_19_rload_avx512_f32x12(_: NoCall);
+    fn libpulp_v0_19_rload_avx512_f32x13(_: NoCall);
+    fn libpulp_v0_19_rload_avx512_f32x14(_: NoCall);
+    fn libpulp_v0_19_rload_avx512_f32x15(_: NoCall);
+    fn libpulp_v0_19_rload_avx512_f32x16(_: NoCall);
+
+    fn libpulp_v0_19_rstore_avx512_f32x0(_: NoCall);
+    fn libpulp_v0_19_rstore_avx512_f32x1(_: NoCall);
+    fn libpulp_v0_19_rstore_avx512_f32x2(_: NoCall);
+    fn libpulp_v0_19_rstore_avx512_f32x3(_: NoCall);
+    fn libpulp_v0_19_rstore_avx512_f32x4(_: NoCall);
+    fn libpulp_v0_19_rstore_avx512_f32x5(_: NoCall);
+    fn libpulp_v0_19_rstore_avx512_f32x6(_: NoCall);
+    fn libpulp_v0_19_rstore_avx512_f32x7(_: NoCall);
+    fn libpulp_v0_19_rstore_avx512_f32x8(_: NoCall);
+    fn libpulp_v0_19_rstore_avx512_f32x9(_: NoCall);
+    fn libpulp_v0_19_rstore_avx512_f32x10(_: NoCall);
+    fn libpulp_v0_19_rstore_avx512_f32x11(_: NoCall);
+    fn libpulp_v0_19_rstore_avx512_f32x12(_: NoCall);
+    fn libpulp_v0_19_rstore_avx512_f32x13(_: NoCall);
+    fn libpulp_v0_19_rstore_avx512_f32x14(_: NoCall);
+    fn libpulp_v0_19_rstore_avx512_f32x15(_: NoCall);
+    fn libpulp_v0_19_rstore_avx512_f32x16(_: NoCall);
 }
 
 static LOAD: [unsafe extern "C" fn(NoCall); 17] = [
@@ -11824,25 +11848,6 @@ static LOAD: [unsafe extern "C" fn(NoCall); 17] = [
     libpulp_v0_19_load_f32x15,
     libpulp_v0_19_load_f32x16,
 ];
-static RLOAD: [unsafe extern "C" fn(NoCall); 17] = [
-    libpulp_v0_19_rload_f32x0,
-    libpulp_v0_19_rload_f32x1,
-    libpulp_v0_19_rload_f32x2,
-    libpulp_v0_19_rload_f32x3,
-    libpulp_v0_19_rload_f32x4,
-    libpulp_v0_19_rload_f32x5,
-    libpulp_v0_19_rload_f32x6,
-    libpulp_v0_19_rload_f32x7,
-    libpulp_v0_19_rload_f32x8,
-    libpulp_v0_19_rload_f32x9,
-    libpulp_v0_19_rload_f32x10,
-    libpulp_v0_19_rload_f32x11,
-    libpulp_v0_19_rload_f32x12,
-    libpulp_v0_19_rload_f32x13,
-    libpulp_v0_19_rload_f32x14,
-    libpulp_v0_19_rload_f32x15,
-    libpulp_v0_19_rload_f32x16,
-];
 static STORE: [unsafe extern "C" fn(NoCall); 17] = [
     libpulp_v0_19_store_f32x0,
     libpulp_v0_19_store_f32x1,
@@ -11862,24 +11867,65 @@ static STORE: [unsafe extern "C" fn(NoCall); 17] = [
     libpulp_v0_19_store_f32x15,
     libpulp_v0_19_store_f32x16,
 ];
-static RSTORE: [unsafe extern "C" fn(NoCall); 17] = [
-    libpulp_v0_19_rstore_f32x0,
-    libpulp_v0_19_rstore_f32x1,
-    libpulp_v0_19_rstore_f32x2,
-    libpulp_v0_19_rstore_f32x3,
-    libpulp_v0_19_rstore_f32x4,
-    libpulp_v0_19_rstore_f32x5,
-    libpulp_v0_19_rstore_f32x6,
-    libpulp_v0_19_rstore_f32x7,
-    libpulp_v0_19_rstore_f32x8,
-    libpulp_v0_19_rstore_f32x9,
-    libpulp_v0_19_rstore_f32x10,
-    libpulp_v0_19_rstore_f32x11,
-    libpulp_v0_19_rstore_f32x12,
-    libpulp_v0_19_rstore_f32x13,
-    libpulp_v0_19_rstore_f32x14,
-    libpulp_v0_19_rstore_f32x15,
-    libpulp_v0_19_rstore_f32x16,
+static RLOAD_AVX: [unsafe extern "C" fn(NoCall); 9] = [
+    libpulp_v0_19_rload_avx_f32x0,
+    libpulp_v0_19_rload_avx_f32x1,
+    libpulp_v0_19_rload_avx_f32x2,
+    libpulp_v0_19_rload_avx_f32x3,
+    libpulp_v0_19_rload_avx_f32x4,
+    libpulp_v0_19_rload_avx_f32x5,
+    libpulp_v0_19_rload_avx_f32x6,
+    libpulp_v0_19_rload_avx_f32x7,
+    libpulp_v0_19_rload_avx_f32x8,
+];
+static RSTORE_AVX: [unsafe extern "C" fn(NoCall); 9] = [
+    libpulp_v0_19_rstore_avx_f32x0,
+    libpulp_v0_19_rstore_avx_f32x1,
+    libpulp_v0_19_rstore_avx_f32x2,
+    libpulp_v0_19_rstore_avx_f32x3,
+    libpulp_v0_19_rstore_avx_f32x4,
+    libpulp_v0_19_rstore_avx_f32x5,
+    libpulp_v0_19_rstore_avx_f32x6,
+    libpulp_v0_19_rstore_avx_f32x7,
+    libpulp_v0_19_rstore_avx_f32x8,
+];
+static RLOAD_AVX512: [unsafe extern "C" fn(NoCall); 17] = [
+    libpulp_v0_19_rload_avx512_f32x0,
+    libpulp_v0_19_rload_avx512_f32x1,
+    libpulp_v0_19_rload_avx512_f32x2,
+    libpulp_v0_19_rload_avx512_f32x3,
+    libpulp_v0_19_rload_avx512_f32x4,
+    libpulp_v0_19_rload_avx512_f32x5,
+    libpulp_v0_19_rload_avx512_f32x6,
+    libpulp_v0_19_rload_avx512_f32x7,
+    libpulp_v0_19_rload_avx512_f32x8,
+    libpulp_v0_19_rload_avx512_f32x9,
+    libpulp_v0_19_rload_avx512_f32x10,
+    libpulp_v0_19_rload_avx512_f32x11,
+    libpulp_v0_19_rload_avx512_f32x12,
+    libpulp_v0_19_rload_avx512_f32x13,
+    libpulp_v0_19_rload_avx512_f32x14,
+    libpulp_v0_19_rload_avx512_f32x15,
+    libpulp_v0_19_rload_avx512_f32x16,
+];
+static RSTORE_AVX512: [unsafe extern "C" fn(NoCall); 17] = [
+    libpulp_v0_19_rstore_avx512_f32x0,
+    libpulp_v0_19_rstore_avx512_f32x1,
+    libpulp_v0_19_rstore_avx512_f32x2,
+    libpulp_v0_19_rstore_avx512_f32x3,
+    libpulp_v0_19_rstore_avx512_f32x4,
+    libpulp_v0_19_rstore_avx512_f32x5,
+    libpulp_v0_19_rstore_avx512_f32x6,
+    libpulp_v0_19_rstore_avx512_f32x7,
+    libpulp_v0_19_rstore_avx512_f32x8,
+    libpulp_v0_19_rstore_avx512_f32x9,
+    libpulp_v0_19_rstore_avx512_f32x10,
+    libpulp_v0_19_rstore_avx512_f32x11,
+    libpulp_v0_19_rstore_avx512_f32x12,
+    libpulp_v0_19_rstore_avx512_f32x13,
+    libpulp_v0_19_rstore_avx512_f32x14,
+    libpulp_v0_19_rstore_avx512_f32x15,
+    libpulp_v0_19_rstore_avx512_f32x16,
 ];
 
 core::arch::global_asm!(
@@ -11893,6 +11939,14 @@ core::arch::global_asm!(
     .global libpulp_v0_19_load_f32x6
     .global libpulp_v0_19_load_f32x7
     .global libpulp_v0_19_load_f32x8
+    .global libpulp_v0_19_load_f32x9
+    .global libpulp_v0_19_load_f32x10
+    .global libpulp_v0_19_load_f32x11
+    .global libpulp_v0_19_load_f32x12
+    .global libpulp_v0_19_load_f32x13
+    .global libpulp_v0_19_load_f32x14
+    .global libpulp_v0_19_load_f32x15
+    .global libpulp_v0_19_load_f32x16
 
     .global libpulp_v0_19_store_f32x0
     .global libpulp_v0_19_store_f32x1
@@ -11903,52 +11957,90 @@ core::arch::global_asm!(
     .global libpulp_v0_19_store_f32x6
     .global libpulp_v0_19_store_f32x7
     .global libpulp_v0_19_store_f32x8
+    .global libpulp_v0_19_store_f32x9
+    .global libpulp_v0_19_store_f32x10
+    .global libpulp_v0_19_store_f32x11
+    .global libpulp_v0_19_store_f32x12
+    .global libpulp_v0_19_store_f32x13
+    .global libpulp_v0_19_store_f32x14
+    .global libpulp_v0_19_store_f32x15
+    .global libpulp_v0_19_store_f32x16
 
-    .global libpulp_v0_19_rload_f32x0
-    .global libpulp_v0_19_rload_f32x1
-    .global libpulp_v0_19_rload_f32x2
-    .global libpulp_v0_19_rload_f32x3
-    .global libpulp_v0_19_rload_f32x4
-    .global libpulp_v0_19_rload_f32x5
-    .global libpulp_v0_19_rload_f32x6
-    .global libpulp_v0_19_rload_f32x7
-    .global libpulp_v0_19_rload_f32x8
+    .global libpulp_v0_19_rload_avx512_f32x0
+    .global libpulp_v0_19_rload_avx512_f32x1
+    .global libpulp_v0_19_rload_avx512_f32x2
+    .global libpulp_v0_19_rload_avx512_f32x3
+    .global libpulp_v0_19_rload_avx512_f32x4
+    .global libpulp_v0_19_rload_avx512_f32x5
+    .global libpulp_v0_19_rload_avx512_f32x6
+    .global libpulp_v0_19_rload_avx512_f32x7
+    .global libpulp_v0_19_rload_avx512_f32x8
+    .global libpulp_v0_19_rload_avx512_f32x9
+    .global libpulp_v0_19_rload_avx512_f32x10
+    .global libpulp_v0_19_rload_avx512_f32x11
+    .global libpulp_v0_19_rload_avx512_f32x12
+    .global libpulp_v0_19_rload_avx512_f32x13
+    .global libpulp_v0_19_rload_avx512_f32x14
+    .global libpulp_v0_19_rload_avx512_f32x15
+    .global libpulp_v0_19_rload_avx512_f32x16
 
-    .global libpulp_v0_19_rstore_f32x0
-    .global libpulp_v0_19_rstore_f32x1
-    .global libpulp_v0_19_rstore_f32x2
-    .global libpulp_v0_19_rstore_f32x3
-    .global libpulp_v0_19_rstore_f32x4
-    .global libpulp_v0_19_rstore_f32x5
-    .global libpulp_v0_19_rstore_f32x6
-    .global libpulp_v0_19_rstore_f32x7
-    .global libpulp_v0_19_rstore_f32x8
+    .global libpulp_v0_19_rstore_avx512_f32x0
+    .global libpulp_v0_19_rstore_avx512_f32x1
+    .global libpulp_v0_19_rstore_avx512_f32x2
+    .global libpulp_v0_19_rstore_avx512_f32x3
+    .global libpulp_v0_19_rstore_avx512_f32x4
+    .global libpulp_v0_19_rstore_avx512_f32x5
+    .global libpulp_v0_19_rstore_avx512_f32x6
+    .global libpulp_v0_19_rstore_avx512_f32x7
+    .global libpulp_v0_19_rstore_avx512_f32x8
+    .global libpulp_v0_19_rstore_avx512_f32x9
+    .global libpulp_v0_19_rstore_avx512_f32x10
+    .global libpulp_v0_19_rstore_avx512_f32x11
+    .global libpulp_v0_19_rstore_avx512_f32x12
+    .global libpulp_v0_19_rstore_avx512_f32x13
+    .global libpulp_v0_19_rstore_avx512_f32x14
+    .global libpulp_v0_19_rstore_avx512_f32x15
+    .global libpulp_v0_19_rstore_avx512_f32x16
 
-    libpulp_v0_19_rload_f32x0:
+    .global libpulp_v0_19_rload_avx_f32x0
+    .global libpulp_v0_19_rload_avx_f32x1
+    .global libpulp_v0_19_rload_avx_f32x2
+    .global libpulp_v0_19_rload_avx_f32x3
+    .global libpulp_v0_19_rload_avx_f32x4
+    .global libpulp_v0_19_rload_avx_f32x5
+    .global libpulp_v0_19_rload_avx_f32x6
+    .global libpulp_v0_19_rload_avx_f32x7
+    .global libpulp_v0_19_rload_avx_f32x8
+
+    .global libpulp_v0_19_rstore_avx_f32x0
+    .global libpulp_v0_19_rstore_avx_f32x1
+    .global libpulp_v0_19_rstore_avx_f32x2
+    .global libpulp_v0_19_rstore_avx_f32x3
+    .global libpulp_v0_19_rstore_avx_f32x4
+    .global libpulp_v0_19_rstore_avx_f32x5
+    .global libpulp_v0_19_rstore_avx_f32x6
+    .global libpulp_v0_19_rstore_avx_f32x7
+    .global libpulp_v0_19_rstore_avx_f32x8
+
     libpulp_v0_19_load_f32x0:
         vxorps xmm0, xmm0, xmm0
         ret
-    libpulp_v0_19_rstore_f32x0:
     libpulp_v0_19_store_f32x0:
         ret
 
 
-    libpulp_v0_19_rload_f32x1:
     libpulp_v0_19_load_f32x1:
         vmovss xmm0, [rax]
         ret
-    libpulp_v0_19_rstore_f32x1:
     libpulp_v0_19_store_f32x1:
         vmovss [rax], xmm0
         ret
         vmovss xmm0, [rax]
 
 
-    libpulp_v0_19_rload_f32x2:
     libpulp_v0_19_load_f32x2:
         vmovsd xmm0, [rax]
         ret
-    libpulp_v0_19_rstore_f32x2:
     libpulp_v0_19_store_f32x2:
         vmovsd [rax], xmm0
         ret
@@ -11959,28 +12051,16 @@ core::arch::global_asm!(
         vmovss xmm1, [rax + 8]
         vunpcklpd xmm0, xmm0, xmm1
         ret
-    libpulp_v0_19_rload_f32x3:
-        vmovsd xmm0, [rax + 4]
-        vmovss xmm1, [rax]
-        vunpcklpd xmm0, xmm0, xmm1
-        ret
     libpulp_v0_19_store_f32x3:
         vmovsd [rax], xmm0
         vunpckhpd xmm0, xmm0, xmm0
         vmovss [rax + 8], xmm0
         ret
-    libpulp_v0_19_rstore_f32x3:
-        vmovsd [rax + 4], xmm0
-        vunpckhpd xmm0, xmm0, xmm0
-        vmovss [rax], xmm0
-        ret
 
 
-    libpulp_v0_19_rload_f32x4:
     libpulp_v0_19_load_f32x4:
         vmovups xmm0, [rax]
         ret
-    libpulp_v0_19_rstore_f32x4:
     libpulp_v0_19_store_f32x4:
         vmovups [rax], xmm0
         ret
@@ -11991,20 +12071,10 @@ core::arch::global_asm!(
         vmovss xmm1, [rax + 16]
         vinsertf128 ymm0, ymm0, xmm1, 0x1
         ret
-    libpulp_v0_19_rload_f32x5:
-        vmovups xmm0, [rax + 4]
-        vmovss xmm1, [rax]
-        vinsertf128 ymm0, ymm0, xmm1, 0x1
-        ret
     libpulp_v0_19_store_f32x5:
         vmovups [rax], xmm0
         vextractf128 xmm0, ymm0, 0x1
         vmovss [rax + 16], xmm0
-        ret
-    libpulp_v0_19_rstore_f32x5:
-        vmovups [rax + 4], xmm0
-        vextractf128 xmm0, ymm0, 0x1
-        vmovss [rax], xmm0
         ret
 
 
@@ -12013,20 +12083,10 @@ core::arch::global_asm!(
         vmovsd xmm1, [rax + 16]
         vinsertf128 ymm0, ymm0, xmm1, 0x1
         ret
-    libpulp_v0_19_rload_f32x6:
-        vmovups xmm0, [rax + 8]
-        vmovsd xmm1, [rax]
-        vinsertf128 ymm0, ymm0, xmm1, 0x1
-        ret
     libpulp_v0_19_store_f32x6:
         vmovups [rax], xmm0
         vextractf128 xmm0, ymm0, 0x1
         vmovsd [rax + 16], xmm0
-        ret
-    libpulp_v0_19_rstore_f32x6:
-        vmovups [rax + 8], xmm0
-        vextractf128 xmm0, ymm0, 0x1
-        vmovsd [rax], xmm0
         ret
 
 
@@ -12037,13 +12097,6 @@ core::arch::global_asm!(
         vmovups xmm0, [rax]
         vinsertf128 ymm0, ymm0, xmm1, 0x1
         ret
-    libpulp_v0_19_rload_f32x7:
-        vmovsd xmm0, [rax + 4]
-        vmovss xmm1, [rax]
-        vunpcklpd xmm1, xmm0, xmm1
-        vmovups xmm0, [rax + 12]
-        vinsertf128 ymm0, ymm0, xmm1, 0x1
-        ret
     libpulp_v0_19_store_f32x7:
         vmovups [rax], xmm0
         vextractf128 xmm0, ymm0, 0x1
@@ -12051,20 +12104,11 @@ core::arch::global_asm!(
         vunpckhpd xmm0, xmm0, xmm0
         vmovss [rax + 24], xmm0
         ret
-    libpulp_v0_19_rstore_f32x7:
-        vmovups [rax + 12], xmm0
-        vextractf128 xmm0, ymm0, 0x1
-        vmovsd [rax + 4], xmm0
-        vunpckhpd xmm0, xmm0, xmm0
-        vmovss [rax], xmm0
-        ret
 
 
-    libpulp_v0_19_rload_f32x8:
     libpulp_v0_19_load_f32x8:
         vmovups ymm0, [rax]
         ret
-    libpulp_v0_19_rstore_f32x8:
     libpulp_v0_19_store_f32x8:
         vmovups [rax], ymm0
         ret
@@ -12075,20 +12119,10 @@ core::arch::global_asm!(
         vmovss xmm1, [rax + 32]
         vinsertf32x4 zmm0, zmm0, xmm1, 0x2
         ret
-    libpulp_v0_19_rload_f32x9:
-        vmovups zmm0, [rax + 4]
-        vmovss xmm1, [rax]
-        vinsertf32x4 zmm0, zmm0, xmm1, 0x2
-        ret
     libpulp_v0_19_store_f32x9:
         vmovups [rax], ymm0
         vextractf32x4 xmm0, zmm0, 0x2
         vmovss [rax + 32], xmm0
-        ret
-    libpulp_v0_19_rstore_f32x9:
-        vmovups [rax + 4], ymm0
-        vextractf32x4 xmm0, zmm0, 0x2
-        vmovss [rax], xmm0
         ret
 
 
@@ -12097,20 +12131,10 @@ core::arch::global_asm!(
         vmovsd xmm1, [rax + 32]
         vinsertf32x4 zmm0, zmm0, xmm1, 0x2
         ret
-    libpulp_v0_19_rload_f32x10:
-        vmovups ymm0, [rax + 8]
-        vmovsd xmm1, [rax]
-        vinsertf32x4 zmm0, zmm0, xmm1, 0x2
-        ret
     libpulp_v0_19_store_f32x10:
         vmovups [rax], ymm0
         vextractf32x4 xmm0, zmm0, 0x2
         vmovsd [rax + 32], xmm0
-        ret
-    libpulp_v0_19_rstore_f32x10:
-        vmovups [rax + 8], ymm0
-        vextractf32x4 xmm0, zmm0, 0x2
-        vmovsd [rax], xmm0
         ret
 
 
@@ -12121,26 +12145,12 @@ core::arch::global_asm!(
         vmovups ymm0, [rax]
         vinsertf32x4 zmm0, zmm0, xmm1, 0x2
         ret
-    libpulp_v0_19_rload_f32x11:
-        vmovsd xmm0, [rax + 4]
-        vmovss xmm1, [rax]
-        vunpcklpd xmm1, xmm0, xmm1
-        vmovups ymm0, [rax + 12]
-        vinsertf32x4 zmm0, zmm0, xmm1, 0x2
-        ret
     libpulp_v0_19_store_f32x11:
         vmovups [rax], ymm0
         vextractf32x4 xmm0, zmm0, 0x2
         vmovsd [rax + 32], xmm0
         vunpckhpd xmm0, xmm0, xmm0
         vmovss [rax + 40], xmm0
-        ret
-    libpulp_v0_19_rstore_f32x11:
-        vmovups [rax + 12], ymm0
-        vextractf32x4 xmm0, zmm0, 0x2
-        vmovsd [rax + 4], xmm0
-        vunpckhpd xmm0, xmm0, xmm0
-        vmovss [rax], xmm0
         ret
 
 
@@ -12149,20 +12159,10 @@ core::arch::global_asm!(
         vmovups xmm1, [rax + 32]
         vinsertf32x4 zmm0, zmm0, xmm1, 0x2
         ret
-    libpulp_v0_19_rload_f32x12:
-        vmovups ymm0, [rax + 16]
-        vmovups xmm1, [rax]
-        vinsertf32x4 zmm0, zmm0, xmm1, 0x2
-        ret
     libpulp_v0_19_store_f32x12:
         vmovups [rax], ymm0
         vextractf32x4 xmm0, zmm0, 0x2
         vmovups [rax + 32], xmm0
-        ret
-    libpulp_v0_19_rstore_f32x12:
-        vmovups [rax + 16], ymm0
-        vextractf32x4 xmm0, zmm0, 0x2
-        vmovups [rax], xmm0
         ret
 
 
@@ -12173,13 +12173,6 @@ core::arch::global_asm!(
         vmovups ymm0, [rax]
         vinsertf32x8 zmm0, zmm0, ymm1, 0x1
         ret
-    libpulp_v0_19_rload_f32x13:
-        vmovups xmm0, [rax + 4]
-        vmovss xmm1, [rax]
-        vinsertf128 ymm1, ymm0, xmm1, 0x1
-        vmovups ymm0, [rax + 20]
-        vinsertf32x8 zmm0, zmm0, ymm1, 0x1
-        ret
     libpulp_v0_19_store_f32x13:
         vmovups [rax], ymm0
         vextractf32x8 ymm0, zmm0, 0x1
@@ -12187,13 +12180,7 @@ core::arch::global_asm!(
         vextractf128 xmm0, ymm0, 0x1
         vmovss [rax + 48], xmm0
         ret
-    libpulp_v0_19_rstore_f32x13:
-        vmovups [rax + 20], ymm0
-        vextractf32x8 ymm0, zmm0, 0x1
-        vmovups [rax + 4], xmm0
-        vextractf128 xmm0, ymm0, 0x1
-        vmovss [rax], xmm0
-        ret
+
 
     libpulp_v0_19_load_f32x14:
         vmovups xmm0, [rax + 32]
@@ -12202,26 +12189,12 @@ core::arch::global_asm!(
         vmovups ymm0, [rax]
         vinsertf32x8 zmm0, zmm0, ymm1, 0x1
         ret
-    libpulp_v0_19_rload_f32x14:
-        vmovups xmm0, [rax + 8]
-        vmovsd xmm1, [rax]
-        vinsertf128 ymm1, ymm0, xmm1, 0x1
-        vmovups ymm0, [rax + 24]
-        vinsertf32x8 zmm0, zmm0, ymm1, 0x1
-        ret
     libpulp_v0_19_store_f32x14:
         vmovups [rax], ymm0
         vextractf32x8 ymm0, zmm0, 0x1
         vmovups [rax + 32], xmm0
         vextractf128 xmm0, ymm0, 0x1
         vmovsd [rax + 48], xmm0
-        ret
-    libpulp_v0_19_rstore_f32x14:
-        vmovups [rax + 24], ymm0
-        vextractf32x8 ymm0, zmm0, 0x1
-        vmovups [rax + 8], xmm0
-        vextractf128 xmm0, ymm0, 0x1
-        vmovsd [rax], xmm0
         ret
 
 
@@ -12234,15 +12207,6 @@ core::arch::global_asm!(
         vmovups ymm0, [rax]
         vinsertf32x8 zmm0, zmm0, ymm1, 0x1
         ret
-    libpulp_v0_19_rload_f32x15:
-        vmovsd xmm0, [rax + 4]
-        vmovss xmm1, [rax]
-        vunpcklpd xmm1, xmm0, xmm1
-        vmovups xmm0, [rax + 12]
-        vinsertf128 ymm1, ymm0, xmm1, 0x1
-        vmovups ymm0, [rax + 28]
-        vinsertf32x8 zmm0, zmm0, ymm1, 0x1
-        ret
     libpulp_v0_19_store_f32x15:
         vmovups [rax], ymm0
         vextractf32x8 ymm0, zmm0, 0x1
@@ -12252,26 +12216,360 @@ core::arch::global_asm!(
         vunpckhpd xmm0, xmm0, xmm0
         vmovss [rax + 56], xmm0
         ret
-    libpulp_v0_19_rstore_f32x15:
-        vmovups [rax + 28], ymm0
-        vextractf32x8 ymm0, zmm0, 0x1
-        vmovups [rax + 12], xmm0
-        vextractf128 xmm0, ymm0, 0x1
+
+
+    libpulp_v0_19_load_f32x16:
+        vmovups zmm0, [rax]
+        ret
+    libpulp_v0_19_store_f32x16:
+        vmovups [rax], zmm0
+        ret
+
+
+
+
+    libpulp_v0_19_rload_avx_f32x0:
+        vxorps xmm0, xmm0, xmm0
+        ret
+    libpulp_v0_19_rstore_avx_f32x0:
+        ret
+
+
+    libpulp_v0_19_rload_avx_f32x1:
+        vmovss xmm0, [rax]
+        vpermilps xmm0, xmm0, 0b00011011
+        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
+        ret
+    libpulp_v0_19_rstore_avx_f32x1:
+        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
+        vpermilps xmm0, xmm0, 0b00011011
+        vmovss [rax], xmm0
+        ret
+
+
+    libpulp_v0_19_rload_avx_f32x2:
+        vmovsd xmm0, [rax]
+        vpermilps xmm0, xmm0, 0b01001110
+        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
+        ret
+    libpulp_v0_19_rstore_avx_f32x2:
+        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
+        vpermilps xmm0, xmm0, 0b01001110
+        vmovsd [rax], xmm0
+        ret
+
+
+    libpulp_v0_19_rload_avx_f32x3:
+        vmovss xmm0, [rax]
+        vmovsd xmm1, [rax + 4]
+        vshufps xmm0, xmm0, xmm1, 0b01000001
+        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
+        ret
+    libpulp_v0_19_rstore_avx_f32x3:
+        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
+        vpermilps xmm0, xmm0, 0b00011110
         vmovsd [rax + 4], xmm0
         vunpckhpd xmm0, xmm0, xmm0
         vmovss [rax], xmm0
         ret
 
 
-    libpulp_v0_19_rload_f32x16:
-    libpulp_v0_19_load_f32x16:
+    libpulp_v0_19_rload_avx_f32x4:
+        vmovups xmm0, [rax]
+        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
+        ret
+    libpulp_v0_19_rstore_avx_f32x4:
+        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
+        vmovups [rax], xmm0
+        ret
+
+
+    libpulp_v0_19_rload_avx_f32x5:
+        vmovss xmm0, [rax]
+        vpermilps xmm0, xmm0, 0b00011011
+        vmovups xmm1, [rax + 4]
+        vinsertf128 ymm0, ymm0, xmm1, 0x1
+        ret
+    libpulp_v0_19_rstore_avx_f32x5:
+        vextractf128 xmm1, ymm0, 0x1
+        vmovups [rax + 4], xmm1
+        vpermilps xmm0, xmm0, 0b00011011
+        vmovss [rax], xmm0
+        ret
+
+
+    libpulp_v0_19_rload_avx_f32x6:
+        vmovsd xmm0, [rax]
+        vpermilps xmm0, xmm0, 0b01001110
+        vmovups xmm1, [rax + 8]
+        vinsertf128 ymm0, ymm0, xmm1, 0x1
+        ret
+    libpulp_v0_19_rstore_avx_f32x6:
+        vextractf128 xmm1, ymm0, 0x1
+        vmovups [rax + 8], xmm1
+        vpermilps xmm0, xmm0, 0b01001110
+        vmovsd [rax], xmm0
+        ret
+
+
+    libpulp_v0_19_rload_avx_f32x7:
+        vmovss xmm0, [rax]
+        vmovsd xmm1, [rax + 4]
+        vshufps xmm0, xmm0, xmm1, 0b01000001
+        vmovups xmm1, [rax + 12]
+        vinsertf128 ymm0, ymm0, xmm1, 0x1
+        ret
+    libpulp_v0_19_rstore_avx_f32x7:
+        vextractf128 xmm1, ymm0, 0x1
+        vmovups [rax + 12], xmm1
+        vpermilps xmm0, xmm0, 0b00011110
+        vmovsd [rax + 4], xmm0
+        vunpckhpd xmm0, xmm0, xmm0
+        vmovss [rax], xmm0
+        ret
+
+
+    libpulp_v0_19_rload_avx_f32x8:
+        vmovups ymm0, [rax]
+        ret
+    libpulp_v0_19_rstore_avx_f32x8:
+        vmovups [rax], ymm0
+        ret
+
+
+
+
+    libpulp_v0_19_rload_avx512_f32x0:
+        vxorps xmm0, xmm0, xmm0
+        ret
+    libpulp_v0_19_rstore_avx512_f32x0:
+        ret
+
+
+    libpulp_v0_19_rload_avx512_f32x1:
+        vmovss xmm0, [rax]
+        vpermilps xmm0, xmm0, 0b00011011
+        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
+        ret
+    libpulp_v0_19_rstore_avx512_f32x1:
+        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
+        vpermilps xmm0, xmm0, 0b00011011
+        vmovss [rax], xmm0
+        ret
+
+
+    libpulp_v0_19_rload_avx512_f32x2:
+        vmovsd xmm0, [rax]
+        vpermilps xmm0, xmm0, 0b01001110
+        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
+        ret
+    libpulp_v0_19_rstore_avx512_f32x2:
+        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
+        vpermilps xmm0, xmm0, 0b01001110
+        vmovsd [rax], xmm0
+        ret
+
+
+    libpulp_v0_19_rload_avx512_f32x3:
+        vmovss xmm0, [rax]
+        vmovsd xmm1, [rax + 4]
+        vshufps xmm0, xmm0, xmm1, 0b01000001
+        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
+        ret
+    libpulp_v0_19_rstore_avx512_f32x3:
+        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
+        vpermilps xmm0, xmm0, 0b00011110
+        vmovsd [rax + 4], xmm0
+        vunpckhpd xmm0, xmm0, xmm0
+        vmovss [rax], xmm0
+        ret
+
+
+    libpulp_v0_19_rload_avx512_f32x4:
+        vmovups xmm0, [rax]
+        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
+        ret
+    libpulp_v0_19_rstore_avx512_f32x4:
+        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
+        vmovups [rax], xmm0
+        ret
+
+
+    libpulp_v0_19_rload_avx512_f32x5:
+        vmovss xmm0, [rax]
+        vpermilps xmm0, xmm0, 0b00011011
+        vmovups xmm1, [rax + 4]
+        vinsertf128 ymm0, ymm1, xmm0, 0x1
+        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
+        ret
+    libpulp_v0_19_rstore_avx512_f32x5:
+        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
+        vmovups [rax + 4], xmm0
+        vextractf128 xmm0, ymm0, 0x1
+        vpermilps xmm0, xmm0, 0b00011011
+        vmovss [rax], xmm0
+        ret
+
+
+    libpulp_v0_19_rload_avx512_f32x6:
+        vmovsd xmm0, [rax]
+        vpermilps xmm0, xmm0, 0b01001110
+        vmovups xmm1, [rax + 8]
+        vinsertf128 ymm0, ymm1, xmm0, 0x1
+        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
+        ret
+    libpulp_v0_19_rstore_avx512_f32x6:
+        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
+        vmovups [rax + 8], xmm0
+        vextractf128 xmm0, ymm0, 0x1
+        vpermilps xmm0, xmm0, 0b01001110
+        vmovsd [rax], xmm0
+        ret
+
+
+    libpulp_v0_19_rload_avx512_f32x7:
+        vmovss xmm0, [rax]
+        vmovsd xmm1, [rax + 4]
+        vshufps xmm0, xmm0, xmm1, 0b01000001
+        vmovups xmm1, [rax + 12]
+        vinsertf128 ymm0, ymm1, xmm0, 0x1
+        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
+        ret
+    libpulp_v0_19_rstore_avx512_f32x7:
+        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
+        vmovups [rax + 12], xmm0
+        vextractf128 xmm0, ymm0, 0x1
+        vpermilps xmm0, xmm0, 0b00011110
+        vmovsd [rax + 4], xmm0
+        vunpckhpd xmm0, xmm0, xmm0
+        vmovss [rax], xmm0
+        ret
+
+
+    libpulp_v0_19_rload_avx512_f32x8:
+        vmovups ymm0, [rax]
+        vshuff32x4 zmm0, zmm0, zmm0, 0b01001110
+        ret
+    libpulp_v0_19_rstore_avx512_f32x8:
+        vshuff32x4 zmm0, zmm0, zmm0, 0b01001110
+        vmovups [rax], ymm0
+        ret
+
+
+    libpulp_v0_19_rload_avx512_f32x9:
+        vmovss xmm0, [rax]
+        vpermilps xmm0, xmm0, 0b00011011
+        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
+        vmovups ymm1, [rax + 4]
+        vinsertf32x8 zmm0, zmm0, ymm1, 0x1
+        ret
+    libpulp_v0_19_rstore_avx512_f32x9:
+        vextractf32x8 ymm1, zmm0, 0x1
+        vmovups [rax + 4], ymm1
+        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
+        vpermilps xmm0, xmm0, 0b00011011
+        vmovss [rax], xmm0
+        ret
+
+    libpulp_v0_19_rload_avx512_f32x10:
+        vmovsd xmm0, [rax]
+        vpermilps xmm0, xmm0, 0b01001110
+        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
+        vmovups ymm1, [rax + 8]
+        vinsertf32x8 zmm0, zmm0, ymm1, 0x1
+        ret
+    libpulp_v0_19_rstore_avx512_f32x10:
+        vextractf32x8 ymm1, zmm0, 0x1
+        vmovups [rax + 8], ymm1
+        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
+        vpermilps xmm0, xmm0, 0b01001110
+        vmovsd [rax], xmm0
+        ret
+
+    libpulp_v0_19_rload_avx512_f32x11:
+        call libpulp_v0_19_rload_avx_f32x3
+        vmovups ymm1, [rax + 12]
+        vinsertf32x8 zmm0, zmm0, ymm1, 0x1
+        ret
+    libpulp_v0_19_rstore_avx512_f32x11:
+        vextractf32x8 ymm1, zmm0, 0x1
+        vmovups [rax + 12], ymm1
+        jmp libpulp_v0_19_rstore_avx_f32x3
+
+    libpulp_v0_19_rload_avx512_f32x12:
+        vmovups xmm0, [rax]
+        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
+        vmovups ymm1, [rax + 16]
+        vinsertf32x8 zmm0, zmm0, ymm1, 0x1
+        ret
+    libpulp_v0_19_rstore_avx512_f32x12:
+        vextractf32x8 ymm1, zmm0, 0x1
+        vmovups [rax + 16], ymm1
+        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
+        vmovups [rax], xmm0
+        ret
+
+    libpulp_v0_19_rload_avx512_f32x13:
+        vmovss xmm0, [rax]
+        vpermilps xmm0, xmm0, 0b00011011
+        vmovups xmm1, [rax + 4]
+        vinsertf128 ymm0, ymm0, xmm1, 0x1
+        vmovups ymm1, [rax + 20]
+        vinsertf32x8 zmm0, zmm0, ymm1, 0x1
+        ret
+    libpulp_v0_19_rstore_avx512_f32x13:
+        vextractf32x8 ymm1, zmm0, 0x1
+        vmovups [rax + 20], ymm1
+        vextractf128 xmm1, ymm0, 0x1
+        vmovups [rax + 4], xmm1
+        vpermilps xmm0, xmm0, 0b00011011
+        vmovss [rax], xmm0
+        ret
+
+    libpulp_v0_19_rload_avx512_f32x14:
+        vmovsd xmm0, [rax]
+        vpermilps xmm0, xmm0, 0b01001110
+        vmovups xmm1, [rax + 8]
+        vinsertf128 ymm0, ymm0, xmm1, 0x1
+        vmovups ymm1, [rax + 24]
+        vinsertf32x8 zmm0, zmm0, ymm1, 0x1
+        ret
+    libpulp_v0_19_rstore_avx512_f32x14:
+        vextractf32x8 ymm1, zmm0, 0x1
+        vmovups [rax + 24], ymm1
+        vextractf128 xmm1, ymm0, 0x1
+        vmovups [rax + 8], xmm1
+        vpermilps xmm0, xmm0, 0b01001110
+        vmovsd [rax], xmm0
+        ret
+
+    libpulp_v0_19_rload_avx512_f32x15:
+        vmovss xmm0, [rax]
+        vmovsd xmm1, [rax + 4]
+        vshufps xmm0, xmm0, xmm1, 0b01000001
+        vmovups xmm1, [rax + 12]
+        vinsertf128 ymm0, ymm0, xmm1, 0x1
+        vmovups ymm1, [rax + 28]
+        vinsertf32x8 zmm0, zmm0, ymm1, 0x1
+        ret
+    libpulp_v0_19_rstore_avx512_f32x15:
+        vextractf32x8 ymm1, zmm0, 0x1
+        vmovups [rax + 28], ymm1
+        vextractf128 xmm1, ymm0, 0x1
+        vmovups [rax + 12], xmm1
+        vpermilps xmm0, xmm0, 0b00011110
+        vmovsd [rax + 4], xmm0
+        vunpckhpd xmm0, xmm0, xmm0
+        vmovss [rax], xmm0
+        ret
+
+
+    libpulp_v0_19_rload_avx512_f32x16:
         vmovups zmm0, [rax]
         ret
-    libpulp_v0_19_rstore_f32x16:
-    libpulp_v0_19_store_f32x16:
+    libpulp_v0_19_rstore_avx512_f32x16:
         vmovups [rax], zmm0
-        ret
-"
+        ret"
 );
 
 #[cfg(test)]
@@ -13007,13 +13305,13 @@ mod tests {
 
         if let Some(simd) = V3::try_new() {
             for n in 0..=8 {
-                let src = core::array::from_fn::<f32, 8, _>(|i| i as _);
+                let src = core::array::from_fn::<f32, 8, _>(|i| (i + 1) as _);
                 let mut dst = [0.0f32; 8];
 
                 let src = &src[..n];
                 let dst = &mut dst[..n];
 
-                simd.partial_store_head_shfl_f32s(dst, simd.partial_load_head_shfl_f32s(src));
+                simd.partial_store_head_f32s(dst, simd.partial_load_head_f32s(src));
 
                 assert_eq!(src, dst);
             }
@@ -13028,8 +13326,9 @@ mod tests {
                 let src = &src[..n];
                 let dst = &mut dst[..n];
 
-                simd.partial_store_head_shfl_f32s(dst, simd.partial_load_head_shfl_f32s(src));
+                simd.partial_store_head_f32s(dst, dbg!(simd.partial_load_head_f32s(src)));
 
+                dbg!(n);
                 assert_eq!(src, dst);
             }
         }
@@ -13044,7 +13343,7 @@ mod tests {
                 let src = &src[..n];
                 let dst = &mut dst[..n];
 
-                simd.partial_store_head_shfl_f32s(dst, simd.partial_load_head_shfl_f32s(src));
+                simd.partial_store_head_f32s(dst, simd.partial_load_head_f32s(src));
 
                 assert_eq!(src, dst);
             }

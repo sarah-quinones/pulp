@@ -138,47 +138,57 @@ impl<F: NullaryFnOnce> WithSimd for F {
 // ...
 // an-1,0 ... an-1,m-1
 #[inline(always)]
-fn interleave_fallback<Unit: Pod, Reg: Pod, AoSReg: Pod>(x: AoSReg) -> AoSReg {
-    const { assert!(size_of::<AoSReg>() % size_of::<Reg>() == 0) };
+fn interleave_fallback<Unit: Pod, Reg: Pod, AosReg: Pod>(x: AosReg) -> AosReg {
+    const { assert!(size_of::<AosReg>() % size_of::<Reg>() == 0) };
     const { assert!(size_of::<Reg>() % size_of::<Unit>() == 0) };
-    let mut y = x;
 
-    let n = const { size_of::<AoSReg>() / size_of::<Reg>() };
-    let m = const { size_of::<Reg>() / size_of::<Unit>() };
+    if const { size_of::<AosReg>() == size_of::<Reg>() } {
+        x
+    } else {
+        let mut y = x;
 
-    unsafe {
-        let y = (&mut y) as *mut _ as *mut Unit;
-        let x = (&x) as *const _ as *const Unit;
-        for j in 0..m {
-            for i in 0..n {
-                *y.add(i + n * j) = *x.add(j + i * m);
+        let n = const { size_of::<AosReg>() / size_of::<Reg>() };
+        let m = const { size_of::<Reg>() / size_of::<Unit>() };
+
+        unsafe {
+            let y = (&mut y) as *mut _ as *mut Unit;
+            let x = (&x) as *const _ as *const Unit;
+            for j in 0..m {
+                for i in 0..n {
+                    *y.add(i + n * j) = *x.add(j + i * m);
+                }
             }
         }
-    }
 
-    y
+        y
+    }
 }
 
 #[inline(always)]
-fn deinterleave_fallback<Unit: Pod, Reg: Pod, AoSReg: Pod>(y: AoSReg) -> AoSReg {
-    const { assert!(size_of::<AoSReg>() % size_of::<Reg>() == 0) };
+fn deinterleave_fallback<Unit: Pod, Reg: Pod, SoaReg: Pod>(y: SoaReg) -> SoaReg {
+    const { assert!(size_of::<SoaReg>() % size_of::<Reg>() == 0) };
     const { assert!(size_of::<Reg>() % size_of::<Unit>() == 0) };
-    let mut x = y;
 
-    let n = const { size_of::<AoSReg>() / size_of::<Reg>() };
-    let m = const { size_of::<Reg>() / size_of::<Unit>() };
+    if const { size_of::<SoaReg>() == size_of::<Reg>() } {
+        y
+    } else {
+        let mut x = y;
 
-    unsafe {
-        let y = (&y) as *const _ as *const Unit;
-        let x = (&mut x) as *mut _ as *mut Unit;
-        for j in 0..m {
-            for i in 0..n {
-                *x.add(j + i * m) = *y.add(i + n * j);
+        let n = const { size_of::<SoaReg>() / size_of::<Reg>() };
+        let m = const { size_of::<Reg>() / size_of::<Unit>() };
+
+        unsafe {
+            let y = (&y) as *const _ as *const Unit;
+            let x = (&mut x) as *mut _ as *mut Unit;
+            for j in 0..m {
+                for i in 0..n {
+                    *x.add(j + i * m) = *y.add(i + n * j);
+                }
             }
         }
-    }
 
-    x
+        x
+    }
 }
 pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     type m32s: Debug + Copy + Send + Sync + Zeroable + NoUninit + 'static;
@@ -924,10 +934,10 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     fn partial_load_u64s(self, slice: &[u64]) -> Self::u64s;
     fn partial_store_u64s(self, slice: &mut [u64], values: Self::u64s);
 
-    fn partial_load_head_shfl_u32s(self, slice: &[u32]) -> Self::u32s;
-    fn partial_store_head_shfl_u32s(self, slice: &mut [u32], values: Self::u32s);
-    fn partial_load_head_shfl_u64s(self, slice: &[u64]) -> Self::u64s;
-    fn partial_store_head_shfl_u64s(self, slice: &mut [u64], values: Self::u64s);
+    fn partial_load_head_u32s(self, slice: &[u32]) -> Self::u32s;
+    fn partial_store_head_u32s(self, slice: &mut [u32], values: Self::u32s);
+    fn partial_load_head_u64s(self, slice: &[u64]) -> Self::u64s;
+    fn partial_store_head_u64s(self, slice: &mut [u64], values: Self::u64s);
 
     #[inline(always)]
     fn deinterleave_shfl_f64s<T: Pod>(self, values: T) -> T {
@@ -998,54 +1008,54 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     }
 
     #[inline(always)]
-    fn partial_load_head_shfl_i32s(self, slice: &[i32]) -> Self::i32s {
-        cast(self.partial_load_head_shfl_u32s(bytemuck::cast_slice(slice)))
+    fn partial_load_head_i32s(self, slice: &[i32]) -> Self::i32s {
+        cast(self.partial_load_head_u32s(bytemuck::cast_slice(slice)))
     }
     #[inline(always)]
-    fn partial_store_head_shfl_i32s(self, slice: &mut [i32], values: Self::i32s) {
-        self.partial_store_head_shfl_u32s(bytemuck::cast_slice_mut(slice), cast(values))
+    fn partial_store_head_i32s(self, slice: &mut [i32], values: Self::i32s) {
+        self.partial_store_head_u32s(bytemuck::cast_slice_mut(slice), cast(values))
     }
     #[inline(always)]
-    fn partial_load_head_shfl_i64s(self, slice: &[i64]) -> Self::i64s {
-        cast(self.partial_load_head_shfl_u64s(bytemuck::cast_slice(slice)))
+    fn partial_load_head_i64s(self, slice: &[i64]) -> Self::i64s {
+        cast(self.partial_load_head_u64s(bytemuck::cast_slice(slice)))
     }
     #[inline(always)]
-    fn partial_store_head_shfl_i64s(self, slice: &mut [i64], values: Self::i64s) {
-        self.partial_store_head_shfl_u64s(bytemuck::cast_slice_mut(slice), cast(values))
-    }
-
-    #[inline(always)]
-    fn partial_load_head_shfl_f32s(self, slice: &[f32]) -> Self::f32s {
-        cast(self.partial_load_head_shfl_u32s(bytemuck::cast_slice(slice)))
-    }
-    #[inline(always)]
-    fn partial_store_head_shfl_f32s(self, slice: &mut [f32], values: Self::f32s) {
-        self.partial_store_head_shfl_u32s(bytemuck::cast_slice_mut(slice), cast(values))
-    }
-    #[inline(always)]
-    fn partial_load_head_shfl_f64s(self, slice: &[f64]) -> Self::f64s {
-        cast(self.partial_load_head_shfl_u64s(bytemuck::cast_slice(slice)))
-    }
-    #[inline(always)]
-    fn partial_store_head_shfl_f64s(self, slice: &mut [f64], values: Self::f64s) {
-        self.partial_store_head_shfl_u64s(bytemuck::cast_slice_mut(slice), cast(values))
+    fn partial_store_head_i64s(self, slice: &mut [i64], values: Self::i64s) {
+        self.partial_store_head_u64s(bytemuck::cast_slice_mut(slice), cast(values))
     }
 
     #[inline(always)]
-    fn partial_load_head_shfl_c32s(self, slice: &[c32]) -> Self::c32s {
-        cast(self.partial_load_head_shfl_f64s(bytemuck::cast_slice(slice)))
+    fn partial_load_head_f32s(self, slice: &[f32]) -> Self::f32s {
+        cast(self.partial_load_head_u32s(bytemuck::cast_slice(slice)))
     }
     #[inline(always)]
-    fn partial_store_head_shfl_c32s(self, slice: &mut [c32], values: Self::c32s) {
-        self.partial_store_head_shfl_f64s(bytemuck::cast_slice_mut(slice), cast(values))
+    fn partial_store_head_f32s(self, slice: &mut [f32], values: Self::f32s) {
+        self.partial_store_head_u32s(bytemuck::cast_slice_mut(slice), cast(values))
     }
     #[inline(always)]
-    fn partial_load_head_shfl_c64s(self, slice: &[c64]) -> Self::c64s {
-        cast(self.partial_load_head_shfl_f64s(bytemuck::cast_slice(slice)))
+    fn partial_load_head_f64s(self, slice: &[f64]) -> Self::f64s {
+        cast(self.partial_load_head_u64s(bytemuck::cast_slice(slice)))
     }
     #[inline(always)]
-    fn partial_store_head_shfl_c64s(self, slice: &mut [c64], values: Self::c64s) {
-        self.partial_store_head_shfl_f64s(bytemuck::cast_slice_mut(slice), cast(values))
+    fn partial_store_head_f64s(self, slice: &mut [f64], values: Self::f64s) {
+        self.partial_store_head_u64s(bytemuck::cast_slice_mut(slice), cast(values))
+    }
+
+    #[inline(always)]
+    fn partial_load_head_c32s(self, slice: &[c32]) -> Self::c32s {
+        cast(self.partial_load_head_f64s(bytemuck::cast_slice(slice)))
+    }
+    #[inline(always)]
+    fn partial_store_head_c32s(self, slice: &mut [c32], values: Self::c32s) {
+        self.partial_store_head_f64s(bytemuck::cast_slice_mut(slice), cast(values))
+    }
+    #[inline(always)]
+    fn partial_load_head_c64s(self, slice: &[c64]) -> Self::c64s {
+        cast(self.partial_load_head_f64s(bytemuck::cast_slice(slice)))
+    }
+    #[inline(always)]
+    fn partial_store_head_c64s(self, slice: &mut [c64], values: Self::c64s) {
+        self.partial_store_head_f64s(bytemuck::cast_slice_mut(slice), cast(values))
     }
 
     #[inline(always)]
@@ -2157,7 +2167,7 @@ impl Simd for Scalar {
     }
 
     #[inline]
-    fn partial_load_head_shfl_u32s(self, slice: &[u32]) -> Self::u32s {
+    fn partial_load_head_u32s(self, slice: &[u32]) -> Self::u32s {
         if let Some((head, _)) = slice.split_last() {
             *head
         } else {
@@ -2166,14 +2176,14 @@ impl Simd for Scalar {
     }
 
     #[inline]
-    fn partial_store_head_shfl_u32s(self, slice: &mut [u32], values: Self::u32s) {
+    fn partial_store_head_u32s(self, slice: &mut [u32], values: Self::u32s) {
         if let Some((head, _)) = slice.split_last_mut() {
             *head = values;
         }
     }
 
     #[inline]
-    fn partial_load_head_shfl_u64s(self, slice: &[u64]) -> Self::u64s {
+    fn partial_load_head_u64s(self, slice: &[u64]) -> Self::u64s {
         if let Some((head, _)) = slice.split_last() {
             *head
         } else {
@@ -2182,14 +2192,14 @@ impl Simd for Scalar {
     }
 
     #[inline]
-    fn partial_store_head_shfl_u64s(self, slice: &mut [u64], values: Self::u64s) {
+    fn partial_store_head_u64s(self, slice: &mut [u64], values: Self::u64s) {
         if let Some((head, _)) = slice.split_last_mut() {
             *head = values;
         }
     }
 
     #[inline]
-    fn partial_load_head_shfl_c64s(self, slice: &[c64]) -> Self::c64s {
+    fn partial_load_head_c64s(self, slice: &[c64]) -> Self::c64s {
         if let Some((head, _)) = slice.split_last() {
             *head
         } else {
@@ -2198,7 +2208,7 @@ impl Simd for Scalar {
     }
 
     #[inline]
-    fn partial_store_head_shfl_c64s(self, slice: &mut [c64], values: Self::c64s) {
+    fn partial_store_head_c64s(self, slice: &mut [c64], values: Self::c64s) {
         if let Some((head, _)) = slice.split_last_mut() {
             *head = values;
         }
