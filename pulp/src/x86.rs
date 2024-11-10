@@ -11889,6 +11889,7 @@ static RSTORE_AVX: [unsafe extern "C" fn(NoCall); 9] = [
     libpulp_v0_19_rstore_avx_f32x7,
     libpulp_v0_19_rstore_avx_f32x8,
 ];
+#[cfg(feature = "nightly")]
 static RLOAD_AVX512: [unsafe extern "C" fn(NoCall); 17] = [
     libpulp_v0_19_rload_avx512_f32x0,
     libpulp_v0_19_rload_avx512_f32x1,
@@ -11908,6 +11909,7 @@ static RLOAD_AVX512: [unsafe extern "C" fn(NoCall); 17] = [
     libpulp_v0_19_rload_avx512_f32x15,
     libpulp_v0_19_rload_avx512_f32x16,
 ];
+#[cfg(feature = "nightly")]
 static RSTORE_AVX512: [unsafe extern "C" fn(NoCall); 17] = [
     libpulp_v0_19_rstore_avx512_f32x0,
     libpulp_v0_19_rstore_avx512_f32x1,
