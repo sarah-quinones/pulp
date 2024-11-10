@@ -193,6 +193,8 @@ unsafe fn deinterleave_fallback<Unit: Pod, Reg: Pod, SoaReg>(y: SoaReg) -> SoaRe
     }
 }
 
+/// # Safety
+/// Instances of this type passed to simd [de]interleave functions must be `Pod`.
 pub unsafe trait Interleave {}
 unsafe impl<T: Pod> Interleave for T {}
 
