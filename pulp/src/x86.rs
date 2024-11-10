@@ -1883,6 +1883,8 @@ impl Simd for V3 {
 }
 
 impl Simd for V3Scalar {
+    const IS_SCALAR: bool = true;
+
     type m32s = bool;
     type f32s = f32;
     type i32s = i32;
@@ -2322,7 +2324,7 @@ impl Simd for V3Scalar {
 
     #[inline(always)]
     fn splat_c64s(self, value: c64) -> Self::c64s {
-        unsafe { cast(_mm256_broadcast_pd(&*(&value as *const _ as *const _))) }
+        value
     }
     #[inline(always)]
     fn add_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
@@ -2727,6 +2729,24 @@ impl Simd for V3Scalar {
     #[inline(always)]
     fn reduce_max_c64s(self, a: Self::c64s) -> c64 {
         a
+    }
+
+    #[inline(always)]
+    fn first_true_m32s(self, mask: Self::m32s) -> usize {
+        if mask {
+            0
+        } else {
+            1
+        }
+    }
+
+    #[inline(always)]
+    fn first_true_m64s(self, mask: Self::m64s) -> usize {
+        if mask {
+            0
+        } else {
+            1
+        }
     }
 }
 

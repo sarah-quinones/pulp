@@ -139,9 +139,9 @@ impl<F: NullaryFnOnce> WithSimd for F {
 // an-1,0 ... an-1,m-1
 #[inline(always)]
 unsafe fn interleave_fallback<Unit: Pod, Reg: Pod, AosReg>(x: AosReg) -> AosReg {
-    const { assert!(size_of::<AosReg>() % size_of::<Reg>() == 0) };
-    const { assert!(size_of::<Reg>() % size_of::<Unit>() == 0) };
-    const { assert!(!core::mem::needs_drop::<AosReg>()) };
+    assert!(size_of::<AosReg>() % size_of::<Reg>() == 0);
+    assert!(size_of::<Reg>() % size_of::<Unit>() == 0);
+    assert!(!core::mem::needs_drop::<AosReg>());
 
     if const { size_of::<AosReg>() == size_of::<Reg>() } {
         x
@@ -167,8 +167,9 @@ unsafe fn interleave_fallback<Unit: Pod, Reg: Pod, AosReg>(x: AosReg) -> AosReg 
 
 #[inline(always)]
 unsafe fn deinterleave_fallback<Unit: Pod, Reg: Pod, SoaReg>(y: SoaReg) -> SoaReg {
-    const { assert!(size_of::<SoaReg>() % size_of::<Reg>() == 0) };
-    const { assert!(size_of::<Reg>() % size_of::<Unit>() == 0) };
+    assert!(size_of::<SoaReg>() % size_of::<Reg>() == 0);
+    assert!(size_of::<Reg>() % size_of::<Unit>() == 0);
+    assert!(!core::mem::needs_drop::<SoaReg>());
 
     if const { size_of::<SoaReg>() == size_of::<Reg>() } {
         y
@@ -196,6 +197,8 @@ pub unsafe trait Interleave {}
 unsafe impl<T: Pod> Interleave for T {}
 
 pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
+    const IS_SCALAR: bool = false;
+
     type m32s: Debug + Copy + Send + Sync + Zeroable + NoUninit + 'static;
     type f32s: Debug + Copy + Send + Sync + Pod + 'static;
     type c32s: Debug + Copy + Send + Sync + Pod + 'static;
@@ -1823,6 +1826,8 @@ impl Scalar {
 
 impl Seal for Scalar {}
 impl Simd for Scalar {
+    const IS_SCALAR: bool = true;
+
     #[inline]
     fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
         op.with_simd(self)
