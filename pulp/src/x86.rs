@@ -11791,7 +11791,10 @@ unsafe extern "C" {
     fn libpulp_v0_19_rstore_avx_f32x6(_: NoCall);
     fn libpulp_v0_19_rstore_avx_f32x7(_: NoCall);
     fn libpulp_v0_19_rstore_avx_f32x8(_: NoCall);
+}
 
+#[cfg(feature = "nightly")]
+unsafe extern "C" {
     fn libpulp_v0_19_rload_avx512_f32x0(_: NoCall);
     fn libpulp_v0_19_rload_avx512_f32x1(_: NoCall);
     fn libpulp_v0_19_rload_avx512_f32x2(_: NoCall);
