@@ -13331,9 +13331,8 @@ mod tests {
                 let src = &src[..n];
                 let dst = &mut dst[..n];
 
-                simd.partial_store_last_f32s(dst, dbg!(simd.partial_load_last_f32s(src)));
+                simd.partial_store_last_f32s(dst, simd.partial_load_last_f32s(src));
 
-                dbg!(n);
                 assert_eq!(src, dst);
             }
         }
