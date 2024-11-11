@@ -1118,13 +1118,13 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     #[inline(always)]
     fn tail_mask_f64s(self, len: usize) -> Self::m64s {
         let iota: Self::u64s =
-            const { unsafe { core::mem::transmute_copy(&<f64 as Iota64>::IOTA) } };
+            const { unsafe { core::mem::transmute_copy(&<u64 as Iota64>::IOTA) } };
         self.less_than_u64s(iota, self.splat_u64s(len as u64))
     }
     #[inline(always)]
     fn tail_mask_f32s(self, len: usize) -> Self::m32s {
         let iota: Self::u32s =
-            const { unsafe { core::mem::transmute_copy(&<f32 as Iota32>::IOTA) } };
+            const { unsafe { core::mem::transmute_copy(&<u32 as Iota32>::IOTA) } };
         self.less_than_u32s(iota, self.splat_u32s(len as u32))
     }
     #[inline(always)]
@@ -1139,13 +1139,13 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     #[inline(always)]
     fn head_mask_f64s(self, len: usize) -> Self::m64s {
         let iota: Self::u64s =
-            const { unsafe { core::mem::transmute_copy(&<f64 as Iota64>::IOTA) } };
+            const { unsafe { core::mem::transmute_copy(&<u64 as Iota64>::IOTA) } };
         self.greater_than_or_equal_u64s(iota, self.splat_u64s(len as u64))
     }
     #[inline(always)]
     fn head_mask_f32s(self, len: usize) -> Self::m32s {
         let iota: Self::u32s =
-            const { unsafe { core::mem::transmute_copy(&<f32 as Iota32>::IOTA) } };
+            const { unsafe { core::mem::transmute_copy(&<u32 as Iota32>::IOTA) } };
         self.greater_than_or_equal_u32s(iota, self.splat_u32s(len as u32))
     }
     #[inline(always)]
@@ -5426,6 +5426,7 @@ pub trait Iota64: Sized {
     const IOTA: [core::mem::MaybeUninit<Self>; 32];
 }
 
+#[cfg(feature = "nightly")]
 impl<T> Iota32 for T {
     const IOTA: [core::mem::MaybeUninit<Self>; 32] = {
         let mut iota = [const { core::mem::MaybeUninit::uninit() }; 32];
@@ -5444,6 +5445,7 @@ impl<T> Iota32 for T {
         iota
     };
 }
+#[cfg(feature = "nightly")]
 impl<T> Iota64 for T {
     const IOTA: [core::mem::MaybeUninit<Self>; 32] = {
         let mut iota = [const { core::mem::MaybeUninit::uninit() }; 32];
@@ -5460,6 +5462,33 @@ impl<T> Iota64 for T {
             i += 1;
         }
         iota
+    };
+}
+
+#[cfg(not(feature = "nightly"))]
+impl Iota32 for u32 {
+    const IOTA: [core::mem::MaybeUninit<Self>; 32] = {
+        let mut iota = [0u32; 32];
+        let mut i = 0;
+        while i < 32 {
+            iota[i] = i as _;
+
+            i += 1;
+        }
+        unsafe { core::mem::transmute(iota) }
+    };
+}
+#[cfg(not(feature = "nightly"))]
+impl Iota64 for u64 {
+    const IOTA: [core::mem::MaybeUninit<Self>; 32] = {
+        let mut iota = [0u64; 32];
+        let mut i = 0;
+        while i < 32 {
+            iota[i] = i as _;
+
+            i += 1;
+        }
+        unsafe { core::mem::transmute(iota) }
     };
 }
 
