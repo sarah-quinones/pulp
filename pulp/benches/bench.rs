@@ -923,11 +923,6 @@ fn aligned_sum_vertical_bench(criterion: &mut Criterion) {
         rhs: &'a [f64],
         dst: &'a mut [f64],
     }
-    struct AlignedSum<'a> {
-        lhs: &'a [f64],
-        rhs: &'a [f64],
-        dst: &'a mut [f64],
-    }
 
     impl WithSimd for Sum<'_> {
         type Output = ();

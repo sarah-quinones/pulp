@@ -493,7 +493,7 @@ pub fn dot_product_simd_extract_reduce_ilp_fma_epilogue_generic<S: Simd>(
 
             acc0 = simd.add_f32s(acc0, acc2);
 
-            if x1.len() > 0 {
+            if !x1.is_empty() {
                 acc0 =
                     simd.mul_add_f32s(simd.partial_load_f32s(x1), simd.partial_load_f32s(y1), acc0);
             }
