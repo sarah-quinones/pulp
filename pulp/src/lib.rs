@@ -101,7 +101,9 @@ pub type c64 = Complex<f64>;
 #[derive(Debug, Copy, Clone)]
 pub struct MemMask<T> {
     mask: T,
+    #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
     load: Option<unsafe extern "C" fn()>,
+    #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
     store: Option<unsafe extern "C" fn()>,
 }
 
@@ -110,7 +112,9 @@ impl<T> From<T> for MemMask<T> {
     fn from(value: T) -> Self {
         Self {
             mask: value,
+            #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
             load: None,
+            #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
             store: None,
         }
     }
