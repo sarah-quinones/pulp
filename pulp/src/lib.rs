@@ -86,7 +86,6 @@ use core::marker::PhantomData;
 use core::mem::MaybeUninit;
 use core::slice::{from_raw_parts, from_raw_parts_mut};
 use num_complex::Complex;
-use reborrow::*;
 use seal::Seal;
 
 /// Requires the first non-lifetime generic parameter, as well as the function's
@@ -98,6 +97,24 @@ pub use pulp_macro::with_simd;
 
 pub type c32 = Complex<f32>;
 pub type c64 = Complex<f64>;
+
+#[derive(Debug, Copy, Clone)]
+pub struct MemMask<T> {
+    mask: T,
+    load: Option<unsafe extern "C" fn()>,
+    store: Option<unsafe extern "C" fn()>,
+}
+
+impl<T> From<T> for MemMask<T> {
+    #[inline]
+    fn from(value: T) -> Self {
+        Self {
+            mask: value,
+            load: None,
+            store: None,
+        }
+    }
+}
 
 mod seal {
     pub trait Seal {}
@@ -193,8 +210,10 @@ unsafe fn deinterleave_fallback<Unit: Pod, Reg: Pod, SoaReg>(y: SoaReg) -> SoaRe
     }
 }
 
+/// Types that allow \[de\]interleaving.
+///
 /// # Safety
-/// Instances of this type passed to simd [de]interleave functions must be `Pod`.
+/// Instances of this type passed to simd \[de\]interleave functions must be `Pod`.
 pub unsafe trait Interleave {}
 unsafe impl<T: Pod> Interleave for T {}
 
@@ -441,404 +460,12 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
         unsafe { rsplit_mut_slice(slice) }
     }
 
-    #[inline(always)]
-    fn align_offset_i32s(self, ptr: *const i32, len: usize) -> Offset<Self::m32s> {
-        align_offset_u32::<Self, i32, Self::i32s>(
-            self,
-            ptr,
-            len,
-            core::mem::size_of::<Self::i32s>(),
-        )
-    }
-    #[inline(always)]
-    fn align_offset_f32s(self, ptr: *const f32, len: usize) -> Offset<Self::m32s> {
-        align_offset_u32::<Self, f32, Self::f32s>(
-            self,
-            ptr,
-            len,
-            core::mem::size_of::<Self::f32s>(),
-        )
-    }
-    #[inline(always)]
-    fn align_offset_u32s(self, ptr: *const u32, len: usize) -> Offset<Self::m32s> {
-        align_offset_u32::<Self, u32, Self::u32s>(
-            self,
-            ptr,
-            len,
-            core::mem::size_of::<Self::u32s>(),
-        )
-    }
-    #[inline(always)]
-    fn align_offset_c32s(self, ptr: *const c32, len: usize) -> Offset<Self::m32s> {
-        align_offset_u32x2::<Self, c32, Self::c32s>(
-            self,
-            ptr,
-            len,
-            core::mem::size_of::<Self::c32s>(),
-        )
-    }
-
-    #[inline(always)]
-    fn align_offset_i64s(self, ptr: *const i64, len: usize) -> Offset<Self::m64s> {
-        align_offset_u64::<Self, i64, Self::i64s>(
-            self,
-            ptr,
-            len,
-            core::mem::size_of::<Self::i64s>(),
-        )
-    }
-    #[inline(always)]
-    fn align_offset_f64s(self, ptr: *const f64, len: usize) -> Offset<Self::m64s> {
-        align_offset_u64::<Self, f64, Self::f64s>(
-            self,
-            ptr,
-            len,
-            core::mem::size_of::<Self::f64s>(),
-        )
-    }
-    #[inline(always)]
-    fn align_offset_u64s(self, ptr: *const u64, len: usize) -> Offset<Self::m64s> {
-        align_offset_u64::<Self, u64, Self::u64s>(
-            self,
-            ptr,
-            len,
-            core::mem::size_of::<Self::u64s>(),
-        )
-    }
-    #[inline(always)]
-    fn align_offset_c64s(self, ptr: *const c64, len: usize) -> Offset<Self::m64s> {
-        align_offset_u64x2::<Self, c64, Self::c64s>(
-            self,
-            ptr,
-            len,
-            core::mem::size_of::<Self::c64s>(),
-        )
-    }
-
-    #[inline(always)]
-    #[track_caller]
-    fn as_aligned_simd_i32s(
-        self,
-        slice: &[i32],
-        offset: Offset<Self::m32s>,
-    ) -> (
-        Prefix<i32, Self, Self::m32s>,
-        &[Self::i32s],
-        Suffix<i32, Self, Self::m32s>,
-    ) {
-        unsafe { split_slice_aligned_like(self, slice, offset) }
-    }
-    #[inline(always)]
-    #[track_caller]
-    fn as_aligned_simd_f32s(
-        self,
-        slice: &[f32],
-        offset: Offset<Self::m32s>,
-    ) -> (
-        Prefix<f32, Self, Self::m32s>,
-        &[Self::f32s],
-        Suffix<f32, Self, Self::m32s>,
-    ) {
-        unsafe { split_slice_aligned_like(self, slice, offset) }
-    }
-    #[inline(always)]
-    #[track_caller]
-    fn as_aligned_simd_u32s(
-        self,
-        slice: &[u32],
-        offset: Offset<Self::m32s>,
-    ) -> (
-        Prefix<u32, Self, Self::m32s>,
-        &[Self::u32s],
-        Suffix<u32, Self, Self::m32s>,
-    ) {
-        unsafe { split_slice_aligned_like(self, slice, offset) }
-    }
-    #[inline(always)]
-    #[track_caller]
-    fn as_aligned_simd_c32s(
-        self,
-        slice: &[c32],
-        offset: Offset<Self::m32s>,
-    ) -> (
-        Prefix<c32, Self, Self::m32s>,
-        &[Self::c32s],
-        Suffix<c32, Self, Self::m32s>,
-    ) {
-        unsafe { split_slice_aligned_like(self, slice, offset) }
-    }
-
-    #[inline(always)]
-    #[track_caller]
-    fn as_aligned_simd_i64s(
-        self,
-        slice: &[i64],
-        offset: Offset<Self::m64s>,
-    ) -> (
-        Prefix<i64, Self, Self::m64s>,
-        &[Self::i64s],
-        Suffix<i64, Self, Self::m64s>,
-    ) {
-        unsafe { split_slice_aligned_like(self, slice, offset) }
-    }
-    #[inline(always)]
-    #[track_caller]
-    fn as_aligned_simd_f64s(
-        self,
-        slice: &[f64],
-        offset: Offset<Self::m64s>,
-    ) -> (
-        Prefix<f64, Self, Self::m64s>,
-        &[Self::f64s],
-        Suffix<f64, Self, Self::m64s>,
-    ) {
-        unsafe { split_slice_aligned_like(self, slice, offset) }
-    }
-    #[inline(always)]
-    #[track_caller]
-    fn as_aligned_simd_u64s(
-        self,
-        slice: &[u64],
-        offset: Offset<Self::m64s>,
-    ) -> (
-        Prefix<u64, Self, Self::m64s>,
-        &[Self::u64s],
-        Suffix<u64, Self, Self::m64s>,
-    ) {
-        unsafe { split_slice_aligned_like(self, slice, offset) }
-    }
-    #[inline(always)]
-    #[track_caller]
-    fn as_aligned_simd_c64s(
-        self,
-        slice: &[c64],
-        offset: Offset<Self::m64s>,
-    ) -> (
-        Prefix<c64, Self, Self::m64s>,
-        &[Self::c64s],
-        Suffix<c64, Self, Self::m64s>,
-    ) {
-        unsafe { split_slice_aligned_like(self, slice, offset) }
-    }
-
-    #[inline(always)]
-    #[track_caller]
-    fn as_aligned_mut_simd_i32s(
-        self,
-        slice: &mut [i32],
-        offset: Offset<Self::m32s>,
-    ) -> (
-        PrefixMut<i32, Self, Self::m32s>,
-        &mut [Self::i32s],
-        SuffixMut<i32, Self, Self::m32s>,
-    ) {
-        unsafe { split_mut_slice_aligned_like(self, slice, offset) }
-    }
-    #[inline(always)]
-    #[track_caller]
-    fn as_aligned_mut_simd_f32s(
-        self,
-        slice: &mut [f32],
-        offset: Offset<Self::m32s>,
-    ) -> (
-        PrefixMut<f32, Self, Self::m32s>,
-        &mut [Self::f32s],
-        SuffixMut<f32, Self, Self::m32s>,
-    ) {
-        unsafe { split_mut_slice_aligned_like(self, slice, offset) }
-    }
-    #[inline(always)]
-    #[track_caller]
-    fn as_aligned_mut_simd_u32s(
-        self,
-        slice: &mut [u32],
-        offset: Offset<Self::m32s>,
-    ) -> (
-        PrefixMut<u32, Self, Self::m32s>,
-        &mut [Self::u32s],
-        SuffixMut<u32, Self, Self::m32s>,
-    ) {
-        unsafe { split_mut_slice_aligned_like(self, slice, offset) }
-    }
-    #[inline(always)]
-    #[track_caller]
-    fn as_aligned_mut_simd_c32s(
-        self,
-        slice: &mut [c32],
-        offset: Offset<Self::m32s>,
-    ) -> (
-        PrefixMut<c32, Self, Self::m32s>,
-        &mut [Self::c32s],
-        SuffixMut<c32, Self, Self::m32s>,
-    ) {
-        unsafe { split_mut_slice_aligned_like(self, slice, offset) }
-    }
-
-    #[inline(always)]
-    #[track_caller]
-    fn as_aligned_mut_simd_i64s(
-        self,
-        slice: &mut [i64],
-        offset: Offset<Self::m64s>,
-    ) -> (
-        PrefixMut<i64, Self, Self::m64s>,
-        &mut [Self::i64s],
-        SuffixMut<i64, Self, Self::m64s>,
-    ) {
-        unsafe { split_mut_slice_aligned_like(self, slice, offset) }
-    }
-    #[inline(always)]
-    #[track_caller]
-    fn as_aligned_mut_simd_f64s(
-        self,
-        slice: &mut [f64],
-        offset: Offset<Self::m64s>,
-    ) -> (
-        PrefixMut<f64, Self, Self::m64s>,
-        &mut [Self::f64s],
-        SuffixMut<f64, Self, Self::m64s>,
-    ) {
-        unsafe { split_mut_slice_aligned_like(self, slice, offset) }
-    }
-    #[inline(always)]
-    #[track_caller]
-    fn as_aligned_mut_simd_u64s(
-        self,
-        slice: &mut [u64],
-        offset: Offset<Self::m64s>,
-    ) -> (
-        PrefixMut<u64, Self, Self::m64s>,
-        &mut [Self::u64s],
-        SuffixMut<u64, Self, Self::m64s>,
-    ) {
-        unsafe { split_mut_slice_aligned_like(self, slice, offset) }
-    }
-    #[inline(always)]
-    #[track_caller]
-    fn as_aligned_mut_simd_c64s(
-        self,
-        slice: &mut [c64],
-        offset: Offset<Self::m64s>,
-    ) -> (
-        PrefixMut<c64, Self, Self::m64s>,
-        &mut [Self::c64s],
-        SuffixMut<c64, Self, Self::m64s>,
-    ) {
-        unsafe { split_mut_slice_aligned_like(self, slice, offset) }
-    }
-
-    #[inline(always)]
-    #[track_caller]
-    fn as_aligned_uninit_mut_simd_i32s(
-        self,
-        slice: &mut [MaybeUninit<i32>],
-        offset: Offset<Self::m32s>,
-    ) -> (
-        PrefixMut<MaybeUninit<i32>, Self, Self::m32s>,
-        &mut [MaybeUninit<Self::i32s>],
-        SuffixMut<MaybeUninit<i32>, Self, Self::m32s>,
-    ) {
-        unsafe { split_mut_slice_aligned_like(self, slice, offset) }
-    }
-    #[inline(always)]
-    #[track_caller]
-    fn as_aligned_uninit_mut_simd_f32s(
-        self,
-        slice: &mut [MaybeUninit<f32>],
-        offset: Offset<Self::m32s>,
-    ) -> (
-        PrefixMut<MaybeUninit<f32>, Self, Self::m32s>,
-        &mut [MaybeUninit<Self::f32s>],
-        SuffixMut<MaybeUninit<f32>, Self, Self::m32s>,
-    ) {
-        unsafe { split_mut_slice_aligned_like(self, slice, offset) }
-    }
-    #[inline(always)]
-    #[track_caller]
-    fn as_aligned_uninit_mut_simd_u32s(
-        self,
-        slice: &mut [MaybeUninit<u32>],
-        offset: Offset<Self::m32s>,
-    ) -> (
-        PrefixMut<MaybeUninit<u32>, Self, Self::m32s>,
-        &mut [MaybeUninit<Self::u32s>],
-        SuffixMut<MaybeUninit<u32>, Self, Self::m32s>,
-    ) {
-        unsafe { split_mut_slice_aligned_like(self, slice, offset) }
-    }
-    #[inline(always)]
-    #[track_caller]
-    fn as_aligned_uninit_mut_simd_c32s(
-        self,
-        slice: &mut [MaybeUninit<c32>],
-        offset: Offset<Self::m32s>,
-    ) -> (
-        PrefixMut<MaybeUninit<c32>, Self, Self::m32s>,
-        &mut [MaybeUninit<Self::c32s>],
-        SuffixMut<MaybeUninit<c32>, Self, Self::m32s>,
-    ) {
-        unsafe { split_mut_slice_aligned_like(self, slice, offset) }
-    }
-
-    #[inline(always)]
-    #[track_caller]
-    fn as_aligned_uninit_mut_simd_i64s(
-        self,
-        slice: &mut [MaybeUninit<i64>],
-        offset: Offset<Self::m64s>,
-    ) -> (
-        PrefixMut<MaybeUninit<i64>, Self, Self::m64s>,
-        &mut [MaybeUninit<Self::i64s>],
-        SuffixMut<MaybeUninit<i64>, Self, Self::m64s>,
-    ) {
-        unsafe { split_mut_slice_aligned_like(self, slice, offset) }
-    }
-    #[inline(always)]
-    #[track_caller]
-    fn as_aligned_uninit_mut_simd_f64s(
-        self,
-        slice: &mut [MaybeUninit<f64>],
-        offset: Offset<Self::m64s>,
-    ) -> (
-        PrefixMut<MaybeUninit<f64>, Self, Self::m64s>,
-        &mut [MaybeUninit<Self::f64s>],
-        SuffixMut<MaybeUninit<f64>, Self, Self::m64s>,
-    ) {
-        unsafe { split_mut_slice_aligned_like(self, slice, offset) }
-    }
-    #[inline(always)]
-    #[track_caller]
-    fn as_aligned_uninit_mut_simd_u64s(
-        self,
-        slice: &mut [MaybeUninit<u64>],
-        offset: Offset<Self::m64s>,
-    ) -> (
-        PrefixMut<MaybeUninit<u64>, Self, Self::m64s>,
-        &mut [MaybeUninit<Self::u64s>],
-        SuffixMut<MaybeUninit<u64>, Self, Self::m64s>,
-    ) {
-        unsafe { split_mut_slice_aligned_like(self, slice, offset) }
-    }
-    #[inline(always)]
-    #[track_caller]
-    fn as_aligned_uninit_mut_simd_c64s(
-        self,
-        slice: &mut [MaybeUninit<c64>],
-        offset: Offset<Self::m64s>,
-    ) -> (
-        PrefixMut<MaybeUninit<c64>, Self, Self::m64s>,
-        &mut [MaybeUninit<Self::c64s>],
-        SuffixMut<MaybeUninit<c64>, Self, Self::m64s>,
-    ) {
-        unsafe { split_mut_slice_aligned_like(self, slice, offset) }
-    }
-
     /// # Safety
     ///
     /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
     /// [`core::ptr::read`].
     #[inline(always)]
-    unsafe fn mask_load_ptr_i32s(self, mask: Self::m32s, ptr: *const i32) -> Self::i32s {
+    unsafe fn mask_load_ptr_i32s(self, mask: MemMask<Self::m32s>, ptr: *const i32) -> Self::i32s {
         self.transmute_i32s_u32s(self.mask_load_ptr_u32s(mask, ptr as *const u32))
     }
     /// # Safety
@@ -846,25 +473,30 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
     /// [`core::ptr::read`].
     #[inline(always)]
-    unsafe fn mask_load_ptr_f32s(self, mask: Self::m32s, ptr: *const f32) -> Self::f32s {
+    unsafe fn mask_load_ptr_f32s(self, mask: MemMask<Self::m32s>, ptr: *const f32) -> Self::f32s {
         self.transmute_f32s_u32s(self.mask_load_ptr_u32s(mask, ptr as *const u32))
     }
     /// # Safety
     ///
     /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
     /// [`core::ptr::read`].
-    unsafe fn mask_load_ptr_u32s(self, mask: Self::m32s, ptr: *const u32) -> Self::u32s;
+    unsafe fn mask_load_ptr_u32s(self, mask: MemMask<Self::m32s>, ptr: *const u32) -> Self::u32s;
     /// # Safety
     ///
     /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
     /// [`core::ptr::read`].
-    unsafe fn mask_load_ptr_c32s(self, mask: Self::m32s, ptr: *const c32) -> Self::c32s;
+    unsafe fn mask_load_ptr_c32s(self, mask: MemMask<Self::m32s>, ptr: *const c32) -> Self::c32s;
     /// # Safety
     ///
     /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
     /// [`core::ptr::write`].
     #[inline(always)]
-    unsafe fn mask_store_ptr_i32s(self, mask: Self::m32s, ptr: *mut i32, values: Self::i32s) {
+    unsafe fn mask_store_ptr_i32s(
+        self,
+        mask: MemMask<Self::m32s>,
+        ptr: *mut i32,
+        values: Self::i32s,
+    ) {
         self.mask_store_ptr_u32s(mask, ptr as *mut u32, self.transmute_u32s_i32s(values));
     }
     /// # Safety
@@ -872,26 +504,41 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
     /// [`core::ptr::write`].
     #[inline(always)]
-    unsafe fn mask_store_ptr_f32s(self, mask: Self::m32s, ptr: *mut f32, values: Self::f32s) {
+    unsafe fn mask_store_ptr_f32s(
+        self,
+        mask: MemMask<Self::m32s>,
+        ptr: *mut f32,
+        values: Self::f32s,
+    ) {
         self.mask_store_ptr_u32s(mask, ptr as *mut u32, self.transmute_u32s_f32s(values));
     }
     /// # Safety
     ///
     /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
     /// [`core::ptr::write`].
-    unsafe fn mask_store_ptr_u32s(self, mask: Self::m32s, ptr: *mut u32, values: Self::u32s);
+    unsafe fn mask_store_ptr_u32s(
+        self,
+        mask: MemMask<Self::m32s>,
+        ptr: *mut u32,
+        values: Self::u32s,
+    );
     /// # Safety
     ///
     /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
     /// [`core::ptr::write`].
-    unsafe fn mask_store_ptr_c32s(self, mask: Self::m32s, ptr: *mut c32, values: Self::c32s);
+    unsafe fn mask_store_ptr_c32s(
+        self,
+        mask: MemMask<Self::m32s>,
+        ptr: *mut c32,
+        values: Self::c32s,
+    );
 
     /// # Safety
     ///
     /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
     /// [`core::ptr::read`].
     #[inline(always)]
-    unsafe fn mask_load_ptr_i64s(self, mask: Self::m64s, ptr: *const i64) -> Self::i64s {
+    unsafe fn mask_load_ptr_i64s(self, mask: MemMask<Self::m64s>, ptr: *const i64) -> Self::i64s {
         self.transmute_i64s_u64s(self.mask_load_ptr_u64s(mask, ptr as *const u64))
     }
     /// # Safety
@@ -899,25 +546,30 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
     /// [`core::ptr::read`].
     #[inline(always)]
-    unsafe fn mask_load_ptr_f64s(self, mask: Self::m64s, ptr: *const f64) -> Self::f64s {
+    unsafe fn mask_load_ptr_f64s(self, mask: MemMask<Self::m64s>, ptr: *const f64) -> Self::f64s {
         self.transmute_f64s_u64s(self.mask_load_ptr_u64s(mask, ptr as *const u64))
     }
     /// # Safety
     ///
     /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
     /// [`core::ptr::read`].
-    unsafe fn mask_load_ptr_u64s(self, mask: Self::m64s, ptr: *const u64) -> Self::u64s;
+    unsafe fn mask_load_ptr_u64s(self, mask: MemMask<Self::m64s>, ptr: *const u64) -> Self::u64s;
     /// # Safety
     ///
     /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
     /// [`core::ptr::read`].
-    unsafe fn mask_load_ptr_c64s(self, mask: Self::m64s, ptr: *const c64) -> Self::c64s;
+    unsafe fn mask_load_ptr_c64s(self, mask: MemMask<Self::m64s>, ptr: *const c64) -> Self::c64s;
     /// # Safety
     ///
     /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
     /// [`core::ptr::write`].
     #[inline(always)]
-    unsafe fn mask_store_ptr_i64s(self, mask: Self::m64s, ptr: *mut i64, values: Self::i64s) {
+    unsafe fn mask_store_ptr_i64s(
+        self,
+        mask: MemMask<Self::m64s>,
+        ptr: *mut i64,
+        values: Self::i64s,
+    ) {
         self.mask_store_ptr_u64s(mask, ptr as *mut u64, self.transmute_u64s_i64s(values));
     }
     /// # Safety
@@ -925,29 +577,39 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
     /// [`core::ptr::write`].
     #[inline(always)]
-    unsafe fn mask_store_ptr_f64s(self, mask: Self::m64s, ptr: *mut f64, values: Self::f64s) {
+    unsafe fn mask_store_ptr_f64s(
+        self,
+        mask: MemMask<Self::m64s>,
+        ptr: *mut f64,
+        values: Self::f64s,
+    ) {
         self.mask_store_ptr_u64s(mask, ptr as *mut u64, self.transmute_u64s_f64s(values));
     }
     /// # Safety
     ///
     /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
     /// [`core::ptr::write`].
-    unsafe fn mask_store_ptr_u64s(self, mask: Self::m64s, ptr: *mut u64, values: Self::u64s);
+    unsafe fn mask_store_ptr_u64s(
+        self,
+        mask: MemMask<Self::m64s>,
+        ptr: *mut u64,
+        values: Self::u64s,
+    );
     /// # Safety
     ///
     /// Addresses corresponding to enabled lanes in the mask have the same restrictions as
     /// [`core::ptr::write`].
-    unsafe fn mask_store_ptr_c64s(self, mask: Self::m64s, ptr: *mut c64, values: Self::c64s);
+    unsafe fn mask_store_ptr_c64s(
+        self,
+        mask: MemMask<Self::m64s>,
+        ptr: *mut c64,
+        values: Self::c64s,
+    );
 
     fn partial_load_u32s(self, slice: &[u32]) -> Self::u32s;
     fn partial_store_u32s(self, slice: &mut [u32], values: Self::u32s);
     fn partial_load_u64s(self, slice: &[u64]) -> Self::u64s;
     fn partial_store_u64s(self, slice: &mut [u64], values: Self::u64s);
-
-    fn partial_load_last_u32s(self, slice: &[u32]) -> Self::u32s;
-    fn partial_store_last_u32s(self, slice: &mut [u32], values: Self::u32s);
-    fn partial_load_last_u64s(self, slice: &[u64]) -> Self::u64s;
-    fn partial_store_last_u64s(self, slice: &mut [u64], values: Self::u64s);
 
     #[inline(always)]
     fn deinterleave_shfl_f64s<T: Interleave>(self, values: T) -> T {
@@ -1018,57 +680,6 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     }
 
     #[inline(always)]
-    fn partial_load_last_i32s(self, slice: &[i32]) -> Self::i32s {
-        cast(self.partial_load_last_u32s(bytemuck::cast_slice(slice)))
-    }
-    #[inline(always)]
-    fn partial_store_last_i32s(self, slice: &mut [i32], values: Self::i32s) {
-        self.partial_store_last_u32s(bytemuck::cast_slice_mut(slice), cast(values))
-    }
-    #[inline(always)]
-    fn partial_load_last_i64s(self, slice: &[i64]) -> Self::i64s {
-        cast(self.partial_load_last_u64s(bytemuck::cast_slice(slice)))
-    }
-    #[inline(always)]
-    fn partial_store_last_i64s(self, slice: &mut [i64], values: Self::i64s) {
-        self.partial_store_last_u64s(bytemuck::cast_slice_mut(slice), cast(values))
-    }
-
-    #[inline(always)]
-    fn partial_load_last_f32s(self, slice: &[f32]) -> Self::f32s {
-        cast(self.partial_load_last_u32s(bytemuck::cast_slice(slice)))
-    }
-    #[inline(always)]
-    fn partial_store_last_f32s(self, slice: &mut [f32], values: Self::f32s) {
-        self.partial_store_last_u32s(bytemuck::cast_slice_mut(slice), cast(values))
-    }
-    #[inline(always)]
-    fn partial_load_last_f64s(self, slice: &[f64]) -> Self::f64s {
-        cast(self.partial_load_last_u64s(bytemuck::cast_slice(slice)))
-    }
-    #[inline(always)]
-    fn partial_store_last_f64s(self, slice: &mut [f64], values: Self::f64s) {
-        self.partial_store_last_u64s(bytemuck::cast_slice_mut(slice), cast(values))
-    }
-
-    #[inline(always)]
-    fn partial_load_last_c32s(self, slice: &[c32]) -> Self::c32s {
-        cast(self.partial_load_last_f64s(bytemuck::cast_slice(slice)))
-    }
-    #[inline(always)]
-    fn partial_store_last_c32s(self, slice: &mut [c32], values: Self::c32s) {
-        self.partial_store_last_f64s(bytemuck::cast_slice_mut(slice), cast(values))
-    }
-    #[inline(always)]
-    fn partial_load_last_c64s(self, slice: &[c64]) -> Self::c64s {
-        cast(self.partial_load_last_f64s(bytemuck::cast_slice(slice)))
-    }
-    #[inline(always)]
-    fn partial_store_last_c64s(self, slice: &mut [c64], values: Self::c64s) {
-        self.partial_store_last_f64s(bytemuck::cast_slice_mut(slice), cast(values))
-    }
-
-    #[inline(always)]
     fn first_true_m32s(self, mask: Self::m32s) -> usize {
         if const { size_of::<Self::m32s>() == size_of::<Self::u32s>() } {
             let mask: Self::u32s = bytemuck::cast(mask);
@@ -1116,45 +727,25 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     }
 
     #[inline(always)]
-    fn tail_mask_f64s(self, len: usize) -> Self::m64s {
+    fn mask_between_m64s(self, start: u64, end: u64) -> MemMask<Self::m64s> {
         let iota: Self::u64s =
             const { unsafe { core::mem::transmute_copy(&<u64 as Iota64>::IOTA) } };
-        self.less_than_u64s(iota, self.splat_u64s(len as u64))
-    }
-    #[inline(always)]
-    fn tail_mask_f32s(self, len: usize) -> Self::m32s {
-        let iota: Self::u32s =
-            const { unsafe { core::mem::transmute_copy(&<u32 as Iota32>::IOTA) } };
-        self.less_than_u32s(iota, self.splat_u32s(len as u32))
-    }
-    #[inline(always)]
-    fn tail_mask_c64s(self, len: usize) -> Self::m64s {
-        self.tail_mask_f64s(2 * len)
-    }
-    #[inline(always)]
-    fn tail_mask_c32s(self, len: usize) -> Self::m32s {
-        self.tail_mask_f32s(2 * len)
+        self.and_m64s(
+            self.greater_than_or_equal_u64s(iota, self.splat_u64s(start)),
+            self.less_than_u64s(iota, self.splat_u64s(end)),
+        )
+        .into()
     }
 
     #[inline(always)]
-    fn head_mask_f64s(self, len: usize) -> Self::m64s {
-        let iota: Self::u64s =
-            const { unsafe { core::mem::transmute_copy(&<u64 as Iota64>::IOTA) } };
-        self.greater_than_or_equal_u64s(iota, self.splat_u64s(len as u64))
-    }
-    #[inline(always)]
-    fn head_mask_f32s(self, len: usize) -> Self::m32s {
+    fn mask_between_m32s(self, start: u32, end: u32) -> MemMask<Self::m32s> {
         let iota: Self::u32s =
             const { unsafe { core::mem::transmute_copy(&<u32 as Iota32>::IOTA) } };
-        self.greater_than_or_equal_u32s(iota, self.splat_u32s(len as u32))
-    }
-    #[inline(always)]
-    fn head_mask_c64s(self, len: usize) -> Self::m64s {
-        self.head_mask_f64s(2 * len)
-    }
-    #[inline(always)]
-    fn head_mask_c32s(self, len: usize) -> Self::m32s {
-        self.head_mask_f32s(2 * len)
+        self.and_m32s(
+            self.greater_than_or_equal_u32s(iota, self.splat_u32s(start)),
+            self.less_than_u32s(iota, self.splat_u32s(end)),
+        )
+        .into()
     }
 
     fn not_m32s(self, a: Self::m32s) -> Self::m32s;
@@ -2188,54 +1779,6 @@ impl Simd for Scalar {
     }
 
     #[inline]
-    fn partial_load_last_u32s(self, slice: &[u32]) -> Self::u32s {
-        if let Some((head, _)) = slice.split_last() {
-            *head
-        } else {
-            0
-        }
-    }
-
-    #[inline]
-    fn partial_store_last_u32s(self, slice: &mut [u32], values: Self::u32s) {
-        if let Some((head, _)) = slice.split_last_mut() {
-            *head = values;
-        }
-    }
-
-    #[inline]
-    fn partial_load_last_u64s(self, slice: &[u64]) -> Self::u64s {
-        if let Some((head, _)) = slice.split_last() {
-            *head
-        } else {
-            0
-        }
-    }
-
-    #[inline]
-    fn partial_store_last_u64s(self, slice: &mut [u64], values: Self::u64s) {
-        if let Some((head, _)) = slice.split_last_mut() {
-            *head = values;
-        }
-    }
-
-    #[inline]
-    fn partial_load_last_c64s(self, slice: &[c64]) -> Self::c64s {
-        if let Some((head, _)) = slice.split_last() {
-            *head
-        } else {
-            c64 { re: 0.0, im: 0.0 }
-        }
-    }
-
-    #[inline]
-    fn partial_store_last_c64s(self, slice: &mut [c64], values: Self::c64s) {
-        if let Some((head, _)) = slice.split_last_mut() {
-            *head = values;
-        }
-    }
-
-    #[inline]
     fn conj_mul_e_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
         a.conj() * b
     }
@@ -2382,8 +1925,8 @@ impl Simd for Scalar {
     }
 
     #[inline(always)]
-    unsafe fn mask_load_ptr_u32s(self, mask: Self::m32s, ptr: *const u32) -> Self::u32s {
-        if mask {
+    unsafe fn mask_load_ptr_u32s(self, mask: MemMask<Self::m32s>, ptr: *const u32) -> Self::u32s {
+        if mask.mask {
             *ptr
         } else {
             0
@@ -2391,8 +1934,8 @@ impl Simd for Scalar {
     }
 
     #[inline(always)]
-    unsafe fn mask_load_ptr_c32s(self, mask: Self::m32s, ptr: *const c32) -> Self::c32s {
-        if mask {
+    unsafe fn mask_load_ptr_c32s(self, mask: MemMask<Self::m32s>, ptr: *const c32) -> Self::c32s {
+        if mask.mask {
             *ptr
         } else {
             core::mem::zeroed()
@@ -2400,22 +1943,32 @@ impl Simd for Scalar {
     }
 
     #[inline(always)]
-    unsafe fn mask_store_ptr_u32s(self, mask: Self::m32s, ptr: *mut u32, values: Self::u32s) {
-        if mask {
+    unsafe fn mask_store_ptr_u32s(
+        self,
+        mask: MemMask<Self::m32s>,
+        ptr: *mut u32,
+        values: Self::u32s,
+    ) {
+        if mask.mask {
             *ptr = values
         }
     }
 
     #[inline(always)]
-    unsafe fn mask_store_ptr_c32s(self, mask: Self::m32s, ptr: *mut c32, values: Self::c32s) {
-        if mask {
+    unsafe fn mask_store_ptr_c32s(
+        self,
+        mask: MemMask<Self::m32s>,
+        ptr: *mut c32,
+        values: Self::c32s,
+    ) {
+        if mask.mask {
             *ptr = values
         }
     }
 
     #[inline(always)]
-    unsafe fn mask_load_ptr_u64s(self, mask: Self::m64s, ptr: *const u64) -> Self::u64s {
-        if mask {
+    unsafe fn mask_load_ptr_u64s(self, mask: MemMask<Self::m64s>, ptr: *const u64) -> Self::u64s {
+        if mask.mask {
             *ptr
         } else {
             0
@@ -2423,8 +1976,8 @@ impl Simd for Scalar {
     }
 
     #[inline(always)]
-    unsafe fn mask_load_ptr_c64s(self, mask: Self::m64s, ptr: *const c64) -> Self::c64s {
-        if mask {
+    unsafe fn mask_load_ptr_c64s(self, mask: MemMask<Self::m64s>, ptr: *const c64) -> Self::c64s {
+        if mask.mask {
             *ptr
         } else {
             core::mem::zeroed()
@@ -2432,15 +1985,25 @@ impl Simd for Scalar {
     }
 
     #[inline(always)]
-    unsafe fn mask_store_ptr_u64s(self, mask: Self::m64s, ptr: *mut u64, values: Self::u64s) {
-        if mask {
+    unsafe fn mask_store_ptr_u64s(
+        self,
+        mask: MemMask<Self::m64s>,
+        ptr: *mut u64,
+        values: Self::u64s,
+    ) {
+        if mask.mask {
             *ptr = values
         }
     }
 
     #[inline(always)]
-    unsafe fn mask_store_ptr_c64s(self, mask: Self::m64s, ptr: *mut c64, values: Self::c64s) {
-        if mask {
+    unsafe fn mask_store_ptr_c64s(
+        self,
+        mask: MemMask<Self::m64s>,
+        ptr: *mut c64,
+        values: Self::c64s,
+    ) {
+        if mask.mask {
             *ptr = values
         }
     }
@@ -2533,1252 +2096,6 @@ impl Simd for Scalar {
     fn reduce_max_c64s(self, a: Self::c64s) -> c64 {
         a
     }
-}
-
-#[derive(Copy, Clone)]
-pub struct Prefix<'a, T, S: Simd, Mask: Copy> {
-    simd: S,
-    mask: Mask,
-    base: *const T,
-    __marker: PhantomData<&'a T>,
-}
-#[derive(Copy, Clone)]
-pub struct Suffix<'a, T, S: Simd, Mask: Copy> {
-    simd: S,
-    mask: Mask,
-    base: *const T,
-    __marker: PhantomData<&'a T>,
-}
-pub struct PrefixMut<'a, T, S: Simd, Mask: Copy> {
-    simd: S,
-    mask: Mask,
-    base: *mut T,
-    __marker: PhantomData<&'a mut T>,
-}
-pub struct SuffixMut<'a, T, S: Simd, Mask: Copy> {
-    simd: S,
-    mask: Mask,
-    base: *mut T,
-    __marker: PhantomData<&'a mut T>,
-}
-
-impl<T, S: Simd> Prefix<'_, T, S, bool> {
-    #[inline(always)]
-    pub fn empty(simd: S) -> Self {
-        Self {
-            simd,
-            mask: false,
-            base: core::ptr::null(),
-            __marker: PhantomData,
-        }
-    }
-}
-impl<T, S: Simd> PrefixMut<'_, T, S, bool> {
-    #[inline(always)]
-    pub fn empty(simd: S) -> Self {
-        Self {
-            simd,
-            mask: false,
-            base: core::ptr::null_mut(),
-            __marker: PhantomData,
-        }
-    }
-}
-impl<T, S: Simd> SuffixMut<'_, T, S, bool> {
-    #[inline(always)]
-    pub fn empty(simd: S) -> Self {
-        Self {
-            simd,
-            mask: false,
-            base: core::ptr::null_mut(),
-            __marker: PhantomData,
-        }
-    }
-}
-impl<T, S: Simd> Suffix<'_, T, S, bool> {
-    #[inline(always)]
-    pub fn empty(simd: S) -> Self {
-        Self {
-            simd,
-            mask: false,
-            base: core::ptr::null(),
-            __marker: PhantomData,
-        }
-    }
-}
-
-impl<'a, T, S: Simd, Mask: Copy> IntoConst for SuffixMut<'a, T, S, Mask> {
-    type Target = Suffix<'a, T, S, Mask>;
-
-    #[inline(always)]
-    fn into_const(self) -> Self::Target {
-        Suffix {
-            simd: self.simd,
-            mask: self.mask,
-            base: self.base,
-            __marker: PhantomData,
-        }
-    }
-}
-impl<'a, T, S: Simd, Mask: Copy> IntoConst for PrefixMut<'a, T, S, Mask> {
-    type Target = Prefix<'a, T, S, Mask>;
-
-    #[inline(always)]
-    fn into_const(self) -> Self::Target {
-        Prefix {
-            simd: self.simd,
-            mask: self.mask,
-            base: self.base,
-            __marker: PhantomData,
-        }
-    }
-}
-
-impl<'short, T, S: Simd, Mask: Copy> ReborrowMut<'short> for SuffixMut<'_, T, S, Mask> {
-    type Target = SuffixMut<'short, T, S, Mask>;
-
-    #[inline(always)]
-    fn rb_mut(&'short mut self) -> Self::Target {
-        SuffixMut {
-            simd: self.simd,
-            mask: self.mask,
-            base: self.base,
-            __marker: PhantomData,
-        }
-    }
-}
-impl<'short, T, S: Simd, Mask: Copy> ReborrowMut<'short> for PrefixMut<'_, T, S, Mask> {
-    type Target = PrefixMut<'short, T, S, Mask>;
-
-    #[inline(always)]
-    fn rb_mut(&'short mut self) -> Self::Target {
-        PrefixMut {
-            simd: self.simd,
-            mask: self.mask,
-            base: self.base,
-            __marker: PhantomData,
-        }
-    }
-}
-
-impl<'short, T, S: Simd, Mask: Copy> Reborrow<'short> for SuffixMut<'_, T, S, Mask> {
-    type Target = Suffix<'short, T, S, Mask>;
-
-    #[inline(always)]
-    fn rb(&'short self) -> Self::Target {
-        Suffix {
-            simd: self.simd,
-            mask: self.mask,
-            base: self.base,
-            __marker: PhantomData,
-        }
-    }
-}
-impl<'short, T, S: Simd, Mask: Copy> Reborrow<'short> for PrefixMut<'_, T, S, Mask> {
-    type Target = Prefix<'short, T, S, Mask>;
-
-    #[inline(always)]
-    fn rb(&'short self) -> Self::Target {
-        Prefix {
-            simd: self.simd,
-            mask: self.mask,
-            base: self.base,
-            __marker: PhantomData,
-        }
-    }
-}
-
-pub trait Read: Debug {
-    type Output;
-    fn read(&self) -> Self::Output;
-}
-pub trait Write: Read {
-    fn write(&mut self, values: Self::Output);
-}
-
-impl<T: Pod + Debug> Read for &[T] {
-    type Output = T;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        if let [first, ..] = &**self {
-            *first
-        } else {
-            unsafe { core::mem::zeroed() }
-        }
-    }
-}
-impl<T: Pod + Debug> Read for &mut [T] {
-    type Output = T;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        if let [first, ..] = &**self {
-            *first
-        } else {
-            unsafe { core::mem::zeroed() }
-        }
-    }
-}
-impl<T: Pod + Debug> Write for &mut [T] {
-    #[inline(always)]
-    fn write(&mut self, values: Self::Output) {
-        if let [first, ..] = &mut **self {
-            *first = values
-        }
-    }
-}
-
-impl<T: Copy + Debug> Read for &T {
-    type Output = T;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        **self
-    }
-}
-impl<T: Copy + Debug> Read for &mut T {
-    type Output = T;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        **self
-    }
-}
-impl<T: Copy + Debug> Write for &mut T {
-    #[inline(always)]
-    fn write(&mut self, values: Self::Output) {
-        **self = values;
-    }
-}
-
-impl<S: Simd> Read for Prefix<'_, u32, S, S::m32s> {
-    type Output = S::u32s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_u32s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for Suffix<'_, u32, S, S::m32s> {
-    type Output = S::u32s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_u32s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for Prefix<'_, i32, S, S::m32s> {
-    type Output = S::i32s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_i32s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for Suffix<'_, i32, S, S::m32s> {
-    type Output = S::i32s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_i32s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for Prefix<'_, f32, S, S::m32s> {
-    type Output = S::f32s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_f32s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for Suffix<'_, f32, S, S::m32s> {
-    type Output = S::f32s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_f32s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for Prefix<'_, c32, S, S::m32s> {
-    type Output = S::c32s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_c32s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for Suffix<'_, c32, S, S::m32s> {
-    type Output = S::c32s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_c32s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for Prefix<'_, u64, S, S::m64s> {
-    type Output = S::u64s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_u64s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for Suffix<'_, u64, S, S::m64s> {
-    type Output = S::u64s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_u64s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for Prefix<'_, i64, S, S::m64s> {
-    type Output = S::i64s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_i64s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for Suffix<'_, i64, S, S::m64s> {
-    type Output = S::i64s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_i64s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for Prefix<'_, f64, S, S::m64s> {
-    type Output = S::f64s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_f64s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for Suffix<'_, f64, S, S::m64s> {
-    type Output = S::f64s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_f64s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for Prefix<'_, c64, S, S::m64s> {
-    type Output = S::c64s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_c64s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for Suffix<'_, c64, S, S::m64s> {
-    type Output = S::c64s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_c64s(self.mask, self.base) }
-    }
-}
-
-impl<S: Simd> Read for PrefixMut<'_, u32, S, S::m32s> {
-    type Output = S::u32s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_u32s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for SuffixMut<'_, u32, S, S::m32s> {
-    type Output = S::u32s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_u32s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for PrefixMut<'_, i32, S, S::m32s> {
-    type Output = S::i32s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_i32s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for SuffixMut<'_, i32, S, S::m32s> {
-    type Output = S::i32s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_i32s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for PrefixMut<'_, f32, S, S::m32s> {
-    type Output = S::f32s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_f32s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for SuffixMut<'_, f32, S, S::m32s> {
-    type Output = S::f32s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_f32s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for PrefixMut<'_, c32, S, S::m32s> {
-    type Output = S::c32s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_c32s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for SuffixMut<'_, c32, S, S::m32s> {
-    type Output = S::c32s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_c32s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for PrefixMut<'_, u64, S, S::m64s> {
-    type Output = S::u64s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_u64s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for SuffixMut<'_, u64, S, S::m64s> {
-    type Output = S::u64s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_u64s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for PrefixMut<'_, i64, S, S::m64s> {
-    type Output = S::i64s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_i64s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for SuffixMut<'_, i64, S, S::m64s> {
-    type Output = S::i64s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_i64s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for PrefixMut<'_, f64, S, S::m64s> {
-    type Output = S::f64s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_f64s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for SuffixMut<'_, f64, S, S::m64s> {
-    type Output = S::f64s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_f64s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for PrefixMut<'_, c64, S, S::m64s> {
-    type Output = S::c64s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_c64s(self.mask, self.base) }
-    }
-}
-impl<S: Simd> Read for SuffixMut<'_, c64, S, S::m64s> {
-    type Output = S::c64s;
-    #[inline(always)]
-    fn read(&self) -> Self::Output {
-        unsafe { self.simd.mask_load_ptr_c64s(self.mask, self.base) }
-    }
-}
-
-impl<S: Simd> Write for PrefixMut<'_, i32, S, S::m32s> {
-    #[inline(always)]
-    fn write(&mut self, values: Self::Output) {
-        unsafe { self.simd.mask_store_ptr_i32s(self.mask, self.base, values) }
-    }
-}
-impl<S: Simd> Write for SuffixMut<'_, i32, S, S::m32s> {
-    #[inline(always)]
-    fn write(&mut self, values: Self::Output) {
-        unsafe { self.simd.mask_store_ptr_i32s(self.mask, self.base, values) }
-    }
-}
-impl<S: Simd> Write for PrefixMut<'_, f32, S, S::m32s> {
-    #[inline(always)]
-    fn write(&mut self, values: Self::Output) {
-        unsafe { self.simd.mask_store_ptr_f32s(self.mask, self.base, values) }
-    }
-}
-impl<S: Simd> Write for SuffixMut<'_, f32, S, S::m32s> {
-    #[inline(always)]
-    fn write(&mut self, values: Self::Output) {
-        unsafe { self.simd.mask_store_ptr_f32s(self.mask, self.base, values) }
-    }
-}
-impl<S: Simd> Write for PrefixMut<'_, c32, S, S::m32s> {
-    #[inline(always)]
-    fn write(&mut self, values: Self::Output) {
-        unsafe { self.simd.mask_store_ptr_c32s(self.mask, self.base, values) }
-    }
-}
-impl<S: Simd> Write for SuffixMut<'_, c32, S, S::m32s> {
-    #[inline(always)]
-    fn write(&mut self, values: Self::Output) {
-        unsafe { self.simd.mask_store_ptr_c32s(self.mask, self.base, values) }
-    }
-}
-impl<S: Simd> Write for PrefixMut<'_, u32, S, S::m32s> {
-    #[inline(always)]
-    fn write(&mut self, values: Self::Output) {
-        unsafe { self.simd.mask_store_ptr_u32s(self.mask, self.base, values) }
-    }
-}
-impl<S: Simd> Write for SuffixMut<'_, u32, S, S::m32s> {
-    #[inline(always)]
-    fn write(&mut self, values: Self::Output) {
-        unsafe { self.simd.mask_store_ptr_u32s(self.mask, self.base, values) }
-    }
-}
-impl<S: Simd> Write for PrefixMut<'_, i64, S, S::m64s> {
-    #[inline(always)]
-    fn write(&mut self, values: Self::Output) {
-        unsafe { self.simd.mask_store_ptr_i64s(self.mask, self.base, values) }
-    }
-}
-impl<S: Simd> Write for SuffixMut<'_, i64, S, S::m64s> {
-    #[inline(always)]
-    fn write(&mut self, values: Self::Output) {
-        unsafe { self.simd.mask_store_ptr_i64s(self.mask, self.base, values) }
-    }
-}
-impl<S: Simd> Write for PrefixMut<'_, f64, S, S::m64s> {
-    #[inline(always)]
-    fn write(&mut self, values: Self::Output) {
-        unsafe { self.simd.mask_store_ptr_f64s(self.mask, self.base, values) }
-    }
-}
-impl<S: Simd> Write for SuffixMut<'_, f64, S, S::m64s> {
-    #[inline(always)]
-    fn write(&mut self, values: Self::Output) {
-        unsafe { self.simd.mask_store_ptr_f64s(self.mask, self.base, values) }
-    }
-}
-impl<S: Simd> Write for PrefixMut<'_, c64, S, S::m64s> {
-    #[inline(always)]
-    fn write(&mut self, values: Self::Output) {
-        unsafe { self.simd.mask_store_ptr_c64s(self.mask, self.base, values) }
-    }
-}
-impl<S: Simd> Write for SuffixMut<'_, c64, S, S::m64s> {
-    #[inline(always)]
-    fn write(&mut self, values: Self::Output) {
-        unsafe { self.simd.mask_store_ptr_c64s(self.mask, self.base, values) }
-    }
-}
-impl<S: Simd> Write for PrefixMut<'_, u64, S, S::m64s> {
-    #[inline(always)]
-    fn write(&mut self, values: Self::Output) {
-        unsafe { self.simd.mask_store_ptr_u64s(self.mask, self.base, values) }
-    }
-}
-impl<S: Simd> Write for SuffixMut<'_, u64, S, S::m64s> {
-    #[inline(always)]
-    fn write(&mut self, values: Self::Output) {
-        unsafe { self.simd.mask_store_ptr_u64s(self.mask, self.base, values) }
-    }
-}
-
-impl<S: Simd> Debug for Prefix<'_, u32, S, S::m32s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Prefix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for Suffix<'_, u32, S, S::m32s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Suffix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for Prefix<'_, i32, S, S::m32s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Prefix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for Suffix<'_, i32, S, S::m32s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Suffix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for Prefix<'_, f32, S, S::m32s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Prefix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for Suffix<'_, f32, S, S::m32s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Suffix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for Prefix<'_, c32, S, S::m32s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Prefix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for Suffix<'_, c32, S, S::m32s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Suffix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for Prefix<'_, u64, S, S::m64s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Prefix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for Suffix<'_, u64, S, S::m64s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Suffix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for Prefix<'_, i64, S, S::m64s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Prefix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for Suffix<'_, i64, S, S::m64s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Suffix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for Prefix<'_, f64, S, S::m64s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Prefix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for Suffix<'_, f64, S, S::m64s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Suffix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for Prefix<'_, c64, S, S::m64s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Prefix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for Suffix<'_, c64, S, S::m64s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Suffix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-
-impl<S: Simd> Debug for PrefixMut<'_, u32, S, S::m32s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Prefix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for SuffixMut<'_, u32, S, S::m32s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Suffix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for PrefixMut<'_, i32, S, S::m32s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Prefix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for SuffixMut<'_, i32, S, S::m32s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Suffix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for PrefixMut<'_, f32, S, S::m32s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Prefix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for SuffixMut<'_, f32, S, S::m32s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Suffix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for PrefixMut<'_, c32, S, S::m32s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Prefix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for SuffixMut<'_, c32, S, S::m32s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Suffix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for PrefixMut<'_, u64, S, S::m64s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Prefix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for SuffixMut<'_, u64, S, S::m64s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Suffix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for PrefixMut<'_, i64, S, S::m64s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Prefix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for SuffixMut<'_, i64, S, S::m64s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Suffix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for PrefixMut<'_, f64, S, S::m64s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Prefix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for SuffixMut<'_, f64, S, S::m64s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Suffix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for PrefixMut<'_, c64, S, S::m64s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let val = self.simd.vectorize(
-            #[inline(always)]
-            || self.read(),
-        );
-        let ptr = self.base;
-        f.debug_struct("Prefix")
-            .field("value", &val)
-            .field("base", &ptr)
-            .finish()
-    }
-}
-impl<S: Simd> Debug for SuffixMut<'_, c64, S, S::m64s> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.simd.vectorize(
-            #[inline(always)]
-            || self.read().fmt(f),
-        )
-    }
-}
-
-#[derive(Debug)]
-#[allow(dead_code)]
-pub struct Offset<Mask> {
-    prefix_mask: Mask,
-    suffix_mask: Mask,
-
-    prefix_offset: usize,
-
-    prefix_len: usize,
-    body_len: usize,
-    suffix_len: usize,
-    simd_body_len: usize,
-    total_len: usize,
-}
-
-impl Offset<bool> {
-    #[inline]
-    pub fn unaligned(len: usize) -> Self {
-        Scalar::new().align_offset_i32s(core::ptr::null(), len)
-    }
-}
-
-impl<Mask> Offset<Mask> {
-    #[inline(always)]
-    pub fn rotate_left_amount(&self) -> usize {
-        self.prefix_offset
-    }
-
-    #[inline(always)]
-    pub fn simd_body_len(&self) -> usize {
-        self.simd_body_len
-    }
-    #[inline(always)]
-    pub fn prefix_len(&self) -> usize {
-        self.prefix_len
-    }
-    #[inline(always)]
-    pub fn suffix_len(&self) -> usize {
-        self.suffix_len
-    }
-
-    #[inline(always)]
-    pub fn len(&self) -> usize {
-        self.total_len
-    }
-
-    #[inline(always)]
-    pub fn is_empty(&self) -> bool {
-        self.total_len == 0
-    }
-}
-
-impl<Mask: Copy> Clone for Offset<Mask> {
-    #[inline]
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-impl<Mask: Copy> Copy for Offset<Mask> {}
-
-#[inline(always)]
-fn align_offset_u64_impl<S: Simd, T, U>(
-    simd: S,
-    ptr: *const T,
-    len: usize,
-    align: usize,
-    iota: [u64; 32],
-) -> Offset<S::m64s> {
-    assert_eq!(core::mem::size_of::<U>() % core::mem::size_of::<T>(), 0);
-    assert_eq!(core::mem::align_of::<U>(), core::mem::align_of::<T>());
-
-    let chunk_size = core::mem::size_of::<U>() / core::mem::size_of::<T>();
-
-    let align = Ord::max(align, core::mem::align_of::<u64>());
-
-    let iota: S::u64s = cast_lossy(iota);
-    let offset = 1 + ptr.wrapping_add(1).align_offset(align) % chunk_size;
-
-    let prefix_offset = chunk_size - offset;
-    let prefix_len = Ord::min(offset, len);
-    let tail_len = len - prefix_len;
-    let body_len = (tail_len.saturating_sub(1)) / chunk_size * chunk_size;
-    let suffix_len = tail_len - body_len;
-
-    let vprefix_min = simd.splat_u64s(prefix_offset as u64);
-    let vprefix_max = simd.splat_u64s((prefix_offset + prefix_len) as u64);
-    let vsuffix_max = simd.splat_u64s(suffix_len as u64);
-
-    Offset {
-        // iota >= prefix_offset &&
-        // iota - prefix_offset < prefix_len
-        prefix_mask: simd.and_m64s(
-            simd.not_m64s(simd.less_than_u64s(iota, vprefix_min)),
-            simd.less_than_u64s(iota, vprefix_max),
-        ),
-        // iota - prefix_offset < suffix_len
-        suffix_mask: simd.less_than_u64s(iota, vsuffix_max),
-        prefix_offset,
-        prefix_len,
-        body_len,
-        suffix_len,
-        total_len: len,
-        simd_body_len: body_len / chunk_size,
-    }
-}
-
-#[inline(always)]
-fn align_offset_u32_impl<S: Simd, T, U>(
-    simd: S,
-    ptr: *const T,
-    len: usize,
-    align: usize,
-    iota: [u32; 32],
-) -> Offset<S::m32s> {
-    assert_eq!(core::mem::size_of::<U>() % core::mem::size_of::<T>(), 0);
-    assert_eq!(core::mem::align_of::<U>(), core::mem::align_of::<T>());
-
-    let chunk_size = core::mem::size_of::<U>() / core::mem::size_of::<T>();
-
-    let align = Ord::max(align, core::mem::align_of::<u32>());
-
-    let iota: S::u32s = cast_lossy(iota);
-    let offset = 1 + ptr.wrapping_add(1).align_offset(align) % chunk_size;
-
-    let prefix_offset = chunk_size - offset;
-    let prefix_len = Ord::min(offset, len);
-    let tail_len = len - prefix_len;
-    let body_len = (tail_len.saturating_sub(1)) / chunk_size * chunk_size;
-    let suffix_len = tail_len - body_len;
-
-    let vprefix_min = simd.splat_u32s(prefix_offset as u32);
-    let vprefix_max = simd.splat_u32s((prefix_offset + prefix_len) as u32);
-    let vsuffix_max = simd.splat_u32s(suffix_len as u32);
-
-    Offset {
-        // iota >= prefix_offset &&
-        // iota - prefix_offset < prefix_len
-        prefix_mask: simd.and_m32s(
-            simd.not_m32s(simd.less_than_u32s(iota, vprefix_min)),
-            simd.less_than_u32s(iota, vprefix_max),
-        ),
-        // iota - prefix_offset < suffix_len
-        suffix_mask: simd.less_than_u32s(iota, vsuffix_max),
-        prefix_offset,
-        prefix_len,
-        body_len,
-        simd_body_len: body_len / chunk_size,
-        suffix_len,
-        total_len: len,
-    }
-}
-
-#[inline(always)]
-fn align_offset_u64x2<S: Simd, T, U>(
-    simd: S,
-    ptr: *const T,
-    len: usize,
-    align: usize,
-) -> Offset<S::m64s> {
-    align_offset_u64_impl::<S, T, U>(
-        simd,
-        ptr,
-        len,
-        align,
-        [
-            0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13,
-            13, 14, 14, 15, 15u64,
-        ],
-    )
-}
-
-#[inline(always)]
-fn align_offset_u64<S: Simd, T, U>(
-    simd: S,
-    ptr: *const T,
-    len: usize,
-    align: usize,
-) -> Offset<S::m64s> {
-    align_offset_u64_impl::<S, T, U>(
-        simd,
-        ptr,
-        len,
-        align,
-        [
-            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
-            24, 25, 26, 27, 28, 29, 30, 31u64,
-        ],
-    )
-}
-
-#[inline(always)]
-fn align_offset_u32x2<S: Simd, T, U>(
-    simd: S,
-    ptr: *const T,
-    len: usize,
-    align: usize,
-) -> Offset<S::m32s> {
-    align_offset_u32_impl::<S, T, U>(
-        simd,
-        ptr,
-        len,
-        align,
-        [
-            0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13,
-            13, 14, 14, 15, 15u32,
-        ],
-    )
-}
-
-#[inline(always)]
-fn align_offset_u32<S: Simd, T, U>(
-    simd: S,
-    ptr: *const T,
-    len: usize,
-    align: usize,
-) -> Offset<S::m32s> {
-    align_offset_u32_impl::<S, T, U>(
-        simd,
-        ptr,
-        len,
-        align,
-        [
-            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
-            24, 25, 26, 27, 28, 29, 30, 31u32,
-        ],
-    )
-}
-
-#[inline(always)]
-#[track_caller]
-unsafe fn split_slice_aligned_like<S: Simd, Mask: Copy, T, U>(
-    simd: S,
-    slice: &[T],
-    offset: Offset<Mask>,
-) -> (Prefix<T, S, Mask>, &[U], Suffix<T, S, Mask>) {
-    assert_eq!(core::mem::size_of::<U>() % core::mem::size_of::<T>(), 0);
-    assert_eq!(core::mem::align_of::<U>(), core::mem::align_of::<T>());
-
-    assert_eq!(slice.len(), offset.total_len);
-
-    let data = slice.as_ptr();
-
-    (
-        Prefix {
-            simd,
-            mask: offset.prefix_mask,
-            base: data.wrapping_sub(offset.prefix_offset),
-            __marker: PhantomData,
-        },
-        from_raw_parts(
-            data.add(offset.prefix_len) as *const U,
-            offset.simd_body_len,
-        ),
-        Suffix {
-            simd,
-            mask: offset.suffix_mask,
-            base: data.add(offset.prefix_len + offset.body_len),
-            __marker: PhantomData,
-        },
-    )
-}
-
-#[inline(always)]
-#[track_caller]
-unsafe fn split_mut_slice_aligned_like<S: Simd, Mask: Copy, T, U>(
-    simd: S,
-    slice: &mut [T],
-    offset: Offset<Mask>,
-) -> (PrefixMut<T, S, Mask>, &mut [U], SuffixMut<T, S, Mask>) {
-    assert_eq!(core::mem::size_of::<U>() % core::mem::size_of::<T>(), 0);
-    assert_eq!(core::mem::align_of::<U>(), core::mem::align_of::<T>());
-
-    assert_eq!(slice.len(), offset.total_len);
-
-    let data = slice.as_mut_ptr();
-    let chunk_size = core::mem::size_of::<U>() / core::mem::size_of::<T>();
-
-    (
-        PrefixMut {
-            simd,
-            mask: offset.prefix_mask,
-            base: data.wrapping_sub(offset.prefix_offset),
-            __marker: PhantomData,
-        },
-        from_raw_parts_mut(
-            data.add(offset.prefix_len) as *mut U,
-            offset.body_len / chunk_size,
-        ),
-        SuffixMut {
-            simd,
-            mask: offset.suffix_mask,
-            base: data.add(offset.prefix_len + offset.body_len),
-            __marker: PhantomData,
-        },
-    )
 }
 
 #[inline(always)]
@@ -5495,113 +3812,6 @@ impl Iota64 for u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_aligned_sum() {
-        #[repr(align(128))]
-        #[derive(Copy, Clone, Debug)]
-        struct Aligned<T>(T);
-
-        use rand::{Rng, SeedableRng};
-
-        let mut rng = rand::rngs::StdRng::seed_from_u64(2);
-
-        let nan = f32::NAN;
-        let data = core::array::from_fn::<f32, 33, _>(|_| rng.gen());
-        let unaligned_data = Aligned(core::array::from_fn::<f32, 36, _>(|i| {
-            if i < 3 {
-                nan
-            } else {
-                data[i - 3]
-            }
-        }));
-        let data = &unaligned_data.0[3..];
-
-        let arch = Arch::new();
-
-        struct Sum<'a> {
-            slice: &'a [f32],
-        }
-        struct AlignedSum<'a> {
-            slice: &'a [f32],
-        }
-        struct WrongAlignedSum<'a> {
-            slice: &'a [f32],
-        }
-
-        impl WithSimd for Sum<'_> {
-            type Output = f32;
-
-            #[inline(always)]
-            fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
-                let mut sum = simd.splat_f32s(0.0);
-                let (head, tail) = S::as_simd_f32s(self.slice);
-
-                for x in head {
-                    sum = simd.add_f32s(sum, *x);
-                }
-                sum = simd.add_f32s(sum, simd.partial_load_f32s(tail));
-
-                bytemuck::cast_slice::<_, f32>(&[sum]).iter().sum()
-            }
-        }
-
-        impl WithSimd for AlignedSum<'_> {
-            type Output = f32;
-
-            #[inline(always)]
-            fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
-                let offset = simd.align_offset_f32s(self.slice.as_ptr(), self.slice.len());
-                let (prefix, body, suffix) = simd.as_aligned_simd_f32s(self.slice, offset);
-
-                let mut sum = prefix.read();
-                for x in body {
-                    sum = simd.add_f32s(sum, *x);
-                }
-                sum = simd.add_f32s(sum, suffix.read());
-                let sum = simd.rotate_left_f32s(sum, offset.rotate_left_amount());
-
-                bytemuck::cast_slice::<_, f32>(&[sum]).iter().sum()
-            }
-        }
-
-        impl WithSimd for WrongAlignedSum<'_> {
-            type Output = f32;
-
-            #[inline(always)]
-            fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
-                let offset = simd.align_offset_f32s(self.slice.as_ptr(), self.slice.len());
-                let (prefix, body, suffix) = simd.as_aligned_simd_f32s(self.slice, offset);
-
-                let mut sum = prefix.read();
-                for x in body {
-                    sum = simd.add_f32s(sum, *x);
-                }
-                sum = simd.add_f32s(sum, suffix.read());
-
-                bytemuck::cast_slice::<_, f32>(&[sum]).iter().sum()
-            }
-        }
-
-        let sum = arch.dispatch(Sum { slice: data });
-        let aligned_sum = arch.dispatch(AlignedSum { slice: data });
-        let wrong_aligned_sum = arch.dispatch(WrongAlignedSum { slice: data });
-
-        struct LaneCount;
-
-        impl WithSimd for LaneCount {
-            type Output = usize;
-
-            fn with_simd<S: Simd>(self, _: S) -> Self::Output {
-                core::mem::size_of::<S::f32s>() / core::mem::size_of::<f32>()
-            }
-        }
-
-        assert_eq!(sum, aligned_sum);
-        if arch.dispatch(LaneCount) > 2 {
-            assert_ne!(sum, wrong_aligned_sum);
-        }
-    }
 
     #[test]
     fn test_interleave() {

@@ -911,7 +911,8 @@ impl Simd for Neon {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_load_ptr_u32s(self, mask: Self::m32s, ptr: *const u32) -> Self::u32s {
+    unsafe fn mask_load_ptr_u32s(self, mask: MemMask<Self::m32s>, ptr: *const u32) -> Self::u32s {
+        let mask = mask.mask;
         u32x4(
             if mask.0.is_set() {
                 *ptr.wrapping_add(0)
@@ -940,7 +941,8 @@ impl Simd for Neon {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_load_ptr_c32s(self, mask: Self::m32s, ptr: *const c32) -> Self::c32s {
+    unsafe fn mask_load_ptr_c32s(self, mask: MemMask<Self::m32s>, ptr: *const c32) -> Self::c32s {
+        let mask = mask.mask;
         let ptr = ptr as *const f32;
         f32x4(
             if mask.0.is_set() {
@@ -970,7 +972,13 @@ impl Simd for Neon {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_u32s(self, mask: Self::m32s, ptr: *mut u32, values: Self::u32s) {
+    unsafe fn mask_store_ptr_u32s(
+        self,
+        mask: MemMask<Self::m32s>,
+        ptr: *mut u32,
+        values: Self::u32s,
+    ) {
+        let mask = mask.mask;
         if mask.0.is_set() {
             *ptr.wrapping_add(0) = values.0
         }
@@ -989,7 +997,13 @@ impl Simd for Neon {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_c32s(self, mask: Self::m32s, ptr: *mut c32, values: Self::c32s) {
+    unsafe fn mask_store_ptr_c32s(
+        self,
+        mask: MemMask<Self::m32s>,
+        ptr: *mut c32,
+        values: Self::c32s,
+    ) {
+        let mask = mask.mask;
         let ptr = ptr as *mut f32;
         if mask.0.is_set() {
             *ptr.wrapping_add(0) = values.0
@@ -1009,7 +1023,8 @@ impl Simd for Neon {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_load_ptr_u64s(self, mask: Self::m64s, ptr: *const u64) -> Self::u64s {
+    unsafe fn mask_load_ptr_u64s(self, mask: MemMask<Self::m64s>, ptr: *const u64) -> Self::u64s {
+        let mask = mask.mask;
         u64x2(
             if mask.0.is_set() {
                 *ptr.wrapping_add(0)
@@ -1028,7 +1043,8 @@ impl Simd for Neon {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_load_ptr_c64s(self, mask: Self::m64s, ptr: *const c64) -> Self::c64s {
+    unsafe fn mask_load_ptr_c64s(self, mask: MemMask<Self::m64s>, ptr: *const c64) -> Self::c64s {
+        let mask = mask.mask;
         let ptr = ptr as *const f64;
         f64x2(
             if mask.0.is_set() {
@@ -1048,7 +1064,13 @@ impl Simd for Neon {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_u64s(self, mask: Self::m64s, ptr: *mut u64, values: Self::u64s) {
+    unsafe fn mask_store_ptr_u64s(
+        self,
+        mask: MemMask<Self::m64s>,
+        ptr: *mut u64,
+        values: Self::u64s,
+    ) {
+        let mask = mask.mask;
         if mask.0.is_set() {
             *ptr.wrapping_add(0) = values.0
         }
@@ -1061,7 +1083,13 @@ impl Simd for Neon {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_c64s(self, mask: Self::m64s, ptr: *mut c64, values: Self::c64s) {
+    unsafe fn mask_store_ptr_c64s(
+        self,
+        mask: MemMask<Self::m64s>,
+        ptr: *mut c64,
+        values: Self::c64s,
+    ) {
+        let mask = mask.mask;
         let ptr = ptr as *mut f64;
         if mask.0.is_set() {
             *ptr.wrapping_add(0) = values.0
@@ -1887,7 +1915,8 @@ impl Simd for NeonFcma {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_load_ptr_u32s(self, mask: Self::m32s, ptr: *const u32) -> Self::u32s {
+    unsafe fn mask_load_ptr_u32s(self, mask: MemMask<Self::m32s>, ptr: *const u32) -> Self::u32s {
+        let mask = mask.mask;
         u32x4(
             if mask.0.is_set() {
                 *ptr.wrapping_add(0)
@@ -1916,7 +1945,8 @@ impl Simd for NeonFcma {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_load_ptr_c32s(self, mask: Self::m32s, ptr: *const c32) -> Self::c32s {
+    unsafe fn mask_load_ptr_c32s(self, mask: MemMask<Self::m32s>, ptr: *const c32) -> Self::c32s {
+        let mask = mask.mask;
         let ptr = ptr as *const f32;
         f32x4(
             if mask.0.is_set() {
@@ -1946,7 +1976,13 @@ impl Simd for NeonFcma {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_u32s(self, mask: Self::m32s, ptr: *mut u32, values: Self::u32s) {
+    unsafe fn mask_store_ptr_u32s(
+        self,
+        mask: MemMask<Self::m32s>,
+        ptr: *mut u32,
+        values: Self::u32s,
+    ) {
+        let mask = mask.mask;
         if mask.0.is_set() {
             *ptr.wrapping_add(0) = values.0
         }
@@ -1965,7 +2001,13 @@ impl Simd for NeonFcma {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_c32s(self, mask: Self::m32s, ptr: *mut c32, values: Self::c32s) {
+    unsafe fn mask_store_ptr_c32s(
+        self,
+        mask: MemMask<Self::m32s>,
+        ptr: *mut c32,
+        values: Self::c32s,
+    ) {
+        let mask = mask.mask;
         let ptr = ptr as *mut f32;
         if mask.0.is_set() {
             *ptr.wrapping_add(0) = values.0
@@ -1985,7 +2027,8 @@ impl Simd for NeonFcma {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_load_ptr_u64s(self, mask: Self::m64s, ptr: *const u64) -> Self::u64s {
+    unsafe fn mask_load_ptr_u64s(self, mask: MemMask<Self::m64s>, ptr: *const u64) -> Self::u64s {
+        let mask = mask.mask;
         u64x2(
             if mask.0.is_set() {
                 *ptr.wrapping_add(0)
@@ -2004,7 +2047,8 @@ impl Simd for NeonFcma {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_load_ptr_c64s(self, mask: Self::m64s, ptr: *const c64) -> Self::c64s {
+    unsafe fn mask_load_ptr_c64s(self, mask: MemMask<Self::m64s>, ptr: *const c64) -> Self::c64s {
+        let mask = mask.mask;
         let ptr = ptr as *const f64;
         f64x2(
             if mask.0.is_set() {
@@ -2024,7 +2068,13 @@ impl Simd for NeonFcma {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_u64s(self, mask: Self::m64s, ptr: *mut u64, values: Self::u64s) {
+    unsafe fn mask_store_ptr_u64s(
+        self,
+        mask: MemMask<Self::m64s>,
+        ptr: *mut u64,
+        values: Self::u64s,
+    ) {
+        let mask = mask.mask;
         if mask.0.is_set() {
             *ptr.wrapping_add(0) = values.0
         }
@@ -2037,7 +2087,13 @@ impl Simd for NeonFcma {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_c64s(self, mask: Self::m64s, ptr: *mut c64, values: Self::c64s) {
+    unsafe fn mask_store_ptr_c64s(
+        self,
+        mask: MemMask<Self::m64s>,
+        ptr: *mut c64,
+        values: Self::c64s,
+    ) {
+        let mask = mask.mask;
         let ptr = ptr as *mut f64;
         if mask.0.is_set() {
             *ptr.wrapping_add(0) = values.0

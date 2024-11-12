@@ -951,30 +951,8 @@ fn aligned_sum_vertical_bench(criterion: &mut Criterion) {
         }
     }
 
-    impl WithSimd for AlignedSum<'_> {
-        type Output = ();
-
-        #[inline(always)]
-        fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
-            let offset = simd.align_offset_f64s(self.dst.as_ptr(), self.dst.len());
-            let (lhs_head, lhs_body, lhs_tail) = simd.as_aligned_simd_f64s(self.lhs, offset);
-            let (rhs_head, rhs_body, rhs_tail) = simd.as_aligned_simd_f64s(self.rhs, offset);
-            let (mut dst_head, dst_body, mut dst_tail) =
-                simd.as_aligned_mut_simd_f64s(self.dst, offset);
-
-            dst_head.write(simd.add_f64s(lhs_head.read(), rhs_head.read()));
-            for (dst, (lhs, rhs)) in zip(dst_body, zip(lhs_body, rhs_body)) {
-                *dst = simd.add_f64s(*lhs, *rhs);
-            }
-            dst_tail.write(simd.add_f64s(lhs_tail.read(), rhs_tail.read()));
-        }
-    }
-
     criterion.bench_function("sum-vertical-unaligned", |bencher| {
         bencher.iter(|| arch.dispatch(Sum { lhs, rhs, dst }));
-    });
-    criterion.bench_function("sum-vertical-aligned", |bencher| {
-        bencher.iter(|| arch.dispatch(AlignedSum { lhs, rhs, dst }));
     });
 }
 
@@ -1002,12 +980,6 @@ fn aligned_sum_reduce_bench(criterion: &mut Criterion) {
     let arch = Arch::new();
 
     struct Sum<'a> {
-        slice: &'a [f64],
-    }
-    struct AlignedSum<'a> {
-        slice: &'a [f64],
-    }
-    struct WrongAlignedSum<'a> {
         slice: &'a [f64],
     }
 
@@ -1039,72 +1011,8 @@ fn aligned_sum_reduce_bench(criterion: &mut Criterion) {
         }
     }
 
-    impl WithSimd for AlignedSum<'_> {
-        type Output = f64;
-
-        #[inline(always)]
-        fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
-            let offset = simd.align_offset_f64s(self.slice.as_ptr(), self.slice.len());
-            let (prefix, body, suffix) = simd.as_aligned_simd_f64s(self.slice, offset);
-
-            let mut sum0 = prefix.read();
-            let mut sum1 = simd.splat_f64s(0.0);
-            let mut sum2 = simd.splat_f64s(0.0);
-            let mut sum3 = simd.splat_f64s(0.0);
-            let (body4, body1) = as_arrays::<4, _>(body);
-            for &[x0, x1, x2, x3] in body4 {
-                sum0 = simd.add_f64s(sum0, x0);
-                sum1 = simd.add_f64s(sum1, x1);
-                sum2 = simd.add_f64s(sum2, x2);
-                sum3 = simd.add_f64s(sum3, x3);
-            }
-            for &x0 in body1 {
-                sum0 = simd.add_f64s(sum0, x0);
-            }
-            sum0 = simd.add_f64s(sum0, suffix.read());
-            sum0 = simd.add_f64s(simd.add_f64s(sum0, sum1), simd.add_f64s(sum2, sum3));
-
-            simd.reduce_sum_f64s(simd.rotate_left_f64s(sum0, offset.rotate_left_amount()))
-        }
-    }
-
-    impl WithSimd for WrongAlignedSum<'_> {
-        type Output = f64;
-
-        #[inline(always)]
-        fn with_simd<S: Simd>(self, simd: S) -> Self::Output {
-            let offset = simd.align_offset_f64s(self.slice.as_ptr(), self.slice.len());
-            let (prefix, body, suffix) = simd.as_aligned_simd_f64s(self.slice, offset);
-
-            let mut sum0 = prefix.read();
-            let mut sum1 = simd.splat_f64s(0.0);
-            let mut sum2 = simd.splat_f64s(0.0);
-            let mut sum3 = simd.splat_f64s(0.0);
-            let (body4, body1) = as_arrays::<4, _>(body);
-            for &[x0, x1, x2, x3] in body4 {
-                sum0 = simd.add_f64s(sum0, x0);
-                sum1 = simd.add_f64s(sum1, x1);
-                sum2 = simd.add_f64s(sum2, x2);
-                sum3 = simd.add_f64s(sum3, x3);
-            }
-            for &x0 in body1 {
-                sum0 = simd.add_f64s(sum0, x0);
-            }
-            sum0 = simd.add_f64s(sum0, suffix.read());
-            sum0 = simd.add_f64s(simd.add_f64s(sum0, sum1), simd.add_f64s(sum2, sum3));
-
-            simd.reduce_sum_f64s(sum0)
-        }
-    }
-
     criterion.bench_function("sum-reduce-unaligned", |bencher| {
         bencher.iter(|| arch.dispatch(Sum { slice: data }));
-    });
-    criterion.bench_function("sum-reduce-aligned", |bencher| {
-        bencher.iter(|| arch.dispatch(AlignedSum { slice: data }));
-    });
-    criterion.bench_function("sum-reduce-aligned-wrong", |bencher| {
-        bencher.iter(|| arch.dispatch(WrongAlignedSum { slice: data }));
     });
 }
 

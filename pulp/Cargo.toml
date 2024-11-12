@@ -33,10 +33,6 @@ rand = "0.8.5"
 name = "bench"
 harness = false
 
-[[bench]]
-name = "maskload"
-harness = false
-
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]

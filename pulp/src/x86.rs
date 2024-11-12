@@ -12,65 +12,17 @@ use core::mem::transmute;
 #[target_feature(enable = "avx2")]
 #[inline]
 unsafe fn avx_load_u32s(slice: &[u32]) -> u32x8 {
-    let ret: __m256;
-    let f = LOAD[slice.len().min(8)];
-
-    core::arch::asm! {
-        "call {f}",
-        f = in(reg) f,
-        in("rax") slice.as_ptr(),
-        out("ymm0") ret,
-        out("ymm1") _,
-    };
-
-    cast(ret)
-}
-
-#[target_feature(enable = "avx2")]
-#[inline]
-unsafe fn avx_load_last_u32s(slice: &[u32]) -> u32x8 {
-    let ret: __m256;
-    let f = RLOAD_AVX[slice.len().min(8)];
-
-    core::arch::asm! {
-        "call {f}",
-        f = in(reg) f,
-        in("rax") slice.as_ptr(),
-        out("ymm0") ret,
-        out("ymm1") _,
-    };
-
-    cast(ret)
+    avx_ld_u32s(slice.as_ptr(), LD_ST[2 * (16 * slice.len().min(8))])
 }
 
 #[target_feature(enable = "avx2")]
 #[inline]
 unsafe fn avx_store_u32s(slice: &mut [u32], value: u32x8) {
-    let f = STORE[slice.len().min(8)];
-
-    core::arch::asm! {
-        "call {f}",
-        f = in(reg) f,
-
-        in("rax") slice.as_mut_ptr(),
-        inout("ymm0") cast::<_, __m256>(value) => _,
-        out("ymm1") _,
-    };
-}
-
-#[target_feature(enable = "avx2")]
-#[inline]
-unsafe fn avx_store_last_u32s(slice: &mut [u32], value: u32x8) {
-    let f = RSTORE_AVX[slice.len().min(8)];
-
-    core::arch::asm! {
-        "call {f}",
-        f = in(reg) f,
-
-        in("rax") slice.as_mut_ptr(),
-        inout("ymm0") cast::<_, __m256>(value) => _,
-        out("ymm1") _,
-    };
+    avx_st_u32s(
+        slice.as_mut_ptr(),
+        value,
+        LD_ST[2 * (16 * slice.len().min(8)) + 1],
+    );
 }
 
 #[target_feature(enable = "avx512f")]
@@ -78,37 +30,7 @@ unsafe fn avx_store_last_u32s(slice: &mut [u32], value: u32x8) {
 #[cfg(feature = "nightly")]
 #[inline]
 unsafe fn avx512_load_u32s(slice: &[u32]) -> u32x16 {
-    let ret: __m512;
-    let f = LOAD[slice.len().min(16)];
-
-    core::arch::asm! {
-        "call {f}",
-        f = in(reg) f,
-        in("rax") slice.as_ptr(),
-        out("zmm0") ret,
-        out("zmm1") _,
-    };
-
-    cast(ret)
-}
-
-#[target_feature(enable = "avx512f")]
-#[target_feature(enable = "avx512vl")]
-#[cfg(feature = "nightly")]
-#[inline]
-unsafe fn avx512_load_last_u32s(slice: &[u32]) -> u32x16 {
-    let ret: __m512;
-    let f = RLOAD_AVX512[slice.len().min(16)];
-
-    core::arch::asm! {
-        "call {f}",
-        f = in(reg) f,
-        in("rax") slice.as_ptr(),
-        out("zmm0") ret,
-        out("zmm1") _,
-    };
-
-    cast(ret)
+    avx512_ld_u32s(slice.as_ptr(), LD_ST[2 * (16 * slice.len().min(16))])
 }
 
 #[target_feature(enable = "avx512f")]
@@ -116,30 +38,66 @@ unsafe fn avx512_load_last_u32s(slice: &[u32]) -> u32x16 {
 #[cfg(feature = "nightly")]
 #[inline]
 unsafe fn avx512_store_u32s(slice: &mut [u32], value: u32x16) {
-    let f = STORE[slice.len().min(16)];
+    avx512_st_u32s(
+        slice.as_mut_ptr(),
+        value,
+        LD_ST[2 * (16 * slice.len().min(16)) + 1],
+    );
+}
 
+#[target_feature(enable = "avx2")]
+#[inline]
+unsafe fn avx_ld_u32s(ptr: *const u32, f: unsafe extern "C" fn()) -> u32x8 {
+    let ret: __m256;
     core::arch::asm! {
         "call {f}",
         f = in(reg) f,
-
-        in("rax") slice.as_mut_ptr(),
-        inout("zmm0") cast::<_, __m512>(value) => _,
-        out("zmm1") _,
+        in("rax") ptr,
+        out("ymm0") ret,
+        out("ymm1") _,
     };
-}
 
+    cast(ret)
+}
 #[target_feature(enable = "avx512f")]
 #[target_feature(enable = "avx512vl")]
 #[cfg(feature = "nightly")]
 #[inline]
-unsafe fn avx512_store_last_u32s(slice: &mut [u32], value: u32x16) {
-    let f = RSTORE_AVX512[slice.len().min(16)];
+unsafe fn avx512_ld_u32s(ptr: *const u32, f: unsafe extern "C" fn()) -> u32x16 {
+    let ret: __m512;
+    core::arch::asm! {
+        "call {f}",
+        f = in(reg) f,
+        in("rax") ptr,
+        out("zmm0") ret,
+        out("zmm1") _,
+    };
 
+    cast(ret)
+}
+
+#[target_feature(enable = "avx2")]
+#[inline]
+unsafe fn avx_st_u32s(ptr: *mut u32, value: u32x8, f: unsafe extern "C" fn()) {
     core::arch::asm! {
         "call {f}",
         f = in(reg) f,
 
-        in("rax") slice.as_mut_ptr(),
+        in("rax") ptr,
+        inout("ymm0") cast::<_, __m256>(value) => _,
+        out("ymm1") _,
+    };
+}
+#[target_feature(enable = "avx512f")]
+#[target_feature(enable = "avx512vl")]
+#[cfg(feature = "nightly")]
+#[inline]
+unsafe fn avx512_st_u32s(ptr: *mut u32, value: u32x16, f: unsafe extern "C" fn()) {
+    core::arch::asm! {
+        "call {f}",
+        f = in(reg) f,
+
+        in("rax") ptr,
         inout("zmm0") cast::<_, __m512>(value) => _,
         out("zmm1") _,
     };
@@ -513,103 +471,6 @@ impl core::ops::Deref for V4_256 {
         &self.0
     }
 }
-
-static V3_U32_MASKS: [u32x8; 9] = [
-    u32x8(0, 0, 0, 0, 0, 0, 0, 0),
-    u32x8(!0, 0, 0, 0, 0, 0, 0, 0),
-    u32x8(!0, !0, 0, 0, 0, 0, 0, 0),
-    u32x8(!0, !0, !0, 0, 0, 0, 0, 0),
-    u32x8(!0, !0, !0, !0, 0, 0, 0, 0),
-    u32x8(!0, !0, !0, !0, !0, 0, 0, 0),
-    u32x8(!0, !0, !0, !0, !0, !0, 0, 0),
-    u32x8(!0, !0, !0, !0, !0, !0, !0, 0),
-    u32x8(!0, !0, !0, !0, !0, !0, !0, !0),
-];
-
-static V3_U32_LAST_MASKS: [u32x8; 9] = [
-    u32x8(0, 0, 0, 0, 0, 0, 0, 0),
-    u32x8(0, 0, 0, 0, 0, 0, 0, !0),
-    u32x8(0, 0, 0, 0, 0, 0, !0, !0),
-    u32x8(0, 0, 0, 0, 0, !0, !0, !0),
-    u32x8(0, 0, 0, 0, !0, !0, !0, !0),
-    u32x8(0, 0, 0, !0, !0, !0, !0, !0),
-    u32x8(0, 0, !0, !0, !0, !0, !0, !0),
-    u32x8(0, !0, !0, !0, !0, !0, !0, !0),
-    u32x8(!0, !0, !0, !0, !0, !0, !0, !0),
-];
-
-#[cfg(feature = "nightly")]
-static V4_U32_MASKS: [u16; 17] = [
-    0b0000000000000000,
-    0b0000000000000001,
-    0b0000000000000011,
-    0b0000000000000111,
-    0b0000000000001111,
-    0b0000000000011111,
-    0b0000000000111111,
-    0b0000000001111111,
-    0b0000000011111111,
-    0b0000000111111111,
-    0b0000001111111111,
-    0b0000011111111111,
-    0b0000111111111111,
-    0b0001111111111111,
-    0b0011111111111111,
-    0b0111111111111111,
-    0b1111111111111111,
-];
-
-#[cfg(feature = "nightly")]
-static V4_U64_MASKS: [u8; 9] = [
-    0b00000000, 0b00000001, 0b00000011, 0b00000111, 0b00001111, 0b00011111, 0b00111111, 0b01111111,
-    0b11111111,
-];
-
-#[cfg(feature = "nightly")]
-static V4_U32_LAST_MASKS: [u16; 17] = [
-    0b0000000000000000,
-    0b1000000000000000,
-    0b1100000000000000,
-    0b1110000000000000,
-    0b1111000000000000,
-    0b1111100000000000,
-    0b1111110000000000,
-    0b1111111000000000,
-    0b1111111100000000,
-    0b1111111110000000,
-    0b1111111111000000,
-    0b1111111111100000,
-    0b1111111111110000,
-    0b1111111111111000,
-    0b1111111111111100,
-    0b1111111111111110,
-    0b1111111111111111,
-];
-
-#[cfg(feature = "nightly")]
-static V4_U64_LAST_MASKS: [u8; 9] = [
-    0b00000000, 0b10000000, 0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110,
-    0b11111111,
-];
-
-#[cfg(feature = "nightly")]
-static V4_256_U32_MASKS: [u8; 9] = [
-    0b00000000, 0b00000001, 0b00000011, 0b00000111, 0b00001111, 0b00011111, 0b00111111, 0b01111111,
-    0b11111111,
-];
-
-#[cfg(feature = "nightly")]
-static V4_256_U32_LAST_MASKS: [u8; 9] = [
-    0b00000000, 0b10000000, 0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110,
-    0b11111111,
-];
-
-#[cfg(feature = "nightly")]
-static V4_256_U64_MASKS: [u8; 5] = [0b00000000, 0b00000001, 0b00000011, 0b00000111, 0b00001111];
-
-#[cfg(feature = "nightly")]
-static V4_256_U64_LAST_MASKS: [u8; 5] =
-    [0b00000000, 0b00001000, 0b00001100, 0b00001110, 0b00001111];
 
 impl V2 {
     #[inline(always)]
@@ -1325,23 +1186,6 @@ impl Simd for V3 {
     }
 
     #[inline(always)]
-    fn tail_mask_f64s(self, len: usize) -> Self::m64s {
-        unsafe { transmute(V3_U32_MASKS[(2 * len).min(8)]) }
-    }
-    #[inline(always)]
-    fn tail_mask_f32s(self, len: usize) -> Self::m32s {
-        unsafe { transmute(V3_U32_MASKS[len.min(8)]) }
-    }
-    #[inline(always)]
-    fn head_mask_f64s(self, len: usize) -> Self::m64s {
-        unsafe { transmute(V3_U32_LAST_MASKS[(2 * len).min(8)]) }
-    }
-    #[inline(always)]
-    fn head_mask_f32s(self, len: usize) -> Self::m32s {
-        unsafe { transmute(V3_U32_LAST_MASKS[len.min(8)]) }
-    }
-
-    #[inline(always)]
     fn partial_load_u32s(self, slice: &[u32]) -> Self::u32s {
         unsafe { avx_load_u32s(slice) }
     }
@@ -1359,26 +1203,6 @@ impl Simd for V3 {
     #[inline(always)]
     fn partial_store_u64s(self, slice: &mut [u64], values: Self::u64s) {
         unsafe { avx_store_u32s(bytemuck::cast_slice_mut(slice), cast(values)) }
-    }
-
-    #[inline(always)]
-    fn partial_load_last_u32s(self, slice: &[u32]) -> Self::u32s {
-        unsafe { avx_load_last_u32s(slice) }
-    }
-
-    #[inline(always)]
-    fn partial_store_last_u32s(self, slice: &mut [u32], values: Self::u32s) {
-        unsafe { avx_store_last_u32s(slice, values) }
-    }
-
-    #[inline(always)]
-    fn partial_load_last_u64s(self, slice: &[u64]) -> Self::u64s {
-        unsafe { cast(avx_load_last_u32s(bytemuck::cast_slice(slice))) }
-    }
-
-    #[inline(always)]
-    fn partial_store_last_u64s(self, slice: &mut [u64], values: Self::u64s) {
-        unsafe { avx_store_last_u32s(bytemuck::cast_slice_mut(slice), cast(values)) }
     }
 
     #[inline(always)]
@@ -1605,90 +1429,112 @@ impl Simd for V3 {
         self.cmp_ge_u64x4(a, b)
     }
 
-    /// # Safety
-    ///
-    /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_load_ptr_u32s(self, mask: Self::m32s, ptr: *const u32) -> Self::u32s {
-        transmute(_mm256_maskload_epi32(ptr as _, transmute(mask)))
+    fn mask_between_m64s(self, start: u64, end: u64) -> MemMask<Self::m64s> {
+        let start = (2 * start.min(4)) as usize;
+        let end = (2 * end.min(4)) as usize;
+        MemMask {
+            mask: unsafe { core::mem::zeroed() },
+            load: Some(LD_ST[2 * (16 * end + start) + 0]),
+            store: Some(LD_ST[2 * (16 * end + start) + 1]),
+        }
     }
-    /// # Safety
-    ///
-    /// See the trait-level safety documentation.
+
     #[inline(always)]
-    unsafe fn mask_load_ptr_f32s(self, mask: Self::m32s, ptr: *const f32) -> Self::f32s {
-        transmute(_mm256_maskload_ps(ptr as _, transmute(mask)))
-    }
-    /// # Safety
-    ///
-    /// See the trait-level safety documentation.
-    #[inline(always)]
-    unsafe fn mask_load_ptr_c32s(self, mask: Self::m32s, ptr: *const c32) -> Self::c32s {
-        transmute(_mm256_maskload_ps(ptr as _, transmute(mask)))
-    }
-    /// # Safety
-    ///
-    /// See the trait-level safety documentation.
-    #[inline(always)]
-    unsafe fn mask_load_ptr_u64s(self, mask: Self::m64s, ptr: *const u64) -> Self::u64s {
-        transmute(_mm256_maskload_epi64(ptr as _, transmute(mask)))
-    }
-    /// # Safety
-    ///
-    /// See the trait-level safety documentation.
-    #[inline(always)]
-    unsafe fn mask_load_ptr_f64s(self, mask: Self::m64s, ptr: *const f64) -> Self::f64s {
-        transmute(_mm256_maskload_pd(ptr as _, transmute(mask)))
-    }
-    /// # Safety
-    ///
-    /// See the trait-level safety documentation.
-    #[inline(always)]
-    unsafe fn mask_load_ptr_c64s(self, mask: Self::m64s, ptr: *const c64) -> Self::c64s {
-        transmute(_mm256_maskload_pd(ptr as _, transmute(mask)))
+    fn mask_between_m32s(self, start: u32, end: u32) -> MemMask<Self::m32s> {
+        let start = start.min(8) as usize;
+        let end = end.min(8) as usize;
+        MemMask {
+            mask: unsafe { core::mem::zeroed() },
+            load: Some(LD_ST[2 * (16 * end + start) + 0]),
+            store: Some(LD_ST[2 * (16 * end + start) + 1]),
+        }
     }
 
     /// # Safety
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_u32s(self, mask: Self::m32s, ptr: *mut u32, values: Self::u32s) {
-        _mm256_maskstore_epi32(ptr as *mut i32, transmute(mask), transmute(values));
+    unsafe fn mask_load_ptr_u32s(self, mask: MemMask<Self::m32s>, ptr: *const u32) -> Self::u32s {
+        match mask.load {
+            Some(load) => avx_ld_u32s(ptr, load),
+            None => transmute(_mm256_maskload_epi32(ptr as _, transmute(mask.mask))),
+        }
     }
     /// # Safety
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_f32s(self, mask: Self::m32s, ptr: *mut f32, values: Self::f32s) {
-        _mm256_maskstore_ps(ptr, transmute(mask), transmute(values));
+    unsafe fn mask_load_ptr_c32s(self, mask: MemMask<Self::m32s>, ptr: *const c32) -> Self::c32s {
+        cast(self.mask_load_ptr_u32s(mask, ptr as _))
     }
     /// # Safety
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_c32s(self, mask: Self::m32s, ptr: *mut c32, values: Self::c32s) {
-        _mm256_maskstore_ps(ptr as *mut f32, transmute(mask), transmute(values));
+    unsafe fn mask_load_ptr_u64s(self, mask: MemMask<Self::m64s>, ptr: *const u64) -> Self::u64s {
+        cast(self.mask_load_ptr_u32s(transmute(mask), ptr as _))
     }
     /// # Safety
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_u64s(self, mask: Self::m64s, ptr: *mut u64, values: Self::u64s) {
-        _mm256_maskstore_epi64(ptr as *mut i64, transmute(mask), transmute(values));
+    unsafe fn mask_load_ptr_c64s(self, mask: MemMask<Self::m64s>, ptr: *const c64) -> Self::c64s {
+        cast(self.mask_load_ptr_u64s(mask, ptr as _))
+    }
+
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
+    unsafe fn mask_store_ptr_u32s(
+        self,
+        mask: MemMask<Self::m32s>,
+        ptr: *mut u32,
+        values: Self::u32s,
+    ) {
+        match mask.store {
+            Some(store) => avx_st_u32s(ptr, values, store),
+            None => {
+                _mm256_maskstore_epi32(ptr as *mut i32, transmute(mask.mask), transmute(values))
+            }
+        }
     }
     /// # Safety
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_f64s(self, mask: Self::m64s, ptr: *mut f64, values: Self::f64s) {
-        _mm256_maskstore_pd(ptr, transmute(mask), transmute(values));
+    unsafe fn mask_store_ptr_c32s(
+        self,
+        mask: MemMask<Self::m32s>,
+        ptr: *mut c32,
+        values: Self::c32s,
+    ) {
+        self.mask_store_ptr_u32s(mask, ptr as _, cast(values))
     }
     /// # Safety
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_c64s(self, mask: Self::m64s, ptr: *mut c64, values: Self::c64s) {
-        _mm256_maskstore_pd(ptr as *mut f64, transmute(mask), transmute(values));
+    unsafe fn mask_store_ptr_u64s(
+        self,
+        mask: MemMask<Self::m64s>,
+        ptr: *mut u64,
+        values: Self::u64s,
+    ) {
+        self.mask_store_ptr_u32s(transmute(mask), ptr as _, cast(values))
+    }
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
+    unsafe fn mask_store_ptr_c64s(
+        self,
+        mask: MemMask<Self::m64s>,
+        ptr: *mut c64,
+        values: Self::c64s,
+    ) {
+        self.mask_store_ptr_u64s(mask, ptr as _, cast(values))
     }
 
     #[inline(always)]
@@ -2403,42 +2249,6 @@ impl Simd for V3Scalar {
     }
 
     #[inline(always)]
-    fn partial_load_last_u32s(self, slice: &[u32]) -> Self::u32s {
-        slice.first().copied().unwrap_or(0)
-    }
-
-    #[inline(always)]
-    fn partial_store_last_u32s(self, slice: &mut [u32], values: Self::u32s) {
-        if let Some(first) = slice.first_mut() {
-            *first = values
-        }
-    }
-
-    #[inline(always)]
-    fn partial_load_last_u64s(self, slice: &[u64]) -> Self::u64s {
-        slice.first().copied().unwrap_or(0)
-    }
-
-    #[inline(always)]
-    fn partial_store_last_u64s(self, slice: &mut [u64], values: Self::u64s) {
-        if let Some(first) = slice.first_mut() {
-            *first = values
-        }
-    }
-
-    #[inline(always)]
-    fn partial_load_last_c64s(self, slice: &[c64]) -> Self::c64s {
-        slice.first().copied().unwrap_or(c64 { re: 0.0, im: 0.0 })
-    }
-
-    #[inline(always)]
-    fn partial_store_last_c64s(self, slice: &mut [c64], values: Self::c64s) {
-        if let Some(first) = slice.first_mut() {
-            *first = values
-        }
-    }
-
-    #[inline(always)]
     fn conj_c32s(self, a: Self::c32s) -> Self::c32s {
         c32 {
             re: a.re,
@@ -2566,7 +2376,8 @@ impl Simd for V3Scalar {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_load_ptr_u32s(self, mask: Self::m32s, ptr: *const u32) -> Self::u32s {
+    unsafe fn mask_load_ptr_u32s(self, mask: MemMask<Self::m32s>, ptr: *const u32) -> Self::u32s {
+        let mask = mask.mask;
         if mask {
             *ptr
         } else {
@@ -2577,7 +2388,8 @@ impl Simd for V3Scalar {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_load_ptr_f32s(self, mask: Self::m32s, ptr: *const f32) -> Self::f32s {
+    unsafe fn mask_load_ptr_f32s(self, mask: MemMask<Self::m32s>, ptr: *const f32) -> Self::f32s {
+        let mask = mask.mask;
         if mask {
             *ptr
         } else {
@@ -2588,7 +2400,8 @@ impl Simd for V3Scalar {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_load_ptr_c32s(self, mask: Self::m32s, ptr: *const c32) -> Self::c32s {
+    unsafe fn mask_load_ptr_c32s(self, mask: MemMask<Self::m32s>, ptr: *const c32) -> Self::c32s {
+        let mask = mask.mask;
         if mask {
             *ptr
         } else {
@@ -2599,7 +2412,8 @@ impl Simd for V3Scalar {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_load_ptr_u64s(self, mask: Self::m64s, ptr: *const u64) -> Self::u64s {
+    unsafe fn mask_load_ptr_u64s(self, mask: MemMask<Self::m64s>, ptr: *const u64) -> Self::u64s {
+        let mask = mask.mask;
         if mask {
             *ptr
         } else {
@@ -2610,7 +2424,8 @@ impl Simd for V3Scalar {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_load_ptr_f64s(self, mask: Self::m64s, ptr: *const f64) -> Self::f64s {
+    unsafe fn mask_load_ptr_f64s(self, mask: MemMask<Self::m64s>, ptr: *const f64) -> Self::f64s {
+        let mask = mask.mask;
         if mask {
             *ptr
         } else {
@@ -2621,7 +2436,8 @@ impl Simd for V3Scalar {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_load_ptr_c64s(self, mask: Self::m64s, ptr: *const c64) -> Self::c64s {
+    unsafe fn mask_load_ptr_c64s(self, mask: MemMask<Self::m64s>, ptr: *const c64) -> Self::c64s {
+        let mask = mask.mask;
         if mask {
             *ptr
         } else {
@@ -2633,7 +2449,13 @@ impl Simd for V3Scalar {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_u32s(self, mask: Self::m32s, ptr: *mut u32, values: Self::u32s) {
+    unsafe fn mask_store_ptr_u32s(
+        self,
+        mask: MemMask<Self::m32s>,
+        ptr: *mut u32,
+        values: Self::u32s,
+    ) {
+        let mask = mask.mask;
         if mask {
             *ptr = values
         }
@@ -2642,7 +2464,13 @@ impl Simd for V3Scalar {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_f32s(self, mask: Self::m32s, ptr: *mut f32, values: Self::f32s) {
+    unsafe fn mask_store_ptr_f32s(
+        self,
+        mask: MemMask<Self::m32s>,
+        ptr: *mut f32,
+        values: Self::f32s,
+    ) {
+        let mask = mask.mask;
         if mask {
             *ptr = values
         }
@@ -2651,7 +2479,13 @@ impl Simd for V3Scalar {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_c32s(self, mask: Self::m32s, ptr: *mut c32, values: Self::c32s) {
+    unsafe fn mask_store_ptr_c32s(
+        self,
+        mask: MemMask<Self::m32s>,
+        ptr: *mut c32,
+        values: Self::c32s,
+    ) {
+        let mask = mask.mask;
         if mask {
             *ptr = values
         }
@@ -2660,7 +2494,13 @@ impl Simd for V3Scalar {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_u64s(self, mask: Self::m64s, ptr: *mut u64, values: Self::u64s) {
+    unsafe fn mask_store_ptr_u64s(
+        self,
+        mask: MemMask<Self::m64s>,
+        ptr: *mut u64,
+        values: Self::u64s,
+    ) {
+        let mask = mask.mask;
         if mask {
             *ptr = values
         }
@@ -2669,7 +2509,13 @@ impl Simd for V3Scalar {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_f64s(self, mask: Self::m64s, ptr: *mut f64, values: Self::f64s) {
+    unsafe fn mask_store_ptr_f64s(
+        self,
+        mask: MemMask<Self::m64s>,
+        ptr: *mut f64,
+        values: Self::f64s,
+    ) {
+        let mask = mask.mask;
         if mask {
             *ptr = values
         }
@@ -2678,7 +2524,13 @@ impl Simd for V3Scalar {
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_c64s(self, mask: Self::m64s, ptr: *mut c64, values: Self::c64s) {
+    unsafe fn mask_store_ptr_c64s(
+        self,
+        mask: MemMask<Self::m64s>,
+        ptr: *mut c64,
+        values: Self::c64s,
+    ) {
+        let mask = mask.mask;
         if mask {
             *ptr = values
         }
@@ -3208,26 +3060,6 @@ impl Simd for V4 {
     }
 
     #[inline(always)]
-    fn partial_load_last_u32s(self, slice: &[u32]) -> Self::u32s {
-        unsafe { avx512_load_last_u32s(slice) }
-    }
-
-    #[inline(always)]
-    fn partial_store_last_u32s(self, slice: &mut [u32], values: Self::u32s) {
-        unsafe { avx512_store_last_u32s(slice, values) }
-    }
-
-    #[inline(always)]
-    fn partial_load_last_u64s(self, slice: &[u64]) -> Self::u64s {
-        unsafe { cast(avx512_load_last_u32s(bytemuck::cast_slice(slice))) }
-    }
-
-    #[inline(always)]
-    fn partial_store_last_u64s(self, slice: &mut [u64], values: Self::u64s) {
-        unsafe { avx512_store_last_u32s(bytemuck::cast_slice_mut(slice), cast(values)) }
-    }
-
-    #[inline(always)]
     fn conj_c32s(self, a: Self::c32s) -> Self::c32s {
         self.xor_f32s(a, self.splat_c32s(c32 { re: 0.0, im: -0.0 }))
     }
@@ -3496,90 +3328,116 @@ impl Simd for V4 {
         (*self).c64_scalar_conj_mul_add(a, b, c)
     }
 
-    /// # Safety
-    ///
-    /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_load_ptr_u32s(self, mask: Self::m32s, ptr: *const u32) -> Self::u32s {
-        transmute(_mm512_maskz_loadu_epi32(mask.0, ptr as _))
+    fn mask_between_m64s(self, start: u64, end: u64) -> MemMask<Self::m64s> {
+        let start = (2 * start.min(8)) as usize;
+        let end = (2 * end.min(8)) as usize;
+        MemMask {
+            mask: unsafe { core::mem::zeroed() },
+            load: Some(LD_ST[2 * (16 * end + start) + 0]),
+            store: Some(LD_ST[2 * (16 * end + start) + 1]),
+        }
     }
-    /// # Safety
-    ///
-    /// See the trait-level safety documentation.
+
     #[inline(always)]
-    unsafe fn mask_load_ptr_f32s(self, mask: Self::m32s, ptr: *const f32) -> Self::f32s {
-        transmute(_mm512_maskz_loadu_ps(mask.0, ptr as _))
-    }
-    /// # Safety
-    ///
-    /// See the trait-level safety documentation.
-    #[inline(always)]
-    unsafe fn mask_load_ptr_c32s(self, mask: Self::m32s, ptr: *const c32) -> Self::c32s {
-        transmute(_mm512_maskz_loadu_ps(mask.0, ptr as _))
-    }
-    /// # Safety
-    ///
-    /// See the trait-level safety documentation.
-    #[inline(always)]
-    unsafe fn mask_load_ptr_u64s(self, mask: Self::m64s, ptr: *const u64) -> Self::u64s {
-        transmute(_mm512_maskz_loadu_epi64(mask.0, ptr as _))
-    }
-    /// # Safety
-    ///
-    /// See the trait-level safety documentation.
-    #[inline(always)]
-    unsafe fn mask_load_ptr_f64s(self, mask: Self::m64s, ptr: *const f64) -> Self::f64s {
-        transmute(_mm512_maskz_loadu_pd(mask.0, ptr as _))
-    }
-    /// # Safety
-    ///
-    /// See the trait-level safety documentation.
-    #[inline(always)]
-    unsafe fn mask_load_ptr_c64s(self, mask: Self::m64s, ptr: *const c64) -> Self::c64s {
-        transmute(_mm512_maskz_loadu_pd(mask.0, ptr as _))
+    fn mask_between_m32s(self, start: u32, end: u32) -> MemMask<Self::m32s> {
+        let start = start.min(16) as usize;
+        let end = end.min(16) as usize;
+        MemMask {
+            mask: unsafe { core::mem::zeroed() },
+            load: Some(LD_ST[2 * (16 * end + start) + 0]),
+            store: Some(LD_ST[2 * (16 * end + start) + 1]),
+        }
     }
 
     /// # Safety
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_u32s(self, mask: Self::m32s, ptr: *mut u32, values: Self::u32s) {
-        _mm512_mask_storeu_epi32(ptr as *mut i32, mask.0, transmute(values));
+    unsafe fn mask_load_ptr_u32s(self, mask: MemMask<Self::m32s>, ptr: *const u32) -> Self::u32s {
+        match mask.load {
+            Some(load) => avx512_ld_u32s(ptr, load),
+            None => transmute(_mm512_maskz_loadu_epi32(mask.mask.0, ptr as _)),
+        }
     }
     /// # Safety
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_f32s(self, mask: Self::m32s, ptr: *mut f32, values: Self::f32s) {
-        _mm512_mask_storeu_ps(ptr, mask.0, transmute(values));
+    unsafe fn mask_load_ptr_c32s(self, mask: MemMask<Self::m32s>, ptr: *const c32) -> Self::c32s {
+        transmute(self.mask_load_ptr_u32s(mask, ptr as _))
     }
     /// # Safety
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_c32s(self, mask: Self::m32s, ptr: *mut c32, values: Self::c32s) {
-        _mm512_mask_storeu_ps(ptr as *mut f32, mask.0, transmute(values));
+    unsafe fn mask_load_ptr_u64s(self, mask: MemMask<Self::m64s>, ptr: *const u64) -> Self::u64s {
+        match mask.load {
+            Some(load) => transmute(avx512_ld_u32s(ptr as _, load)),
+            None => transmute(_mm512_maskz_loadu_epi64(mask.mask.0, ptr as _)),
+        }
     }
     /// # Safety
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_u64s(self, mask: Self::m64s, ptr: *mut u64, values: Self::u64s) {
-        _mm512_mask_storeu_epi64(ptr as *mut i64, mask.0, transmute(values));
+    unsafe fn mask_load_ptr_c64s(self, mask: MemMask<Self::m64s>, ptr: *const c64) -> Self::c64s {
+        transmute(self.mask_load_ptr_u64s(mask, ptr as _))
+    }
+
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
+    unsafe fn mask_store_ptr_u32s(
+        self,
+        mask: MemMask<Self::m32s>,
+        ptr: *mut u32,
+        values: Self::u32s,
+    ) {
+        match mask.store {
+            Some(store) => avx512_st_u32s(ptr, values, store),
+            None => _mm512_mask_storeu_epi32(ptr as *mut i32, mask.mask.0, transmute(values)),
+        }
     }
     /// # Safety
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_f64s(self, mask: Self::m64s, ptr: *mut f64, values: Self::f64s) {
-        _mm512_mask_storeu_pd(ptr, mask.0, transmute(values));
+    unsafe fn mask_store_ptr_c32s(
+        self,
+        mask: MemMask<Self::m32s>,
+        ptr: *mut c32,
+        values: Self::c32s,
+    ) {
+        self.mask_store_ptr_u32s(mask, ptr as _, transmute(values))
     }
     /// # Safety
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_c64s(self, mask: Self::m64s, ptr: *mut c64, values: Self::c64s) {
-        _mm512_mask_storeu_pd(ptr as *mut f64, mask.0, transmute(values));
+    unsafe fn mask_store_ptr_u64s(
+        self,
+        mask: MemMask<Self::m64s>,
+        ptr: *mut u64,
+        values: Self::u64s,
+    ) {
+        match mask.store {
+            Some(store) => avx512_st_u32s(ptr as _, transmute(values), store),
+            None => _mm512_mask_storeu_epi64(ptr as *mut _, mask.mask.0, transmute(values)),
+        }
+    }
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
+    unsafe fn mask_store_ptr_c64s(
+        self,
+        mask: MemMask<Self::m64s>,
+        ptr: *mut c64,
+        values: Self::c64s,
+    ) {
+        self.mask_store_ptr_u64s(mask, ptr as _, cast(values))
     }
 
     #[inline(always)]
@@ -3630,23 +3488,6 @@ impl Simd for V4 {
     #[inline(always)]
     fn swap_re_im_c64s(self, a: Self::c64s) -> Self::c64s {
         unsafe { cast(_mm512_permute_pd::<0b01010101>(cast(a))) }
-    }
-
-    #[inline(always)]
-    fn tail_mask_f64s(self, len: usize) -> Self::m64s {
-        unsafe { transmute(V4_U64_MASKS[len.min(8)]) }
-    }
-    #[inline(always)]
-    fn tail_mask_f32s(self, len: usize) -> Self::m32s {
-        unsafe { transmute(V4_U32_MASKS[len.min(16)]) }
-    }
-    #[inline(always)]
-    fn head_mask_f64s(self, len: usize) -> Self::m64s {
-        unsafe { transmute(V4_U64_LAST_MASKS[len.min(8)]) }
-    }
-    #[inline(always)]
-    fn head_mask_f32s(self, len: usize) -> Self::m32s {
-        unsafe { transmute(V4_U32_LAST_MASKS[len.min(16)]) }
     }
 
     #[inline(always)]
@@ -4213,26 +4054,6 @@ impl Simd for V4_256 {
     }
 
     #[inline(always)]
-    fn partial_load_last_u32s(self, slice: &[u32]) -> Self::u32s {
-        unsafe { avx_load_last_u32s(slice) }
-    }
-
-    #[inline(always)]
-    fn partial_store_last_u32s(self, slice: &mut [u32], values: Self::u32s) {
-        unsafe { avx_store_last_u32s(slice, values) }
-    }
-
-    #[inline(always)]
-    fn partial_load_last_u64s(self, slice: &[u64]) -> Self::u64s {
-        unsafe { cast(avx_load_last_u32s(bytemuck::cast_slice(slice))) }
-    }
-
-    #[inline(always)]
-    fn partial_store_last_u64s(self, slice: &mut [u64], values: Self::u64s) {
-        unsafe { avx_store_last_u32s(bytemuck::cast_slice_mut(slice), cast(values)) }
-    }
-
-    #[inline(always)]
     fn conj_c32s(self, a: Self::c32s) -> Self::c32s {
         self.xor_f32s(a, self.splat_c32s(c32 { re: 0.0, im: -0.0 }))
     }
@@ -4400,90 +4221,116 @@ impl Simd for V4_256 {
         (*self).c64_scalar_conj_mul_add(a, b, c)
     }
 
-    /// # Safety
-    ///
-    /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_load_ptr_u32s(self, mask: Self::m32s, ptr: *const u32) -> Self::u32s {
-        transmute(_mm256_maskz_loadu_epi32(mask.0, ptr as _))
+    fn mask_between_m64s(self, start: u64, end: u64) -> MemMask<Self::m64s> {
+        let start = (2 * start.min(4)) as usize;
+        let end = (2 * end.min(4)) as usize;
+        MemMask {
+            mask: unsafe { core::mem::zeroed() },
+            load: Some(LD_ST[2 * (16 * end + start) + 0]),
+            store: Some(LD_ST[2 * (16 * end + start) + 1]),
+        }
     }
-    /// # Safety
-    ///
-    /// See the trait-level safety documentation.
+
     #[inline(always)]
-    unsafe fn mask_load_ptr_f32s(self, mask: Self::m32s, ptr: *const f32) -> Self::f32s {
-        transmute(_mm256_maskz_loadu_ps(mask.0, ptr as _))
-    }
-    /// # Safety
-    ///
-    /// See the trait-level safety documentation.
-    #[inline(always)]
-    unsafe fn mask_load_ptr_c32s(self, mask: Self::m32s, ptr: *const c32) -> Self::c32s {
-        transmute(_mm256_maskz_loadu_ps(mask.0, ptr as _))
-    }
-    /// # Safety
-    ///
-    /// See the trait-level safety documentation.
-    #[inline(always)]
-    unsafe fn mask_load_ptr_u64s(self, mask: Self::m64s, ptr: *const u64) -> Self::u64s {
-        transmute(_mm256_maskz_loadu_epi64(mask.0, ptr as _))
-    }
-    /// # Safety
-    ///
-    /// See the trait-level safety documentation.
-    #[inline(always)]
-    unsafe fn mask_load_ptr_f64s(self, mask: Self::m64s, ptr: *const f64) -> Self::f64s {
-        transmute(_mm256_maskz_loadu_pd(mask.0, ptr as _))
-    }
-    /// # Safety
-    ///
-    /// See the trait-level safety documentation.
-    #[inline(always)]
-    unsafe fn mask_load_ptr_c64s(self, mask: Self::m64s, ptr: *const c64) -> Self::c64s {
-        transmute(_mm256_maskz_loadu_pd(mask.0, ptr as _))
+    fn mask_between_m32s(self, start: u32, end: u32) -> MemMask<Self::m32s> {
+        let start = start.min(8) as usize;
+        let end = end.min(8) as usize;
+        MemMask {
+            mask: unsafe { core::mem::zeroed() },
+            load: Some(LD_ST[2 * (16 * end + start) + 0]),
+            store: Some(LD_ST[2 * (16 * end + start) + 1]),
+        }
     }
 
     /// # Safety
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_u32s(self, mask: Self::m32s, ptr: *mut u32, values: Self::u32s) {
-        _mm256_mask_storeu_epi32(ptr as *mut i32, mask.0, transmute(values));
+    unsafe fn mask_load_ptr_u32s(self, mask: MemMask<Self::m32s>, ptr: *const u32) -> Self::u32s {
+        match mask.load {
+            Some(load) => avx_ld_u32s(ptr, load),
+            None => transmute(_mm256_maskz_loadu_epi32(mask.mask.0, ptr as _)),
+        }
     }
     /// # Safety
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_f32s(self, mask: Self::m32s, ptr: *mut f32, values: Self::f32s) {
-        _mm256_mask_storeu_ps(ptr, mask.0, transmute(values));
+    unsafe fn mask_load_ptr_c32s(self, mask: MemMask<Self::m32s>, ptr: *const c32) -> Self::c32s {
+        transmute(self.mask_load_ptr_u32s(mask, ptr as _))
     }
     /// # Safety
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_c32s(self, mask: Self::m32s, ptr: *mut c32, values: Self::c32s) {
-        _mm256_mask_storeu_ps(ptr as *mut f32, mask.0, transmute(values));
+    unsafe fn mask_load_ptr_u64s(self, mask: MemMask<Self::m64s>, ptr: *const u64) -> Self::u64s {
+        match mask.load {
+            Some(load) => transmute(avx_ld_u32s(ptr as _, load)),
+            None => transmute(_mm256_maskz_loadu_epi64(mask.mask.0, ptr as _)),
+        }
     }
     /// # Safety
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_u64s(self, mask: Self::m64s, ptr: *mut u64, values: Self::u64s) {
-        _mm256_mask_storeu_epi64(ptr as *mut i64, mask.0, transmute(values));
+    unsafe fn mask_load_ptr_c64s(self, mask: MemMask<Self::m64s>, ptr: *const c64) -> Self::c64s {
+        transmute(self.mask_load_ptr_u64s(mask, ptr as _))
+    }
+
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
+    unsafe fn mask_store_ptr_u32s(
+        self,
+        mask: MemMask<Self::m32s>,
+        ptr: *mut u32,
+        values: Self::u32s,
+    ) {
+        match mask.store {
+            Some(store) => avx_st_u32s(ptr, values, store),
+            None => _mm256_mask_storeu_epi32(ptr as *mut i32, mask.mask.0, transmute(values)),
+        }
     }
     /// # Safety
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_f64s(self, mask: Self::m64s, ptr: *mut f64, values: Self::f64s) {
-        _mm256_mask_storeu_pd(ptr, mask.0, transmute(values));
+    unsafe fn mask_store_ptr_c32s(
+        self,
+        mask: MemMask<Self::m32s>,
+        ptr: *mut c32,
+        values: Self::c32s,
+    ) {
+        self.mask_store_ptr_u32s(mask, ptr as _, transmute(values))
     }
     /// # Safety
     ///
     /// See the trait-level safety documentation.
     #[inline(always)]
-    unsafe fn mask_store_ptr_c64s(self, mask: Self::m64s, ptr: *mut c64, values: Self::c64s) {
-        _mm256_mask_storeu_pd(ptr as *mut f64, mask.0, transmute(values));
+    unsafe fn mask_store_ptr_u64s(
+        self,
+        mask: MemMask<Self::m64s>,
+        ptr: *mut u64,
+        values: Self::u64s,
+    ) {
+        match mask.store {
+            Some(store) => avx_st_u32s(ptr as _, transmute(values), store),
+            None => _mm256_mask_storeu_epi64(ptr as *mut _, mask.mask.0, transmute(values)),
+        }
+    }
+    /// # Safety
+    ///
+    /// See the trait-level safety documentation.
+    #[inline(always)]
+    unsafe fn mask_store_ptr_c64s(
+        self,
+        mask: MemMask<Self::m64s>,
+        ptr: *mut c64,
+        values: Self::c64s,
+    ) {
+        self.mask_store_ptr_u64s(mask, ptr as _, cast(values))
     }
 
     #[inline(always)]
@@ -4552,23 +4399,6 @@ impl Simd for V4_256 {
             let max_rev = _mm256_shuffle_pd::<0b0101>(cast(max), cast(max));
             self.max_f64s(max, cast(max_rev))
         }
-    }
-
-    #[inline(always)]
-    fn tail_mask_f64s(self, len: usize) -> Self::m64s {
-        unsafe { transmute(V4_256_U64_MASKS[len.min(4)]) }
-    }
-    #[inline(always)]
-    fn tail_mask_f32s(self, len: usize) -> Self::m32s {
-        unsafe { transmute(V4_256_U32_MASKS[len.min(8)]) }
-    }
-    #[inline(always)]
-    fn head_mask_f64s(self, len: usize) -> Self::m64s {
-        unsafe { transmute(V4_256_U64_LAST_MASKS[len.min(4)]) }
-    }
-    #[inline(always)]
-    fn head_mask_f32s(self, len: usize) -> Self::m32s {
-        unsafe { transmute(V4_256_U32_LAST_MASKS[len.min(8)]) }
     }
 
     #[inline(always)]
@@ -11908,849 +11738,7 @@ impl Default for ScalarArchInner {
     }
 }
 
-enum NoCall {}
-
-unsafe extern "C" {
-    fn libpulp_v0_19_load_f32x0(_: NoCall);
-    fn libpulp_v0_19_load_f32x1(_: NoCall);
-    fn libpulp_v0_19_load_f32x2(_: NoCall);
-    fn libpulp_v0_19_load_f32x3(_: NoCall);
-    fn libpulp_v0_19_load_f32x4(_: NoCall);
-    fn libpulp_v0_19_load_f32x5(_: NoCall);
-    fn libpulp_v0_19_load_f32x6(_: NoCall);
-    fn libpulp_v0_19_load_f32x7(_: NoCall);
-    fn libpulp_v0_19_load_f32x8(_: NoCall);
-    fn libpulp_v0_19_load_f32x9(_: NoCall);
-    fn libpulp_v0_19_load_f32x10(_: NoCall);
-    fn libpulp_v0_19_load_f32x11(_: NoCall);
-    fn libpulp_v0_19_load_f32x12(_: NoCall);
-    fn libpulp_v0_19_load_f32x13(_: NoCall);
-    fn libpulp_v0_19_load_f32x14(_: NoCall);
-    fn libpulp_v0_19_load_f32x15(_: NoCall);
-    fn libpulp_v0_19_load_f32x16(_: NoCall);
-
-    fn libpulp_v0_19_store_f32x0(_: NoCall);
-    fn libpulp_v0_19_store_f32x1(_: NoCall);
-    fn libpulp_v0_19_store_f32x2(_: NoCall);
-    fn libpulp_v0_19_store_f32x3(_: NoCall);
-    fn libpulp_v0_19_store_f32x4(_: NoCall);
-    fn libpulp_v0_19_store_f32x5(_: NoCall);
-    fn libpulp_v0_19_store_f32x6(_: NoCall);
-    fn libpulp_v0_19_store_f32x7(_: NoCall);
-    fn libpulp_v0_19_store_f32x8(_: NoCall);
-    fn libpulp_v0_19_store_f32x9(_: NoCall);
-    fn libpulp_v0_19_store_f32x10(_: NoCall);
-    fn libpulp_v0_19_store_f32x11(_: NoCall);
-    fn libpulp_v0_19_store_f32x12(_: NoCall);
-    fn libpulp_v0_19_store_f32x13(_: NoCall);
-    fn libpulp_v0_19_store_f32x14(_: NoCall);
-    fn libpulp_v0_19_store_f32x15(_: NoCall);
-    fn libpulp_v0_19_store_f32x16(_: NoCall);
-
-    fn libpulp_v0_19_rload_avx_f32x0(_: NoCall);
-    fn libpulp_v0_19_rload_avx_f32x1(_: NoCall);
-    fn libpulp_v0_19_rload_avx_f32x2(_: NoCall);
-    fn libpulp_v0_19_rload_avx_f32x3(_: NoCall);
-    fn libpulp_v0_19_rload_avx_f32x4(_: NoCall);
-    fn libpulp_v0_19_rload_avx_f32x5(_: NoCall);
-    fn libpulp_v0_19_rload_avx_f32x6(_: NoCall);
-    fn libpulp_v0_19_rload_avx_f32x7(_: NoCall);
-    fn libpulp_v0_19_rload_avx_f32x8(_: NoCall);
-
-    fn libpulp_v0_19_rstore_avx_f32x0(_: NoCall);
-    fn libpulp_v0_19_rstore_avx_f32x1(_: NoCall);
-    fn libpulp_v0_19_rstore_avx_f32x2(_: NoCall);
-    fn libpulp_v0_19_rstore_avx_f32x3(_: NoCall);
-    fn libpulp_v0_19_rstore_avx_f32x4(_: NoCall);
-    fn libpulp_v0_19_rstore_avx_f32x5(_: NoCall);
-    fn libpulp_v0_19_rstore_avx_f32x6(_: NoCall);
-    fn libpulp_v0_19_rstore_avx_f32x7(_: NoCall);
-    fn libpulp_v0_19_rstore_avx_f32x8(_: NoCall);
-}
-
-#[cfg(feature = "nightly")]
-unsafe extern "C" {
-    fn libpulp_v0_19_rload_avx512_f32x0(_: NoCall);
-    fn libpulp_v0_19_rload_avx512_f32x1(_: NoCall);
-    fn libpulp_v0_19_rload_avx512_f32x2(_: NoCall);
-    fn libpulp_v0_19_rload_avx512_f32x3(_: NoCall);
-    fn libpulp_v0_19_rload_avx512_f32x4(_: NoCall);
-    fn libpulp_v0_19_rload_avx512_f32x5(_: NoCall);
-    fn libpulp_v0_19_rload_avx512_f32x6(_: NoCall);
-    fn libpulp_v0_19_rload_avx512_f32x7(_: NoCall);
-    fn libpulp_v0_19_rload_avx512_f32x8(_: NoCall);
-    fn libpulp_v0_19_rload_avx512_f32x9(_: NoCall);
-    fn libpulp_v0_19_rload_avx512_f32x10(_: NoCall);
-    fn libpulp_v0_19_rload_avx512_f32x11(_: NoCall);
-    fn libpulp_v0_19_rload_avx512_f32x12(_: NoCall);
-    fn libpulp_v0_19_rload_avx512_f32x13(_: NoCall);
-    fn libpulp_v0_19_rload_avx512_f32x14(_: NoCall);
-    fn libpulp_v0_19_rload_avx512_f32x15(_: NoCall);
-    fn libpulp_v0_19_rload_avx512_f32x16(_: NoCall);
-
-    fn libpulp_v0_19_rstore_avx512_f32x0(_: NoCall);
-    fn libpulp_v0_19_rstore_avx512_f32x1(_: NoCall);
-    fn libpulp_v0_19_rstore_avx512_f32x2(_: NoCall);
-    fn libpulp_v0_19_rstore_avx512_f32x3(_: NoCall);
-    fn libpulp_v0_19_rstore_avx512_f32x4(_: NoCall);
-    fn libpulp_v0_19_rstore_avx512_f32x5(_: NoCall);
-    fn libpulp_v0_19_rstore_avx512_f32x6(_: NoCall);
-    fn libpulp_v0_19_rstore_avx512_f32x7(_: NoCall);
-    fn libpulp_v0_19_rstore_avx512_f32x8(_: NoCall);
-    fn libpulp_v0_19_rstore_avx512_f32x9(_: NoCall);
-    fn libpulp_v0_19_rstore_avx512_f32x10(_: NoCall);
-    fn libpulp_v0_19_rstore_avx512_f32x11(_: NoCall);
-    fn libpulp_v0_19_rstore_avx512_f32x12(_: NoCall);
-    fn libpulp_v0_19_rstore_avx512_f32x13(_: NoCall);
-    fn libpulp_v0_19_rstore_avx512_f32x14(_: NoCall);
-    fn libpulp_v0_19_rstore_avx512_f32x15(_: NoCall);
-    fn libpulp_v0_19_rstore_avx512_f32x16(_: NoCall);
-}
-
-static LOAD: [unsafe extern "C" fn(NoCall); 17] = [
-    libpulp_v0_19_load_f32x0,
-    libpulp_v0_19_load_f32x1,
-    libpulp_v0_19_load_f32x2,
-    libpulp_v0_19_load_f32x3,
-    libpulp_v0_19_load_f32x4,
-    libpulp_v0_19_load_f32x5,
-    libpulp_v0_19_load_f32x6,
-    libpulp_v0_19_load_f32x7,
-    libpulp_v0_19_load_f32x8,
-    libpulp_v0_19_load_f32x9,
-    libpulp_v0_19_load_f32x10,
-    libpulp_v0_19_load_f32x11,
-    libpulp_v0_19_load_f32x12,
-    libpulp_v0_19_load_f32x13,
-    libpulp_v0_19_load_f32x14,
-    libpulp_v0_19_load_f32x15,
-    libpulp_v0_19_load_f32x16,
-];
-static STORE: [unsafe extern "C" fn(NoCall); 17] = [
-    libpulp_v0_19_store_f32x0,
-    libpulp_v0_19_store_f32x1,
-    libpulp_v0_19_store_f32x2,
-    libpulp_v0_19_store_f32x3,
-    libpulp_v0_19_store_f32x4,
-    libpulp_v0_19_store_f32x5,
-    libpulp_v0_19_store_f32x6,
-    libpulp_v0_19_store_f32x7,
-    libpulp_v0_19_store_f32x8,
-    libpulp_v0_19_store_f32x9,
-    libpulp_v0_19_store_f32x10,
-    libpulp_v0_19_store_f32x11,
-    libpulp_v0_19_store_f32x12,
-    libpulp_v0_19_store_f32x13,
-    libpulp_v0_19_store_f32x14,
-    libpulp_v0_19_store_f32x15,
-    libpulp_v0_19_store_f32x16,
-];
-static RLOAD_AVX: [unsafe extern "C" fn(NoCall); 9] = [
-    libpulp_v0_19_rload_avx_f32x0,
-    libpulp_v0_19_rload_avx_f32x1,
-    libpulp_v0_19_rload_avx_f32x2,
-    libpulp_v0_19_rload_avx_f32x3,
-    libpulp_v0_19_rload_avx_f32x4,
-    libpulp_v0_19_rload_avx_f32x5,
-    libpulp_v0_19_rload_avx_f32x6,
-    libpulp_v0_19_rload_avx_f32x7,
-    libpulp_v0_19_rload_avx_f32x8,
-];
-static RSTORE_AVX: [unsafe extern "C" fn(NoCall); 9] = [
-    libpulp_v0_19_rstore_avx_f32x0,
-    libpulp_v0_19_rstore_avx_f32x1,
-    libpulp_v0_19_rstore_avx_f32x2,
-    libpulp_v0_19_rstore_avx_f32x3,
-    libpulp_v0_19_rstore_avx_f32x4,
-    libpulp_v0_19_rstore_avx_f32x5,
-    libpulp_v0_19_rstore_avx_f32x6,
-    libpulp_v0_19_rstore_avx_f32x7,
-    libpulp_v0_19_rstore_avx_f32x8,
-];
-#[cfg(feature = "nightly")]
-static RLOAD_AVX512: [unsafe extern "C" fn(NoCall); 17] = [
-    libpulp_v0_19_rload_avx512_f32x0,
-    libpulp_v0_19_rload_avx512_f32x1,
-    libpulp_v0_19_rload_avx512_f32x2,
-    libpulp_v0_19_rload_avx512_f32x3,
-    libpulp_v0_19_rload_avx512_f32x4,
-    libpulp_v0_19_rload_avx512_f32x5,
-    libpulp_v0_19_rload_avx512_f32x6,
-    libpulp_v0_19_rload_avx512_f32x7,
-    libpulp_v0_19_rload_avx512_f32x8,
-    libpulp_v0_19_rload_avx512_f32x9,
-    libpulp_v0_19_rload_avx512_f32x10,
-    libpulp_v0_19_rload_avx512_f32x11,
-    libpulp_v0_19_rload_avx512_f32x12,
-    libpulp_v0_19_rload_avx512_f32x13,
-    libpulp_v0_19_rload_avx512_f32x14,
-    libpulp_v0_19_rload_avx512_f32x15,
-    libpulp_v0_19_rload_avx512_f32x16,
-];
-#[cfg(feature = "nightly")]
-static RSTORE_AVX512: [unsafe extern "C" fn(NoCall); 17] = [
-    libpulp_v0_19_rstore_avx512_f32x0,
-    libpulp_v0_19_rstore_avx512_f32x1,
-    libpulp_v0_19_rstore_avx512_f32x2,
-    libpulp_v0_19_rstore_avx512_f32x3,
-    libpulp_v0_19_rstore_avx512_f32x4,
-    libpulp_v0_19_rstore_avx512_f32x5,
-    libpulp_v0_19_rstore_avx512_f32x6,
-    libpulp_v0_19_rstore_avx512_f32x7,
-    libpulp_v0_19_rstore_avx512_f32x8,
-    libpulp_v0_19_rstore_avx512_f32x9,
-    libpulp_v0_19_rstore_avx512_f32x10,
-    libpulp_v0_19_rstore_avx512_f32x11,
-    libpulp_v0_19_rstore_avx512_f32x12,
-    libpulp_v0_19_rstore_avx512_f32x13,
-    libpulp_v0_19_rstore_avx512_f32x14,
-    libpulp_v0_19_rstore_avx512_f32x15,
-    libpulp_v0_19_rstore_avx512_f32x16,
-];
-
-core::arch::global_asm!(
-    "
-    .global libpulp_v0_19_load_f32x0
-    .global libpulp_v0_19_load_f32x1
-    .global libpulp_v0_19_load_f32x2
-    .global libpulp_v0_19_load_f32x3
-    .global libpulp_v0_19_load_f32x4
-    .global libpulp_v0_19_load_f32x5
-    .global libpulp_v0_19_load_f32x6
-    .global libpulp_v0_19_load_f32x7
-    .global libpulp_v0_19_load_f32x8
-    .global libpulp_v0_19_load_f32x9
-    .global libpulp_v0_19_load_f32x10
-    .global libpulp_v0_19_load_f32x11
-    .global libpulp_v0_19_load_f32x12
-    .global libpulp_v0_19_load_f32x13
-    .global libpulp_v0_19_load_f32x14
-    .global libpulp_v0_19_load_f32x15
-    .global libpulp_v0_19_load_f32x16
-
-    .global libpulp_v0_19_store_f32x0
-    .global libpulp_v0_19_store_f32x1
-    .global libpulp_v0_19_store_f32x2
-    .global libpulp_v0_19_store_f32x3
-    .global libpulp_v0_19_store_f32x4
-    .global libpulp_v0_19_store_f32x5
-    .global libpulp_v0_19_store_f32x6
-    .global libpulp_v0_19_store_f32x7
-    .global libpulp_v0_19_store_f32x8
-    .global libpulp_v0_19_store_f32x9
-    .global libpulp_v0_19_store_f32x10
-    .global libpulp_v0_19_store_f32x11
-    .global libpulp_v0_19_store_f32x12
-    .global libpulp_v0_19_store_f32x13
-    .global libpulp_v0_19_store_f32x14
-    .global libpulp_v0_19_store_f32x15
-    .global libpulp_v0_19_store_f32x16
-
-    .global libpulp_v0_19_rload_avx512_f32x0
-    .global libpulp_v0_19_rload_avx512_f32x1
-    .global libpulp_v0_19_rload_avx512_f32x2
-    .global libpulp_v0_19_rload_avx512_f32x3
-    .global libpulp_v0_19_rload_avx512_f32x4
-    .global libpulp_v0_19_rload_avx512_f32x5
-    .global libpulp_v0_19_rload_avx512_f32x6
-    .global libpulp_v0_19_rload_avx512_f32x7
-    .global libpulp_v0_19_rload_avx512_f32x8
-    .global libpulp_v0_19_rload_avx512_f32x9
-    .global libpulp_v0_19_rload_avx512_f32x10
-    .global libpulp_v0_19_rload_avx512_f32x11
-    .global libpulp_v0_19_rload_avx512_f32x12
-    .global libpulp_v0_19_rload_avx512_f32x13
-    .global libpulp_v0_19_rload_avx512_f32x14
-    .global libpulp_v0_19_rload_avx512_f32x15
-    .global libpulp_v0_19_rload_avx512_f32x16
-
-    .global libpulp_v0_19_rstore_avx512_f32x0
-    .global libpulp_v0_19_rstore_avx512_f32x1
-    .global libpulp_v0_19_rstore_avx512_f32x2
-    .global libpulp_v0_19_rstore_avx512_f32x3
-    .global libpulp_v0_19_rstore_avx512_f32x4
-    .global libpulp_v0_19_rstore_avx512_f32x5
-    .global libpulp_v0_19_rstore_avx512_f32x6
-    .global libpulp_v0_19_rstore_avx512_f32x7
-    .global libpulp_v0_19_rstore_avx512_f32x8
-    .global libpulp_v0_19_rstore_avx512_f32x9
-    .global libpulp_v0_19_rstore_avx512_f32x10
-    .global libpulp_v0_19_rstore_avx512_f32x11
-    .global libpulp_v0_19_rstore_avx512_f32x12
-    .global libpulp_v0_19_rstore_avx512_f32x13
-    .global libpulp_v0_19_rstore_avx512_f32x14
-    .global libpulp_v0_19_rstore_avx512_f32x15
-    .global libpulp_v0_19_rstore_avx512_f32x16
-
-    .global libpulp_v0_19_rload_avx_f32x0
-    .global libpulp_v0_19_rload_avx_f32x1
-    .global libpulp_v0_19_rload_avx_f32x2
-    .global libpulp_v0_19_rload_avx_f32x3
-    .global libpulp_v0_19_rload_avx_f32x4
-    .global libpulp_v0_19_rload_avx_f32x5
-    .global libpulp_v0_19_rload_avx_f32x6
-    .global libpulp_v0_19_rload_avx_f32x7
-    .global libpulp_v0_19_rload_avx_f32x8
-
-    .global libpulp_v0_19_rstore_avx_f32x0
-    .global libpulp_v0_19_rstore_avx_f32x1
-    .global libpulp_v0_19_rstore_avx_f32x2
-    .global libpulp_v0_19_rstore_avx_f32x3
-    .global libpulp_v0_19_rstore_avx_f32x4
-    .global libpulp_v0_19_rstore_avx_f32x5
-    .global libpulp_v0_19_rstore_avx_f32x6
-    .global libpulp_v0_19_rstore_avx_f32x7
-    .global libpulp_v0_19_rstore_avx_f32x8
-
-    libpulp_v0_19_load_f32x0:
-        vxorps xmm0, xmm0, xmm0
-        ret
-    libpulp_v0_19_store_f32x0:
-        ret
-
-
-    libpulp_v0_19_load_f32x1:
-        vmovss xmm0, [rax]
-        ret
-    libpulp_v0_19_store_f32x1:
-        vmovss [rax], xmm0
-        ret
-        vmovss xmm0, [rax]
-
-
-    libpulp_v0_19_load_f32x2:
-        vmovsd xmm0, [rax]
-        ret
-    libpulp_v0_19_store_f32x2:
-        vmovsd [rax], xmm0
-        ret
-
-
-    libpulp_v0_19_load_f32x3:
-        vmovsd xmm0, [rax]
-        vmovss xmm1, [rax + 8]
-        vunpcklpd xmm0, xmm0, xmm1
-        ret
-    libpulp_v0_19_store_f32x3:
-        vmovsd [rax], xmm0
-        vunpckhpd xmm0, xmm0, xmm0
-        vmovss [rax + 8], xmm0
-        ret
-
-
-    libpulp_v0_19_load_f32x4:
-        vmovups xmm0, [rax]
-        ret
-    libpulp_v0_19_store_f32x4:
-        vmovups [rax], xmm0
-        ret
-
-
-    libpulp_v0_19_load_f32x5:
-        vmovups xmm0, [rax]
-        vmovss xmm1, [rax + 16]
-        vinsertf128 ymm0, ymm0, xmm1, 0x1
-        ret
-    libpulp_v0_19_store_f32x5:
-        vmovups [rax], xmm0
-        vextractf128 xmm0, ymm0, 0x1
-        vmovss [rax + 16], xmm0
-        ret
-
-
-    libpulp_v0_19_load_f32x6:
-        vmovups xmm0, [rax]
-        vmovsd xmm1, [rax + 16]
-        vinsertf128 ymm0, ymm0, xmm1, 0x1
-        ret
-    libpulp_v0_19_store_f32x6:
-        vmovups [rax], xmm0
-        vextractf128 xmm0, ymm0, 0x1
-        vmovsd [rax + 16], xmm0
-        ret
-
-
-    libpulp_v0_19_load_f32x7:
-        vmovsd xmm0, [rax + 16]
-        vmovss xmm1, [rax + 24]
-        vunpcklpd xmm1, xmm0, xmm1
-        vmovups xmm0, [rax]
-        vinsertf128 ymm0, ymm0, xmm1, 0x1
-        ret
-    libpulp_v0_19_store_f32x7:
-        vmovups [rax], xmm0
-        vextractf128 xmm0, ymm0, 0x1
-        vmovsd [rax + 16], xmm0
-        vunpckhpd xmm0, xmm0, xmm0
-        vmovss [rax + 24], xmm0
-        ret
-
-
-    libpulp_v0_19_load_f32x8:
-        vmovups ymm0, [rax]
-        ret
-    libpulp_v0_19_store_f32x8:
-        vmovups [rax], ymm0
-        ret
-
-
-    libpulp_v0_19_load_f32x9:
-        vmovups ymm0, [rax]
-        vmovss xmm1, [rax + 32]
-        vinsertf32x4 zmm0, zmm0, xmm1, 0x2
-        ret
-    libpulp_v0_19_store_f32x9:
-        vmovups [rax], ymm0
-        vextractf32x4 xmm0, zmm0, 0x2
-        vmovss [rax + 32], xmm0
-        ret
-
-
-    libpulp_v0_19_load_f32x10:
-        vmovups ymm0, [rax]
-        vmovsd xmm1, [rax + 32]
-        vinsertf32x4 zmm0, zmm0, xmm1, 0x2
-        ret
-    libpulp_v0_19_store_f32x10:
-        vmovups [rax], ymm0
-        vextractf32x4 xmm0, zmm0, 0x2
-        vmovsd [rax + 32], xmm0
-        ret
-
-
-    libpulp_v0_19_load_f32x11:
-        vmovsd xmm0, [rax + 32]
-        vmovss xmm1, [rax + 40]
-        vunpcklpd xmm1, xmm0, xmm1
-        vmovups ymm0, [rax]
-        vinsertf32x4 zmm0, zmm0, xmm1, 0x2
-        ret
-    libpulp_v0_19_store_f32x11:
-        vmovups [rax], ymm0
-        vextractf32x4 xmm0, zmm0, 0x2
-        vmovsd [rax + 32], xmm0
-        vunpckhpd xmm0, xmm0, xmm0
-        vmovss [rax + 40], xmm0
-        ret
-
-
-    libpulp_v0_19_load_f32x12:
-        vmovups ymm0, [rax]
-        vmovups xmm1, [rax + 32]
-        vinsertf32x4 zmm0, zmm0, xmm1, 0x2
-        ret
-    libpulp_v0_19_store_f32x12:
-        vmovups [rax], ymm0
-        vextractf32x4 xmm0, zmm0, 0x2
-        vmovups [rax + 32], xmm0
-        ret
-
-
-    libpulp_v0_19_load_f32x13:
-        vmovups xmm0, [rax + 32]
-        vmovss xmm1, [rax + 48]
-        vinsertf128 ymm1, ymm0, xmm1, 0x1
-        vmovups ymm0, [rax]
-        vinsertf32x8 zmm0, zmm0, ymm1, 0x1
-        ret
-    libpulp_v0_19_store_f32x13:
-        vmovups [rax], ymm0
-        vextractf32x8 ymm0, zmm0, 0x1
-        vmovups [rax + 32], xmm0
-        vextractf128 xmm0, ymm0, 0x1
-        vmovss [rax + 48], xmm0
-        ret
-
-
-    libpulp_v0_19_load_f32x14:
-        vmovups xmm0, [rax + 32]
-        vmovsd xmm1, [rax + 48]
-        vinsertf128 ymm1, ymm0, xmm1, 0x1
-        vmovups ymm0, [rax]
-        vinsertf32x8 zmm0, zmm0, ymm1, 0x1
-        ret
-    libpulp_v0_19_store_f32x14:
-        vmovups [rax], ymm0
-        vextractf32x8 ymm0, zmm0, 0x1
-        vmovups [rax + 32], xmm0
-        vextractf128 xmm0, ymm0, 0x1
-        vmovsd [rax + 48], xmm0
-        ret
-
-
-    libpulp_v0_19_load_f32x15:
-        vmovsd xmm0, [rax + 48]
-        vmovss xmm1, [rax + 56]
-        vunpcklpd xmm1, xmm0, xmm1
-        vmovups xmm0, [rax + 32]
-        vinsertf128 ymm1, ymm0, xmm1, 0x1
-        vmovups ymm0, [rax]
-        vinsertf32x8 zmm0, zmm0, ymm1, 0x1
-        ret
-    libpulp_v0_19_store_f32x15:
-        vmovups [rax], ymm0
-        vextractf32x8 ymm0, zmm0, 0x1
-        vmovups [rax + 32], xmm0
-        vextractf128 xmm0, ymm0, 0x1
-        vmovsd [rax + 48], xmm0
-        vunpckhpd xmm0, xmm0, xmm0
-        vmovss [rax + 56], xmm0
-        ret
-
-
-    libpulp_v0_19_load_f32x16:
-        vmovups zmm0, [rax]
-        ret
-    libpulp_v0_19_store_f32x16:
-        vmovups [rax], zmm0
-        ret
-
-
-
-
-    libpulp_v0_19_rload_avx_f32x0:
-        vxorps xmm0, xmm0, xmm0
-        ret
-    libpulp_v0_19_rstore_avx_f32x0:
-        ret
-
-
-    libpulp_v0_19_rload_avx_f32x1:
-        vmovss xmm0, [rax]
-        vpermilps xmm0, xmm0, 0b00011011
-        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
-        ret
-    libpulp_v0_19_rstore_avx_f32x1:
-        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
-        vpermilps xmm0, xmm0, 0b00011011
-        vmovss [rax], xmm0
-        ret
-
-
-    libpulp_v0_19_rload_avx_f32x2:
-        vmovsd xmm0, [rax]
-        vpermilps xmm0, xmm0, 0b01001110
-        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
-        ret
-    libpulp_v0_19_rstore_avx_f32x2:
-        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
-        vpermilps xmm0, xmm0, 0b01001110
-        vmovsd [rax], xmm0
-        ret
-
-
-    libpulp_v0_19_rload_avx_f32x3:
-        vmovss xmm0, [rax]
-        vmovsd xmm1, [rax + 4]
-        vshufps xmm0, xmm0, xmm1, 0b01000001
-        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
-        ret
-    libpulp_v0_19_rstore_avx_f32x3:
-        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
-        vpermilps xmm0, xmm0, 0b00011110
-        vmovsd [rax + 4], xmm0
-        vunpckhpd xmm0, xmm0, xmm0
-        vmovss [rax], xmm0
-        ret
-
-
-    libpulp_v0_19_rload_avx_f32x4:
-        vmovups xmm0, [rax]
-        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
-        ret
-    libpulp_v0_19_rstore_avx_f32x4:
-        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
-        vmovups [rax], xmm0
-        ret
-
-
-    libpulp_v0_19_rload_avx_f32x5:
-        vmovss xmm0, [rax]
-        vpermilps xmm0, xmm0, 0b00011011
-        vmovups xmm1, [rax + 4]
-        vinsertf128 ymm0, ymm0, xmm1, 0x1
-        ret
-    libpulp_v0_19_rstore_avx_f32x5:
-        vextractf128 xmm1, ymm0, 0x1
-        vmovups [rax + 4], xmm1
-        vpermilps xmm0, xmm0, 0b00011011
-        vmovss [rax], xmm0
-        ret
-
-
-    libpulp_v0_19_rload_avx_f32x6:
-        vmovsd xmm0, [rax]
-        vpermilps xmm0, xmm0, 0b01001110
-        vmovups xmm1, [rax + 8]
-        vinsertf128 ymm0, ymm0, xmm1, 0x1
-        ret
-    libpulp_v0_19_rstore_avx_f32x6:
-        vextractf128 xmm1, ymm0, 0x1
-        vmovups [rax + 8], xmm1
-        vpermilps xmm0, xmm0, 0b01001110
-        vmovsd [rax], xmm0
-        ret
-
-
-    libpulp_v0_19_rload_avx_f32x7:
-        vmovss xmm0, [rax]
-        vmovsd xmm1, [rax + 4]
-        vshufps xmm0, xmm0, xmm1, 0b01000001
-        vmovups xmm1, [rax + 12]
-        vinsertf128 ymm0, ymm0, xmm1, 0x1
-        ret
-    libpulp_v0_19_rstore_avx_f32x7:
-        vextractf128 xmm1, ymm0, 0x1
-        vmovups [rax + 12], xmm1
-        vpermilps xmm0, xmm0, 0b00011110
-        vmovsd [rax + 4], xmm0
-        vunpckhpd xmm0, xmm0, xmm0
-        vmovss [rax], xmm0
-        ret
-
-
-    libpulp_v0_19_rload_avx_f32x8:
-        vmovups ymm0, [rax]
-        ret
-    libpulp_v0_19_rstore_avx_f32x8:
-        vmovups [rax], ymm0
-        ret
-
-
-
-
-    libpulp_v0_19_rload_avx512_f32x0:
-        vxorps xmm0, xmm0, xmm0
-        ret
-    libpulp_v0_19_rstore_avx512_f32x0:
-        ret
-
-
-    libpulp_v0_19_rload_avx512_f32x1:
-        vmovss xmm0, [rax]
-        vpermilps xmm0, xmm0, 0b00011011
-        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
-        ret
-    libpulp_v0_19_rstore_avx512_f32x1:
-        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
-        vpermilps xmm0, xmm0, 0b00011011
-        vmovss [rax], xmm0
-        ret
-
-
-    libpulp_v0_19_rload_avx512_f32x2:
-        vmovsd xmm0, [rax]
-        vpermilps xmm0, xmm0, 0b01001110
-        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
-        ret
-    libpulp_v0_19_rstore_avx512_f32x2:
-        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
-        vpermilps xmm0, xmm0, 0b01001110
-        vmovsd [rax], xmm0
-        ret
-
-
-    libpulp_v0_19_rload_avx512_f32x3:
-        vmovss xmm0, [rax]
-        vmovsd xmm1, [rax + 4]
-        vshufps xmm0, xmm0, xmm1, 0b01000001
-        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
-        ret
-    libpulp_v0_19_rstore_avx512_f32x3:
-        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
-        vpermilps xmm0, xmm0, 0b00011110
-        vmovsd [rax + 4], xmm0
-        vunpckhpd xmm0, xmm0, xmm0
-        vmovss [rax], xmm0
-        ret
-
-
-    libpulp_v0_19_rload_avx512_f32x4:
-        vmovups xmm0, [rax]
-        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
-        ret
-    libpulp_v0_19_rstore_avx512_f32x4:
-        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
-        vmovups [rax], xmm0
-        ret
-
-
-    libpulp_v0_19_rload_avx512_f32x5:
-        vmovss xmm0, [rax]
-        vpermilps xmm0, xmm0, 0b00011011
-        vmovups xmm1, [rax + 4]
-        vinsertf128 ymm0, ymm1, xmm0, 0x1
-        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
-        ret
-    libpulp_v0_19_rstore_avx512_f32x5:
-        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
-        vmovups [rax + 4], xmm0
-        vextractf128 xmm0, ymm0, 0x1
-        vpermilps xmm0, xmm0, 0b00011011
-        vmovss [rax], xmm0
-        ret
-
-
-    libpulp_v0_19_rload_avx512_f32x6:
-        vmovsd xmm0, [rax]
-        vpermilps xmm0, xmm0, 0b01001110
-        vmovups xmm1, [rax + 8]
-        vinsertf128 ymm0, ymm1, xmm0, 0x1
-        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
-        ret
-    libpulp_v0_19_rstore_avx512_f32x6:
-        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
-        vmovups [rax + 8], xmm0
-        vextractf128 xmm0, ymm0, 0x1
-        vpermilps xmm0, xmm0, 0b01001110
-        vmovsd [rax], xmm0
-        ret
-
-
-    libpulp_v0_19_rload_avx512_f32x7:
-        vmovss xmm0, [rax]
-        vmovsd xmm1, [rax + 4]
-        vshufps xmm0, xmm0, xmm1, 0b01000001
-        vmovups xmm1, [rax + 12]
-        vinsertf128 ymm0, ymm1, xmm0, 0x1
-        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
-        ret
-    libpulp_v0_19_rstore_avx512_f32x7:
-        vshuff32x4 zmm0, zmm0, zmm0, 0b00011011
-        vmovups [rax + 12], xmm0
-        vextractf128 xmm0, ymm0, 0x1
-        vpermilps xmm0, xmm0, 0b00011110
-        vmovsd [rax + 4], xmm0
-        vunpckhpd xmm0, xmm0, xmm0
-        vmovss [rax], xmm0
-        ret
-
-
-    libpulp_v0_19_rload_avx512_f32x8:
-        vmovups ymm0, [rax]
-        vshuff32x4 zmm0, zmm0, zmm0, 0b01001110
-        ret
-    libpulp_v0_19_rstore_avx512_f32x8:
-        vshuff32x4 zmm0, zmm0, zmm0, 0b01001110
-        vmovups [rax], ymm0
-        ret
-
-
-    libpulp_v0_19_rload_avx512_f32x9:
-        vmovss xmm0, [rax]
-        vpermilps xmm0, xmm0, 0b00011011
-        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
-        vmovups ymm1, [rax + 4]
-        vinsertf32x8 zmm0, zmm0, ymm1, 0x1
-        ret
-    libpulp_v0_19_rstore_avx512_f32x9:
-        vextractf32x8 ymm1, zmm0, 0x1
-        vmovups [rax + 4], ymm1
-        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
-        vpermilps xmm0, xmm0, 0b00011011
-        vmovss [rax], xmm0
-        ret
-
-    libpulp_v0_19_rload_avx512_f32x10:
-        vmovsd xmm0, [rax]
-        vpermilps xmm0, xmm0, 0b01001110
-        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
-        vmovups ymm1, [rax + 8]
-        vinsertf32x8 zmm0, zmm0, ymm1, 0x1
-        ret
-    libpulp_v0_19_rstore_avx512_f32x10:
-        vextractf32x8 ymm1, zmm0, 0x1
-        vmovups [rax + 8], ymm1
-        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
-        vpermilps xmm0, xmm0, 0b01001110
-        vmovsd [rax], xmm0
-        ret
-
-    libpulp_v0_19_rload_avx512_f32x11:
-        call libpulp_v0_19_rload_avx_f32x3
-        vmovups ymm1, [rax + 12]
-        vinsertf32x8 zmm0, zmm0, ymm1, 0x1
-        ret
-    libpulp_v0_19_rstore_avx512_f32x11:
-        vextractf32x8 ymm1, zmm0, 0x1
-        vmovups [rax + 12], ymm1
-        jmp libpulp_v0_19_rstore_avx_f32x3
-
-    libpulp_v0_19_rload_avx512_f32x12:
-        vmovups xmm0, [rax]
-        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
-        vmovups ymm1, [rax + 16]
-        vinsertf32x8 zmm0, zmm0, ymm1, 0x1
-        ret
-    libpulp_v0_19_rstore_avx512_f32x12:
-        vextractf32x8 ymm1, zmm0, 0x1
-        vmovups [rax + 16], ymm1
-        vperm2f128 ymm0, ymm0, ymm0, 0b00000001
-        vmovups [rax], xmm0
-        ret
-
-    libpulp_v0_19_rload_avx512_f32x13:
-        vmovss xmm0, [rax]
-        vpermilps xmm0, xmm0, 0b00011011
-        vmovups xmm1, [rax + 4]
-        vinsertf128 ymm0, ymm0, xmm1, 0x1
-        vmovups ymm1, [rax + 20]
-        vinsertf32x8 zmm0, zmm0, ymm1, 0x1
-        ret
-    libpulp_v0_19_rstore_avx512_f32x13:
-        vextractf32x8 ymm1, zmm0, 0x1
-        vmovups [rax + 20], ymm1
-        vextractf128 xmm1, ymm0, 0x1
-        vmovups [rax + 4], xmm1
-        vpermilps xmm0, xmm0, 0b00011011
-        vmovss [rax], xmm0
-        ret
-
-    libpulp_v0_19_rload_avx512_f32x14:
-        vmovsd xmm0, [rax]
-        vpermilps xmm0, xmm0, 0b01001110
-        vmovups xmm1, [rax + 8]
-        vinsertf128 ymm0, ymm0, xmm1, 0x1
-        vmovups ymm1, [rax + 24]
-        vinsertf32x8 zmm0, zmm0, ymm1, 0x1
-        ret
-    libpulp_v0_19_rstore_avx512_f32x14:
-        vextractf32x8 ymm1, zmm0, 0x1
-        vmovups [rax + 24], ymm1
-        vextractf128 xmm1, ymm0, 0x1
-        vmovups [rax + 8], xmm1
-        vpermilps xmm0, xmm0, 0b01001110
-        vmovsd [rax], xmm0
-        ret
-
-    libpulp_v0_19_rload_avx512_f32x15:
-        vmovss xmm0, [rax]
-        vmovsd xmm1, [rax + 4]
-        vshufps xmm0, xmm0, xmm1, 0b01000001
-        vmovups xmm1, [rax + 12]
-        vinsertf128 ymm0, ymm0, xmm1, 0x1
-        vmovups ymm1, [rax + 28]
-        vinsertf32x8 zmm0, zmm0, ymm1, 0x1
-        ret
-    libpulp_v0_19_rstore_avx512_f32x15:
-        vextractf32x8 ymm1, zmm0, 0x1
-        vmovups [rax + 28], ymm1
-        vextractf128 xmm1, ymm0, 0x1
-        vmovups [rax + 12], xmm1
-        vpermilps xmm0, xmm0, 0b00011110
-        vmovsd [rax + 4], xmm0
-        vunpckhpd xmm0, xmm0, xmm0
-        vmovss [rax], xmm0
-        ret
-
-
-    libpulp_v0_19_rload_avx512_f32x16:
-        vmovups zmm0, [rax]
-        ret
-    libpulp_v0_19_rstore_avx512_f32x16:
-        vmovups [rax], zmm0
-        ret"
-);
+include!(concat!(env!("OUT_DIR"), "/x86_64_asm.rs"));
 
 #[cfg(test)]
 mod tests {
@@ -13193,196 +12181,6 @@ mod tests {
     }
 
     #[test]
-    fn test_aligned() {
-        #[repr(align(128))]
-        #[derive(Copy, Clone, Debug)]
-        struct Aligned<T>(T);
-
-        if let Some(simd) = V3::try_new() {
-            {
-                let data = Aligned([
-                    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-                    22, 23, 24, 25, 26, 27, 28, 29, 30, 31u32,
-                ]);
-                let data = data.0.as_slice();
-                let none = 0;
-                {
-                    // loading aligned data
-                    let offset = simd.align_offset_u32s(data.as_ptr(), data.len());
-                    let (prefix, body, suffix) = simd.as_aligned_simd_u32s(data, offset);
-                    assert_eq!(prefix.read(), u32x8(0, 1, 2, 3, 4, 5, 6, 7),);
-                    assert_eq!(
-                        body,
-                        [
-                            u32x8(8, 9, 10, 11, 12, 13, 14, 15),
-                            u32x8(16, 17, 18, 19, 20, 21, 22, 23),
-                        ],
-                    );
-                    assert_eq!(suffix.read(), u32x8(24, 25, 26, 27, 28, 29, 30, 31),);
-                }
-                {
-                    // loading aligned data with one chunk
-                    let data = &data[0..8];
-                    let offset = simd.align_offset_u32s(data.as_ptr(), data.len());
-                    let (prefix, body, suffix) = simd.as_aligned_simd_u32s(data, offset);
-                    assert_eq!(prefix.read(), u32x8(0, 1, 2, 3, 4, 5, 6, 7),);
-                    assert_eq!(body, []);
-                    assert_eq!(
-                        suffix.read(),
-                        u32x8(none, none, none, none, none, none, none, none),
-                    );
-                }
-                {
-                    // loading aligned data with one partial chunk
-                    let data = &data[0..3];
-                    let offset = simd.align_offset_u32s(data.as_ptr(), data.len());
-                    let (prefix, body, suffix) = simd.as_aligned_simd_u32s(data, offset);
-                    assert_eq!(prefix.read(), u32x8(0, 1, 2, none, none, none, none, none),);
-                    assert_eq!(body, []);
-                    assert_eq!(
-                        suffix.read(),
-                        u32x8(none, none, none, none, none, none, none, none),
-                    );
-                }
-                {
-                    // loading aligned data with two chunks
-                    let data = &data[0..16];
-                    let offset = simd.align_offset_u32s(data.as_ptr(), data.len());
-                    let (prefix, body, suffix) = simd.as_aligned_simd_u32s(data, offset);
-                    assert_eq!(prefix.read(), u32x8(0, 1, 2, 3, 4, 5, 6, 7),);
-                    assert_eq!(body, []);
-                    assert_eq!(suffix.read(), u32x8(8, 9, 10, 11, 12, 13, 14, 15),);
-                }
-                {
-                    // loading unaligned data
-                    let data = &data[3..];
-                    let offset = simd.align_offset_u32s(data.as_ptr(), data.len());
-                    let (prefix, body, suffix) = simd.as_aligned_simd_u32s(data, offset);
-                    assert_eq!(prefix.read(), u32x8(none, none, none, 3, 4, 5, 6, 7),);
-                    assert_eq!(
-                        body,
-                        [
-                            u32x8(8, 9, 10, 11, 12, 13, 14, 15),
-                            u32x8(16, 17, 18, 19, 20, 21, 22, 23),
-                        ],
-                    );
-                    assert_eq!(suffix.read(), u32x8(24, 25, 26, 27, 28, 29, 30, 31),);
-                }
-                {
-                    // loading unaligned data with one chunk
-                    let data = &data[3..11];
-                    let offset = simd.align_offset_u32s(data.as_ptr(), data.len());
-                    let (prefix, body, suffix) = simd.as_aligned_simd_u32s(data, offset);
-                    assert_eq!(prefix.read(), u32x8(none, none, none, 3, 4, 5, 6, 7),);
-                    assert_eq!(body, []);
-                    assert_eq!(suffix.read(), u32x8(8, 9, 10, none, none, none, none, none),);
-                }
-                {
-                    // loading unaligned data with one partial chunk
-                    let data = &data[3..6];
-                    let offset = simd.align_offset_u32s(data.as_ptr(), data.len());
-                    let (prefix, body, suffix) = simd.as_aligned_simd_u32s(data, offset);
-                    assert_eq!(prefix.read(), u32x8(none, none, none, 3, 4, 5, none, none),);
-                    assert_eq!(body, []);
-                    assert_eq!(
-                        suffix.read(),
-                        u32x8(none, none, none, none, none, none, none, none),
-                    );
-                }
-                {
-                    // loading unaligned data with two chunks
-                    let data = &data[3..19];
-                    let offset = simd.align_offset_u32s(data.as_ptr(), data.len());
-                    let (prefix, body, suffix) = simd.as_aligned_simd_u32s(data, offset);
-                    assert_eq!(prefix.read(), u32x8(none, none, none, 3, 4, 5, 6, 7),);
-                    assert_eq!(body, [u32x8(8, 9, 10, 11, 12, 13, 14, 15)]);
-                    assert_eq!(
-                        suffix.read(),
-                        u32x8(16, 17, 18, none, none, none, none, none),
-                    );
-                }
-            }
-
-            {
-                let data = Aligned(
-                    [
-                        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-                        21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31u32,
-                    ]
-                    .map(|i| i as f32),
-                );
-                let data = data.0.as_slice();
-                let none = c32 { re: 0.0, im: 0.0 };
-                {
-                    let data = bytemuck::cast_slice(data);
-                    let offset = simd.align_offset_c32s(data.as_ptr(), data.len());
-                    let (prefix, body, suffix) = simd.as_aligned_simd_c32s(data, offset);
-                    assert_eq!(prefix.read(), f32x8(0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0),);
-                    assert_eq!(
-                        body,
-                        [
-                            f32x8(8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0),
-                            f32x8(16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0),
-                        ],
-                    );
-                    assert_eq!(
-                        suffix.read(),
-                        f32x8(24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0),
-                    );
-                }
-                {
-                    let data = bytemuck::cast_slice(&data[1..31]);
-                    let offset = simd.align_offset_c32s(data.as_ptr(), data.len());
-                    let (prefix, body, suffix) = simd.as_aligned_simd_c32s(data, offset);
-                    assert_eq!(prefix.read(), f32x8(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0),);
-                    assert_eq!(
-                        body,
-                        [
-                            f32x8(9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0),
-                            f32x8(17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0),
-                        ],
-                    );
-                    assert_eq!(
-                        suffix.read(),
-                        f32x8(25.0, 26.0, 27.0, 28.0, 29.0, 30.0, none.re, none.im),
-                    );
-                }
-                {
-                    let data = bytemuck::cast_slice(&data[4..8]);
-                    let offset = simd.align_offset_c32s(data.as_ptr(), data.len());
-                    let (prefix, body, suffix) = simd.as_aligned_simd_c32s(data, offset);
-                    assert_eq!(
-                        prefix.read(),
-                        f32x8(none.re, none.im, none.re, none.im, 4.0, 5.0, 6.0, 7.0),
-                    );
-                    assert_eq!(body, []);
-                    assert_eq!(
-                        suffix.read(),
-                        f32x8(
-                            none.re, none.im, none.re, none.im, none.re, none.im, none.re, none.im
-                        ),
-                    );
-                }
-
-                {
-                    let data = bytemuck::cast_slice(&data[4..10]);
-                    let offset = simd.align_offset_c32s(data.as_ptr(), data.len());
-                    let (prefix, body, suffix) = simd.as_aligned_simd_c32s(data, offset);
-                    assert_eq!(
-                        prefix.read(),
-                        f32x8(none.re, none.im, none.re, none.im, 4.0, 5.0, 6.0, 7.0),
-                    );
-                    assert_eq!(body, []);
-                    assert_eq!(
-                        suffix.read(),
-                        f32x8(8.0, 9.0, none.re, none.im, none.re, none.im, none.re, none.im),
-                    );
-                }
-            }
-        }
-    }
-
-    #[test]
     fn test_rotate() {
         if let Some(simd) = V3::try_new() {
             for amount in 0..128 {
@@ -13442,13 +12240,17 @@ mod tests {
             for n in 0..=8 {
                 let src = core::array::from_fn::<f32, 8, _>(|i| i as _);
                 let mut dst = [0.0f32; 8];
+                let zero = dst;
 
-                let src = &src[..n];
-                let dst = &mut dst[..n];
+                {
+                    let src = &src[..n];
+                    let dst = &mut dst[..n];
 
-                simd.partial_store_f32s(dst, simd.partial_load_f32s(src));
+                    simd.partial_store_f32s(dst, simd.partial_load_f32s(src));
 
-                assert_eq!(src, dst);
+                    assert_eq!(src, dst);
+                }
+                assert_eq!(dst[n..], zero[n..]);
             }
         }
 
@@ -13457,74 +12259,17 @@ mod tests {
             for n in 0..=16 {
                 let src = core::array::from_fn::<f32, 16, _>(|i| i as _);
                 let mut dst = [0.0f32; 16];
+                let zero = dst;
 
-                let src = &src[..n];
-                let dst = &mut dst[..n];
+                {
+                    let src = &src[..n];
+                    let dst = &mut dst[..n];
 
-                simd.partial_store_f32s(dst, simd.partial_load_f32s(src));
+                    simd.partial_store_f32s(dst, simd.partial_load_f32s(src));
 
-                assert_eq!(src, dst);
-            }
-        }
-
-        #[cfg(feature = "nightly")]
-        if let Some(simd) = V4::try_new() {
-            let simd = V4_256(simd);
-            for n in 0..=8 {
-                let src = core::array::from_fn::<f32, 8, _>(|i| i as _);
-                let mut dst = [0.0f32; 8];
-
-                let src = &src[..n];
-                let dst = &mut dst[..n];
-
-                simd.partial_store_f32s(dst, simd.partial_load_f32s(src));
-
-                assert_eq!(src, dst);
-            }
-        }
-
-        if let Some(simd) = V3::try_new() {
-            for n in 0..=8 {
-                let src = core::array::from_fn::<f32, 8, _>(|i| (i + 1) as _);
-                let mut dst = [0.0f32; 8];
-
-                let src = &src[..n];
-                let dst = &mut dst[..n];
-
-                simd.partial_store_last_f32s(dst, simd.partial_load_last_f32s(src));
-
-                assert_eq!(src, dst);
-            }
-        }
-
-        #[cfg(feature = "nightly")]
-        if let Some(simd) = V4::try_new() {
-            for n in 0..=16 {
-                let src = core::array::from_fn::<f32, 16, _>(|i| i as _);
-                let mut dst = [0.0f32; 16];
-
-                let src = &src[..n];
-                let dst = &mut dst[..n];
-
-                simd.partial_store_last_f32s(dst, simd.partial_load_last_f32s(src));
-
-                assert_eq!(src, dst);
-            }
-        }
-
-        #[cfg(feature = "nightly")]
-        if let Some(simd) = V4::try_new() {
-            let simd = V4_256(simd);
-            for n in 0..=8 {
-                let src = core::array::from_fn::<f32, 8, _>(|i| i as _);
-                let mut dst = [0.0f32; 8];
-
-                let src = &src[..n];
-                let dst = &mut dst[..n];
-
-                simd.partial_store_last_f32s(dst, simd.partial_load_last_f32s(src));
-
-                assert_eq!(src, dst);
+                    assert_eq!(src, dst);
+                }
+                assert_eq!(dst[n..], zero[n..]);
             }
         }
     }
