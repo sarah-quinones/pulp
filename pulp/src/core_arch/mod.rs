@@ -196,7 +196,7 @@ macro_rules! simd_type {
             $(#[$attr])*
             #[derive(Clone, Copy, Debug)]
             $vis struct $name{
-                $($feature_vis $ident : $crate::__impl_type!($feature),)*
+                $($feature_vis $ident : $crate::core_arch::__impl_type!($feature),)*
             }
 
             #[allow(dead_code)]
@@ -210,7 +210,7 @@ macro_rules! simd_type {
                 #[inline]
                 pub unsafe fn new_unchecked() -> Self {
                     Self{
-                        $($ident: <$crate::__impl_type!($feature)>::new_unchecked(),)*
+                        $($ident: <$crate::core_arch::__impl_type!($feature)>::new_unchecked(),)*
                     }
                 }
 
@@ -220,7 +220,7 @@ macro_rules! simd_type {
                 pub fn try_new() -> Option<Self> {
                     if Self::is_available() {
                         Some(Self{
-                            $($ident: <$crate::__impl_type!($feature)>::new_unchecked(),)*
+                            $($ident: <$crate::core_arch::__impl_type!($feature)>::new_unchecked(),)*
                         })
                     } else {
                         None
@@ -247,7 +247,7 @@ macro_rules! simd_type {
 
                 #[inline(never)]
                 fn __detect_is_available() -> bool {
-                    let out = true $(&& <$crate::__impl_type!($feature)>::is_available())*;
+                    let out = true $(&& <$crate::core_arch::__impl_type!($feature)>::is_available())*;
                     Self::__static_available().store(out as u8, ::core::sync::atomic::Ordering::Relaxed);
                     out
                 }
@@ -262,111 +262,52 @@ macro_rules! simd_type {
                 pub fn vectorize<F: $crate::NullaryFnOnce>(self, f: F) -> F::Output {
                     $(#[target_feature(enable = $feature)])*
                     #[inline]
-                    unsafe fn __impl<F: $crate::NullaryFnOnce>(f: F) -> F::Output {
+                    unsafe fn imp_fastcall<F: $crate::NullaryFnOnce>(
+                        f0: ::core::mem::MaybeUninit<::core::primitive::usize>,
+                        f1: ::core::mem::MaybeUninit<::core::primitive::usize>,
+                        f2: ::core::mem::MaybeUninit<::core::primitive::usize>,
+                        f3: ::core::mem::MaybeUninit<::core::primitive::usize>,
+                        f4: ::core::mem::MaybeUninit<::core::primitive::usize>,
+                        f5: ::core::mem::MaybeUninit<::core::primitive::usize>,
+                        f6: ::core::mem::MaybeUninit<::core::primitive::usize>,
+                        f7: ::core::mem::MaybeUninit<::core::primitive::usize>,
+                    ) -> F::Output {
+                        let f: F = core::mem::transmute_copy(&[f0, f1, f2, f3, f4, f5, f6, f7]);
                         f.call()
                     }
-                    unsafe { __impl(f) }
-                }
 
-                /// Takes a proof of the existence of this SIMD token (`self`), and returns a
-                /// persistent reference to it.
-                #[inline]
-                pub fn to_ref(self) -> &'static Self {
-                    const __ASSERT_ZST: () = {
-                        assert!(::core::mem::size_of::<$name>() == 0);
-                    };
-                    unsafe { &*::core::ptr::NonNull::dangling().as_ptr() }
-                }
-            }
-        )*
-    };
-}
-
-macro_rules! internal_simd_type {
-    (
-        $(
-            $(#[$attr: meta])*
-            $vis: vis struct $name: ident {
-                $($feature_vis: vis $ident: ident: $feature: tt),* $(,)?
-            }
-        )*
-    ) => {
-        $(
-            #[repr(transparent)]
-            #[allow(dead_code)]
-            $(#[$attr])*
-            #[derive(Clone, Copy, Debug)]
-            $vis struct $name{
-                $($feature_vis $ident : __impl_type!($feature),)*
-            }
-
-            #[allow(dead_code)]
-            $(#[$attr])*
-            impl $name {
-                /// Returns a SIMD token type without checking if the required CPU features for
-                /// this type are available.
-                ///
-                /// # Safety
-                /// - the required CPU features must be available.
-                #[inline]
-                pub unsafe fn new_unchecked() -> Self {
-                    Self{
-                        $($ident: <__impl_type!($feature)>::new_unchecked(),)*
+                    $(#[target_feature(enable = $feature)])*
+                    #[inline]
+                    unsafe fn imp<F: $crate::NullaryFnOnce>(f: F) -> F::Output {
+                        f.call()
                     }
-                }
 
-                /// Returns a SIMD token type if the required CPU features for this type are
-                /// available, otherwise returns `None`.
-                #[inline]
-                pub fn try_new() -> Option<Self> {
-                    if Self::is_available() {
-                        Some(Self{
-                            $($ident: <__impl_type!($feature)>::new_unchecked(),)*
-                        })
+                    if const { ::core::mem::size_of::<F>() <= 8 * ::core::mem::size_of::<::core::primitive::usize>() } {
+                        union Pad<T> {
+                            t: ::core::mem::ManuallyDrop<T>,
+                            __u: ::core::mem::MaybeUninit<[usize; 8]>,
+                        }
+
+                        let f = Pad {
+                            t: ::core::mem::ManuallyDrop::new(f),
+                        };
+                        let p = (&f) as *const _ as *const MaybeUninit<usize>;
+
+                        unsafe {
+                            imp_fastcall::<F>(
+                                *p.add(0),
+                                *p.add(1),
+                                *p.add(2),
+                                *p.add(3),
+                                *p.add(4),
+                                *p.add(5),
+                                *p.add(6),
+                                *p.add(7),
+                            )
+                        }
                     } else {
-                        None
+                        unsafe { imp(f) }
                     }
-                }
-
-                #[inline(always)]
-                fn __static_available() -> &'static ::core::sync::atomic::AtomicU8 {
-                    static AVAILABLE: ::core::sync::atomic::AtomicU8 = ::core::sync::atomic::AtomicU8::new(u8::MAX);
-                    &AVAILABLE
-                }
-
-                /// Returns `true` if the required CPU features for this type are available,
-                /// otherwise returns `false`.
-                #[inline]
-                pub fn is_available() -> bool {
-                    let mut available = Self::__static_available().load(::core::sync::atomic::Ordering::Relaxed);
-                    if available == u8::MAX {
-                        available = Self::__detect_is_available() as u8;
-                    }
-
-                    available != 0
-                }
-
-                #[inline(never)]
-                fn __detect_is_available() -> bool {
-                    let out = true $(&& <__impl_type!($feature)>::is_available())*;
-                    Self::__static_available().store(out as u8, ::core::sync::atomic::Ordering::Relaxed);
-                    out
-                }
-
-                /// Vectorizes the given function as if the CPU features for this type were applied
-                /// to it.
-                ///
-                /// # Note
-                /// For the vectorization to work properly, the given function must be inlined.
-                /// Consider marking it as `#[inline(always)]`
-                #[inline(always)]
-                pub fn vectorize<F: $crate::NullaryFnOnce>(self, f: F) -> F::Output {
-                    $(#[target_feature(enable = $feature)])*
-                    #[inline]
-                    unsafe fn __impl<F: $crate::NullaryFnOnce>(f: F) -> F::Output {
-                        f.call()
-                    }
-                    unsafe { __impl(f) }
                 }
 
                 /// Takes a proof of the existence of this SIMD token (`self`), and returns a
@@ -383,7 +324,8 @@ macro_rules! internal_simd_type {
     };
 }
 
-pub(crate) use internal_simd_type;
+#[rustfmt::skip]
+pub use __impl_type as __impl_type;
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 #[cfg_attr(docsrs, doc(cfg(any(target_arch = "x86", target_arch = "x86_64"))))]

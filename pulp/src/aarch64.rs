@@ -1,5 +1,4 @@
 use super::*;
-use crate::core_arch::internal_simd_type;
 use core::arch::aarch64::*;
 use core::arch::asm;
 use core::mem::transmute;
@@ -76,7 +75,7 @@ unsafe fn vcmlaq_270_f32(mut acc: float32x4_t, lhs: float32x4_t, rhs: float32x4_
     acc
 }
 
-internal_simd_type! {
+simd_type! {
     #[allow(missing_docs)]
     pub struct Neon {
         pub neon: "neon",

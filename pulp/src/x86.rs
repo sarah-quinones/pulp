@@ -1,5 +1,4 @@
 use super::*;
-use crate::core_arch::internal_simd_type;
 #[cfg(feature = "nightly")]
 use crate::core_arch::x86::{Avx512bw_Avx512vl, Avx512f_Avx512vl};
 #[cfg(target_arch = "x86")]
@@ -343,7 +342,7 @@ impl f64x8 {
 }
 
 // https://en.wikipedia.org/wiki/X86-64#Microarchitecture_levels
-internal_simd_type! {
+simd_type! {
     /// SSE instruction set.
     #[allow(missing_docs)]
     pub struct V2 {

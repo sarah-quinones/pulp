@@ -33,7 +33,16 @@ rand = "0.8.5"
 name = "bench"
 harness = false
 
+[[example]]
+name = "dot_product"
+doc-scrape-examples = true
+
+[[example]]
+name = "basic"
+doc-scrape-examples = true
+
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 targets = ["x86_64-unknown-linux-gnu", "aarch64-apple-darwin"]
