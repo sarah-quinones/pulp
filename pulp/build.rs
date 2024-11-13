@@ -183,7 +183,10 @@ fn main() {
     let mut wrote_empty = false;
 
     let mut names = vec![];
-    let ver = "v0_19";
+    let ver_major = env::var("CARGO_PKG_VERSION_MAJOR").unwrap();
+    let ver_minor = env::var("CARGO_PKG_VERSION_MINOR").unwrap();
+    let ver_patch = env::var("CARGO_PKG_VERSION_PATCH").unwrap();
+    let ver = format!("v{ver_major}_{ver_minor}_{ver_patch}");
 
     for end in 1..=max {
         for start in 0..max {
