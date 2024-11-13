@@ -3283,11 +3283,11 @@ impl Neon {
 
     #[inline(always)]
     pub fn reduce_sum_f32x4(self, a: f32x4) -> f32 {
-        (a.0 + a.1) + (a.2 + a.3)
+        (a.0 + a.2) + (a.1 + a.3)
     }
     #[inline(always)]
     pub fn reduce_product_f32x4(self, a: f32x4) -> f32 {
-        (a.0 * a.1) * (a.2 * a.3)
+        (a.0 * a.2) * (a.1 * a.3)
     }
     #[inline(always)]
     pub fn reduce_min_f32x4(self, a: f32x4) -> f32 {
