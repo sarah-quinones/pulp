@@ -120,6 +120,8 @@ static NEON_ROTATE_IDX: [u8x16; 16] = [
 ];
 
 impl Simd for Neon {
+    const REGISTER_COUNT: usize = 32;
+
     type m32s = m32x4;
     type f32s = f32x4;
     type c32s = f32x4;
@@ -1180,6 +1182,8 @@ impl Simd for Neon {
 }
 
 impl Simd for NeonFcma {
+    const REGISTER_COUNT: usize = 32;
+
     type m32s = m32x4;
     type f32s = f32x4;
     type c32s = f32x4;

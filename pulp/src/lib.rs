@@ -120,6 +120,13 @@ impl<T> From<T> for MemMask<T> {
     }
 }
 
+impl<T: Copy> MemMask<T> {
+    #[inline]
+    pub fn mask(self) -> T {
+        self.mask
+    }
+}
+
 mod seal {
     pub trait Seal {}
 }
@@ -223,6 +230,18 @@ unsafe impl<T: Pod> Interleave for T {}
 
 pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
     const IS_SCALAR: bool = false;
+
+    const U64_LANES: usize = size_of::<Self::u64s>() / size_of::<u64>();
+    const I64_LANES: usize = size_of::<Self::i64s>() / size_of::<i64>();
+    const F64_LANES: usize = size_of::<Self::f64s>() / size_of::<f64>();
+    const C64_LANES: usize = size_of::<Self::c64s>() / size_of::<c64>();
+
+    const U32_LANES: usize = size_of::<Self::u32s>() / size_of::<u32>();
+    const I32_LANES: usize = size_of::<Self::i32s>() / size_of::<i32>();
+    const F32_LANES: usize = size_of::<Self::f32s>() / size_of::<f32>();
+    const C32_LANES: usize = size_of::<Self::c32s>() / size_of::<c32>();
+
+    const REGISTER_COUNT: usize;
 
     type m32s: Debug + Copy + Send + Sync + Zeroable + NoUninit + 'static;
     type f32s: Debug + Copy + Send + Sync + Pod + 'static;
@@ -1424,6 +1443,7 @@ impl Scalar {
 impl Seal for Scalar {}
 impl Simd for Scalar {
     const IS_SCALAR: bool = true;
+    const REGISTER_COUNT: usize = 16;
 
     #[inline]
     fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {

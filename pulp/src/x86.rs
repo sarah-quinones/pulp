@@ -289,6 +289,94 @@ static AVX512_256_ROTATE_IDX: [u32x8; 8] = [
     u32x8(1, 2, 3, 4, 5, 6, 7, 0),
 ];
 
+static V3_U32_MASKS: [u32x8; 9] = [
+    u32x8(0, 0, 0, 0, 0, 0, 0, 0),
+    u32x8(!0, 0, 0, 0, 0, 0, 0, 0),
+    u32x8(!0, !0, 0, 0, 0, 0, 0, 0),
+    u32x8(!0, !0, !0, 0, 0, 0, 0, 0),
+    u32x8(!0, !0, !0, !0, 0, 0, 0, 0),
+    u32x8(!0, !0, !0, !0, !0, 0, 0, 0),
+    u32x8(!0, !0, !0, !0, !0, !0, 0, 0),
+    u32x8(!0, !0, !0, !0, !0, !0, !0, 0),
+    u32x8(!0, !0, !0, !0, !0, !0, !0, !0),
+];
+static V3_U32_LAST_MASKS: [u32x8; 9] = [
+    u32x8(0, 0, 0, 0, 0, 0, 0, 0),
+    u32x8(0, 0, 0, 0, 0, 0, 0, !0),
+    u32x8(0, 0, 0, 0, 0, 0, !0, !0),
+    u32x8(0, 0, 0, 0, 0, !0, !0, !0),
+    u32x8(0, 0, 0, 0, !0, !0, !0, !0),
+    u32x8(0, 0, 0, !0, !0, !0, !0, !0),
+    u32x8(0, 0, !0, !0, !0, !0, !0, !0),
+    u32x8(0, !0, !0, !0, !0, !0, !0, !0),
+    u32x8(!0, !0, !0, !0, !0, !0, !0, !0),
+];
+#[cfg(feature = "nightly")]
+static V4_U32_MASKS: [u16; 17] = [
+    0b0000000000000000,
+    0b0000000000000001,
+    0b0000000000000011,
+    0b0000000000000111,
+    0b0000000000001111,
+    0b0000000000011111,
+    0b0000000000111111,
+    0b0000000001111111,
+    0b0000000011111111,
+    0b0000000111111111,
+    0b0000001111111111,
+    0b0000011111111111,
+    0b0000111111111111,
+    0b0001111111111111,
+    0b0011111111111111,
+    0b0111111111111111,
+    0b1111111111111111,
+];
+#[cfg(feature = "nightly")]
+static V4_U64_MASKS: [u8; 9] = [
+    0b00000000, 0b00000001, 0b00000011, 0b00000111, 0b00001111, 0b00011111, 0b00111111, 0b01111111,
+    0b11111111,
+];
+#[cfg(feature = "nightly")]
+static V4_U32_LAST_MASKS: [u16; 17] = [
+    0b0000000000000000,
+    0b1000000000000000,
+    0b1100000000000000,
+    0b1110000000000000,
+    0b1111000000000000,
+    0b1111100000000000,
+    0b1111110000000000,
+    0b1111111000000000,
+    0b1111111100000000,
+    0b1111111110000000,
+    0b1111111111000000,
+    0b1111111111100000,
+    0b1111111111110000,
+    0b1111111111111000,
+    0b1111111111111100,
+    0b1111111111111110,
+    0b1111111111111111,
+];
+#[cfg(feature = "nightly")]
+static V4_U64_LAST_MASKS: [u8; 9] = [
+    0b00000000, 0b10000000, 0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110,
+    0b11111111,
+];
+#[cfg(feature = "nightly")]
+static V4_256_U32_MASKS: [u8; 9] = [
+    0b00000000, 0b00000001, 0b00000011, 0b00000111, 0b00001111, 0b00011111, 0b00111111, 0b01111111,
+    0b11111111,
+];
+#[cfg(feature = "nightly")]
+static V4_256_U32_LAST_MASKS: [u8; 9] = [
+    0b00000000, 0b10000000, 0b11000000, 0b11100000, 0b11110000, 0b11111000, 0b11111100, 0b11111110,
+    0b11111111,
+];
+#[cfg(feature = "nightly")]
+static V4_256_U64_MASKS: [u8; 5] = [0b00000000, 0b00000001, 0b00000011, 0b00000111, 0b00001111];
+#[cfg(feature = "nightly")]
+static V4_256_U64_LAST_MASKS: [u8; 5] =
+    [0b00000000, 0b00001000, 0b00001100, 0b00001110, 0b00001111];
+
 impl Seal for V2 {}
 impl Seal for V3 {}
 impl Seal for V3Scalar {}
@@ -621,6 +709,8 @@ impl V2 {
 }
 
 impl Simd for V3 {
+    const REGISTER_COUNT: usize = 16;
+
     type m32s = m32x8;
     type f32s = f32x8;
     type i32s = i32x8;
@@ -1433,7 +1523,12 @@ impl Simd for V3 {
         let start = (2 * start.min(4)) as usize;
         let end = (2 * end.min(4)) as usize;
         MemMask {
-            mask: unsafe { core::mem::zeroed() },
+            mask: unsafe {
+                self.and_m64s(
+                    transmute(V3_U32_LAST_MASKS[start]),
+                    transmute(V3_U32_MASKS[end]),
+                )
+            },
             load: Some(LD_ST[2 * (16 * end + start) + 0]),
             store: Some(LD_ST[2 * (16 * end + start) + 1]),
         }
@@ -1444,7 +1539,12 @@ impl Simd for V3 {
         let start = start.min(8) as usize;
         let end = end.min(8) as usize;
         MemMask {
-            mask: unsafe { core::mem::zeroed() },
+            mask: unsafe {
+                self.and_m32s(
+                    transmute(V3_U32_LAST_MASKS[start]),
+                    transmute(V3_U32_MASKS[end]),
+                )
+            },
             load: Some(LD_ST[2 * (16 * end + start) + 0]),
             store: Some(LD_ST[2 * (16 * end + start) + 1]),
         }
@@ -1728,6 +1828,8 @@ impl Simd for V3 {
 }
 
 impl Simd for V3Scalar {
+    const REGISTER_COUNT: usize = 16;
+
     const IS_SCALAR: bool = true;
 
     type m32s = bool;
@@ -2603,6 +2705,8 @@ impl Simd for V3Scalar {
 
 #[cfg(feature = "nightly")]
 impl Simd for V4 {
+    const REGISTER_COUNT: usize = 32;
+
     type m32s = b16;
     type f32s = f32x16;
     type i32s = i32x16;
@@ -3332,7 +3436,7 @@ impl Simd for V4 {
         let start = (2 * start.min(8)) as usize;
         let end = (2 * end.min(8)) as usize;
         MemMask {
-            mask: unsafe { core::mem::zeroed() },
+            mask: b8(V4_U64_LAST_MASKS[start] & V4_U64_MASKS[end]),
             load: Some(LD_ST[2 * (16 * end + start) + 0]),
             store: Some(LD_ST[2 * (16 * end + start) + 1]),
         }
@@ -3343,7 +3447,7 @@ impl Simd for V4 {
         let start = start.min(16) as usize;
         let end = end.min(16) as usize;
         MemMask {
-            mask: unsafe { core::mem::zeroed() },
+            mask: b16(V4_U32_LAST_MASKS[start] & V4_U32_MASKS[end]),
             load: Some(LD_ST[2 * (16 * end + start) + 0]),
             store: Some(LD_ST[2 * (16 * end + start) + 1]),
         }
@@ -3659,6 +3763,8 @@ impl Simd for V4 {
 
 #[cfg(feature = "nightly")]
 impl Simd for V4_256 {
+    const REGISTER_COUNT: usize = 32;
+
     type m32s = b8;
     type f32s = f32x8;
     type i32s = i32x8;
@@ -4225,7 +4331,7 @@ impl Simd for V4_256 {
         let start = (2 * start.min(4)) as usize;
         let end = (2 * end.min(4)) as usize;
         MemMask {
-            mask: unsafe { core::mem::zeroed() },
+            mask: b8(V4_256_U64_LAST_MASKS[start] & V4_256_U64_MASKS[end]),
             load: Some(LD_ST[2 * (16 * end + start) + 0]),
             store: Some(LD_ST[2 * (16 * end + start) + 1]),
         }
@@ -4236,7 +4342,7 @@ impl Simd for V4_256 {
         let start = start.min(8) as usize;
         let end = end.min(8) as usize;
         MemMask {
-            mask: unsafe { core::mem::zeroed() },
+            mask: b8(V4_256_U32_LAST_MASKS[start] & V4_256_U32_MASKS[end]),
             load: Some(LD_ST[2 * (16 * end + start) + 0]),
             store: Some(LD_ST[2 * (16 * end + start) + 1]),
         }
