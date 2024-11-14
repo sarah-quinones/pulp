@@ -3433,8 +3433,8 @@ impl Simd for V4 {
 
     #[inline(always)]
     fn mask_between_m64s(self, start: u64, end: u64) -> MemMask<Self::m64s> {
-        let start = (2 * start.min(8)) as usize;
-        let end = (2 * end.min(8)) as usize;
+        let start = (start.min(8)) as usize;
+        let end = (end.min(8)) as usize;
         MemMask {
             mask: b8(V4_U64_LAST_MASKS[start] & V4_U64_MASKS[end]),
             load: Some(LD_ST[2 * (16 * end + start) + 0]),
@@ -4328,8 +4328,8 @@ impl Simd for V4_256 {
 
     #[inline(always)]
     fn mask_between_m64s(self, start: u64, end: u64) -> MemMask<Self::m64s> {
-        let start = (2 * start.min(4)) as usize;
-        let end = (2 * end.min(4)) as usize;
+        let start = (start.min(4)) as usize;
+        let end = (end.min(4)) as usize;
         MemMask {
             mask: b8(V4_256_U64_LAST_MASKS[start] & V4_256_U64_MASKS[end]),
             load: Some(LD_ST[2 * (16 * end + start) + 0]),
