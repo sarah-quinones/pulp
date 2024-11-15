@@ -49,9 +49,12 @@ unsafe fn avx512_store_u32s(slice: &mut [u32], value: u32x16) {
 unsafe fn avx_ld_u32s(ptr: *const u32, f: unsafe extern "C" fn()) -> u32x8 {
     let ret: __m256;
     core::arch::asm! {
-        "call {f}",
+        "lea rcx, [rip + 2f]",
+        "jmp {f}",
+        "2:",
         f = in(reg) f,
         in("rax") ptr,
+        out("rcx") _,
         out("ymm0") ret,
         out("ymm1") _,
     };
@@ -65,9 +68,12 @@ unsafe fn avx_ld_u32s(ptr: *const u32, f: unsafe extern "C" fn()) -> u32x8 {
 unsafe fn avx512_ld_u32s(ptr: *const u32, f: unsafe extern "C" fn()) -> u32x16 {
     let ret: __m512;
     core::arch::asm! {
-        "call {f}",
+        "lea rcx, [rip + 2f]",
+        "jmp {f}",
+        "2:",
         f = in(reg) f,
         in("rax") ptr,
+        out("rcx") _,
         out("zmm0") ret,
         out("zmm1") _,
     };
@@ -79,10 +85,13 @@ unsafe fn avx512_ld_u32s(ptr: *const u32, f: unsafe extern "C" fn()) -> u32x16 {
 #[inline]
 unsafe fn avx_st_u32s(ptr: *mut u32, value: u32x8, f: unsafe extern "C" fn()) {
     core::arch::asm! {
-        "call {f}",
+        "lea rcx, [rip + 2f]",
+        "jmp {f}",
+        "2:",
         f = in(reg) f,
 
         in("rax") ptr,
+        out("rcx") _,
         inout("ymm0") cast::<_, __m256>(value) => _,
         out("ymm1") _,
     };
@@ -93,10 +102,13 @@ unsafe fn avx_st_u32s(ptr: *mut u32, value: u32x8, f: unsafe extern "C" fn()) {
 #[inline]
 unsafe fn avx512_st_u32s(ptr: *mut u32, value: u32x16, f: unsafe extern "C" fn()) {
     core::arch::asm! {
-        "call {f}",
+        "lea rcx, [rip + 2f]",
+        "jmp {f}",
+        "2:",
         f = in(reg) f,
 
         in("rax") ptr,
+        out("rcx") _,
         inout("zmm0") cast::<_, __m512>(value) => _,
         out("zmm1") _,
     };
@@ -1525,7 +1537,7 @@ impl Simd for V3 {
         MemMask {
             mask: unsafe {
                 self.and_m64s(
-                    transmute(V3_U32_LAST_MASKS[start]),
+                    transmute(V3_U32_LAST_MASKS[8 - start]),
                     transmute(V3_U32_MASKS[end]),
                 )
             },
@@ -1541,7 +1553,7 @@ impl Simd for V3 {
         MemMask {
             mask: unsafe {
                 self.and_m32s(
-                    transmute(V3_U32_LAST_MASKS[start]),
+                    transmute(V3_U32_LAST_MASKS[8 - start]),
                     transmute(V3_U32_MASKS[end]),
                 )
             },
@@ -3433,10 +3445,10 @@ impl Simd for V4 {
 
     #[inline(always)]
     fn mask_between_m64s(self, start: u64, end: u64) -> MemMask<Self::m64s> {
-        let start = (start.min(8)) as usize;
-        let end = (end.min(8)) as usize;
+        let start = (2 * start.min(8)) as usize;
+        let end = (2 * end.min(8)) as usize;
         MemMask {
-            mask: b8(V4_U64_LAST_MASKS[start] & V4_U64_MASKS[end]),
+            mask: b8(V4_U64_LAST_MASKS[8 - start / 2] & V4_U64_MASKS[end / 2]),
             load: Some(LD_ST[2 * (16 * end + start) + 0]),
             store: Some(LD_ST[2 * (16 * end + start) + 1]),
         }
@@ -3447,7 +3459,7 @@ impl Simd for V4 {
         let start = start.min(16) as usize;
         let end = end.min(16) as usize;
         MemMask {
-            mask: b16(V4_U32_LAST_MASKS[start] & V4_U32_MASKS[end]),
+            mask: b16(V4_U32_LAST_MASKS[16 - start] & V4_U32_MASKS[end]),
             load: Some(LD_ST[2 * (16 * end + start) + 0]),
             store: Some(LD_ST[2 * (16 * end + start) + 1]),
         }
@@ -4328,10 +4340,10 @@ impl Simd for V4_256 {
 
     #[inline(always)]
     fn mask_between_m64s(self, start: u64, end: u64) -> MemMask<Self::m64s> {
-        let start = (start.min(4)) as usize;
-        let end = (end.min(4)) as usize;
+        let start = (2 * start.min(4)) as usize;
+        let end = (2 * end.min(4)) as usize;
         MemMask {
-            mask: b8(V4_256_U64_LAST_MASKS[start] & V4_256_U64_MASKS[end]),
+            mask: b8(V4_256_U64_LAST_MASKS[4 - start / 2] & V4_256_U64_MASKS[end / 2]),
             load: Some(LD_ST[2 * (16 * end + start) + 0]),
             store: Some(LD_ST[2 * (16 * end + start) + 1]),
         }
@@ -4342,7 +4354,7 @@ impl Simd for V4_256 {
         let start = start.min(8) as usize;
         let end = end.min(8) as usize;
         MemMask {
-            mask: b8(V4_256_U32_LAST_MASKS[start] & V4_256_U32_MASKS[end]),
+            mask: b8(V4_256_U32_LAST_MASKS[8 - start] & V4_256_U32_MASKS[end]),
             load: Some(LD_ST[2 * (16 * end + start) + 0]),
             store: Some(LD_ST[2 * (16 * end + start) + 1]),
         }
@@ -12347,6 +12359,9 @@ mod tests {
                 let mut dst = [0.0f32; 8];
                 let zero = dst;
 
+                assert_eq!(simd.partial_load_f32s(&src[..n]), unsafe {
+                    simd.mask_load_ptr_f32s(simd.mask_between_m32s(0, n as u32), src.as_ptr())
+                });
                 {
                     let src = &src[..n];
                     let dst = &mut dst[..n];
@@ -12365,6 +12380,10 @@ mod tests {
                 let src = core::array::from_fn::<f32, 16, _>(|i| i as _);
                 let mut dst = [0.0f32; 16];
                 let zero = dst;
+
+                assert_eq!(simd.partial_load_f32s(&src[..n]), unsafe {
+                    simd.mask_load_ptr_f32s(simd.mask_between_m32s(0, n as u32), src.as_ptr())
+                });
 
                 {
                     let src = &src[..n];

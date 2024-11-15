@@ -202,14 +202,14 @@ fn main() {
                 f += &format!(".globl {ld}\n");
                 f += &format!("{ld}:\n");
                 f += &load_f32x16(start, end);
-                f += "ret\n";
+                f += "jmp rcx\n";
                 names.push(ld);
 
                 let st = format!("libpulp_{ver}_st_b32s_{mask:0>16b}");
                 f += &format!(".globl {st}\n");
                 f += &format!("{st}:\n");
                 f += &store_f32x16(start, end);
-                f += "ret\n";
+                f += "jmp rcx\n";
                 names.push(st);
             }
 
