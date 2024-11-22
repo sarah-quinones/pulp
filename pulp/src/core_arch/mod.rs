@@ -291,7 +291,7 @@ macro_rules! simd_type {
                         let f = Pad {
                             t: ::core::mem::ManuallyDrop::new(f),
                         };
-                        let p = (&f) as *const _ as *const MaybeUninit<usize>;
+                        let p = (&f) as *const _ as *const ::core::mem::MaybeUninit<usize>;
 
                         unsafe {
                             imp_fastcall::<F>(
