@@ -3769,14 +3769,14 @@ pub trait Iota64: Sized {
 
 impl<T> Iota32 for T {
     const IOTA: [core::mem::MaybeUninit<Self>; 32] = {
-        let mut iota = [const { core::mem::MaybeUninit::uninit() }; 32];
+        let mut iota = [const { core::mem::MaybeUninit::zeroed() }; 32];
         let mut i = 0;
         while i < 32 {
             let v = (&mut iota[i]) as *mut _ as *mut u32;
 
             let mut j = 0;
             while j < size_of::<T>() / size_of::<u32>() {
-                unsafe { *v.add(j) = i as u32 };
+                unsafe { v.add(j).write_unaligned(i as u32) };
                 j += 1;
             }
 
@@ -3787,14 +3787,14 @@ impl<T> Iota32 for T {
 }
 impl<T> Iota64 for T {
     const IOTA: [core::mem::MaybeUninit<Self>; 32] = {
-        let mut iota = [const { core::mem::MaybeUninit::uninit() }; 32];
+        let mut iota = [const { core::mem::MaybeUninit::zeroed() }; 32];
         let mut i = 0;
         while i < 32 {
             let v = (&mut iota[i]) as *mut _ as *mut u64;
 
             let mut j = 0;
             while j < size_of::<T>() / size_of::<u64>() {
-                unsafe { *v.add(j) = i as u64 };
+                unsafe { v.add(j).write_unaligned(i as u64) };
                 j += 1;
             }
 
