@@ -324,6 +324,7 @@ macro_rules! simd_type {
     };
 }
 
+#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
 #[rustfmt::skip]
 pub use __impl_type as __impl_type;
 
