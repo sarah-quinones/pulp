@@ -181,6 +181,14 @@ macro_rules! __impl_type {
     ("asimd") => { $crate::core_arch::aarch64::Asimd };
 }
 
+#[cfg(not(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64",)))]
+#[doc(hidden)]
+#[rustfmt::skip]
+#[macro_export]
+macro_rules! __impl_type {
+    ($tt: tt) => { compile_error!("unsupported arch") }
+}
+
 #[macro_export]
 macro_rules! simd_type {
     (
@@ -322,14 +330,6 @@ macro_rules! simd_type {
             }
         )*
     };
-}
-
-#[cfg(not(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64",)))]
-#[doc(hidden)]
-#[rustfmt::skip]
-#[macro_export]
-macro_rules! __impl_type {
-    ($tt: tt) => { compile_error!("unsupported arch") }
 }
 
 #[rustfmt::skip]

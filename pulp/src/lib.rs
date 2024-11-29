@@ -3767,7 +3767,6 @@ pub trait Iota64: Sized {
     const IOTA: [core::mem::MaybeUninit<Self>; 32];
 }
 
-#[cfg(feature = "nightly")]
 impl<T> Iota32 for T {
     const IOTA: [core::mem::MaybeUninit<Self>; 32] = {
         let mut iota = [const { core::mem::MaybeUninit::uninit() }; 32];
@@ -3786,7 +3785,6 @@ impl<T> Iota32 for T {
         iota
     };
 }
-#[cfg(feature = "nightly")]
 impl<T> Iota64 for T {
     const IOTA: [core::mem::MaybeUninit<Self>; 32] = {
         let mut iota = [const { core::mem::MaybeUninit::uninit() }; 32];
@@ -3803,33 +3801,6 @@ impl<T> Iota64 for T {
             i += 1;
         }
         iota
-    };
-}
-
-#[cfg(not(feature = "nightly"))]
-impl Iota32 for u32 {
-    const IOTA: [core::mem::MaybeUninit<Self>; 32] = {
-        let mut iota = [0u32; 32];
-        let mut i = 0;
-        while i < 32 {
-            iota[i] = i as _;
-
-            i += 1;
-        }
-        unsafe { core::mem::transmute(iota) }
-    };
-}
-#[cfg(not(feature = "nightly"))]
-impl Iota64 for u64 {
-    const IOTA: [core::mem::MaybeUninit<Self>; 32] = {
-        let mut iota = [0u64; 32];
-        let mut i = 0;
-        while i < 32 {
-            iota[i] = i as _;
-
-            i += 1;
-        }
-        unsafe { core::mem::transmute(iota) }
     };
 }
 
