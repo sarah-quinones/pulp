@@ -2427,7 +2427,7 @@ macro_rules! scalar_simd {
 
 				for i in 0..Self::C32_LANES {
 					out[i].re = fma_f32(a[i].re, b[i].re, -fma_f32(a[i].im, b[i].im, -c[i].re));
-					out[i].im = fma_f32(a[i].re, b[i].im, fma_f32(a[i].im, b[i].re, c[i].re));
+					out[i].im = fma_f32(a[i].re, b[i].im, fma_f32(a[i].im, b[i].re, c[i].im));
 				}
 
 				cast(out)
@@ -2442,7 +2442,7 @@ macro_rules! scalar_simd {
 
 				for i in 0..Self::C32_LANES {
 					out[i].re = fma_f32(a[i].re, b[i].re, fma_f32(a[i].im, b[i].im, c[i].re));
-					out[i].im = fma_f32(a[i].re, b[i].im, -fma_f32(a[i].im, b[i].re, -c[i].re));
+					out[i].im = fma_f32(a[i].re, b[i].im, -fma_f32(a[i].im, b[i].re, -c[i].im));
 				}
 
 				cast(out)
@@ -2840,7 +2840,7 @@ macro_rules! scalar_simd {
 
 				for i in 0..Self::C64_LANES {
 					out[i].re = fma_f64(a[i].re, b[i].re, -fma_f64(a[i].im, b[i].im, -c[i].re));
-					out[i].im = fma_f64(a[i].re, b[i].im, fma_f64(a[i].im, b[i].re, c[i].re));
+					out[i].im = fma_f64(a[i].re, b[i].im, fma_f64(a[i].im, b[i].re, c[i].im));
 				}
 
 				cast(out)
@@ -2855,7 +2855,7 @@ macro_rules! scalar_simd {
 
 				for i in 0..Self::C64_LANES {
 					out[i].re = fma_f64(a[i].re, b[i].re, fma_f64(a[i].im, b[i].im, c[i].re));
-					out[i].im = fma_f64(a[i].re, b[i].im, -fma_f64(a[i].im, b[i].re, -c[i].re));
+					out[i].im = fma_f64(a[i].re, b[i].im, -fma_f64(a[i].im, b[i].re, -c[i].im));
 				}
 
 				cast(out)
@@ -3095,14 +3095,14 @@ impl Simd for Scalar {
 	#[inline]
 	fn conj_mul_add_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
 		let re = fma_f32(a.re, b.re, fma_f32(a.im, b.im, c.re));
-		let im = fma_f32(a.re, b.im, -fma_f32(a.im, b.re, -c.re));
+		let im = fma_f32(a.re, b.im, -fma_f32(a.im, b.re, -c.im));
 		Complex { re, im }
 	}
 
 	#[inline]
 	fn conj_mul_add_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
 		let re = fma_f64(a.re, b.re, fma_f64(a.im, b.im, c.re));
-		let im = fma_f64(a.re, b.im, -fma_f64(a.im, b.re, -c.re));
+		let im = fma_f64(a.re, b.im, -fma_f64(a.im, b.re, -c.im));
 		Complex { re, im }
 	}
 
@@ -3361,14 +3361,14 @@ impl Simd for Scalar {
 	#[inline]
 	fn mul_add_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
 		let re = fma_f32(a.re, b.re, -fma_f32(a.im, b.im, -c.re));
-		let im = fma_f32(a.re, b.im, fma_f32(a.im, b.re, c.re));
+		let im = fma_f32(a.re, b.im, fma_f32(a.im, b.re, c.im));
 		Complex { re, im }
 	}
 
 	#[inline]
 	fn mul_add_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
 		let re = fma_f64(a.re, b.re, -fma_f64(a.im, b.im, -c.re));
-		let im = fma_f64(a.re, b.im, fma_f64(a.im, b.re, c.re));
+		let im = fma_f64(a.re, b.im, fma_f64(a.im, b.re, c.im));
 		Complex { re, im }
 	}
 
