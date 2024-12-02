@@ -1,40 +1,40 @@
 mod arch {
-    #[cfg(target_arch = "aarch64")]
-    pub use core::arch::aarch64::*;
-    #[cfg(target_arch = "wasm32")]
-    pub use core::arch::wasm32::*;
-    #[cfg(target_arch = "x86")]
-    pub use core::arch::x86::*;
-    #[cfg(target_arch = "x86_64")]
-    pub use core::arch::x86_64::*;
+	#[cfg(target_arch = "aarch64")]
+	pub use core::arch::aarch64::*;
+	#[cfg(target_arch = "wasm32")]
+	pub use core::arch::wasm32::*;
+	#[cfg(target_arch = "x86")]
+	pub use core::arch::x86::*;
+	#[cfg(target_arch = "x86_64")]
+	pub use core::arch::x86_64::*;
 
-    #[cfg(all(feature = "nightly", target_arch = "arm"))]
-    pub use core::arch::arm::*;
-    #[cfg(all(feature = "nightly", target_arch = "mips"))]
-    pub use core::arch::mips::*;
-    #[cfg(all(feature = "nightly", target_arch = "mips64"))]
-    pub use core::arch::mips64::*;
-    #[cfg(all(feature = "nightly", target_arch = "powerpc"))]
-    pub use core::arch::powerpc::*;
-    #[cfg(all(feature = "nightly", target_arch = "powerpc64"))]
-    pub use core::arch::powerpc64::*;
-    #[cfg(all(feature = "nightly", target_arch = "riscv32"))]
-    pub use core::arch::riscv32::*;
-    #[cfg(all(feature = "nightly", target_arch = "riscv64"))]
-    pub use core::arch::riscv64::*;
-    #[cfg(all(feature = "nightly", target_arch = "wasm64"))]
-    pub use core::arch::wasm64::*;
+	#[cfg(all(feature = "nightly", target_arch = "arm"))]
+	pub use core::arch::arm::*;
+	#[cfg(all(feature = "nightly", target_arch = "mips"))]
+	pub use core::arch::mips::*;
+	#[cfg(all(feature = "nightly", target_arch = "mips64"))]
+	pub use core::arch::mips64::*;
+	#[cfg(all(feature = "nightly", target_arch = "powerpc"))]
+	pub use core::arch::powerpc::*;
+	#[cfg(all(feature = "nightly", target_arch = "powerpc64"))]
+	pub use core::arch::powerpc64::*;
+	#[cfg(all(feature = "nightly", target_arch = "riscv32"))]
+	pub use core::arch::riscv32::*;
+	#[cfg(all(feature = "nightly", target_arch = "riscv64"))]
+	pub use core::arch::riscv64::*;
+	#[cfg(all(feature = "nightly", target_arch = "wasm64"))]
+	pub use core::arch::wasm64::*;
 }
 
 #[allow(unused_macros)]
 macro_rules! delegate {
-    ($(
+    ({$(
         $(#[$attr: meta])*
         $(unsafe $($placeholder: lifetime)?)?
         fn $func: ident $(<$(const $generic: ident: $generic_ty: ty),* $(,)?>)?(
             $($arg: ident: $ty: ty),* $(,)?
         ) $(-> $ret: ty)?;
-    )*) => {
+    )*}) => {
         $(
             $(#[$attr])*
             #[inline(always)]
@@ -48,28 +48,28 @@ macro_rules! delegate {
 #[cfg(all(feature = "std", any(target_arch = "x86", target_arch = "x86_64")))]
 #[macro_export]
 macro_rules! feature_detected {
-    ($feature: tt) => {
-        ::std::is_x86_feature_detected!($feature)
-    };
+	($feature: tt) => {
+		::std::is_x86_feature_detected!($feature)
+	};
 }
 
 #[cfg(all(feature = "std", target_arch = "aarch64"))]
 #[macro_export]
 macro_rules! feature_detected {
-    ($feature: tt) => {
-        ::std::arch::is_aarch64_feature_detected!($feature)
-    };
+	($feature: tt) => {
+		::std::arch::is_aarch64_feature_detected!($feature)
+	};
 }
 
 #[cfg(any(
-    not(feature = "std"),
-    not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))
+	not(feature = "std"),
+	not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))
 ))]
 #[macro_export]
 macro_rules! feature_detected {
-    ($feature: tt) => {
-        cfg!(target_feature = $feature)
-    };
+	($feature: tt) => {
+		cfg!(target_feature = $feature)
+	};
 }
 
 #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
@@ -102,7 +102,7 @@ macro_rules! __impl_type {
     ("avx512pf") => { $crate::core_arch::x86::Avx512pf };
     ("avx512bw") => { $crate::core_arch::x86::Avx512bw };
     ("avx512dq") => { $crate::core_arch::x86::Avx512dq };
-    ("avx512vl") => { $crate::core_arch::x86::Avx512vl };
+    ("avx512vl") => { $crate::core_arch::x86::Avx512f };
     ("avx512ifma") => { $crate::core_arch::x86::Avx512ifma };
     ("avx512vbmi") => { $crate::core_arch::x86::Avx512vbmi };
     ("avx512vpopcntdq") => { $crate::core_arch::x86::Avx512vpopcntdq };
@@ -199,6 +199,22 @@ macro_rules! simd_type {
             }
         )*
     ) => {
+        $crate::simd_type!({$(
+            $(#[$attr])*
+            $vis struct $name {
+                $($feature_vis $ident: target_feature!($feature),)*
+            }
+        )*});
+    };
+
+    ({
+        $(
+            $(#[$attr: meta])*
+            $vis: vis struct $name: ident {
+                $($feature_vis: vis $ident: ident: $_: ident!($feature: tt)),* $(,)?
+            }
+        )*
+    }) => {
         $(
             #[allow(dead_code)]
             $(#[$attr])*
@@ -333,6 +349,7 @@ macro_rules! simd_type {
 }
 
 #[rustfmt::skip]
+#[doc(hidden)]
 pub use __impl_type as __impl_type;
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]

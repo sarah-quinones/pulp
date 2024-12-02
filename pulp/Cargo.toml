@@ -15,11 +15,23 @@ bytemuck = { version = "1.15", features = ["aarch64_simd"] }
 num-complex = { version = "0.4.4", default-features = false, features = ["bytemuck"] }
 libm = { version = "0.2", default-features = false }
 reborrow = "0.5"
+cfg-if = "1.0.0"
 
 [features]
-default = ["std"]
+default = [
+  "std",
+  "x86-v3",
+]
+nightly = [
+  "bytemuck/nightly_stdsimd",
+]
 std = []
-nightly = ["bytemuck/nightly_stdsimd"]
+
+x86-v3 = []
+nightly-x86-v4 = [
+  "nightly",
+]
+
 macro = ["dep:pulp-macro"]
 
 [dev-dependencies]
