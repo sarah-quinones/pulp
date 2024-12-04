@@ -64,7 +64,9 @@
 	clippy::identity_op,
 	clippy::too_many_arguments,
 	clippy::type_complexity,
-	clippy::missing_transmute_annotations
+	clippy::missing_transmute_annotations,
+	clippy::tabs_in_doc_comments,
+	clippy::modulo_one
 )]
 #![cfg_attr(
 	all(feature = "nightly", any(target_arch = "x86", target_arch = "x86_64")),

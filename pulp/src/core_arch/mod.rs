@@ -37,6 +37,7 @@ macro_rules! delegate {
     )*}) => {
         $(
             $(#[$attr])*
+            #[allow(clippy::missing_safety_doc)]
             #[inline(always)]
             pub $(unsafe $($placeholder)?)? fn $func $(<$(const $generic: $generic_ty,)*>)?(self, $($arg: $ty,)*) $(-> $ret)? {
                 unsafe { arch::$func $(::<$($generic,)*>)?($($arg,)*) }

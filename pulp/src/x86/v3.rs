@@ -853,12 +853,12 @@ impl Simd for V3 {
 
 	#[inline(always)]
 	fn mul_add_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
-		self.mul_add_e_f32s(a, b, c)
+		cast!(self.fma._mm256_fmadd_ps(cast!(a), cast!(b), cast!(c)))
 	}
 
 	#[inline(always)]
 	fn mul_add_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
-		self.mul_add_e_f64s(a, b, c)
+		cast!(self.fma._mm256_fmadd_pd(cast!(a), cast!(b), cast!(c)))
 	}
 
 	#[inline(always)]
@@ -4993,15 +4993,15 @@ impl V3 {
 
 		let ab_lo = self.avx2._mm256_blend_epi32::<0b10101010>(
 			// a0b0_lo xxxxxxx a2b2_lo xxxxxxx
-			cast!(ab_evens),
+			ab_evens,
 			// xxxxxxx a1b1_lo xxxxxxx a3b3_lo
-			cast!(avx2._mm256_slli_epi64::<32>(ab_odds)),
+			avx2._mm256_slli_epi64::<32>(ab_odds),
 		);
 		let ab_hi = self.avx2._mm256_blend_epi32::<0b10101010>(
 			// a0b0_hi xxxxxxx a2b2_hi xxxxxxx
-			cast!(avx2._mm256_srli_epi64::<32>(ab_evens)),
+			avx2._mm256_srli_epi64::<32>(ab_evens),
 			// xxxxxxx a1b1_hi xxxxxxx a3b3_hi
-			cast!(ab_odds),
+			ab_odds,
 		);
 
 		(cast!(ab_lo), cast!(ab_hi))
@@ -5035,15 +5035,15 @@ impl V3 {
 
 		let ab_lo = self.avx2._mm256_blend_epi32::<0b10101010>(
 			// a0b0_lo xxxxxxx a2b2_lo xxxxxxx
-			cast!(ab_evens),
+			ab_evens,
 			// xxxxxxx a1b1_lo xxxxxxx a3b3_lo
-			cast!(avx2._mm256_slli_epi64::<32>(ab_odds)),
+			avx2._mm256_slli_epi64::<32>(ab_odds),
 		);
 		let ab_hi = self.avx2._mm256_blend_epi32::<0b10101010>(
 			// a0b0_hi xxxxxxx a2b2_hi xxxxxxx
-			cast!(avx2._mm256_srli_epi64::<32>(ab_evens)),
+			avx2._mm256_srli_epi64::<32>(ab_evens),
 			// xxxxxxx a1b1_hi xxxxxxx a3b3_hi
-			cast!(ab_odds),
+			ab_odds,
 		);
 
 		(cast!(ab_lo), cast!(ab_hi))

@@ -4434,16 +4434,16 @@ impl V4 {
 		let ab_lo = self.avx512f._mm512_mask_blend_epi32(
 			0b1010101010101010,
 			// a0b0_lo xxxxxxx a2b2_lo xxxxxxx
-			cast!(ab_evens),
+			ab_evens,
 			// xxxxxxx a1b1_lo xxxxxxx a3b3_lo
-			cast!(avx512f._mm512_slli_epi64::<32>(ab_odds)),
+			avx512f._mm512_slli_epi64::<32>(ab_odds),
 		);
 		let ab_hi = self.avx512f._mm512_mask_blend_epi32(
 			0b1010101010101010,
 			// a0b0_hi xxxxxxx a2b2_hi xxxxxxx
-			cast!(avx512f._mm512_srli_epi64::<32>(ab_evens)),
+			avx512f._mm512_srli_epi64::<32>(ab_evens),
 			// xxxxxxx a1b1_hi xxxxxxx a3b3_hi
-			cast!(ab_odds),
+			ab_odds,
 		);
 
 		(cast!(ab_lo), cast!(ab_hi))
@@ -4478,16 +4478,16 @@ impl V4 {
 		let ab_lo = self.avx512f._mm512_mask_blend_epi32(
 			0b1010101010101010,
 			// a0b0_lo xxxxxxx a2b2_lo xxxxxxx
-			cast!(ab_evens),
+			ab_evens,
 			// xxxxxxx a1b1_lo xxxxxxx a3b3_lo
-			cast!(avx512f._mm512_slli_epi64::<32>(ab_odds)),
+			avx512f._mm512_slli_epi64::<32>(ab_odds),
 		);
 		let ab_hi = self.avx512f._mm512_mask_blend_epi32(
 			0b1010101010101010,
 			// a0b0_hi xxxxxxx a2b2_hi xxxxxxx
-			cast!(avx512f._mm512_srli_epi64::<32>(ab_evens)),
+			avx512f._mm512_srli_epi64::<32>(ab_evens),
 			// xxxxxxx a1b1_hi xxxxxxx a3b3_hi
-			cast!(ab_odds),
+			ab_odds,
 		);
 
 		(cast!(ab_lo), cast!(ab_hi))
