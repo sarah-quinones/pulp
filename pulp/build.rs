@@ -198,14 +198,14 @@ fn main() {
 			}
 
 			if mask != 0 || !wrote_empty {
-				let ld = format!("_libpulp_{ver}_ld_b32s_{mask:0>16b}");
+				let ld = format!("libpulp_{ver}_ld_b32s_{mask:0>16b}");
 				f += &format!(".global {ld}\n");
 				f += &format!("{ld}:\n");
 				f += &load_f32x16(start, end);
 				f += "jmp rcx\n";
 				names.push(ld);
 
-				let st = format!("_libpulp_{ver}_st_b32s_{mask:0>16b}");
+				let st = format!("libpulp_{ver}_st_b32s_{mask:0>16b}");
 				f += &format!(".global {st}\n");
 				f += &format!("{st}:\n");
 				f += &store_f32x16(start, end);
@@ -222,7 +222,7 @@ fn main() {
 
 	f += "unsafe extern \"C\" {\n";
 	for name in &names {
-		f += &format!("fn {name}();\n");
+		f += &format!("#[link_name = \"{name}\"] fn {name}();\n");
 	}
 	f += "}\n";
 
@@ -237,8 +237,8 @@ fn main() {
 				}
 			}
 
-			let ld = format!("_libpulp_{ver}_ld_b32s_{mask:0>16b}");
-			let st = format!("_libpulp_{ver}_st_b32s_{mask:0>16b}");
+			let ld = format!("libpulp_{ver}_ld_b32s_{mask:0>16b}");
+			let st = format!("libpulp_{ver}_st_b32s_{mask:0>16b}");
 			f += &format!("{ld}, {st},\n");
 		}
 	}
