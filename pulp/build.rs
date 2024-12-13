@@ -222,7 +222,7 @@ fn main() {
 
 	f += "unsafe extern \"C\" {\n";
 	for name in &names {
-		f += &format!("#[link_name = \"{name}\"] fn {name}();\n");
+		f += &format!("#[link_name = \"\\x01{name}\"] fn {name}();\n");
 	}
 	f += "}\n";
 
