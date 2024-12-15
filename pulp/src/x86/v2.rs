@@ -19,13 +19,13 @@ simd_type!({
 impl Seal for V2 {}
 
 impl V2 {
-	/// Computes the absolute value of the elements of each lane of `a`.
+	/// Computes `abs(a)` for each lane of `a`.
 	#[inline(always)]
 	pub fn abs_f32x4(self, a: f32x4) -> f32x4 {
 		self.and_f32x4(a, cast!(self.splat_u32x4((1 << 31) - 1)))
 	}
 
-	/// Computes the absolute value of the elements of each lane of `a`.
+	/// Computes `abs(a)` for each lane of `a`.
 	#[inline(always)]
 	pub fn abs_f64x2(self, a: f64x2) -> f64x2 {
 		self.and_f64x2(a, cast!(self.splat_u64x2((1 << 63) - 1)))

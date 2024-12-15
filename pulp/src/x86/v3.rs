@@ -2896,13 +2896,13 @@ impl Simd for V3_512b {
 }
 
 impl V3 {
-	/// Computes the absolute value of the elements of each lane of `a`.
+	/// Computes `abs(a)` for each lane of `a`.
 	#[inline(always)]
 	pub fn abs_f32x8(self, a: f32x8) -> f32x8 {
 		self.and_f32x8(a, cast!(self.splat_u32x8((1 << 31) - 1)))
 	}
 
-	/// Computes the absolute value of the elements of each lane of `a`.
+	/// Computes `abs(a)` for each lane of `a`.
 	#[inline(always)]
 	pub fn abs_f64x4(self, a: f64x4) -> f64x4 {
 		self.and_f64x4(a, cast!(self.splat_u64x4((1 << 63) - 1)))
