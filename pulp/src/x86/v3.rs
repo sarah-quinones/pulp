@@ -3127,13 +3127,13 @@ impl V3 {
 		cast!(self.avx._mm256_rsqrt_ps(cast!(a)))
 	}
 
-	/// Averages the elements of each lane of `a` and `b`.
+	/// Computes `average(a, b)` for each lane of `a` and `b`.
 	#[inline(always)]
 	pub fn average_u16x16(self, a: u16x16, b: u16x16) -> u16x16 {
 		cast!(self.avx2._mm256_avg_epu16(cast!(a), cast!(b)))
 	}
 
-	/// Averages the elements of each lane of `a` and `b`.
+	/// Computes `average(a, b)` for each lane of `a` and `b`.
 	#[inline(always)]
 	pub fn average_u8x32(self, a: u8x32, b: u8x32) -> u8x32 {
 		cast!(self.avx2._mm256_avg_epu8(cast!(a), cast!(b)))

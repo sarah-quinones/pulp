@@ -250,13 +250,13 @@ impl V2 {
 		cast!(self.sse._mm_rsqrt_ps(cast!(a)))
 	}
 
-	/// Averages the elements of each lane of `a` and `b`.
+	/// Computes `average(a, b)` for each lane of `a` and `b`.
 	#[inline(always)]
 	pub fn average_u16x8(self, a: u16x8, b: u16x8) -> u16x8 {
 		cast!(self.sse2._mm_avg_epu16(cast!(a), cast!(b)))
 	}
 
-	/// Averages the elements of each lane of `a` and `b`.
+	/// Computes `average(a, b)` for each lane of `a` and `b`.
 	#[inline(always)]
 	pub fn average_u8x16(self, a: u8x16, b: u8x16) -> u8x16 {
 		cast!(self.sse2._mm_avg_epu8(cast!(a), cast!(b)))
