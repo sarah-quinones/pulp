@@ -1643,42 +1643,42 @@ impl V2 {
 		)
 	}
 
-	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.  
+	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.
 	/// Shifting by a value greater than the bit width of the type sets the result to zero.
 	#[inline(always)]
 	pub fn shl_const_i16x8<const AMOUNT: i32>(self, a: i16x8) -> i16x8 {
 		cast!(self.sse2._mm_slli_epi16::<AMOUNT>(cast!(a)))
 	}
 
-	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.  
+	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.
 	/// Shifting by a value greater than the bit width of the type sets the result to zero.
 	#[inline(always)]
 	pub fn shl_const_i32x4<const AMOUNT: i32>(self, a: i32x4) -> i32x4 {
 		cast!(self.sse2._mm_slli_epi32::<AMOUNT>(cast!(a)))
 	}
 
-	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.  
+	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.
 	/// Shifting by a value greater than the bit width of the type sets the result to zero.
 	#[inline(always)]
 	pub fn shl_const_i64x2<const AMOUNT: i32>(self, a: i64x2) -> i64x2 {
 		cast!(self.sse2._mm_slli_epi64::<AMOUNT>(cast!(a)))
 	}
 
-	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.  
+	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.
 	/// Shifting by a value greater than the bit width of the type sets the result to zero.
 	#[inline(always)]
 	pub fn shl_const_u16x8<const AMOUNT: i32>(self, a: u16x8) -> u16x8 {
 		cast!(self.sse2._mm_slli_epi16::<AMOUNT>(cast!(a)))
 	}
 
-	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.  
+	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.
 	/// Shifting by a value greater than the bit width of the type sets the result to zero.
 	#[inline(always)]
 	pub fn shl_const_u32x4<const AMOUNT: i32>(self, a: u32x4) -> u32x4 {
 		cast!(self.sse2._mm_slli_epi32::<AMOUNT>(cast!(a)))
 	}
 
-	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.  
+	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.
 	/// Shifting by a value greater than the bit width of the type sets the result to zero.
 	#[inline(always)]
 	pub fn shl_const_u64x2<const AMOUNT: i32>(self, a: u64x2) -> u64x2 {
@@ -1686,7 +1686,7 @@ impl V2 {
 	}
 
 	/// Shift the bits of each lane of `a` to the left by the first element in `amount`, while
-	/// shifting in zeros.  
+	/// shifting in zeros.
 	/// Shifting by a value greater than the bit width of the type sets the result to zero.
 	#[inline(always)]
 	pub fn shl_i16x8(self, a: i16x8, amount: u64x2) -> i16x8 {
@@ -1694,7 +1694,7 @@ impl V2 {
 	}
 
 	/// Shift the bits of each lane of `a` to the left by the first element in `amount`, while
-	/// shifting in zeros.  
+	/// shifting in zeros.
 	/// Shifting by a value greater than the bit width of the type sets the result to zero.
 	#[inline(always)]
 	pub fn shl_i32x4(self, a: i32x4, amount: u64x2) -> i32x4 {
@@ -1702,7 +1702,7 @@ impl V2 {
 	}
 
 	/// Shift the bits of each lane of `a` to the left by the first element in `amount`, while
-	/// shifting in zeros.  
+	/// shifting in zeros.
 	/// Shifting by a value greater than the bit width of the type sets the result to zero.
 	#[inline(always)]
 	pub fn shl_i64x2(self, a: i64x2, amount: u64x2) -> u64x2 {
@@ -1710,7 +1710,7 @@ impl V2 {
 	}
 
 	/// Shift the bits of each lane of `a` to the left by the first element in `amount`, while
-	/// shifting in zeros.  
+	/// shifting in zeros.
 	/// Shifting by a value greater than the bit width of the type sets the result to zero.
 	#[inline(always)]
 	pub fn shl_u16x8(self, a: u16x8, amount: u64x2) -> u16x8 {
@@ -1718,7 +1718,7 @@ impl V2 {
 	}
 
 	/// Shift the bits of each lane of `a` to the left by the first element in `amount`, while
-	/// shifting in zeros.  
+	/// shifting in zeros.
 	/// Shifting by a value greater than the bit width of the type sets the result to zero.
 	#[inline(always)]
 	pub fn shl_u32x4(self, a: u32x4, amount: u64x2) -> u32x4 {
@@ -1726,14 +1726,14 @@ impl V2 {
 	}
 
 	/// Shift the bits of each lane of `a` to the left by the first element in `amount`, while
-	/// shifting in zeros.  
+	/// shifting in zeros.
 	/// Shifting by a value greater than the bit width of the type sets the result to zero.
 	#[inline(always)]
 	pub fn shl_u64x2(self, a: u64x2, amount: u64x2) -> u64x2 {
 		cast!(self.sse2._mm_sll_epi64(cast!(a), cast!(amount)))
 	}
 
-	/// Shift the bits of each lane of `a` to the right by `AMOUNT`, while shifting in sign bits.  
+	/// Shift the bits of each lane of `a` to the right by `AMOUNT`, while shifting in sign bits.
 	/// Shifting by a value greater than the bit width of the type sets the result to zero if the
 	/// sign bit is not set, and to `-1` if the sign bit is set.
 	#[inline(always)]
@@ -1741,7 +1741,7 @@ impl V2 {
 		cast!(self.sse2._mm_srai_epi16::<AMOUNT>(cast!(a)))
 	}
 
-	/// Shift the bits of each lane of `a` to the right by `AMOUNT`, while shifting in sign bits.  
+	/// Shift the bits of each lane of `a` to the right by `AMOUNT`, while shifting in sign bits.
 	/// Shifting by a value greater than the bit width of the type sets the result to zero if the
 	/// sign bit is not set, and to `-1` if the sign bit is set.
 	#[inline(always)]
@@ -1749,21 +1749,21 @@ impl V2 {
 		cast!(self.sse2._mm_srai_epi32::<AMOUNT>(cast!(a)))
 	}
 
-	/// Shift the bits of each lane of `a` to the right by `AMOUNT`, while shifting in zeros.  
+	/// Shift the bits of each lane of `a` to the right by `AMOUNT`, while shifting in zeros.
 	/// Shifting by a value greater than the bit width of the type sets the result to zero.
 	#[inline(always)]
 	pub fn shr_const_u16x8<const AMOUNT: i32>(self, a: u16x8) -> u16x8 {
 		cast!(self.sse2._mm_srli_epi16::<AMOUNT>(cast!(a)))
 	}
 
-	/// Shift the bits of each lane of `a` to the right by `AMOUNT`, while shifting in zeros.  
+	/// Shift the bits of each lane of `a` to the right by `AMOUNT`, while shifting in zeros.
 	/// Shifting by a value greater than the bit width of the type sets the result to zero.
 	#[inline(always)]
 	pub fn shr_const_u32x4<const AMOUNT: i32>(self, a: u32x4) -> u32x4 {
 		cast!(self.sse2._mm_srli_epi32::<AMOUNT>(cast!(a)))
 	}
 
-	/// Shift the bits of each lane of `a` to the right by `AMOUNT`, while shifting in zeros.  
+	/// Shift the bits of each lane of `a` to the right by `AMOUNT`, while shifting in zeros.
 	/// Shifting by a value greater than the bit width of the type sets the result to zero.
 	#[inline(always)]
 	pub fn shr_const_u64x2<const AMOUNT: i32>(self, a: u64x2) -> u64x2 {
@@ -1771,7 +1771,7 @@ impl V2 {
 	}
 
 	/// Shift the bits of each lane of `a` to the right by the first element in `amount`, while
-	/// shifting in zeros.  
+	/// shifting in zeros.
 	/// Shifting by a value greater than the bit width of the type sets the result to zero if the
 	/// sign bit is not set, and to `-1` if the sign bit is set.
 	#[inline(always)]
@@ -1780,7 +1780,7 @@ impl V2 {
 	}
 
 	/// Shift the bits of each lane of `a` to the right by the first element in `amount`, while
-	/// shifting in zeros.  
+	/// shifting in zeros.
 	/// Shifting by a value greater than the bit width of the type sets the result to zero if the
 	/// sign bit is not set, and to `-1` if the sign bit is set.
 	#[inline(always)]
@@ -1789,7 +1789,7 @@ impl V2 {
 	}
 
 	/// Shift the bits of each lane of `a` to the right by the first element in `amount`, while
-	/// shifting in zeros.  
+	/// shifting in zeros.
 	/// Shifting by a value greater than the bit width of the type sets the result to zero.
 	#[inline(always)]
 	pub fn shr_u16x8(self, a: u16x8, amount: u64x2) -> u16x8 {
@@ -1797,7 +1797,7 @@ impl V2 {
 	}
 
 	/// Shift the bits of each lane of `a` to the right by the first element in `amount`, while
-	/// shifting in zeros.  
+	/// shifting in zeros.
 	/// Shifting by a value greater than the bit width of the type sets the result to zero.
 	#[inline(always)]
 	pub fn shr_u32x4(self, a: u32x4, amount: u64x2) -> u32x4 {
@@ -1805,7 +1805,7 @@ impl V2 {
 	}
 
 	/// Shift the bits of each lane of `a` to the right by the first element in `amount`, while
-	/// shifting in zeros.  
+	/// shifting in zeros.
 	/// Shifting by a value greater than the bit width of the type sets the result to zero.
 	#[inline(always)]
 	pub fn shr_u64x2(self, a: u64x2, amount: u64x2) -> u64x2 {
