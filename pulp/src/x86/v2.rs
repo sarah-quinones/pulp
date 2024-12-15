@@ -262,13 +262,13 @@ impl V2 {
 		cast!(self.sse2._mm_avg_epu8(cast!(a), cast!(b)))
 	}
 
-	/// Rounds the elements of each lane of `a` to the nearest integer towards positive infinity.
+	/// Returns `ceil(a)` for each lane of `a`, rounding towards positive infinity.
 	#[inline(always)]
 	pub fn ceil_f32x4(self, a: f32x4) -> f32x4 {
 		cast!(self.sse4_1._mm_ceil_ps(cast!(a)))
 	}
 
-	/// Rounds the elements of each lane of `a` to the nearest integer towards positive infinity.
+	/// Returns `ceil(a)` for each lane of `a`, rounding towards positive infinity.
 	#[inline(always)]
 	pub fn ceil_f64x2(self, a: f64x2) -> f64x2 {
 		cast!(self.sse4_1._mm_ceil_pd(cast!(a)))
