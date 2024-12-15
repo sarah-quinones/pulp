@@ -882,61 +882,81 @@ impl V2 {
 		cast!(self.sse4_1._mm_floor_pd(cast!(a)))
 	}
 
-	/// See `_mm_hadd_ps`.
+	/// See [_mm_hadd_ps].
+	///
+	/// [_mm_hadd_ps]: core::arch::x86_64::_mm_hadd_ps
 	#[inline(always)]
 	pub fn horizontal_add_pack_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
 		cast!(self.sse3._mm_hadd_ps(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm_hadd_pd`.
+	/// See [_mm_hadd_pd].
+	///
+	/// [_mm_hadd_pd]: core::arch::x86_64::_mm_hadd_pd
 	#[inline(always)]
 	pub fn horizontal_add_pack_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
 		cast!(self.sse3._mm_hadd_pd(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm_hadd_epi16`.
+	/// See [_mm_hadd_epi16].
+	///
+	/// [_mm_hadd_epi16]: core::arch::x86_64::_mm_hadd_epi16
 	#[inline(always)]
 	pub fn horizontal_add_pack_i16x8(self, a: i16x8, b: i16x8) -> i16x8 {
 		cast!(self.ssse3._mm_hadd_epi16(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm_hadd_epi32`.
+	/// See [_mm_hadd_epi32].
+	///
+	/// [_mm_hadd_epi32]: core::arch::x86_64::_mm_hadd_epi32
 	#[inline(always)]
 	pub fn horizontal_add_pack_i32x4(self, a: i32x4, b: i32x4) -> i32x4 {
 		cast!(self.ssse3._mm_hadd_epi32(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm_hadds_epi16`
+	/// See [_mm_hadds_epi16].
+	///
+	/// [_mm_hadds_epi16]: core::arch::x86_64::_mm_hadds_epi16
 	#[inline(always)]
 	pub fn horizontal_saturating_add_pack_i16x8(self, a: i16x8, b: i16x8) -> i16x8 {
 		cast!(self.ssse3._mm_hadds_epi16(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm_hsubs_epi16`
+	/// See [_mm_hsubs_epi16].
+	///
+	/// [_mm_hsubs_epi16]: core::arch::x86_64::_mm_hsubs_epi16
 	#[inline(always)]
 	pub fn horizontal_saturating_sub_pack_i16x8(self, a: i16x8, b: i16x8) -> i16x8 {
 		cast!(self.ssse3._mm_hsubs_epi16(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm_hsub_ps`
+	/// See [_mm_hsub_ps].
+	///
+	/// [_mm_hsub_ps]: core::arch::x86_64::_mm_hsub_ps
 	#[inline(always)]
 	pub fn horizontal_sub_pack_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
 		cast!(self.sse3._mm_hsub_ps(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm_hsub_pd`
+	/// See [_mm_hsub_pd].
+	///
+	/// [_mm_hsub_pd]: core::arch::x86_64::_mm_hsub_pd
 	#[inline(always)]
 	pub fn horizontal_sub_pack_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
 		cast!(self.sse3._mm_hsub_pd(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm_hsub_epi16`
+	/// See [_mm_hsub_epi16].
+	///
+	/// [_mm_hsub_epi16]: core::arch::x86_64::_mm_hsub_epi16
 	#[inline(always)]
 	pub fn horizontal_sub_pack_i16x8(self, a: i16x8, b: i16x8) -> i16x8 {
 		cast!(self.ssse3._mm_hsub_epi16(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm_hsub_epi32`
+	/// See [_mm_hsub_epi32].
+	///
+	/// [_mm_hsub_epi32]: core::arch::x86_64::_mm_hsub_epi32
 	#[inline(always)]
 	pub fn horizontal_sub_pack_i32x4(self, a: i32x4, b: i32x4) -> i32x4 {
 		cast!(self.ssse3._mm_hsub_epi32(cast!(a), cast!(b)))
@@ -1074,19 +1094,25 @@ impl V2 {
 		cast!(self.sse2._mm_mul_pd(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm_maddubs_epi16`
+	/// See [_mm_maddubs_epi16].
+	///
+	/// [_mm_maddubs_epi16]: core::arch::x86_64::_mm_maddubs_epi16
 	#[inline(always)]
 	pub fn multiply_saturating_add_adjacent_i8x16(self, a: i8x16, b: i8x16) -> i16x8 {
 		cast!(self.ssse3._mm_maddubs_epi16(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm_madd_epi16`
+	/// See [_mm_madd_epi16].
+	///
+	/// [_mm_madd_epi16]: core::arch::x86_64::_mm_madd_epi16
 	#[inline(always)]
 	pub fn multiply_wrapping_add_adjacent_i16x8(self, a: i16x8, b: i16x8) -> i32x4 {
 		cast!(self.sse2._mm_madd_epi16(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm_mpsadbw_epu8`.
+	/// See [_mm_mpsadbw_epu8].
+	///
+	/// [_mm_mpsadbw_epu8]: core::arch::x86_64::_mm_mpsadbw_epu8
 	#[inline(always)]
 	pub fn multisum_of_absolute_differences_u8x16<const OFFSETS: i32>(
 		self,
@@ -1252,25 +1278,33 @@ impl V2 {
 		cast!(self.sse2._mm_or_si128(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm_packs_epi16`
+	/// See [_mm_packs_epi16].
+	///
+	/// [_mm_packs_epi16]: core::arch::x86_64::_mm_packs_epi16
 	#[inline(always)]
 	pub fn pack_with_signed_saturation_i16x8(self, a: i16x8, b: i16x8) -> i8x16 {
 		cast!(self.sse2._mm_packs_epi16(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm_packs_epi32`
+	/// See [_mm_packs_epi32].
+	///
+	/// [_mm_packs_epi32]: core::arch::x86_64::_mm_packs_epi32
 	#[inline(always)]
 	pub fn pack_with_signed_saturation_i32x4(self, a: i32x4, b: i32x4) -> i16x8 {
 		cast!(self.sse2._mm_packs_epi32(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm_packus_epi16`
+	/// See [_mm_packus_epi16].
+	///
+	/// [_mm_packus_epi16]: core::arch::x86_64::_mm_packus_epi16
 	#[inline(always)]
 	pub fn pack_with_unsigned_saturation_i16x8(self, a: i16x8, b: i16x8) -> u8x16 {
 		cast!(self.sse2._mm_packus_epi16(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm_packus_epi32`
+	/// See [_mm_packus_epi32].
+	///
+	/// [_mm_packus_epi32]: core::arch::x86_64::_mm_packus_epi32
 	#[inline(always)]
 	pub fn pack_with_unsigned_saturation_i32x4(self, a: i32x4, b: i32x4) -> u16x8 {
 		cast!(self.sse4_1._mm_packus_epi32(cast!(a), cast!(b)))
@@ -1898,7 +1932,9 @@ impl V2 {
 		cast!(self.sse3._mm_addsub_pd(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm_sad_epu8`
+	/// See [_mm_sad_epu8].
+	///
+	/// [_mm_sad_epu8]: core::arch::x86_64::_mm_sad_epu8
 	#[inline(always)]
 	pub fn sum_of_absolute_differences_u8x16(self, a: u8x16, b: u8x16) -> u64x2 {
 		cast!(self.sse2._mm_sad_epu8(cast!(a), cast!(b)))

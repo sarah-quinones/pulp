@@ -3759,61 +3759,81 @@ impl V3 {
 		cast!(self.avx._mm256_floor_pd(cast!(a)))
 	}
 
-	/// See `_mm256_hadd_ps`.
+	/// See [_mm_hadd_ps].
+	///
+	/// [_mm_hadd_ps]: core::arch::x86_64::_mm_hadd_ps
 	#[inline(always)]
 	pub fn horizontal_add_pack_f32x8(self, a: f32x8, b: f32x8) -> f32x8 {
 		cast!(self.avx._mm256_hadd_ps(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm256_hadd_pd`.
+	/// See [_mm_hadd_pd].
+	///
+	/// [_mm_hadd_pd]: core::arch::x86_64::_mm_hadd_pd
 	#[inline(always)]
 	pub fn horizontal_add_pack_f64x4(self, a: f64x4, b: f64x4) -> f64x4 {
 		cast!(self.avx._mm256_hadd_pd(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm256_hadd_epi16`.
+	/// See [_mm_hadd_epi16].
+	///
+	/// [_mm_hadd_epi16]: core::arch::x86_64::_mm_hadd_epi16
 	#[inline(always)]
 	pub fn horizontal_add_pack_i16x16(self, a: i16x16, b: i16x16) -> i16x16 {
 		cast!(self.avx2._mm256_hadd_epi16(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm256_hadd_epi32`.
+	/// See [_mm_hadd_epi32].
+	///
+	/// [_mm_hadd_epi32]: core::arch::x86_64::_mm_hadd_epi32
 	#[inline(always)]
 	pub fn horizontal_add_pack_i32x8(self, a: i32x8, b: i32x8) -> i32x8 {
 		cast!(self.avx2._mm256_hadd_epi32(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm256_hadds_epi16`
+	/// See [_mm_hadds_epi16].
+	///
+	/// [_mm_hadds_epi16]: core::arch::x86_64::_mm_hadds_epi16
 	#[inline(always)]
 	pub fn horizontal_saturating_add_pack_i16x16(self, a: i16x16, b: i16x16) -> i16x16 {
 		cast!(self.avx2._mm256_hadds_epi16(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm256_hsubs_epi16`
+	/// See [_mm_hsubs_epi16].
+	///
+	/// [_mm_hsubs_epi16]: core::arch::x86_64::_mm_hsubs_epi16
 	#[inline(always)]
 	pub fn horizontal_saturating_sub_pack_i16x16(self, a: i16x16, b: i16x16) -> i16x16 {
 		cast!(self.avx2._mm256_hsubs_epi16(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm256_hsub_ps`
+	/// See [_mm256_hsub_ps].
+	///
+	/// [_mm256_hsub_ps]: core::arch::x86_64::_mm256_hsub_ps
 	#[inline(always)]
 	pub fn horizontal_sub_pack_f32x8(self, a: f32x8, b: f32x8) -> f32x8 {
 		cast!(self.avx._mm256_hsub_ps(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm256_hsub_pd`
+	/// See [_mm256_hsub_pd].
+	///
+	/// [_mm256_hsub_pd]: core::arch::x86_64::_mm256_hsub_pd
 	#[inline(always)]
 	pub fn horizontal_sub_pack_f64x4(self, a: f64x4, b: f64x4) -> f64x4 {
 		cast!(self.avx._mm256_hsub_pd(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm256_hsub_epi16`
+	/// See [_mm256_hsub_epi16].
+	///
+	/// [_mm256_hsub_epi16]: core::arch::x86_64::_mm256_hsub_epi16
 	#[inline(always)]
 	pub fn horizontal_sub_pack_i16x16(self, a: i16x16, b: i16x16) -> i16x16 {
 		cast!(self.avx2._mm256_hsub_epi16(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm256_hsub_epi32`
+	/// See [_mm256_hsub_epi32].
+	///
+	/// [_mm256_hsub_epi32]: core::arch::x86_64::_mm256_hsub_epi32
 	#[inline(always)]
 	pub fn horizontal_sub_pack_i32x8(self, a: i32x8, b: i32x8) -> i32x8 {
 		cast!(self.avx2._mm256_hsub_epi32(cast!(a), cast!(b)))
@@ -4063,19 +4083,25 @@ impl V3 {
 		cast!(self.fma._mm256_fmaddsub_pd(cast!(a), cast!(b), cast!(c)))
 	}
 
-	/// See `_mm256_maddubs_epi16`
+	/// See [_mm256_maddubs_epi16].
+	///
+	/// [_mm256_maddubs_epi16]: core::arch::x86_64::_mm256_maddubs_epi16
 	#[inline(always)]
 	pub fn multiply_saturating_add_adjacent_i8x32(self, a: i8x32, b: i8x32) -> i16x16 {
 		cast!(self.avx2._mm256_maddubs_epi16(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm256_madd_epi16`
+	/// See [_mm256_madd_epi16].
+	///
+	/// [_mm256_madd_epi16]: core::arch::x86_64::_mm256_madd_epi16
 	#[inline(always)]
 	pub fn multiply_wrapping_add_adjacent_i16x16(self, a: i16x16, b: i16x16) -> i32x8 {
 		cast!(self.avx2._mm256_madd_epi16(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm256_mpsadbw_epu8`.
+	/// See [_mm256_mpsadbw_epu8].
+	///
+	/// [_mm256_mpsadbw_epu8]: core::arch::x86_64::_mm256_mpsadbw_epu8
 	#[inline(always)]
 	pub fn multisum_of_absolute_differences_u8x32<const OFFSETS: i32>(
 		self,
@@ -4297,25 +4323,33 @@ impl V3 {
 		cast!(self.avx2._mm256_or_si256(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm256_packs_epi16`
+	/// See [_mm256_packs_epi16].
+	///
+	/// [_mm256_packs_epi16]: core::arch::x86_64::_mm256_packs_epi16
 	#[inline(always)]
 	pub fn pack_with_signed_saturation_i16x16(self, a: i16x16, b: i16x16) -> i8x32 {
 		cast!(self.avx2._mm256_packs_epi16(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm256_packs_epi32`
+	/// See [_mm256_packs_epi32].
+	///
+	/// [_mm256_packs_epi32]: core::arch::x86_64::_mm256_packs_epi32
 	#[inline(always)]
 	pub fn pack_with_signed_saturation_i32x8(self, a: i32x8, b: i32x8) -> i16x16 {
 		cast!(self.avx2._mm256_packs_epi32(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm256_packus_epi16`
+	/// See [_mm256_packus_epi16].
+	///
+	/// [_mm256_packus_epi16]: core::arch::x86_64::_mm256_packus_epi16
 	#[inline(always)]
 	pub fn pack_with_unsigned_saturation_i16x16(self, a: i16x16, b: i16x16) -> u8x32 {
 		cast!(self.avx2._mm256_packus_epi16(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm256_packus_epi32`
+	/// See [_mm256_packus_epi32].
+	///
+	/// [_mm256_packus_epi32]: core::arch::x86_64::_mm256_packus_epi32
 	#[inline(always)]
 	pub fn pack_with_unsigned_saturation_i32x8(self, a: i32x8, b: i32x8) -> u16x16 {
 		cast!(self.avx2._mm256_packus_epi32(cast!(a), cast!(b)))
@@ -4927,7 +4961,9 @@ impl V3 {
 		cast!(self.avx._mm256_addsub_pd(cast!(a), cast!(b)))
 	}
 
-	/// See `_mm256_sad_epu8`
+	/// See [_mm256_sad_epu8].
+	///
+	/// [_mm256_sad_epu8]: core::arch::x86_64::_mm256_sad_epu8
 	#[inline(always)]
 	pub fn sum_of_absolute_differences_u8x32(self, a: u8x32, b: u8x32) -> u64x4 {
 		cast!(self.avx2._mm256_sad_epu8(cast!(a), cast!(b)))
