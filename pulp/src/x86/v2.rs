@@ -986,49 +986,49 @@ impl V2 {
 		cast!(self.sse2._mm_cmpord_pd(cast!(a), cast!(a)))
 	}
 
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
+	/// Computes `max(a, b)`. for each lane in `a` and `b`.
 	#[inline(always)]
 	pub fn max_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
 		cast!(self.sse._mm_max_ps(cast!(a), cast!(b)))
 	}
 
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
+	/// Computes `max(a, b)`. for each lane in `a` and `b`.
 	#[inline(always)]
 	pub fn max_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
 		cast!(self.sse2._mm_max_pd(cast!(a), cast!(b)))
 	}
 
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
+	/// Computes `max(a, b)`. for each lane in `a` and `b`.
 	#[inline(always)]
 	pub fn max_i16x8(self, a: i16x8, b: i16x8) -> i16x8 {
 		cast!(self.sse2._mm_max_epi16(cast!(a), cast!(b)))
 	}
 
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
+	/// Computes `max(a, b)`. for each lane in `a` and `b`.
 	#[inline(always)]
 	pub fn max_i32x4(self, a: i32x4, b: i32x4) -> i32x4 {
 		cast!(self.sse4_1._mm_max_epi32(cast!(a), cast!(b)))
 	}
 
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
+	/// Computes `max(a, b)`. for each lane in `a` and `b`.
 	#[inline(always)]
 	pub fn max_i8x16(self, a: i8x16, b: i8x16) -> i8x16 {
 		cast!(self.sse4_1._mm_max_epi8(cast!(a), cast!(b)))
 	}
 
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
+	/// Computes `max(a, b)`. for each lane in `a` and `b`.
 	#[inline(always)]
 	pub fn max_u16x8(self, a: u16x8, b: u16x8) -> u16x8 {
 		cast!(self.sse4_1._mm_max_epu16(cast!(a), cast!(b)))
 	}
 
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
+	/// Computes `max(a, b)`. for each lane in `a` and `b`.
 	#[inline(always)]
 	pub fn max_u32x4(self, a: u32x4, b: u32x4) -> u32x4 {
 		cast!(self.sse4_1._mm_max_epu32(cast!(a), cast!(b)))
 	}
 
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
+	/// Computes `max(a, b)`. for each lane in `a` and `b`.
 	#[inline(always)]
 	pub fn max_u8x16(self, a: u8x16, b: u8x16) -> u8x16 {
 		cast!(self.sse2._mm_max_epu8(cast!(a), cast!(b)))

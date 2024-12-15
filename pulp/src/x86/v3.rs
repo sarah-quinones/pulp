@@ -3863,49 +3863,49 @@ impl V3 {
 		cast!(self.avx._mm256_cmp_pd::<_CMP_ORD_Q>(cast!(a), cast!(a)))
 	}
 
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
+	/// Computes `max(a, b)`. for each lane in `a` and `b`.
 	#[inline(always)]
 	pub fn max_f32x8(self, a: f32x8, b: f32x8) -> f32x8 {
 		cast!(self.avx._mm256_max_ps(cast!(a), cast!(b)))
 	}
 
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
+	/// Computes `max(a, b)`. for each lane in `a` and `b`.
 	#[inline(always)]
 	pub fn max_f64x4(self, a: f64x4, b: f64x4) -> f64x4 {
 		cast!(self.avx._mm256_max_pd(cast!(a), cast!(b)))
 	}
 
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
+	/// Computes `max(a, b)`. for each lane in `a` and `b`.
 	#[inline(always)]
 	pub fn max_i16x16(self, a: i16x16, b: i16x16) -> i16x16 {
 		cast!(self.avx2._mm256_max_epi16(cast!(a), cast!(b)))
 	}
 
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
+	/// Computes `max(a, b)`. for each lane in `a` and `b`.
 	#[inline(always)]
 	pub fn max_i32x8(self, a: i32x8, b: i32x8) -> i32x8 {
 		cast!(self.avx2._mm256_max_epi32(cast!(a), cast!(b)))
 	}
 
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
+	/// Computes `max(a, b)`. for each lane in `a` and `b`.
 	#[inline(always)]
 	pub fn max_i8x32(self, a: i8x32, b: i8x32) -> i8x32 {
 		cast!(self.avx2._mm256_max_epi8(cast!(a), cast!(b)))
 	}
 
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
+	/// Computes `max(a, b)`. for each lane in `a` and `b`.
 	#[inline(always)]
 	pub fn max_u16x16(self, a: u16x16, b: u16x16) -> u16x16 {
 		cast!(self.avx2._mm256_max_epu16(cast!(a), cast!(b)))
 	}
 
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
+	/// Computes `max(a, b)`. for each lane in `a` and `b`.
 	#[inline(always)]
 	pub fn max_u32x8(self, a: u32x8, b: u32x8) -> u32x8 {
 		cast!(self.avx2._mm256_max_epu32(cast!(a), cast!(b)))
 	}
 
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
+	/// Computes `max(a, b)`. for each lane in `a` and `b`.
 	#[inline(always)]
 	pub fn max_u8x32(self, a: u8x32, b: u8x32) -> u8x32 {
 		cast!(self.avx2._mm256_max_epu8(cast!(a), cast!(b)))
