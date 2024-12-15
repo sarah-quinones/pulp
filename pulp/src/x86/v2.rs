@@ -31,181 +31,181 @@ impl V2 {
 		self.and_f64x2(a, cast!(self.splat_u64x2((1 << 63) - 1)))
 	}
 
-	/// Adds the elements of each lane of `a` and `b`.
+	/// Computes `a + b` for each lane of `a` and `b`.
 	#[inline(always)]
 	pub fn add_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
 		cast!(self.sse._mm_add_ps(cast!(a), cast!(b)))
 	}
 
-	/// Adds the elements of each lane of `a` and `b`.
+	/// Computes `a + b` for each lane of `a` and `b`.
 	#[inline(always)]
 	pub fn add_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
 		cast!(self.sse2._mm_add_pd(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of `a` and `b`.
+	/// Returns `a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn and_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
 		cast!(self.sse._mm_and_ps(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of `a` and `b`.
+	/// Returns `a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn and_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
 		cast!(self.sse2._mm_and_pd(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of `a` and `b`.
+	/// Returns `a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn and_i16x8(self, a: i16x8, b: i16x8) -> i16x8 {
 		cast!(self.sse2._mm_and_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of `a` and `b`.
+	/// Returns `a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn and_i32x4(self, a: i32x4, b: i32x4) -> i32x4 {
 		cast!(self.sse2._mm_and_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of `a` and `b`.
+	/// Returns `a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn and_i64x2(self, a: i64x2, b: i64x2) -> i64x2 {
 		cast!(self.sse2._mm_and_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of `a` and `b`.
+	/// Returns `a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn and_i8x16(self, a: i8x16, b: i8x16) -> i8x16 {
 		cast!(self.sse2._mm_and_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of `a` and `b`.
+	/// Returns `a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn and_m16x8(self, a: m16x8, b: m16x8) -> m16x8 {
 		cast!(self.sse2._mm_and_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of `a` and `b`.
+	/// Returns `a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn and_m32x4(self, a: m32x4, b: m32x4) -> m32x4 {
 		cast!(self.sse2._mm_and_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of `a` and `b`.
+	/// Returns `a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn and_m64x2(self, a: m64x2, b: m64x2) -> m64x2 {
 		cast!(self.sse2._mm_and_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of `a` and `b`.
+	/// Returns `a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn and_m8x16(self, a: m8x16, b: m8x16) -> m8x16 {
 		cast!(self.sse2._mm_and_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of `a` and `b`.
+	/// Returns `a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn and_u16x8(self, a: u16x8, b: u16x8) -> u16x8 {
 		cast!(self.sse2._mm_and_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of `a` and `b`.
+	/// Returns `a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn and_u32x4(self, a: u32x4, b: u32x4) -> u32x4 {
 		cast!(self.sse2._mm_and_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of `a` and `b`.
+	/// Returns `a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn and_u64x2(self, a: u64x2, b: u64x2) -> u64x2 {
 		cast!(self.sse2._mm_and_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of `a` and `b`.
+	/// Returns `a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn and_u8x16(self, a: u8x16, b: u8x16) -> u8x16 {
 		cast!(self.sse2._mm_and_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of NOT `a` and `b`.
+	/// Returns `!a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn andnot_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
 		cast!(self.sse._mm_andnot_ps(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of NOT `a` and `b`.
+	/// Returns `!a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn andnot_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
 		cast!(self.sse2._mm_andnot_pd(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of NOT `a` and `b`.
+	/// Returns `!a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn andnot_i16x8(self, a: i16x8, b: i16x8) -> i16x8 {
 		cast!(self.sse2._mm_andnot_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of NOT `a` and `b`.
+	/// Returns `!a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn andnot_i32x4(self, a: i32x4, b: i32x4) -> i32x4 {
 		cast!(self.sse2._mm_andnot_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of NOT `a` and `b`.
+	/// Returns `!a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn andnot_i64x2(self, a: i64x2, b: i64x2) -> i64x2 {
 		cast!(self.sse2._mm_andnot_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of NOT `a` and `b`.
+	/// Returns `!a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn andnot_i8x16(self, a: i8x16, b: i8x16) -> i8x16 {
 		cast!(self.sse2._mm_andnot_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of NOT `a` and `b`.
+	/// Returns `!a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn andnot_m16x8(self, a: m16x8, b: m16x8) -> m16x8 {
 		cast!(self.sse2._mm_andnot_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of NOT `a` and `b`.
+	/// Returns `!a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn andnot_m32x4(self, a: m32x4, b: m32x4) -> m32x4 {
 		cast!(self.sse2._mm_andnot_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of NOT `a` and `b`.
+	/// Returns `!a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn andnot_m64x2(self, a: m64x2, b: m64x2) -> m64x2 {
 		cast!(self.sse2._mm_andnot_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of NOT `a` and `b`.
+	/// Returns `!a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn andnot_m8x16(self, a: m8x16, b: m8x16) -> m8x16 {
 		cast!(self.sse2._mm_andnot_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of NOT `a` and `b`.
+	/// Returns `!a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn andnot_u16x8(self, a: u16x8, b: u16x8) -> u16x8 {
 		cast!(self.sse2._mm_andnot_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of NOT `a` and `b`.
+	/// Returns `!a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn andnot_u32x4(self, a: u32x4, b: u32x4) -> u32x4 {
 		cast!(self.sse2._mm_andnot_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of NOT `a` and `b`.
+	/// Returns `!a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn andnot_u64x2(self, a: u64x2, b: u64x2) -> u64x2 {
 		cast!(self.sse2._mm_andnot_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise AND of NOT `a` and `b`.
+	/// Returns `!a & b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn andnot_u8x16(self, a: u8x16, b: u8x16) -> u8x16 {
 		cast!(self.sse2._mm_andnot_si128(cast!(a), cast!(b)))
@@ -1082,13 +1082,13 @@ impl V2 {
 		cast!(self.sse2._mm_min_epu8(cast!(a), cast!(b)))
 	}
 
-	/// Multiplies the elements of each lane of `a` and `b`.
+	/// Computes `a * b` for each lane in `a` and `b`.
 	#[inline(always)]
 	pub fn mul_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
 		cast!(self.sse._mm_mul_ps(cast!(a), cast!(b)))
 	}
 
-	/// Multiplies the elements of each lane of `a` and `b`.
+	/// Computes `a * b` for each lane in `a` and `b`.
 	#[inline(always)]
 	pub fn mul_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
 		cast!(self.sse2._mm_mul_pd(cast!(a), cast!(b)))
@@ -1122,157 +1122,157 @@ impl V2 {
 		cast!(self.sse4_1._mm_mpsadbw_epu8::<OFFSETS>(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise NOT of `a`.
+	/// Returns `!a` for each bit in a.
 	#[inline(always)]
 	pub fn not_i16x8(self, a: i16x8) -> i16x8 {
 		self.xor_i16x8(a, self.splat_i16x8(!0))
 	}
 
-	/// Returns the bitwise NOT of `a`.
+	/// Returns `!a` for each bit in a.
 	#[inline(always)]
 	pub fn not_i32x4(self, a: i32x4) -> i32x4 {
 		self.xor_i32x4(a, self.splat_i32x4(!0))
 	}
 
-	/// Returns the bitwise NOT of `a`.
+	/// Returns `!a` for each bit in a.
 	#[inline(always)]
 	pub fn not_i64x2(self, a: i64x2) -> i64x2 {
 		self.xor_i64x2(a, self.splat_i64x2(!0))
 	}
 
-	/// Returns the bitwise NOT of `a`.
+	/// Returns `!a` for each bit in a.
 	#[inline(always)]
 	pub fn not_i8x16(self, a: i8x16) -> i8x16 {
 		self.xor_i8x16(a, self.splat_i8x16(!0))
 	}
 
-	/// Returns the bitwise NOT of `a`.
+	/// Returns `!a` for each bit in a.
 	#[inline(always)]
 	pub fn not_m16x8(self, a: m16x8) -> m16x8 {
 		self.xor_m16x8(a, self.splat_m16x8(m16::new(true)))
 	}
 
-	/// Returns the bitwise NOT of `a`.
+	/// Returns `!a` for each bit in a.
 	#[inline(always)]
 	pub fn not_m32x4(self, a: m32x4) -> m32x4 {
 		self.xor_m32x4(a, self.splat_m32x4(m32::new(true)))
 	}
 
-	/// Returns the bitwise NOT of `a`.
+	/// Returns `!a` for each bit in a.
 	#[inline(always)]
 	pub fn not_m64x2(self, a: m64x2) -> m64x2 {
 		self.xor_m64x2(a, self.splat_m64x2(m64::new(true)))
 	}
 
-	/// Returns the bitwise NOT of `a`.
+	/// Returns `!a` for each bit in a.
 	#[inline(always)]
 	pub fn not_m8x16(self, a: m8x16) -> m8x16 {
 		self.xor_m8x16(a, self.splat_m8x16(m8::new(true)))
 	}
 
-	/// Returns the bitwise NOT of `a`.
+	/// Returns `!a` for each bit in a.
 	#[inline(always)]
 	pub fn not_u16x8(self, a: u16x8) -> u16x8 {
 		self.xor_u16x8(a, self.splat_u16x8(!0))
 	}
 
-	/// Returns the bitwise NOT of `a`.
+	/// Returns `!a` for each bit in a.
 	#[inline(always)]
 	pub fn not_u32x4(self, a: u32x4) -> u32x4 {
 		self.xor_u32x4(a, self.splat_u32x4(!0))
 	}
 
-	/// Returns the bitwise NOT of `a`.
+	/// Returns `!a` for each bit in a.
 	#[inline(always)]
 	pub fn not_u64x2(self, a: u64x2) -> u64x2 {
 		self.xor_u64x2(a, self.splat_u64x2(!0))
 	}
 
-	/// Returns the bitwise NOT of `a`.
+	/// Returns `!a` for each bit in a.
 	#[inline(always)]
 	pub fn not_u8x16(self, a: u8x16) -> u8x16 {
 		self.xor_u8x16(a, self.splat_u8x16(!0))
 	}
 
-	/// Returns the bitwise OR of `a` and `b`.
+	/// Returns `a | b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn or_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
 		cast!(self.sse._mm_or_ps(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise OR of `a` and `b`.
+	/// Returns `a | b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn or_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
 		cast!(self.sse2._mm_or_pd(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise OR of `a` and `b`.
+	/// Returns `a | b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn or_i16x8(self, a: i16x8, b: i16x8) -> i16x8 {
 		cast!(self.sse2._mm_or_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise OR of `a` and `b`.
+	/// Returns `a | b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn or_i32x4(self, a: i32x4, b: i32x4) -> i32x4 {
 		cast!(self.sse2._mm_or_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise OR of `a` and `b`.
+	/// Returns `a | b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn or_i64x2(self, a: i64x2, b: i64x2) -> i64x2 {
 		cast!(self.sse2._mm_or_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise OR of `a` and `b`.
+	/// Returns `a | b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn or_i8x16(self, a: i8x16, b: i8x16) -> i8x16 {
 		cast!(self.sse2._mm_or_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise OR of `a` and `b`.
+	/// Returns `a | b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn or_m16x8(self, a: m16x8, b: m16x8) -> m16x8 {
 		cast!(self.sse2._mm_or_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise OR of `a` and `b`.
+	/// Returns `a | b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn or_m32x4(self, a: m32x4, b: m32x4) -> m32x4 {
 		cast!(self.sse2._mm_or_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise OR of `a` and `b`.
+	/// Returns `a | b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn or_m64x2(self, a: m64x2, b: m64x2) -> m64x2 {
 		cast!(self.sse2._mm_or_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise OR of `a` and `b`.
+	/// Returns `a | b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn or_m8x16(self, a: m8x16, b: m8x16) -> m8x16 {
 		cast!(self.sse2._mm_or_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise OR of `a` and `b`.
+	/// Returns `a | b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn or_u16x8(self, a: u16x8, b: u16x8) -> u16x8 {
 		cast!(self.sse2._mm_or_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise OR of `a` and `b`.
+	/// Returns `a | b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn or_u32x4(self, a: u32x4, b: u32x4) -> u32x4 {
 		cast!(self.sse2._mm_or_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise OR of `a` and `b`.
+	/// Returns `a | b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn or_u64x2(self, a: u64x2, b: u64x2) -> u64x2 {
 		cast!(self.sse2._mm_or_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise OR of `a` and `b`.
+	/// Returns `a | b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn or_u8x16(self, a: u8x16, b: u8x16) -> u8x16 {
 		cast!(self.sse2._mm_or_si128(cast!(a), cast!(b)))
@@ -1908,13 +1908,13 @@ impl V2 {
 		cast!(self.sse2._mm_sqrt_pd(cast!(a)))
 	}
 
-	/// Subtracts the elements of each lane of `a` and `b`.
+	/// Calculates `a - b` for each lane in `a` and `b`.
 	#[inline(always)]
 	pub fn sub_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
 		cast!(self.sse._mm_sub_ps(cast!(a), cast!(b)))
 	}
 
-	/// Subtracts the elements of each lane of `a` and `b`.
+	/// Calculates `a - b` for each lane in `a` and `b`.
 	#[inline(always)]
 	pub fn sub_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
 		cast!(self.sse2._mm_sub_pd(cast!(a), cast!(b)))
@@ -2172,85 +2172,85 @@ impl V2 {
 		cast!(self.sse2._mm_sub_epi8(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise XOR of `a` and `b`.
+	/// Returns `a ^ b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn xor_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
 		cast!(self.sse._mm_xor_ps(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise XOR of `a` and `b`.
+	/// Returns `a ^ b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn xor_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
 		cast!(self.sse2._mm_xor_pd(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise XOR of `a` and `b`.
+	/// Returns `a ^ b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn xor_i16x8(self, a: i16x8, b: i16x8) -> i16x8 {
 		cast!(self.sse2._mm_xor_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise XOR of `a` and `b`.
+	/// Returns `a ^ b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn xor_i32x4(self, a: i32x4, b: i32x4) -> i32x4 {
 		cast!(self.sse2._mm_xor_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise XOR of `a` and `b`.
+	/// Returns `a ^ b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn xor_i64x2(self, a: i64x2, b: i64x2) -> i64x2 {
 		cast!(self.sse2._mm_xor_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise XOR of `a` and `b`.
+	/// Returns `a ^ b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn xor_i8x16(self, a: i8x16, b: i8x16) -> i8x16 {
 		cast!(self.sse2._mm_xor_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise XOR of `a` and `b`.
+	/// Returns `a ^ b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn xor_m16x8(self, a: m16x8, b: m16x8) -> m16x8 {
 		cast!(self.sse2._mm_xor_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise XOR of `a` and `b`.
+	/// Returns `a ^ b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn xor_m32x4(self, a: m32x4, b: m32x4) -> m32x4 {
 		cast!(self.sse2._mm_xor_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise XOR of `a` and `b`.
+	/// Returns `a ^ b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn xor_m64x2(self, a: m64x2, b: m64x2) -> m64x2 {
 		cast!(self.sse2._mm_xor_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise XOR of `a` and `b`.
+	/// Returns `a ^ b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn xor_m8x16(self, a: m8x16, b: m8x16) -> m8x16 {
 		cast!(self.sse2._mm_xor_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise XOR of `a` and `b`.
+	/// Returns `a ^ b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn xor_u16x8(self, a: u16x8, b: u16x8) -> u16x8 {
 		cast!(self.sse2._mm_xor_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise XOR of `a` and `b`.
+	/// Returns `a ^ b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn xor_u32x4(self, a: u32x4, b: u32x4) -> u32x4 {
 		cast!(self.sse2._mm_xor_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise XOR of `a` and `b`.
+	/// Returns `a ^ b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn xor_u64x2(self, a: u64x2, b: u64x2) -> u64x2 {
 		cast!(self.sse2._mm_xor_si128(cast!(a), cast!(b)))
 	}
 
-	/// Returns the bitwise XOR of `a` and `b`.
+	/// Returns `a ^ b` for each bit in `a` and `b`.
 	#[inline(always)]
 	pub fn xor_u8x16(self, a: u8x16, b: u8x16) -> u8x16 {
 		cast!(self.sse2._mm_xor_si128(cast!(a), cast!(b)))
