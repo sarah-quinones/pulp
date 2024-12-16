@@ -234,9 +234,9 @@ macro_rules! simd_type {
                 /// - the required CPU features must be available.
                 #[inline]
                 pub unsafe fn new_unchecked() -> Self {
-                    Self{
+                    unsafe{Self{
                         $($ident: <$crate::core_arch::__impl_type!($feature)>::new_unchecked(),)*
-                    }
+                    }}
                 }
 
                 /// Returns a SIMD token type if the required CPU features for this type are
@@ -244,9 +244,9 @@ macro_rules! simd_type {
                 #[inline]
                 pub fn try_new() -> Option<Self> {
                     if Self::is_available() {
-                        Some(Self{
+                        Some(unsafe{Self{
                             $($ident: <$crate::core_arch::__impl_type!($feature)>::new_unchecked(),)*
-                        })
+                        }})
                     } else {
                         None
                     }
@@ -287,6 +287,7 @@ macro_rules! simd_type {
                 pub fn vectorize<F: $crate::NullaryFnOnce>(self, f: F) -> F::Output {
                     $(#[target_feature(enable = $feature)])*
                     #[inline]
+                	#[allow(clippy::too_many_arguments)]
                     unsafe fn imp_fastcall<F: $crate::NullaryFnOnce>(
                         f0: ::core::mem::MaybeUninit<::core::primitive::usize>,
                         f1: ::core::mem::MaybeUninit<::core::primitive::usize>,

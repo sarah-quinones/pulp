@@ -11,7 +11,7 @@ macro_rules! __impl {
 
 		impl $name {
 			#[inline(always)]
-			pub fn new_unchecked() -> Self {
+			pub unsafe fn new_unchecked() -> Self {
 				Self { __private: () }
 			}
 

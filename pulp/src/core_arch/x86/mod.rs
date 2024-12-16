@@ -5,7 +5,7 @@ macro_rules! __impl {
 	($name: ident, $feature: tt) => {
 		impl $name {
 			#[inline(always)]
-			pub fn new_unchecked() -> Self {
+			pub unsafe fn new_unchecked() -> Self {
 				Self { __private: () }
 			}
 
