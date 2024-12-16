@@ -902,7 +902,7 @@ impl Simd for Neon {
 
 	#[inline(always)]
 	fn reduce_max_c64s(self, a: Self::c64s) -> c64 {
-		cast(a)
+		cast!(a)
 	}
 
 	#[inline(always)]
@@ -930,7 +930,7 @@ impl Simd for Neon {
 
 	#[inline(always)]
 	fn reduce_min_c64s(self, a: Self::c64s) -> c64 {
-		cast(a)
+		cast!(a)
 	}
 
 	#[inline(always)]
@@ -968,7 +968,7 @@ impl Simd for Neon {
 
 	#[inline(always)]
 	fn reduce_sum_c64s(self, a: Self::c64s) -> c64 {
-		cast(a)
+		cast!(a)
 	}
 
 	#[inline(always)]
@@ -1038,12 +1038,12 @@ impl Simd for Neon {
 
 	#[inline(always)]
 	fn splat_c32s(self, value: c32) -> Self::c32s {
-		cast([value; 2])
+		cast!(self.splat_f64x2(cast!(value)))
 	}
 
 	#[inline(always)]
 	fn splat_c64s(self, value: c64) -> Self::c64s {
-		cast(value)
+		cast!(value)
 	}
 
 	#[inline(always)]
@@ -1149,7 +1149,7 @@ impl Simd for Neon {
 
 	#[inline(always)]
 	fn wrapping_dyn_shl_u32s(self, a: Self::u32s, amount: Self::u32s) -> Self::u32s {
-		self.shl_dyn_u32x4(a, self.and_i32x4(cast(amount), self.splat_i32x4(32 - 1)))
+		self.shl_dyn_u32x4(a, self.and_i32x4(cast!(amount), self.splat_i32x4(32 - 1)))
 	}
 
 	#[inline(always)]
@@ -1341,18 +1341,18 @@ impl Simd for NeonFcma {
 
 	#[inline(always)]
 	fn conj_mul_add_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
-		let a = cast(a);
-		let b = cast(b);
-		let c = cast(c);
-		unsafe { cast(vcmlaq_270_f32(vcmlaq_0_f32(c, a, b), a, b)) }
+		let a = cast!(a);
+		let b = cast!(b);
+		let c = cast!(c);
+		unsafe { cast!(vcmlaq_270_f32(vcmlaq_0_f32(c, a, b), a, b)) }
 	}
 
 	#[inline(always)]
 	fn conj_mul_add_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
-		let a = cast(a);
-		let b = cast(b);
-		let c = cast(c);
-		unsafe { cast(vcmlaq_270_f64(vcmlaq_0_f64(c, a, b), a, b)) }
+		let a = cast!(a);
+		let b = cast!(b);
+		let c = cast!(c);
+		unsafe { cast!(vcmlaq_270_f64(vcmlaq_0_f64(c, a, b), a, b)) }
 	}
 
 	#[inline(always)]
@@ -1679,18 +1679,18 @@ impl Simd for NeonFcma {
 
 	#[inline(always)]
 	fn mul_add_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
-		let a = cast(a);
-		let b = cast(b);
-		let c = cast(c);
-		unsafe { cast(vcmlaq_90_f32(vcmlaq_0_f32(c, a, b), a, b)) }
+		let a = cast!(a);
+		let b = cast!(b);
+		let c = cast!(c);
+		unsafe { cast!(vcmlaq_90_f32(vcmlaq_0_f32(c, a, b), a, b)) }
 	}
 
 	#[inline(always)]
 	fn mul_add_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
-		let a = cast(a);
-		let b = cast(b);
-		let c = cast(c);
-		unsafe { cast(vcmlaq_90_f64(vcmlaq_0_f64(c, a, b), a, b)) }
+		let a = cast!(a);
+		let b = cast!(b);
+		let c = cast!(c);
+		unsafe { cast!(vcmlaq_90_f64(vcmlaq_0_f64(c, a, b), a, b)) }
 	}
 
 	#[inline(always)]
@@ -1849,7 +1849,7 @@ impl Simd for NeonFcma {
 
 	#[inline(always)]
 	fn reduce_max_c64s(self, a: Self::c64s) -> c64 {
-		cast(a)
+		cast!(a)
 	}
 
 	#[inline(always)]
@@ -1869,7 +1869,7 @@ impl Simd for NeonFcma {
 
 	#[inline(always)]
 	fn reduce_min_c64s(self, a: Self::c64s) -> c64 {
-		cast(a)
+		cast!(a)
 	}
 
 	#[inline(always)]
@@ -1899,7 +1899,7 @@ impl Simd for NeonFcma {
 
 	#[inline(always)]
 	fn reduce_sum_c64s(self, a: Self::c64s) -> c64 {
-		cast(a)
+		cast!(a)
 	}
 
 	#[inline(always)]
@@ -1969,12 +1969,12 @@ impl Simd for NeonFcma {
 
 	#[inline(always)]
 	fn splat_c32s(self, value: c32) -> Self::c32s {
-		cast([value; 2])
+		cast!(self.splat_f64x2(cast!(value)))
 	}
 
 	#[inline(always)]
 	fn splat_c64s(self, value: c64) -> Self::c64s {
-		cast(value)
+		cast!(value)
 	}
 
 	#[inline(always)]
@@ -2080,7 +2080,7 @@ impl Simd for NeonFcma {
 
 	#[inline(always)]
 	fn wrapping_dyn_shl_u32s(self, a: Self::u32s, amount: Self::u32s) -> Self::u32s {
-		self.shl_dyn_u32x4(a, self.and_i32x4(cast(amount), self.splat_i32x4(32 - 1)))
+		self.shl_dyn_u32x4(a, self.and_i32x4(cast!(amount), self.splat_i32x4(32 - 1)))
 	}
 
 	#[inline(always)]
@@ -2280,13 +2280,13 @@ impl Neon {
 	/// Returns the bitwise AND of NOT `a` and `b`.
 	#[inline(always)]
 	pub fn andnot_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
-		self.and_f32x4(cast(self.not_u32x4(cast(a))), b)
+		self.and_f32x4(cast!(self.not_u32x4(cast!(a))), b)
 	}
 
 	/// Returns the bitwise AND of NOT `a` and `b`.
 	#[inline(always)]
 	pub fn andnot_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
-		self.and_f64x2(cast(self.not_u64x2(cast(a))), b)
+		self.and_f64x2(cast!(self.not_u64x2(cast!(a))), b)
 	}
 
 	/// Returns the bitwise AND of NOT `a` and `b`.
@@ -3001,7 +3001,7 @@ impl Neon {
 
 	#[inline(always)]
 	pub fn reduce_sum_c64x1(self, a: f64x2) -> c64 {
-		cast(a)
+		cast!(a)
 	}
 
 	#[inline(always)]
@@ -3239,85 +3239,85 @@ impl Neon {
 	/// Returns a SIMD vector with all lanes set to the given value.
 	#[inline(always)]
 	pub fn splat_f32x4(self, value: f32) -> f32x4 {
-		cast([value; 4])
+		cast!(self.neon.vdupq_n_f32(value))
 	}
 
 	/// Returns a SIMD vector with all lanes set to the given value.
 	#[inline(always)]
 	pub fn splat_f64x2(self, value: f64) -> f64x2 {
-		cast([value; 2])
+		cast!(self.neon.vdupq_n_f64(value))
 	}
 
 	/// Returns a SIMD vector with all lanes set to the given value.
 	#[inline(always)]
 	pub fn splat_i16x8(self, value: i16) -> i16x8 {
-		cast([value; 8])
+		cast!(self.neon.vdupq_n_s16(value))
 	}
 
 	/// Returns a SIMD vector with all lanes set to the given value.
 	#[inline(always)]
 	pub fn splat_i32x4(self, value: i32) -> i32x4 {
-		cast([value; 4])
+		cast!(self.neon.vdupq_n_s32(value))
 	}
 
 	/// Returns a SIMD vector with all lanes set to the given value.
 	#[inline(always)]
 	pub fn splat_i64x2(self, value: i64) -> i64x2 {
-		cast([value; 2])
+		cast!(self.neon.vdupq_n_s64(value))
 	}
 
 	/// Returns a SIMD vector with all lanes set to the given value.
 	#[inline(always)]
 	pub fn splat_i8x16(self, value: i8) -> i8x16 {
-		cast([value; 16])
+		cast!(self.neon.vdupq_n_s8(value))
 	}
 
 	/// Returns a SIMD vector with all lanes set to the given value.
 	#[inline(always)]
 	pub fn splat_m16x8(self, value: m16) -> m16x8 {
-		cast!([value; 8])
+		cast!(self.splat_i16x8(cast!(value)))
 	}
 
 	/// Returns a SIMD vector with all lanes set to the given value.
 	#[inline(always)]
 	pub fn splat_m32x4(self, value: m32) -> m32x4 {
-		cast!([value; 4])
+		cast!(self.splat_i32x4(cast!(value)))
 	}
 
 	/// Returns a SIMD vector with all lanes set to the given value.
 	#[inline(always)]
 	pub fn splat_m64x2(self, value: m64) -> m64x2 {
-		cast!([value; 2])
+		cast!(self.splat_i64x2(cast!(value)))
 	}
 
 	/// Returns a SIMD vector with all lanes set to the given value.
 	#[inline(always)]
 	pub fn splat_m8x16(self, value: m8) -> m8x16 {
-		cast!([value; 16])
+		cast!(self.splat_i8x16(cast!(value)))
 	}
 
 	/// Returns a SIMD vector with all lanes set to the given value.
 	#[inline(always)]
 	pub fn splat_u16x8(self, value: u16) -> u16x8 {
-		cast([value; 8])
+		cast!(self.splat_i16x8(cast!(value)))
 	}
 
 	/// Returns a SIMD vector with all lanes set to the given value.
 	#[inline(always)]
 	pub fn splat_u32x4(self, value: u32) -> u32x4 {
-		cast([value; 4])
+		cast!(self.splat_i32x4(cast!(value)))
 	}
 
 	/// Returns a SIMD vector with all lanes set to the given value.
 	#[inline(always)]
 	pub fn splat_u64x2(self, value: u64) -> u64x2 {
-		cast([value; 2])
+		cast!(self.splat_i64x2(cast!(value)))
 	}
 
 	/// Returns a SIMD vector with all lanes set to the given value.
 	#[inline(always)]
 	pub fn splat_u8x16(self, value: u8) -> u8x16 {
-		cast([value; 16])
+		cast!(self.splat_i8x16(cast!(value)))
 	}
 
 	/// Subtracts the elements of each lane of `a` and `b`.
@@ -3577,45 +3577,45 @@ mod tests {
 
 			let scalar = Scalar::new();
 
-			let expected = cast(scalar.mul_c64s(cast(a), cast(b)));
+			let expected = cast!(scalar.mul_c64s(cast!(a), cast!(b)));
 			if let Some(simd) = Neon::try_new() {
 				let c = simd.mul_c64s(a, b);
 				assert_eq_c64(c, expected);
 			}
-			let expected = cast(scalar.mul_add_c64s(cast(a), cast(b), cast(acc)));
+			let expected = cast!(scalar.mul_add_c64s(cast!(a), cast!(b), cast!(acc)));
 			if let Some(simd) = Neon::try_new() {
 				let c = simd.mul_add_c64s(a, b, acc);
 				assert_eq_c64(c, expected);
 			}
 
-			let expected = cast(scalar.conj_mul_c64s(cast(a), cast(b)));
+			let expected = cast!(scalar.conj_mul_c64s(cast!(a), cast!(b)));
 			if let Some(simd) = Neon::try_new() {
 				let c = simd.conj_mul_c64s(a, b);
 				assert_eq_c64(c, expected);
 			}
-			let expected = cast(scalar.conj_mul_add_c64s(cast(a), cast(b), cast(acc)));
+			let expected = cast!(scalar.conj_mul_add_c64s(cast!(a), cast!(b), cast!(acc)));
 			if let Some(simd) = Neon::try_new() {
 				let c = simd.conj_mul_add_c64s(a, b, acc);
 				assert_eq_c64(c, expected);
 			}
 
-			let expected = cast(scalar.mul_c64s(cast(a), cast(b)));
+			let expected = cast!(scalar.mul_c64s(cast!(a), cast!(b)));
 			if let Some(simd) = NeonFcma::try_new() {
 				let c = simd.mul_c64s(a, b);
 				assert_eq_c64(c, expected);
 			}
-			let expected = cast(scalar.mul_add_c64s(cast(a), cast(b), cast(acc)));
+			let expected = cast!(scalar.mul_add_c64s(cast!(a), cast!(b), cast!(acc)));
 			if let Some(simd) = NeonFcma::try_new() {
 				let c = simd.mul_add_c64s(a, b, acc);
 				assert_eq_c64(c, expected);
 			}
 
-			let expected = cast(scalar.conj_mul_c64s(cast(a), cast(b)));
+			let expected = cast!(scalar.conj_mul_c64s(cast!(a), cast!(b)));
 			if let Some(simd) = NeonFcma::try_new() {
 				let c = simd.conj_mul_c64s(a, b);
 				assert_eq_c64(c, expected);
 			}
-			let expected = cast(scalar.conj_mul_add_c64s(cast(a), cast(b), cast(acc)));
+			let expected = cast!(scalar.conj_mul_add_c64s(cast!(a), cast!(b), cast!(acc)));
 			if let Some(simd) = NeonFcma::try_new() {
 				let c = simd.conj_mul_add_c64s(a, b, acc);
 				assert_eq_c64(c, expected);
@@ -3632,68 +3632,84 @@ mod tests {
 
 			let scalar = Scalar::new();
 
-			let expected = cast([
-				scalar.mul_c32s(cast([a.0, a.1]), cast([b.0, b.1])),
-				scalar.mul_c32s(cast([a.2, a.3]), cast([b.2, b.3])),
+			let expected = cast!([
+				scalar.mul_c32s(cast!([a.0, a.1]), cast!([b.0, b.1])),
+				scalar.mul_c32s(cast!([a.2, a.3]), cast!([b.2, b.3])),
 			]);
 			if let Some(simd) = Neon::try_new() {
 				let c = simd.mul_c32s(a, b);
 				assert_eq_c32(c, expected);
 			}
-			let expected = cast([
-				scalar.mul_add_c32s(cast([a.0, a.1]), cast([b.0, b.1]), cast([acc.0, acc.1])),
-				scalar.mul_add_c32s(cast([a.2, a.3]), cast([b.2, b.3]), cast([acc.2, acc.3])),
+			let expected = cast!([
+				scalar.mul_add_c32s(cast!([a.0, a.1]), cast!([b.0, b.1]), cast!([acc.0, acc.1])),
+				scalar.mul_add_c32s(cast!([a.2, a.3]), cast!([b.2, b.3]), cast!([acc.2, acc.3])),
 			]);
 			if let Some(simd) = Neon::try_new() {
 				let c = simd.mul_add_c32s(a, b, acc);
 				assert_eq_c32(c, expected);
 			}
 
-			let expected = cast([
-				scalar.conj_mul_c32s(cast([a.0, a.1]), cast([b.0, b.1])),
-				scalar.conj_mul_c32s(cast([a.2, a.3]), cast([b.2, b.3])),
+			let expected = cast!([
+				scalar.conj_mul_c32s(cast!([a.0, a.1]), cast!([b.0, b.1])),
+				scalar.conj_mul_c32s(cast!([a.2, a.3]), cast!([b.2, b.3])),
 			]);
 			if let Some(simd) = Neon::try_new() {
 				let c = simd.conj_mul_c32s(a, b);
 				assert_eq_c32(c, expected);
 			}
-			let expected = cast([
-				scalar.conj_mul_add_c32s(cast([a.0, a.1]), cast([b.0, b.1]), cast([acc.0, acc.1])),
-				scalar.conj_mul_add_c32s(cast([a.2, a.3]), cast([b.2, b.3]), cast([acc.2, acc.3])),
+			let expected = cast!([
+				scalar.conj_mul_add_c32s(
+					cast!([a.0, a.1]),
+					cast!([b.0, b.1]),
+					cast!([acc.0, acc.1])
+				),
+				scalar.conj_mul_add_c32s(
+					cast!([a.2, a.3]),
+					cast!([b.2, b.3]),
+					cast!([acc.2, acc.3])
+				),
 			]);
 			if let Some(simd) = Neon::try_new() {
 				let c = simd.conj_mul_add_c32s(a, b, acc);
 				assert_eq_c32(c, expected);
 			}
 
-			let expected = cast([
-				scalar.mul_c32s(cast([a.0, a.1]), cast([b.0, b.1])),
-				scalar.mul_c32s(cast([a.2, a.3]), cast([b.2, b.3])),
+			let expected = cast!([
+				scalar.mul_c32s(cast!([a.0, a.1]), cast!([b.0, b.1])),
+				scalar.mul_c32s(cast!([a.2, a.3]), cast!([b.2, b.3])),
 			]);
 			if let Some(simd) = NeonFcma::try_new() {
 				let c = simd.mul_c32s(a, b);
 				assert_eq_c32(c, expected);
 			}
-			let expected = cast([
-				scalar.mul_add_c32s(cast([a.0, a.1]), cast([b.0, b.1]), cast([acc.0, acc.1])),
-				scalar.mul_add_c32s(cast([a.2, a.3]), cast([b.2, b.3]), cast([acc.2, acc.3])),
+			let expected = cast!([
+				scalar.mul_add_c32s(cast!([a.0, a.1]), cast!([b.0, b.1]), cast!([acc.0, acc.1])),
+				scalar.mul_add_c32s(cast!([a.2, a.3]), cast!([b.2, b.3]), cast!([acc.2, acc.3])),
 			]);
 			if let Some(simd) = NeonFcma::try_new() {
 				let c = simd.mul_add_c32s(a, b, acc);
 				assert_eq_c32(c, expected);
 			}
 
-			let expected = cast([
-				scalar.conj_mul_c32s(cast([a.0, a.1]), cast([b.0, b.1])),
-				scalar.conj_mul_c32s(cast([a.2, a.3]), cast([b.2, b.3])),
+			let expected = cast!([
+				scalar.conj_mul_c32s(cast!([a.0, a.1]), cast!([b.0, b.1])),
+				scalar.conj_mul_c32s(cast!([a.2, a.3]), cast!([b.2, b.3])),
 			]);
 			if let Some(simd) = NeonFcma::try_new() {
 				let c = simd.conj_mul_c32s(a, b);
 				assert_eq_c32(c, expected);
 			}
-			let expected = cast([
-				scalar.conj_mul_add_c32s(cast([a.0, a.1]), cast([b.0, b.1]), cast([acc.0, acc.1])),
-				scalar.conj_mul_add_c32s(cast([a.2, a.3]), cast([b.2, b.3]), cast([acc.2, acc.3])),
+			let expected = cast!([
+				scalar.conj_mul_add_c32s(
+					cast!([a.0, a.1]),
+					cast!([b.0, b.1]),
+					cast!([acc.0, acc.1])
+				),
+				scalar.conj_mul_add_c32s(
+					cast!([a.2, a.3]),
+					cast!([b.2, b.3]),
+					cast!([acc.2, acc.3])
+				),
 			]);
 			if let Some(simd) = NeonFcma::try_new() {
 				let c = simd.conj_mul_add_c32s(a, b, acc);
@@ -3711,7 +3727,7 @@ mod tests {
 					*dst = 1000 + i as u32;
 				}
 
-				let rot: [u32; 4] = cast(simd.rotate_right_u32s(cast(array), amount));
+				let rot: [u32; 4] = cast!(simd.rotate_right_u32s(cast!(array), amount));
 				for i in 0..4 {
 					assert_eq!(rot[(i + amount) % 4], array[i]);
 				}
@@ -3722,7 +3738,7 @@ mod tests {
 					*dst = 1000 + i as u64;
 				}
 
-				let rot: [u64; 2] = cast(simd.rotate_right_u64s(cast(array), amount));
+				let rot: [u64; 2] = cast!(simd.rotate_right_u64s(cast!(array), amount));
 				for i in 0..2 {
 					assert_eq!(rot[(i + amount) % 2], array[i]);
 				}

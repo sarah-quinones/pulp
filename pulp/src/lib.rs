@@ -5580,13 +5580,13 @@ impl<T> Iota64 for T {
 	};
 }
 
+#[cfg(target_arch = "x86_64")]
 #[cfg(test)]
 mod tests {
 	use super::*;
 
 	#[test]
 	fn test_interleave() {
-		#[cfg(target_arch = "x86_64")]
 		if let Some(simd) = x86::V3::try_new() {
 			{
 				let src = [f64x4(0.0, 0.1, 1.0, 1.1), f64x4(2.0, 2.1, 3.0, 3.1)];
