@@ -2324,13 +2324,13 @@ impl Avx512f {
 		unsafe fn _mm512_loadu_epi64(mem_addr: *const i64) -> __m512i;
 		unsafe fn _mm512_storeu_epi64(mem_addr: *mut i64, a: __m512i);
 		unsafe fn _mm512_loadu_si512(mem_addr: *const i32) -> __m512i;
-		unsafe fn _mm512_storeu_si512(mem_addr: *mut i32, a: __m512i);
+		unsafe fn _mm512_storeu_si512(mem_addr: *mut __m512i, a: __m512i);
 		unsafe fn _mm512_loadu_pd(mem_addr: *const f64) -> __m512d;
 		unsafe fn _mm512_storeu_pd(mem_addr: *mut f64, a: __m512d);
 		unsafe fn _mm512_loadu_ps(mem_addr: *const f32) -> __m512;
 		unsafe fn _mm512_storeu_ps(mem_addr: *mut f32, a: __m512);
 		unsafe fn _mm512_load_si512(mem_addr: *const i32) -> __m512i;
-		unsafe fn _mm512_store_si512(mem_addr: *mut i32, a: __m512i);
+		unsafe fn _mm512_store_si512(mem_addr: *mut __m512i, a: __m512i);
 		unsafe fn _mm512_load_epi32(mem_addr: *const i32) -> __m512i;
 		unsafe fn _mm512_store_epi32(mem_addr: *mut i32, a: __m512i);
 		unsafe fn _mm512_load_epi64(mem_addr: *const i64) -> __m512i;
