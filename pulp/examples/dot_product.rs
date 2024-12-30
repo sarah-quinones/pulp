@@ -348,6 +348,17 @@ mod x86 {
 		}
 	}
 
+	pub fn bench_dot_simd_extract_reduce_ilp_fma_misaligned(bencher: Bencher, PlotArg(n): PlotArg) {
+		let x = &avec![1.0_f32; n + 1][1..];
+		let y = &avec![1.0_f32; n + 1][1..];
+
+		if let Some(simd) = V3::try_new() {
+			bencher.bench(|| dot_product_simd_extract_reduce_ilp_fma_v3(simd, x, y))
+		} else {
+			bencher.skip();
+		}
+	}
+
 	pub fn bench_dot_simd_extract_reduce_ilp_fma_aligned(bencher: Bencher, PlotArg(n): PlotArg) {
 		// aligned memory is more efficient for simd loads and stores
 		// always use this for benchmarks
@@ -580,6 +591,7 @@ fn main() -> std::io::Result<()> {
 			x86::bench_dot_simd_extract_reduce,
 			x86::bench_dot_simd_extract_reduce_ilp,
 			x86::bench_dot_simd_extract_reduce_ilp_fma,
+			x86::bench_dot_simd_extract_reduce_ilp_fma_misaligned,
 			x86::bench_dot_simd_extract_reduce_ilp_fma_aligned,
 			bench_dot_simd_extract_reduce_ilp_fma_aligned_runtime_dispatch,
 			bench_dot_simd_extract_reduce_ilp_fma_epilogue_aligned_runtime_dispatch,
