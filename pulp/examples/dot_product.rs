@@ -50,7 +50,7 @@ mod x86 {
 	use super::*;
 
 	use pulp::x86::V3;
-	use pulp::{cast, f32x8};
+	use pulp::{cast, f32x8, u32x8};
 
 	// x86/x86_64
 	// - V3 simd uses 256bit registers (f32x8)   => 16 registers
@@ -251,10 +251,10 @@ mod x86 {
 				// sum (reduce_sum(X * Y))
 				// reduce_sum(sum (X * Y))
 
-				let mut acc0 = simd.splat_f32x8(0.0);
-				let mut acc1 = simd.splat_f32x8(0.0);
-				let mut acc2 = simd.splat_f32x8(0.0);
-				let mut acc3 = simd.splat_f32x8(0.0);
+				let mut acc0 = simd.splat_u32x8(0);
+				let mut acc1 = simd.splat_u32x8(0);
+				let mut acc2 = simd.splat_u32x8(0);
+				let mut acc3 = simd.splat_u32x8(0);
 
 				// 12 registers are being used
 				// 4 for accumulators + 2×4 inside the loop for x[0|1] and y[0|1]
@@ -262,37 +262,37 @@ mod x86 {
 				let (y8_4, y8_1) = pulp::as_arrays::<4, _>(y8);
 
 				for ([x0, x1, x2, x3], [y0, y1, y2, y3]) in iter::zip(x8_4, y8_4) {
-					let x0: f32x8 = cast(*x0);
-					let y0: f32x8 = cast(*y0);
-					let x1: f32x8 = cast(*x1);
-					let y1: f32x8 = cast(*y1);
-					let x2: f32x8 = cast(*x2);
-					let y2: f32x8 = cast(*y2);
-					let x3: f32x8 = cast(*x3);
-					let y3: f32x8 = cast(*y3);
+					let x0: u32x8 = cast(*x0);
+					let y0: u32x8 = cast(*y0);
+					let x1: u32x8 = cast(*x1);
+					let y1: u32x8 = cast(*y1);
+					let x2: u32x8 = cast(*x2);
+					let y2: u32x8 = cast(*y2);
+					let x3: u32x8 = cast(*x3);
+					let y3: u32x8 = cast(*y3);
 
-					acc0 = simd.mul_add_f32x8(x0, y0, acc0);
-					acc1 = simd.mul_add_f32x8(x1, y1, acc1);
-					acc2 = simd.mul_add_f32x8(x2, y2, acc2);
-					acc3 = simd.mul_add_f32x8(x3, y3, acc3);
+					acc0 = simd.wrapping_add_u32x8(simd.wrapping_mul_u32x8(x0, y0), acc0);
+					acc1 = simd.wrapping_add_u32x8(simd.wrapping_mul_u32x8(x1, y1), acc1);
+					acc2 = simd.wrapping_add_u32x8(simd.wrapping_mul_u32x8(x2, y2), acc2);
+					acc3 = simd.wrapping_add_u32x8(simd.wrapping_mul_u32x8(x3, y3), acc3);
 				}
 
 				for (x0, y0) in iter::zip(x8_1, y8_1) {
-					let x0: f32x8 = cast(*x0);
-					let y0: f32x8 = cast(*y0);
-					acc0 = simd.mul_add_f32x8(x0, y0, acc0);
+					let x0: u32x8 = cast(*x0);
+					let y0: u32x8 = cast(*y0);
+					acc0 = simd.wrapping_add_u32x8(simd.wrapping_mul_u32x8(x0, y0), acc0);
 				}
 
 				// reduce_sum_f32s
 				// f32x8 -> f32x4 + f32x4
 				// f32x4 -> f32x2 + f32x2
 				// f32x2 -> f32 + f32
-				acc0 = simd.add_f32x8(acc0, acc1);
-				acc2 = simd.add_f32x8(acc2, acc3);
+				acc0 = simd.wrapping_add_u32x8(acc0, acc1);
+				acc2 = simd.wrapping_add_u32x8(acc2, acc3);
 
-				acc0 = simd.add_f32x8(acc0, acc2);
+				acc0 = simd.wrapping_add_u32x8(acc0, acc2);
 
-				let mut acc = simd.reduce_sum_f32s(acc0);
+				let mut acc = simd.reduce_sum_f32s(cast(acc0));
 
 				for (x, y) in iter::zip(x1, y1) {
 					acc += x * y;

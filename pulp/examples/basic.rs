@@ -89,9 +89,36 @@ mod x86 {
 
 					let (head, tail) = pulp::as_arrays::<8, _>(v);
 
+					let mut acc0 = simd.splat_f64x8(0.0);
+					let mut acc1 = simd.splat_f64x8(0.0);
+					let mut acc2 = simd.splat_f64x8(0.0);
+					let mut acc3 = simd.splat_f64x8(0.0);
+
+					let (head4, head1) = pulp::as_arrays::<4, _>(head);
+
+					for [x0, x1, x2, x3] in head4 {
+						let x0 = pulp::cast(*x0);
+						let x1 = pulp::cast(*x1);
+						let x2 = pulp::cast(*x2);
+						let x3 = pulp::cast(*x3);
+
+						acc0 = simd.add_f64x8(acc0, x0);
+						acc1 = simd.add_f64x8(acc1, x1);
+						acc2 = simd.add_f64x8(acc2, x2);
+						acc3 = simd.add_f64x8(acc3, x3);
+					}
+					for x0 in head1 {
+						let x0 = pulp::cast(*x0);
+						acc0 = simd.add_f64x8(acc0, x0);
+					}
+
+					acc0 = simd.add_f64x8(acc0, acc1);
+					acc2 = simd.add_f64x8(acc2, acc3);
+					acc0 = simd.add_f64x8(acc0, acc2);
+
 					let tail = simd.partial_load_f64s(tail);
 
-					simd.reduce_sum_f64s(simd.add_f64s(inline_barrier(simd, head), tail))
+					simd.reduce_sum_f64s(simd.add_f64x8(acc0, tail))
 				}
 			}
 
@@ -101,48 +128,33 @@ mod x86 {
 
 	#[inline(always)]
 	fn inline_barrier(simd: V4, head: &[[f64; 8]]) -> f64x8 {
-		struct Imp<'a> {
-			simd: V4,
-			head: &'a [[f64; 8]],
+		let mut acc0 = simd.splat_f64x8(0.0);
+		let mut acc1 = simd.splat_f64x8(0.0);
+		let mut acc2 = simd.splat_f64x8(0.0);
+		let mut acc3 = simd.splat_f64x8(0.0);
+
+		let (head4, head1) = pulp::as_arrays::<4, _>(head);
+
+		for [x0, x1, x2, x3] in head4 {
+			let x0 = pulp::cast(*x0);
+			let x1 = pulp::cast(*x1);
+			let x2 = pulp::cast(*x2);
+			let x3 = pulp::cast(*x3);
+
+			acc0 = simd.add_f64x8(acc0, x0);
+			acc1 = simd.add_f64x8(acc1, x1);
+			acc2 = simd.add_f64x8(acc2, x2);
+			acc3 = simd.add_f64x8(acc3, x3);
+		}
+		for x0 in head1 {
+			let x0 = pulp::cast(*x0);
+			acc0 = simd.add_f64x8(acc0, x0);
 		}
 
-		impl pulp::NullaryFnOnce for Imp<'_> {
-			type Output = f64x8;
-
-			#[inline(always)]
-			fn call(self) -> Self::Output {
-				let Self { simd, head } = self;
-
-				let mut acc0 = simd.splat_f64x8(0.0);
-				let mut acc1 = simd.splat_f64x8(0.0);
-				let mut acc2 = simd.splat_f64x8(0.0);
-				let mut acc3 = simd.splat_f64x8(0.0);
-
-				let (head4, head1) = pulp::as_arrays::<4, _>(head);
-
-				for [x0, x1, x2, x3] in head4 {
-					let x0 = pulp::cast(*x0);
-					let x1 = pulp::cast(*x1);
-					let x2 = pulp::cast(*x2);
-					let x3 = pulp::cast(*x3);
-
-					acc0 = simd.add_f64x8(acc0, x0);
-					acc1 = simd.add_f64x8(acc1, x1);
-					acc2 = simd.add_f64x8(acc2, x2);
-					acc3 = simd.add_f64x8(acc3, x3);
-				}
-				for x0 in head1 {
-					let x0 = pulp::cast(*x0);
-					acc0 = simd.add_f64x8(acc0, x0);
-				}
-
-				acc0 = simd.add_f64x8(acc0, acc1);
-				acc2 = simd.add_f64x8(acc2, acc3);
-				acc0 = simd.add_f64x8(acc0, acc2);
-				acc0
-			}
-		}
-		simd.vectorize(Imp { simd, head })
+		acc0 = simd.add_f64x8(acc0, acc1);
+		acc2 = simd.add_f64x8(acc2, acc3);
+		acc0 = simd.add_f64x8(acc0, acc2);
+		acc0
 	}
 
 	fn sum_pulp_dispatch(bencher: Bencher, len: usize) {
@@ -161,9 +173,10 @@ mod x86 {
 					let Self { v } = self;
 
 					let (head, tail) = S::as_simd_f64s(v);
-					let tail = simd.partial_load_f64s(tail);
-
-					simd.reduce_sum_f64s(simd.add_f64s(inline_barrier_generic(simd, head), tail))
+					simd.reduce_sum_f64s(simd.add_f64s(
+						inline_barrier_generic(simd, head),
+						simd.partial_load_f64s(tail),
+					))
 				}
 			}
 
@@ -173,49 +186,34 @@ mod x86 {
 
 	#[inline(always)]
 	fn inline_barrier_generic<S: Simd>(simd: S, head: &[S::f64s]) -> S::f64s {
-		struct Imp<'a, S: Simd> {
-			simd: S,
-			head: &'a [S::f64s],
+		let mut acc0 = simd.splat_f64s(0.0);
+		let mut acc1 = simd.splat_f64s(0.0);
+		let mut acc2 = simd.splat_f64s(0.0);
+		let mut acc3 = simd.splat_f64s(0.0);
+
+		let (head4, head1) = pulp::as_arrays::<4, _>(head);
+
+		for [x0, x1, x2, x3] in head4 {
+			let x0 = pulp::cast(*x0);
+			let x1 = pulp::cast(*x1);
+			let x2 = pulp::cast(*x2);
+			let x3 = pulp::cast(*x3);
+
+			acc0 = simd.add_f64s(acc0, x0);
+			acc1 = simd.add_f64s(acc1, x1);
+			acc2 = simd.add_f64s(acc2, x2);
+			acc3 = simd.add_f64s(acc3, x3);
 		}
 
-		impl<S: Simd> pulp::NullaryFnOnce for Imp<'_, S> {
-			type Output = S::f64s;
-
-			#[inline(always)]
-			fn call(self) -> Self::Output {
-				let Self { simd, head } = self;
-
-				let mut acc0 = simd.splat_f64s(0.0);
-				let mut acc1 = simd.splat_f64s(0.0);
-				let mut acc2 = simd.splat_f64s(0.0);
-				let mut acc3 = simd.splat_f64s(0.0);
-
-				let (head4, head1) = pulp::as_arrays::<4, _>(head);
-
-				for [x0, x1, x2, x3] in head4 {
-					let x0 = pulp::cast(*x0);
-					let x1 = pulp::cast(*x1);
-					let x2 = pulp::cast(*x2);
-					let x3 = pulp::cast(*x3);
-
-					acc0 = simd.add_f64s(acc0, x0);
-					acc1 = simd.add_f64s(acc1, x1);
-					acc2 = simd.add_f64s(acc2, x2);
-					acc3 = simd.add_f64s(acc3, x3);
-				}
-
-				for x0 in head1 {
-					let x0 = pulp::cast(*x0);
-					acc0 = simd.add_f64s(acc0, x0);
-				}
-
-				acc0 = simd.add_f64s(acc0, acc1);
-				acc2 = simd.add_f64s(acc2, acc3);
-				acc0 = simd.add_f64s(acc0, acc2);
-				acc0
-			}
+		for x0 in head1 {
+			let x0 = pulp::cast(*x0);
+			acc0 = simd.add_f64s(acc0, x0);
 		}
-		simd.vectorize(Imp { simd, head })
+
+		acc0 = simd.add_f64s(acc0, acc1);
+		acc2 = simd.add_f64s(acc2, acc3);
+		acc0 = simd.add_f64s(acc0, acc2);
+		acc0
 	}
 
 	pub fn main() -> std::io::Result<()> {
@@ -223,7 +221,7 @@ mod x86 {
 
 		bench.register_many(
 			list![sum_scalar, sum_stdarch, sum_pulp, sum_pulp_dispatch],
-			[1, 2, 3, 4, 8, 15, 16, 32, 64, 256],
+			[64, 256, 1024],
 		);
 		bench.run()?;
 		Ok(())
