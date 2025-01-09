@@ -41,6 +41,9 @@ criterion = "0.5.0"
 diol = { version = "0.8.3", default-features = false }
 rand = "0.8.5"
 
+[build-dependencies]
+version_check = "0.9.5"
+
 [[bench]]
 name = "bench"
 harness = false

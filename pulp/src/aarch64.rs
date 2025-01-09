@@ -306,11 +306,13 @@ impl Simd for Neon {
 
 	#[inline(always)]
 	fn deinterleave_shfl_f32s<T: Interleave>(self, values: T) -> T {
-		if const { size_of::<T>() == 2 * size_of::<Self::f32s>() } {
+		if try_const! { core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f32s>() } {
 			unsafe { core::mem::transmute_copy(&vld2q_f32((&values) as *const _ as *const f32)) }
-		} else if const { size_of::<T>() == 3 * size_of::<Self::f32s>() } {
+		} else if try_const! { core::mem::size_of::<T>() == 3 * core::mem::size_of::<Self::f32s>() }
+		{
 			unsafe { core::mem::transmute_copy(&vld3q_f32((&values) as *const _ as *const f32)) }
-		} else if const { size_of::<T>() == 4 * size_of::<Self::f32s>() } {
+		} else if try_const! { core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f32s>() }
+		{
 			unsafe { core::mem::transmute_copy(&vld4q_f32((&values) as *const _ as *const f32)) }
 		} else {
 			unsafe { deinterleave_fallback::<f32, Self::f32s, T>(values) }
@@ -319,11 +321,13 @@ impl Simd for Neon {
 
 	#[inline(always)]
 	fn deinterleave_shfl_f64s<T: Interleave>(self, values: T) -> T {
-		if const { size_of::<T>() == 2 * size_of::<Self::f32s>() } {
+		if try_const! { core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f32s>() } {
 			unsafe { core::mem::transmute_copy(&vld2q_f64((&values) as *const _ as *const f64)) }
-		} else if const { size_of::<T>() == 3 * size_of::<Self::f32s>() } {
+		} else if try_const! { core::mem::size_of::<T>() == 3 * core::mem::size_of::<Self::f32s>() }
+		{
 			unsafe { core::mem::transmute_copy(&vld3q_f64((&values) as *const _ as *const f64)) }
-		} else if const { size_of::<T>() == 4 * size_of::<Self::f32s>() } {
+		} else if try_const! { core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f32s>() }
+		{
 			unsafe { core::mem::transmute_copy(&vld4q_f64((&values) as *const _ as *const f64)) }
 		} else {
 			unsafe { deinterleave_fallback::<f64, Self::f64s, T>(values) }
@@ -375,17 +379,19 @@ impl Simd for Neon {
 		unsafe {
 			let mut out: T = core::mem::zeroed();
 
-			if const { size_of::<T>() == 2 * size_of::<Self::f32s>() } {
+			if try_const! { core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f32s>() } {
 				vst2q_f32(
 					(&mut out) as *mut _ as *mut f32,
 					core::mem::transmute_copy(&values),
 				);
-			} else if const { size_of::<T>() == 3 * size_of::<Self::f32s>() } {
+			} else if try_const! { core::mem::size_of::<T>() == 3 * core::mem::size_of::<Self::f32s>() }
+			{
 				vst3q_f32(
 					(&mut out) as *mut _ as *mut f32,
 					core::mem::transmute_copy(&values),
 				);
-			} else if const { size_of::<T>() == 4 * size_of::<Self::f32s>() } {
+			} else if try_const! { core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f32s>() }
+			{
 				vst4q_f32(
 					(&mut out) as *mut _ as *mut f32,
 					core::mem::transmute_copy(&values),
@@ -403,17 +409,19 @@ impl Simd for Neon {
 		unsafe {
 			let mut out: T = core::mem::zeroed();
 
-			if const { size_of::<T>() == 2 * size_of::<Self::f32s>() } {
+			if try_const! { core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f32s>() } {
 				vst2q_f64(
 					(&mut out) as *mut _ as *mut f64,
 					core::mem::transmute_copy(&values),
 				);
-			} else if const { size_of::<T>() == 3 * size_of::<Self::f32s>() } {
+			} else if try_const! { core::mem::size_of::<T>() == 3 * core::mem::size_of::<Self::f32s>() }
+			{
 				vst3q_f64(
 					(&mut out) as *mut _ as *mut f64,
 					core::mem::transmute_copy(&values),
 				);
-			} else if const { size_of::<T>() == 4 * size_of::<Self::f32s>() } {
+			} else if try_const! { core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f32s>() }
+			{
 				vst4q_f64(
 					(&mut out) as *mut _ as *mut f64,
 					core::mem::transmute_copy(&values),

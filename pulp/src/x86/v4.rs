@@ -318,7 +318,7 @@ impl Simd for V4 {
 	fn deinterleave_shfl_f32s<T: Interleave>(self, values: T) -> T {
 		let avx = self.avx512f;
 
-		if const { size_of::<T>() == 2 * size_of::<Self::f32s>() } {
+		if try_const! { core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f32s>() } {
 			let values: [__m512d; 2] = unsafe { core::mem::transmute_copy(&values) };
 			// a0 b0 a1 b1 a2 b2 a3 b3
 			// a4 b4 a5 b5 a6 b6 a7 b7
@@ -338,7 +338,8 @@ impl Simd for V4 {
 			];
 
 			unsafe { core::mem::transmute_copy(&values) }
-		} else if const { size_of::<T>() == 4 * size_of::<Self::f32s>() } {
+		} else if try_const! { core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f32s>() }
+		{
 			// a0 b0 c0 d0 a1 b1 c1 d1
 			// a2 b2 c2 d2 a3 b3 c3 d3
 			// a4 b4 c4 d4 a5 b5 c5 d5
@@ -384,7 +385,7 @@ impl Simd for V4 {
 	fn deinterleave_shfl_f64s<T: Interleave>(self, values: T) -> T {
 		let avx = self.avx512f;
 
-		if const { size_of::<T>() == 2 * size_of::<Self::f64s>() } {
+		if try_const! { core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f64s>() } {
 			let values: [__m512d; 2] = unsafe { core::mem::transmute_copy(&values) };
 			unsafe {
 				core::mem::transmute_copy(&[
@@ -392,7 +393,8 @@ impl Simd for V4 {
 					avx._mm512_unpackhi_pd(values[0], values[1]),
 				])
 			}
-		} else if const { size_of::<T>() == 4 * size_of::<Self::f64s>() } {
+		} else if try_const! { core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f64s>() }
+		{
 			let values: [__m512d; 4] = unsafe { core::mem::transmute_copy(&values) };
 
 			// a0 b0 c0 d0
@@ -480,9 +482,9 @@ impl Simd for V4 {
 
 	#[inline(always)]
 	fn interleave_shfl_f32s<T: Interleave>(self, values: T) -> T {
-		if const {
-			(size_of::<T>() == 2 * size_of::<Self::f32s>())
-				|| (size_of::<T>() == 4 * size_of::<Self::f32s>())
+		if try_const! {
+			(core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f32s>())
+				|| (core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f32s>())
 		} {
 			// permutation is inverse of itself in this case
 			self.deinterleave_shfl_f32s(values)
@@ -493,7 +495,7 @@ impl Simd for V4 {
 
 	#[inline(always)]
 	fn interleave_shfl_f64s<T: Interleave>(self, values: T) -> T {
-		if const { size_of::<T>() == 4 * size_of::<Self::f64s>() } {
+		if try_const! { core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f64s>() } {
 			let values: [__m512d; 4] = unsafe { core::mem::transmute_copy(&values) };
 			let avx = self.avx512f;
 
@@ -519,7 +521,8 @@ impl Simd for V4 {
 					avx._mm512_unpackhi_pd(values[2], values[3]),
 				])
 			}
-		} else if const { size_of::<T>() == 2 * size_of::<Self::f64s>() } {
+		} else if try_const! { core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f64s>() }
+		{
 			// permutation is inverse of itself in this case
 			self.deinterleave_shfl_f64s(values)
 		} else {

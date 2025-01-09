@@ -20,7 +20,7 @@ pub use v3::*;
 #[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 pub use v4::*;
 
-#[target_feature(enable = "avx2")]
+#[target_feature(enable = "avx,avx2")]
 #[inline]
 unsafe fn avx_ld_u32s(ptr: *const u32, f: unsafe extern "C" fn()) -> u32x8 {
 	let ret: __m256;
@@ -38,7 +38,7 @@ unsafe fn avx_ld_u32s(ptr: *const u32, f: unsafe extern "C" fn()) -> u32x8 {
 	cast!(ret)
 }
 
-#[target_feature(enable = "avx2")]
+#[target_feature(enable = "avx,avx2")]
 #[inline]
 unsafe fn avx_st_u32s(ptr: *mut u32, value: u32x8, f: unsafe extern "C" fn()) {
 	core::arch::asm! {

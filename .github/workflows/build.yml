@@ -39,6 +39,25 @@ jobs:
       - name: Test debug no-std
         run: cargo test --no-default-features
 
+  cargo-msrv:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, macos-13, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@1.67.0
+
+      - name: Build debug
+        run: cargo build
+
+      - name: Build debug no-std
+        run: cargo build --no-default-features
+
   cargo-tests-nightly:
     runs-on: ${{ matrix.os }}
 

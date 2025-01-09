@@ -4,6 +4,8 @@ use arch::*;
 macro_rules! __impl {
 	($name: ident, $feature: tt) => {
 		impl $name {
+			/// # Safety
+			/// requires the corresponding feature
 			#[inline(always)]
 			pub unsafe fn new_unchecked() -> Self {
 				Self { __private: () }
@@ -36,8 +38,10 @@ macro_rules! __impl {
 macro_rules! __impl512 {
 	($name: ident, $feature: tt) => {
 		impl $name {
+			/// # Safety
+			/// requires the corresponding feature
 			#[inline(always)]
-			pub fn new_unchecked() -> Self {
+			pub unsafe fn new_unchecked() -> Self {
 				Self { __private: () }
 			}
 
