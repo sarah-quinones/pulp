@@ -202,17 +202,18 @@ use match_cfg;
 /// This function asserts at compile time that the two types have the same size.
 #[macro_export]
 macro_rules! cast {
-	($val: expr $(,)?) => {
+	($val: expr $(,)?) => {{
+		let __val = $val;
 		if try_const! { false } {
 			// checks type constraints
-			$crate::cast($val)
+			$crate::cast(__val)
 		} else {
-			#[allow(unused_unsafe)]
+			#[allow(unused_unsafe, clippy::missing_transmute_annotations)]
 			unsafe {
-				::core::mem::transmute($val)
+				::core::mem::transmute(__val)
 			}
 		}
-	};
+	}};
 }
 
 use bytemuck::{AnyBitPattern, NoUninit, Pod, Zeroable};
