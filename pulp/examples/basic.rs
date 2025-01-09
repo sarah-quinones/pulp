@@ -9,8 +9,8 @@ mod x86 {
 	use diol::prelude::*;
 
 	use core::arch::x86_64::*;
+	use pulp::Simd;
 	use pulp::x86::V4;
-	use pulp::{Simd, f64x8};
 
 	fn sum_scalar(bencher: Bencher, len: usize) {
 		let v = &*avec![0.0f64; len];
