@@ -308,7 +308,7 @@ macro_rules! simd_type {
                         f.call()
                     }
 
-                    if try_const! { ::core::mem::size_of::<F>() <= 8 * ::core::mem::size_of::<::core::primitive::usize>() } {
+                    if $crate::try_const! { ::core::mem::size_of::<F>() <= 8 * ::core::mem::size_of::<::core::primitive::usize>() } {
                         union Pad<T> {
                             t: ::core::mem::ManuallyDrop<T>,
                             __u: ::core::mem::MaybeUninit<[usize; 8]>,

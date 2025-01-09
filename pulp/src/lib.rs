@@ -204,7 +204,7 @@ use match_cfg;
 macro_rules! cast {
 	($val: expr $(,)?) => {{
 		let __val = $val;
-		if try_const! { false } {
+		if $crate::try_const! { false } {
 			// checks type constraints
 			$crate::cast(__val)
 		} else {
