@@ -9,6 +9,7 @@ mod x86 {
 	use diol::prelude::*;
 
 	use core::arch::x86_64::*;
+	use core::mem::transmute;
 	use pulp::Simd;
 	use pulp::x86::V4;
 
@@ -25,14 +26,15 @@ mod x86 {
 		let mut acc2 = _mm512_set1_pd(0.0);
 		let mut acc3 = _mm512_set1_pd(0.0);
 
+		// 512 = 64 * 8
 		let (head, tail) = pulp::as_arrays::<8, _>(v);
 		let (head4, head1) = pulp::as_arrays::<4, _>(head);
 
 		for [x0, x1, x2, x3] in head4 {
-			let x0 = pulp::cast(*x0);
-			let x1 = pulp::cast(*x1);
-			let x2 = pulp::cast(*x2);
-			let x3 = pulp::cast(*x3);
+			let x0 = transmute(*x0);
+			let x1 = transmute(*x1);
+			let x2 = transmute(*x2);
+			let x3 = transmute(*x3);
 
 			acc0 = _mm512_add_pd(acc0, x0);
 			acc1 = _mm512_add_pd(acc1, x1);
@@ -71,59 +73,64 @@ mod x86 {
 	}
 
 	fn sum_pulp(bencher: Bencher, len: usize) {
-		let simd = V4::try_new().unwrap();
-		let v = &*avec![0.0f64; len];
+		if let Some(simd) = V4::try_new() {
+			let v = &*avec![0.0f64; len];
 
-		bencher.bench(|| {
-			struct Imp<'a> {
-				simd: V4,
-				v: &'a [f64],
-			}
-
-			impl pulp::NullaryFnOnce for Imp<'_> {
-				type Output = f64;
-
-				#[inline(always)]
-				fn call(self) -> Self::Output {
-					let Self { simd, v } = self;
-
-					let (head, tail) = pulp::as_arrays::<8, _>(v);
-
-					let mut acc0 = simd.splat_f64x8(0.0);
-					let mut acc1 = simd.splat_f64x8(0.0);
-					let mut acc2 = simd.splat_f64x8(0.0);
-					let mut acc3 = simd.splat_f64x8(0.0);
-
-					let (head4, head1) = pulp::as_arrays::<4, _>(head);
-
-					for [x0, x1, x2, x3] in head4 {
-						let x0 = pulp::cast(*x0);
-						let x1 = pulp::cast(*x1);
-						let x2 = pulp::cast(*x2);
-						let x3 = pulp::cast(*x3);
-
-						acc0 = simd.add_f64x8(acc0, x0);
-						acc1 = simd.add_f64x8(acc1, x1);
-						acc2 = simd.add_f64x8(acc2, x2);
-						acc3 = simd.add_f64x8(acc3, x3);
-					}
-					for x0 in head1 {
-						let x0 = pulp::cast(*x0);
-						acc0 = simd.add_f64x8(acc0, x0);
-					}
-
-					acc0 = simd.add_f64x8(acc0, acc1);
-					acc2 = simd.add_f64x8(acc2, acc3);
-					acc0 = simd.add_f64x8(acc0, acc2);
-
-					let tail = simd.partial_load_f64s(tail);
-
-					simd.reduce_sum_f64s(simd.add_f64x8(acc0, tail))
+			bencher.bench(|| {
+				struct Imp<'a> {
+					simd: V4,
+					v: &'a [f64],
 				}
-			}
 
-			simd.vectorize(Imp { simd, v })
-		});
+				impl pulp::NullaryFnOnce for Imp<'_> {
+					type Output = f64;
+
+					#[inline(always)]
+					fn call(self) -> Self::Output {
+						let Self { simd, v } = self;
+
+						let (head, tail) = pulp::as_arrays::<8, _>(v);
+
+						let mut acc0 = simd.splat_f64x8(0.0);
+						let mut acc1 = simd.splat_f64x8(0.0);
+						let mut acc2 = simd.splat_f64x8(0.0);
+						let mut acc3 = simd.splat_f64x8(0.0);
+
+						let (head4, head1) = pulp::as_arrays::<4, _>(head);
+
+						for [x0, x1, x2, x3] in head4 {
+							let x0 = pulp::cast(*x0);
+							let x1 = pulp::cast(*x1);
+							let x2 = pulp::cast(*x2);
+							let x3 = pulp::cast(*x3);
+
+							acc0 = pulp::cast(
+								simd.avx512f._mm512_add_pd(pulp::cast(acc0), pulp::cast(x0)),
+							);
+
+							acc0 = simd.add_f64x8(acc0, x0);
+							acc1 = simd.add_f64x8(acc1, x1);
+							acc2 = simd.add_f64x8(acc2, x2);
+							acc3 = simd.add_f64x8(acc3, x3);
+						}
+						for x0 in head1 {
+							let x0 = pulp::cast(*x0);
+							acc0 = simd.add_f64x8(acc0, x0);
+						}
+
+						acc0 = simd.add_f64x8(acc0, acc1);
+						acc2 = simd.add_f64x8(acc2, acc3);
+						acc0 = simd.add_f64x8(acc0, acc2);
+
+						let tail = simd.partial_load_f64s(tail);
+
+						simd.reduce_sum_f64s(simd.add_f64x8(acc0, tail))
+					}
+				}
+
+				simd.vectorize(Imp { simd, v })
+			});
+		}
 	}
 
 	fn sum_pulp_dispatch(bencher: Bencher, len: usize) {
@@ -150,20 +157,14 @@ mod x86 {
 
 					let (head4, head1) = pulp::as_arrays::<4, _>(head);
 
-					for [x0, x1, x2, x3] in head4 {
-						let x0 = pulp::cast(*x0);
-						let x1 = pulp::cast(*x1);
-						let x2 = pulp::cast(*x2);
-						let x3 = pulp::cast(*x3);
-
+					for &[x0, x1, x2, x3] in head4 {
 						acc0 = simd.add_f64s(acc0, x0);
 						acc1 = simd.add_f64s(acc1, x1);
 						acc2 = simd.add_f64s(acc2, x2);
 						acc3 = simd.add_f64s(acc3, x3);
 					}
 
-					for x0 in head1 {
-						let x0 = pulp::cast(*x0);
+					for &x0 in head1 {
 						acc0 = simd.add_f64s(acc0, x0);
 					}
 

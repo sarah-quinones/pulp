@@ -4694,6 +4694,7 @@ impl V4 {
 #[inline]
 unsafe fn avx512_ld_u32s(ptr: *const u32, f: unsafe extern "C" fn()) -> u32x16 {
 	let ret: __m512;
+	#[cfg(target_arch = "x86_64")]
 	core::arch::asm! {
 		"lea rcx, [rip + 2f]",
 		"jmp {f}",
@@ -4701,6 +4702,17 @@ unsafe fn avx512_ld_u32s(ptr: *const u32, f: unsafe extern "C" fn()) -> u32x16 {
 		f = in(reg) f,
 		in("rax") ptr,
 		out("rcx") _,
+		out("zmm0") ret,
+		out("zmm1") _,
+	};
+	#[cfg(target_arch = "x86")]
+	core::arch::asm! {
+		"lea ecx, [eip + 2f]",
+		"jmp {f}",
+		"2:",
+		f = in(reg) f,
+		in("eax") ptr,
+		out("ecx") _,
 		out("zmm0") ret,
 		out("zmm1") _,
 	};
@@ -4712,6 +4724,7 @@ unsafe fn avx512_ld_u32s(ptr: *const u32, f: unsafe extern "C" fn()) -> u32x16 {
 #[target_feature(enable = "avx512vl")]
 #[inline]
 unsafe fn avx512_st_u32s(ptr: *mut u32, value: u32x16, f: unsafe extern "C" fn()) {
+	#[cfg(target_arch = "x86_64")]
 	core::arch::asm! {
 		"lea rcx, [rip + 2f]",
 		"jmp {f}",
@@ -4720,6 +4733,18 @@ unsafe fn avx512_st_u32s(ptr: *mut u32, value: u32x16, f: unsafe extern "C" fn()
 
 		in("rax") ptr,
 		out("rcx") _,
+		inout("zmm0") cast::<_, __m512>(value) => _,
+		out("zmm1") _,
+	};
+	#[cfg(target_arch = "x86")]
+	core::arch::asm! {
+		"lea ecx, [eip + 2f]",
+		"jmp {f}",
+		"2:",
+		f = in(reg) f,
+
+		in("eax") ptr,
+		out("ecx") _,
 		inout("zmm0") cast::<_, __m512>(value) => _,
 		out("zmm1") _,
 	};

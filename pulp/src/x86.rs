@@ -24,6 +24,7 @@ pub use v4::*;
 #[inline]
 unsafe fn avx_ld_u32s(ptr: *const u32, f: unsafe extern "C" fn()) -> u32x8 {
 	let ret: __m256;
+	#[cfg(target_arch = "x86_64")]
 	core::arch::asm! {
 		"lea rcx, [rip + 2f]",
 		"jmp {f}",
@@ -35,12 +36,25 @@ unsafe fn avx_ld_u32s(ptr: *const u32, f: unsafe extern "C" fn()) -> u32x8 {
 		out("ymm1") _,
 	};
 
+	#[cfg(target_arch = "x86")]
+	core::arch::asm! {
+		"lea ecx, [eip + 2f]",
+		"jmp {f}",
+		"2:",
+		f = in(reg) f,
+		in("eax") ptr,
+		out("ecx") _,
+		out("ymm0") ret,
+		out("ymm1") _,
+	};
+
 	cast!(ret)
 }
 
 #[target_feature(enable = "avx,avx2")]
 #[inline]
 unsafe fn avx_st_u32s(ptr: *mut u32, value: u32x8, f: unsafe extern "C" fn()) {
+	#[cfg(target_arch = "x86_64")]
 	core::arch::asm! {
 		"lea rcx, [rip + 2f]",
 		"jmp {f}",
@@ -49,6 +63,19 @@ unsafe fn avx_st_u32s(ptr: *mut u32, value: u32x8, f: unsafe extern "C" fn()) {
 
 		in("rax") ptr,
 		out("rcx") _,
+		inout("ymm0") cast::<_, __m256>(value) => _,
+		out("ymm1") _,
+	};
+
+	#[cfg(target_arch = "x86")]
+	core::arch::asm! {
+		"lea ecx, [eip + 2f]",
+		"jmp {f}",
+		"2:",
+		f = in(reg) f,
+
+		in("eax") ptr,
+		out("ecx") _,
 		inout("ymm0") cast::<_, __m256>(value) => _,
 		out("ymm1") _,
 	};
