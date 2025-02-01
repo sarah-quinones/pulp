@@ -221,6 +221,7 @@ use core::fmt::Debug;
 use core::marker::PhantomData;
 use core::mem::MaybeUninit;
 use core::slice::{from_raw_parts, from_raw_parts_mut};
+#[cfg(feature = "complex")]
 use num_complex::Complex;
 use seal::Seal;
 
@@ -231,9 +232,13 @@ use seal::Seal;
 #[cfg_attr(docsrs, doc(cfg(feature = "macro")))]
 pub use pulp_macro::with_simd;
 
-pub use {bytemuck, num_complex};
+pub use bytemuck;
+#[cfg(feature = "complex")]
+pub use num_complex;
 
+#[cfg(feature = "complex")]
 pub type c32 = Complex<f32>;
+#[cfg(feature = "complex")]
 pub type c64 = Complex<f64>;
 
 match_cfg!(item, match cfg!() {
@@ -420,31 +425,37 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	const U64_LANES: usize = core::mem::size_of::<Self::u64s>() / core::mem::size_of::<u64>();
 	const I64_LANES: usize = core::mem::size_of::<Self::i64s>() / core::mem::size_of::<i64>();
 	const F64_LANES: usize = core::mem::size_of::<Self::f64s>() / core::mem::size_of::<f64>();
+	#[cfg(feature = "complex")]
 	const C64_LANES: usize = core::mem::size_of::<Self::c64s>() / core::mem::size_of::<c64>();
 
 	const U32_LANES: usize = core::mem::size_of::<Self::u32s>() / core::mem::size_of::<u32>();
 	const I32_LANES: usize = core::mem::size_of::<Self::i32s>() / core::mem::size_of::<i32>();
 	const F32_LANES: usize = core::mem::size_of::<Self::f32s>() / core::mem::size_of::<f32>();
+	#[cfg(feature = "complex")]
 	const C32_LANES: usize = core::mem::size_of::<Self::c32s>() / core::mem::size_of::<c32>();
 
 	const REGISTER_COUNT: usize;
 
 	type m32s: Debug + Copy + Send + Sync + Zeroable + NoUninit + 'static;
 	type f32s: Debug + Copy + Send + Sync + Pod + 'static;
+	#[cfg(feature = "complex")]
 	type c32s: Debug + Copy + Send + Sync + Pod + 'static;
 	type i32s: Debug + Copy + Send + Sync + Pod + 'static;
 	type u32s: Debug + Copy + Send + Sync + Pod + 'static;
 
 	type m64s: Debug + Copy + Send + Sync + Zeroable + NoUninit + 'static;
 	type f64s: Debug + Copy + Send + Sync + Pod + 'static;
+	#[cfg(feature = "complex")]
 	type c64s: Debug + Copy + Send + Sync + Pod + 'static;
 	type i64s: Debug + Copy + Send + Sync + Pod + 'static;
 	type u64s: Debug + Copy + Send + Sync + Pod + 'static;
 
 	/// Contains the square of the norm in both the real and imaginary components.
+	#[cfg(feature = "complex")]
 	fn abs2_c32s(self, a: Self::c32s) -> Self::c32s;
 
 	/// Contains the square of the norm in both the real and imaginary components.
+	#[cfg(feature = "complex")]
 	fn abs2_c64s(self, a: Self::c64s) -> Self::c64s;
 	#[inline]
 	fn abs_f32s(self, a: Self::f32s) -> Self::f32s {
@@ -455,10 +466,14 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 		self.and_f64s(self.not_f64s(self.splat_f64s(-0.0)), a)
 	}
 	/// Contains the max norm in both the real and imaginary components.
+	#[cfg(feature = "complex")]
 	fn abs_max_c32s(self, a: Self::c32s) -> Self::c32s;
 	/// Contains the max norm in both the real and imaginary components.
+	#[cfg(feature = "complex")]
 	fn abs_max_c64s(self, a: Self::c64s) -> Self::c64s;
+	#[cfg(feature = "complex")]
 	fn add_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s;
+	#[cfg(feature = "complex")]
 	fn add_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s;
 	fn add_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
 	fn add_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
@@ -505,10 +520,12 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	fn and_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s;
 	fn and_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s;
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn as_mut_rsimd_c32s(slice: &mut [c32]) -> (&mut [c32], &mut [Self::c32s]) {
 		unsafe { rsplit_mut_slice(slice) }
 	}
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn as_mut_rsimd_c64s(slice: &mut [c64]) -> (&mut [c64], &mut [Self::c64s]) {
 		unsafe { rsplit_mut_slice(slice) }
 	}
@@ -538,10 +555,12 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 		unsafe { rsplit_mut_slice(slice) }
 	}
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn as_mut_simd_c32s(slice: &mut [c32]) -> (&mut [Self::c32s], &mut [c32]) {
 		unsafe { split_mut_slice(slice) }
 	}
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn as_mut_simd_c64s(slice: &mut [c64]) -> (&mut [Self::c64s], &mut [c64]) {
 		unsafe { split_mut_slice(slice) }
 	}
@@ -570,10 +589,12 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 		unsafe { split_mut_slice(slice) }
 	}
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn as_rsimd_c32s(slice: &[c32]) -> (&[c32], &[Self::c32s]) {
 		unsafe { rsplit_slice(slice) }
 	}
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn as_rsimd_c64s(slice: &[c64]) -> (&[c64], &[Self::c64s]) {
 		unsafe { rsplit_slice(slice) }
 	}
@@ -602,10 +623,12 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 		unsafe { rsplit_slice(slice) }
 	}
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn as_simd_c32s(slice: &[c32]) -> (&[Self::c32s], &[c32]) {
 		unsafe { split_slice(slice) }
 	}
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn as_simd_c64s(slice: &[c64]) -> (&[Self::c64s], &[c64]) {
 		unsafe { split_slice(slice) }
 	}
@@ -635,12 +658,14 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 		unsafe { split_slice(slice) }
 	}
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn as_uninit_mut_rsimd_c32s(
 		slice: &mut [MaybeUninit<c32>],
 	) -> (&mut [MaybeUninit<c32>], &mut [MaybeUninit<Self::c32s>]) {
 		unsafe { rsplit_mut_slice(slice) }
 	}
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn as_uninit_mut_rsimd_c64s(
 		slice: &mut [MaybeUninit<c64>],
 	) -> (&mut [MaybeUninit<c64>], &mut [MaybeUninit<Self::c64s>]) {
@@ -684,12 +709,14 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 		unsafe { rsplit_mut_slice(slice) }
 	}
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn as_uninit_mut_simd_c32s(
 		slice: &mut [MaybeUninit<c32>],
 	) -> (&mut [MaybeUninit<Self::c32s>], &mut [MaybeUninit<c32>]) {
 		unsafe { split_mut_slice(slice) }
 	}
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn as_uninit_mut_simd_c64s(
 		slice: &mut [MaybeUninit<c64>],
 	) -> (&mut [MaybeUninit<Self::c64s>], &mut [MaybeUninit<c64>]) {
@@ -733,31 +760,41 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	) -> (&mut [MaybeUninit<Self::u64s>], &mut [MaybeUninit<u64>]) {
 		unsafe { split_mut_slice(slice) }
 	}
+	#[cfg(feature = "complex")]
 	fn conj_c32s(self, a: Self::c32s) -> Self::c32s;
+	#[cfg(feature = "complex")]
 	fn conj_c64s(self, a: Self::c64s) -> Self::c64s;
+	#[cfg(feature = "complex")]
 	fn conj_mul_add_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s;
 
+	#[cfg(feature = "complex")]
 	fn conj_mul_add_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s;
 	/// Computes `conj(a) * b + c`
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn conj_mul_add_e_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
 		self.conj_mul_add_c32s(a, b, c)
 	}
 	/// Computes `conj(a) * b + c`
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn conj_mul_add_e_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
 		self.conj_mul_add_c64s(a, b, c)
 	}
+	#[cfg(feature = "complex")]
 	fn conj_mul_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s;
 
+	#[cfg(feature = "complex")]
 	fn conj_mul_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s;
 	/// Computes `conj(a) * b`
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn conj_mul_e_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		self.conj_mul_c32s(a, b)
 	}
 	/// Computes `conj(a) * b`
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn conj_mul_e_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 		self.conj_mul_c64s(a, b)
 	}
@@ -899,11 +936,13 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	///
 	/// Addresses corresponding to enabled lanes in the mask have the same restrictions as
 	/// [`core::ptr::read`].
+	#[cfg(feature = "complex")]
 	unsafe fn mask_load_ptr_c32s(self, mask: MemMask<Self::m32s>, ptr: *const c32) -> Self::c32s;
 	/// # Safety
 	///
 	/// Addresses corresponding to enabled lanes in the mask have the same restrictions as
 	/// [`core::ptr::read`].
+	#[cfg(feature = "complex")]
 	unsafe fn mask_load_ptr_c64s(self, mask: MemMask<Self::m64s>, ptr: *const c64) -> Self::c64s;
 	/// # Safety
 	///
@@ -953,6 +992,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	///
 	/// Addresses corresponding to enabled lanes in the mask have the same restrictions as
 	/// [`core::ptr::write`].
+	#[cfg(feature = "complex")]
 	unsafe fn mask_store_ptr_c32s(
 		self,
 		mask: MemMask<Self::m32s>,
@@ -963,6 +1003,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	///
 	/// Addresses corresponding to enabled lanes in the mask have the same restrictions as
 	/// [`core::ptr::write`].
+	#[cfg(feature = "complex")]
 	unsafe fn mask_store_ptr_c64s(
 		self,
 		mask: MemMask<Self::m64s>,
@@ -1048,15 +1089,19 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	fn min_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
 	fn min_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
 
+	#[cfg(feature = "complex")]
 	fn mul_add_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s;
+	#[cfg(feature = "complex")]
 	fn mul_add_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s;
 	/// Computes `a * b + c`
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn mul_add_e_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
 		self.mul_add_c32s(a, b, c)
 	}
 	/// Computes `a * b + c`
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn mul_add_e_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
 		self.mul_add_c64s(a, b, c)
 	}
@@ -1064,21 +1109,27 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	fn mul_add_e_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s;
 	fn mul_add_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s;
 	fn mul_add_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s;
+	#[cfg(feature = "complex")]
 	fn mul_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s;
 
+	#[cfg(feature = "complex")]
 	fn mul_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s;
 	/// Computes `a * b`
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn mul_e_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		self.mul_c32s(a, b)
 	}
 	/// Computes `a * b`
+	#[cfg(feature = "complex")]
 	fn mul_e_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 		self.mul_c64s(a, b)
 	}
 	fn mul_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
 	fn mul_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
+	#[cfg(feature = "complex")]
 	fn neg_c32s(self, a: Self::c32s) -> Self::c32s;
+	#[cfg(feature = "complex")]
 	fn neg_c64s(self, a: Self::c64s) -> Self::c64s;
 
 	#[inline]
@@ -1141,10 +1192,12 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	fn or_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s;
 	fn or_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s;
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn partial_load_c32s(self, slice: &[c32]) -> Self::c32s {
 		cast(self.partial_load_f64s(bytemuck::cast_slice(slice)))
 	}
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn partial_load_c64s(self, slice: &[c64]) -> Self::c64s {
 		cast(self.partial_load_f64s(bytemuck::cast_slice(slice)))
 	}
@@ -1184,10 +1237,12 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn partial_store_c32s(self, slice: &mut [c32], values: Self::c32s) {
 		self.partial_store_f64s(bytemuck::cast_slice_mut(slice), cast(values))
 	}
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn partial_store_c64s(self, slice: &mut [c64], values: Self::c64s) {
 		self.partial_store_f64s(bytemuck::cast_slice_mut(slice), cast(values))
 	}
@@ -1228,27 +1283,35 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 			)
 		}
 	}
+	#[cfg(feature = "complex")]
 	fn reduce_max_c32s(self, a: Self::c32s) -> c32;
+	#[cfg(feature = "complex")]
 	fn reduce_max_c64s(self, a: Self::c64s) -> c64;
 	fn reduce_max_f32s(self, a: Self::f32s) -> f32;
 	fn reduce_max_f64s(self, a: Self::f64s) -> f64;
+	#[cfg(feature = "complex")]
 	fn reduce_min_c32s(self, a: Self::c32s) -> c32;
+	#[cfg(feature = "complex")]
 	fn reduce_min_c64s(self, a: Self::c64s) -> c64;
 	fn reduce_min_f32s(self, a: Self::f32s) -> f32;
 	fn reduce_min_f64s(self, a: Self::f64s) -> f64;
 
 	fn reduce_product_f32s(self, a: Self::f32s) -> f32;
 	fn reduce_product_f64s(self, a: Self::f64s) -> f64;
+	#[cfg(feature = "complex")]
 	fn reduce_sum_c32s(self, a: Self::c32s) -> c32;
+	#[cfg(feature = "complex")]
 	fn reduce_sum_c64s(self, a: Self::c64s) -> c64;
 
 	fn reduce_sum_f32s(self, a: Self::f32s) -> f32;
 	fn reduce_sum_f64s(self, a: Self::f64s) -> f64;
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn rotate_left_c32s(self, a: Self::c32s, amount: usize) -> Self::c32s {
 		self.rotate_right_c32s(a, amount.wrapping_neg())
 	}
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn rotate_left_c64s(self, a: Self::c64s, amount: usize) -> Self::c64s {
 		self.rotate_right_c64s(a, amount.wrapping_neg())
 	}
@@ -1279,7 +1342,9 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	fn rotate_left_u64s(self, a: Self::u64s, amount: usize) -> Self::u64s {
 		self.rotate_right_u64s(a, amount.wrapping_neg())
 	}
+	#[cfg(feature = "complex")]
 	fn rotate_right_c32s(self, a: Self::c32s, amount: usize) -> Self::c32s;
+	#[cfg(feature = "complex")]
 	fn rotate_right_c64s(self, a: Self::c64s, amount: usize) -> Self::c64s;
 	#[inline(always)]
 	fn rotate_right_f32s(self, a: Self::f32s, amount: usize) -> Self::f32s {
@@ -1364,7 +1429,9 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 		if_true: Self::u64s,
 		if_false: Self::u64s,
 	) -> Self::u64s;
+	#[cfg(feature = "complex")]
 	fn splat_c32s(self, value: c32) -> Self::c32s;
+	#[cfg(feature = "complex")]
 	fn splat_c64s(self, value: c64) -> Self::c64s;
 	fn splat_f32s(self, value: f32) -> Self::f32s;
 	fn splat_f64s(self, value: f64) -> Self::f64s;
@@ -1380,7 +1447,9 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	fn splat_u32s(self, value: u32) -> Self::u32s;
 	fn splat_u64s(self, value: u64) -> Self::u64s;
 
+	#[cfg(feature = "complex")]
 	fn sub_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s;
+	#[cfg(feature = "complex")]
 	fn sub_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s;
 	fn sub_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
 	fn sub_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
@@ -1400,7 +1469,9 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 
 	fn sub_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s;
 	fn sub_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s;
+	#[cfg(feature = "complex")]
 	fn swap_re_im_c32s(self, a: Self::c32s) -> Self::c32s;
+	#[cfg(feature = "complex")]
 	fn swap_re_im_c64s(self, a: Self::c64s) -> Self::c64s;
 	#[inline]
 	fn transmute_f32s_i32s(self, a: Self::i32s) -> Self::f32s {
@@ -1510,7 +1581,9 @@ macro_rules! scalar_simd {
 	($ty: ty, $register_count: expr, $m32s: ty, $f32s: ty, $i32s: ty, $u32s: ty, $m64s: ty, $f64s: ty, $i64s: ty, $u64s: ty $(,)?) => {
 		impl Seal for $ty {}
 		impl Simd for $ty {
+			#[cfg(feature = "complex")]
 			type c32s = $f32s;
+			#[cfg(feature = "complex")]
 			type c64s = $f64s;
 			type f32s = $f32s;
 			type f64s = $f64s;
@@ -1545,6 +1618,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			unsafe fn mask_load_ptr_c32s(
 				self,
 				mask: MemMask<Self::m32s>,
@@ -1570,6 +1644,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			unsafe fn mask_store_ptr_c32s(
 				self,
 				mask: MemMask<Self::m32s>,
@@ -1596,6 +1671,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			unsafe fn mask_load_ptr_c64s(
 				self,
 				mask: MemMask<Self::m64s>,
@@ -1621,6 +1697,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			unsafe fn mask_store_ptr_c64s(
 				self,
 				mask: MemMask<Self::m64s>,
@@ -2345,11 +2422,13 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn splat_c32s(self, value: c32) -> Self::c32s {
 				cast([value; Self::C32_LANES])
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn conj_c32s(self, a: Self::c32s) -> Self::c32s {
 				let mut out = [c32::ZERO; Self::C32_LANES];
 				let a: [c32; Self::C32_LANES] = cast(a);
@@ -2362,6 +2441,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn neg_c32s(self, a: Self::c32s) -> Self::c32s {
 				let mut out = [c32::ZERO; Self::C32_LANES];
 				let a: [c32; Self::C32_LANES] = cast(a);
@@ -2374,6 +2454,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn swap_re_im_c32s(self, a: Self::c32s) -> Self::c32s {
 				let mut out = [c32::ZERO; Self::C32_LANES];
 				let a: [c32; Self::C32_LANES] = cast(a);
@@ -2386,6 +2467,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn add_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 				let mut out = [c32::ZERO; Self::C32_LANES];
 				let a: [c32; Self::C32_LANES] = cast(a);
@@ -2399,6 +2481,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn sub_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 				let mut out = [c32::ZERO; Self::C32_LANES];
 				let a: [c32; Self::C32_LANES] = cast(a);
@@ -2412,6 +2495,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn mul_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 				let mut out = [c32::ZERO; Self::C32_LANES];
 				let a: [c32; Self::C32_LANES] = cast(a);
@@ -2426,6 +2510,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn conj_mul_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 				let mut out = [c32::ZERO; Self::C32_LANES];
 				let a: [c32; Self::C32_LANES] = cast(a);
@@ -2440,6 +2525,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn mul_add_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
 				let mut out = [c32::ZERO; Self::C32_LANES];
 				let a: [c32; Self::C32_LANES] = cast(a);
@@ -2455,6 +2541,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn conj_mul_add_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
 				let mut out = [c32::ZERO; Self::C32_LANES];
 				let a: [c32; Self::C32_LANES] = cast(a);
@@ -2470,6 +2557,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn abs2_c32s(self, a: Self::c32s) -> Self::c32s {
 				let mut out = [c32::ZERO; Self::C32_LANES];
 				let a: [c32; Self::C32_LANES] = cast(a);
@@ -2484,6 +2572,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn abs_max_c32s(self, a: Self::c32s) -> Self::c32s {
 				let mut out = [c32::ZERO; Self::C32_LANES];
 				let a: [c32; Self::C32_LANES] = cast(self.abs_f32s(a));
@@ -2498,6 +2587,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn reduce_sum_c32s(self, a: Self::c32s) -> c32 {
 				let mut a: [c32; Self::C32_LANES] = cast(a);
 
@@ -2514,6 +2604,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn reduce_min_c32s(self, a: Self::c32s) -> c32 {
 				let mut a: [c32; Self::C32_LANES] = cast(a);
 
@@ -2530,6 +2621,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn reduce_max_c32s(self, a: Self::c32s) -> c32 {
 				let mut a: [c32; Self::C32_LANES] = cast(a);
 
@@ -2554,6 +2646,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn rotate_right_c32s(self, a: Self::c32s, amount: usize) -> Self::c32s {
 				let mut a: [c32; Self::C32_LANES] = cast(a);
 				let amount = amount % Self::C32_LANES;
@@ -2758,11 +2851,13 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn splat_c64s(self, value: c64) -> Self::c64s {
 				cast([value; Self::C64_LANES])
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn conj_c64s(self, a: Self::c64s) -> Self::c64s {
 				let mut out = [c64::ZERO; Self::C64_LANES];
 				let a: [c64; Self::C64_LANES] = cast(a);
@@ -2775,6 +2870,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn neg_c64s(self, a: Self::c64s) -> Self::c64s {
 				let mut out = [c64::ZERO; Self::C64_LANES];
 				let a: [c64; Self::C64_LANES] = cast(a);
@@ -2787,6 +2883,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn swap_re_im_c64s(self, a: Self::c64s) -> Self::c64s {
 				let mut out = [c64::ZERO; Self::C64_LANES];
 				let a: [c64; Self::C64_LANES] = cast(a);
@@ -2799,6 +2896,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn add_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 				let mut out = [c64::ZERO; Self::C64_LANES];
 				let a: [c64; Self::C64_LANES] = cast(a);
@@ -2812,6 +2910,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn sub_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 				let mut out = [c64::ZERO; Self::C64_LANES];
 				let a: [c64; Self::C64_LANES] = cast(a);
@@ -2825,6 +2924,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn mul_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 				let mut out = [c64::ZERO; Self::C64_LANES];
 				let a: [c64; Self::C64_LANES] = cast(a);
@@ -2839,6 +2939,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn conj_mul_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 				let mut out = [c64::ZERO; Self::C64_LANES];
 				let a: [c64; Self::C64_LANES] = cast(a);
@@ -2853,6 +2954,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn mul_add_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
 				let mut out = [c64::ZERO; Self::C64_LANES];
 				let a: [c64; Self::C64_LANES] = cast(a);
@@ -2868,6 +2970,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn conj_mul_add_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
 				let mut out = [c64::ZERO; Self::C64_LANES];
 				let a: [c64; Self::C64_LANES] = cast(a);
@@ -2883,6 +2986,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn abs2_c64s(self, a: Self::c64s) -> Self::c64s {
 				let mut out = [c64::ZERO; Self::C64_LANES];
 				let a: [c64; Self::C64_LANES] = cast(a);
@@ -2897,6 +3001,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn abs_max_c64s(self, a: Self::c64s) -> Self::c64s {
 				let mut out = [c64::ZERO; Self::C64_LANES];
 				let a: [c64; Self::C64_LANES] = cast(self.abs_f64s(a));
@@ -2911,6 +3016,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn reduce_sum_c64s(self, a: Self::c64s) -> c64 {
 				let mut a: [c64; Self::C64_LANES] = cast(a);
 
@@ -2927,6 +3033,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn reduce_min_c64s(self, a: Self::c64s) -> c64 {
 				let mut a: [c64; Self::C64_LANES] = cast(a);
 
@@ -2943,6 +3050,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn reduce_max_c64s(self, a: Self::c64s) -> c64 {
 				let mut a: [c64; Self::C64_LANES] = cast(a);
 
@@ -2967,6 +3075,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			#[cfg(feature = "complex")]
 			fn rotate_right_c64s(self, a: Self::c64s, amount: usize) -> Self::c64s {
 				let mut a: [c64; Self::C64_LANES] = cast(a);
 				let amount = amount % Self::C64_LANES;
@@ -3013,7 +3122,9 @@ impl Scalar {
 
 impl Seal for Scalar {}
 impl Simd for Scalar {
+	#[cfg(feature = "complex")]
 	type c32s = c32;
+	#[cfg(feature = "complex")]
 	type c64s = c64;
 	type f32s = f32;
 	type f64s = f64;
@@ -3028,18 +3139,21 @@ impl Simd for Scalar {
 	const REGISTER_COUNT: usize = 16;
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn abs2_c32s(self, a: Self::c32s) -> Self::c32s {
 		let norm2 = a.re * a.re + a.im * a.im;
 		c32::new(norm2, norm2)
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn abs2_c64s(self, a: Self::c64s) -> Self::c64s {
 		let norm2 = a.re * a.re + a.im * a.im;
 		c64::new(norm2, norm2)
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn abs_max_c32s(self, a: Self::c32s) -> Self::c32s {
 		let re = if a.re > a.im { a.re } else { a.im };
 		let im = re;
@@ -3047,6 +3161,7 @@ impl Simd for Scalar {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn abs_max_c64s(self, a: Self::c64s) -> Self::c64s {
 		let re = if a.re > a.im { a.re } else { a.im };
 		let im = re;
@@ -3054,11 +3169,13 @@ impl Simd for Scalar {
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn add_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		a + b
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn add_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 		a + b
 	}
@@ -3104,16 +3221,19 @@ impl Simd for Scalar {
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn conj_c32s(self, a: Self::c32s) -> Self::c32s {
 		a.conj()
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn conj_c64s(self, a: Self::c64s) -> Self::c64s {
 		a.conj()
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn conj_mul_add_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
 		let re = fma_f32(a.re, b.re, fma_f32(a.im, b.im, c.re));
 		let im = fma_f32(a.re, b.im, -fma_f32(a.im, b.re, -c.im));
@@ -3121,6 +3241,7 @@ impl Simd for Scalar {
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn conj_mul_add_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
 		let re = fma_f64(a.re, b.re, fma_f64(a.im, b.im, c.re));
 		let im = fma_f64(a.re, b.im, -fma_f64(a.im, b.re, -c.im));
@@ -3128,16 +3249,19 @@ impl Simd for Scalar {
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn conj_mul_add_e_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
 		a.conj() * b + c
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn conj_mul_add_e_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
 		a.conj() * b + c
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn conj_mul_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		let re = fma_f32(a.re, b.re, a.im * b.im);
 		let im = fma_f32(a.re, b.im, -(a.im * b.re));
@@ -3145,6 +3269,7 @@ impl Simd for Scalar {
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn conj_mul_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 		let re = fma_f64(a.re, b.re, a.im * b.im);
 		let im = fma_f64(a.re, b.im, -(a.im * b.re));
@@ -3152,11 +3277,13 @@ impl Simd for Scalar {
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn conj_mul_e_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		a.conj() * b
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn conj_mul_e_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 		a.conj() * b
 	}
@@ -3292,11 +3419,13 @@ impl Simd for Scalar {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	unsafe fn mask_load_ptr_c32s(self, mask: MemMask<Self::m32s>, ptr: *const c32) -> Self::c32s {
 		if mask.mask { *ptr } else { core::mem::zeroed() }
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	unsafe fn mask_load_ptr_c64s(self, mask: MemMask<Self::m64s>, ptr: *const c64) -> Self::c64s {
 		if mask.mask { *ptr } else { core::mem::zeroed() }
 	}
@@ -3312,6 +3441,7 @@ impl Simd for Scalar {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	unsafe fn mask_store_ptr_c32s(
 		self,
 		mask: MemMask<Self::m32s>,
@@ -3324,6 +3454,7 @@ impl Simd for Scalar {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	unsafe fn mask_store_ptr_c64s(
 		self,
 		mask: MemMask<Self::m64s>,
@@ -3380,6 +3511,7 @@ impl Simd for Scalar {
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn mul_add_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
 		let re = fma_f32(a.re, b.re, -fma_f32(a.im, b.im, -c.re));
 		let im = fma_f32(a.re, b.im, fma_f32(a.im, b.re, c.im));
@@ -3387,6 +3519,7 @@ impl Simd for Scalar {
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn mul_add_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
 		let re = fma_f64(a.re, b.re, -fma_f64(a.im, b.im, -c.re));
 		let im = fma_f64(a.re, b.im, fma_f64(a.im, b.re, c.im));
@@ -3394,11 +3527,13 @@ impl Simd for Scalar {
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn mul_add_e_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
 		a * b + c
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn mul_add_e_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
 		a * b + c
 	}
@@ -3424,6 +3559,7 @@ impl Simd for Scalar {
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn mul_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		let re = fma_f32(a.re, b.re, -(a.im * b.im));
 		let im = fma_f32(a.re, b.im, a.im * b.re);
@@ -3431,6 +3567,7 @@ impl Simd for Scalar {
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn mul_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 		let re = fma_f64(a.re, b.re, -(a.im * b.im));
 		let im = fma_f64(a.re, b.im, a.im * b.re);
@@ -3438,11 +3575,13 @@ impl Simd for Scalar {
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn mul_e_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		a * b
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn mul_e_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 		a * b
 	}
@@ -3458,11 +3597,13 @@ impl Simd for Scalar {
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn neg_c32s(self, a: Self::c32s) -> Self::c32s {
 		-a
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn neg_c64s(self, a: Self::c64s) -> Self::c64s {
 		-a
 	}
@@ -3508,6 +3649,7 @@ impl Simd for Scalar {
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn partial_load_c64s(self, slice: &[c64]) -> Self::c64s {
 		if let Some((head, _)) = slice.split_first() {
 			*head
@@ -3535,6 +3677,7 @@ impl Simd for Scalar {
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn partial_store_c64s(self, slice: &mut [c64], values: Self::c64s) {
 		if let Some((head, _)) = slice.split_first_mut() {
 			*head = values;
@@ -3556,11 +3699,13 @@ impl Simd for Scalar {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn reduce_max_c32s(self, a: Self::c32s) -> c32 {
 		a
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn reduce_max_c64s(self, a: Self::c64s) -> c64 {
 		a
 	}
@@ -3576,11 +3721,13 @@ impl Simd for Scalar {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn reduce_min_c32s(self, a: Self::c32s) -> c32 {
 		a
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn reduce_min_c64s(self, a: Self::c64s) -> c64 {
 		a
 	}
@@ -3606,11 +3753,13 @@ impl Simd for Scalar {
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn reduce_sum_c32s(self, a: Self::c32s) -> c32 {
 		a
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn reduce_sum_c64s(self, a: Self::c64s) -> c64 {
 		a
 	}
@@ -3626,11 +3775,13 @@ impl Simd for Scalar {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn rotate_right_c32s(self, a: Self::c32s, _amount: usize) -> Self::c32s {
 		a
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn rotate_right_c64s(self, a: Self::c64s, _amount: usize) -> Self::c64s {
 		a
 	}
@@ -3666,11 +3817,13 @@ impl Simd for Scalar {
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn splat_c32s(self, value: c32) -> Self::c32s {
 		value
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn splat_c64s(self, value: c64) -> Self::c64s {
 		value
 	}
@@ -3696,11 +3849,13 @@ impl Simd for Scalar {
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn sub_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		a - b
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn sub_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 		a - b
 	}
@@ -3726,10 +3881,12 @@ impl Simd for Scalar {
 	}
 
 	#[inline]
+	#[cfg(feature = "complex")]
 	fn swap_re_im_c32s(self, a: Self::c32s) -> Self::c32s {
 		c32 { re: a.im, im: a.re }
 	}
 
+	#[cfg(feature = "complex")]
 	fn swap_re_im_c64s(self, a: Self::c64s) -> Self::c64s {
 		c64 { re: a.im, im: a.re }
 	}

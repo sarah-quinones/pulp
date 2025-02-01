@@ -136,6 +136,7 @@ impl Default for Arch {
 include!(concat!(env!("OUT_DIR"), "/x86_64_asm.rs"));
 
 #[cfg(test)]
+#[cfg_attr(not(feature = "complex"), allow(unused_imports))]
 mod tests {
 	extern crate alloc;
 
@@ -205,6 +206,7 @@ mod tests {
 	}
 
 	#[test]
+	#[cfg(feature = "complex")]
 	fn cplx_ops() {
 		let n = 16;
 		let a = (0..n)
