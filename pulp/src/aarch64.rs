@@ -1,9 +1,11 @@
 use super::*;
 use core::arch::aarch64::*;
+#[cfg(feature = "complex")]
 use core::arch::asm;
 
 #[inline]
 #[target_feature(enable = "neon,fcma")]
+#[cfg(feature = "complex")]
 unsafe fn vcmlaq_0_f64(mut acc: float64x2_t, lhs: float64x2_t, rhs: float64x2_t) -> float64x2_t {
 	asm!(
         "fcmla {0:v}.2d, {1:v}.2d, {2:v}.2d, 0",
@@ -16,6 +18,7 @@ unsafe fn vcmlaq_0_f64(mut acc: float64x2_t, lhs: float64x2_t, rhs: float64x2_t)
 
 #[inline]
 #[target_feature(enable = "neon,fcma")]
+#[cfg(feature = "complex")]
 unsafe fn vcmlaq_90_f64(mut acc: float64x2_t, lhs: float64x2_t, rhs: float64x2_t) -> float64x2_t {
 	asm!(
         "fcmla {0:v}.2d, {1:v}.2d, {2:v}.2d, 90",
@@ -28,6 +31,7 @@ unsafe fn vcmlaq_90_f64(mut acc: float64x2_t, lhs: float64x2_t, rhs: float64x2_t
 
 #[inline]
 #[target_feature(enable = "neon,fcma")]
+#[cfg(feature = "complex")]
 unsafe fn vcmlaq_270_f64(mut acc: float64x2_t, lhs: float64x2_t, rhs: float64x2_t) -> float64x2_t {
 	asm!(
         "fcmla {0:v}.2d, {1:v}.2d, {2:v}.2d, 270",
@@ -40,6 +44,7 @@ unsafe fn vcmlaq_270_f64(mut acc: float64x2_t, lhs: float64x2_t, rhs: float64x2_
 
 #[inline]
 #[target_feature(enable = "neon,fcma")]
+#[cfg(feature = "complex")]
 unsafe fn vcmlaq_0_f32(mut acc: float32x4_t, lhs: float32x4_t, rhs: float32x4_t) -> float32x4_t {
 	asm!(
         "fcmla {0:v}.4s, {1:v}.4s, {2:v}.4s, 0",
@@ -52,6 +57,7 @@ unsafe fn vcmlaq_0_f32(mut acc: float32x4_t, lhs: float32x4_t, rhs: float32x4_t)
 
 #[inline]
 #[target_feature(enable = "neon,fcma")]
+#[cfg(feature = "complex")]
 unsafe fn vcmlaq_90_f32(mut acc: float32x4_t, lhs: float32x4_t, rhs: float32x4_t) -> float32x4_t {
 	asm!(
         "fcmla {0:v}.4s, {1:v}.4s, {2:v}.4s, 90",
@@ -64,6 +70,7 @@ unsafe fn vcmlaq_90_f32(mut acc: float32x4_t, lhs: float32x4_t, rhs: float32x4_t
 
 #[inline]
 #[target_feature(enable = "neon,fcma")]
+#[cfg(feature = "complex")]
 unsafe fn vcmlaq_270_f32(mut acc: float32x4_t, lhs: float32x4_t, rhs: float32x4_t) -> float32x4_t {
 	asm!(
         "fcmla {0:v}.4s, {1:v}.4s, {2:v}.4s, 270",
@@ -119,7 +126,9 @@ static NEON_ROTATE_IDX: [u8x16; 16] = [
 ];
 
 impl Simd for Neon {
+	#[cfg(feature = "complex")]
 	type c32s = f32x4;
+	#[cfg(feature = "complex")]
 	type c64s = f64x2;
 	type f32s = f32x4;
 	type f64s = f64x2;
@@ -133,6 +142,7 @@ impl Simd for Neon {
 	const REGISTER_COUNT: usize = 32;
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn abs2_c32s(self, a: Self::c32s) -> Self::c32s {
 		unsafe {
 			let sqr = self.mul_f32s(a, a);
@@ -142,6 +152,7 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn abs2_c64s(self, a: Self::c64s) -> Self::c64s {
 		unsafe {
 			let sqr = self.mul_f64s(a, a);
@@ -154,6 +165,7 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn abs_max_c32s(self, a: Self::c32s) -> Self::c32s {
 		unsafe {
 			let max = self.max_f32s(a, a);
@@ -163,6 +175,7 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn abs_max_c64s(self, a: Self::c64s) -> Self::c64s {
 		unsafe {
 			let sqr = self.max_f64s(a, a);
@@ -175,11 +188,13 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn add_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		self.add_f32x4(a, b)
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn add_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 		self.add_f64s(a, b)
 	}
@@ -225,16 +240,19 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn conj_c32s(self, a: Self::c32s) -> Self::c32s {
 		self.xor_f32s(a, self.splat_c32s(c32 { re: 0.0, im: -0.0 }))
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn conj_c64s(self, a: Self::c64s) -> Self::c64s {
 		self.xor_f64s(a, self.splat_c64s(c64 { re: 0.0, im: -0.0 }))
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn conj_mul_add_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
 		unsafe {
 			let ab = cast!(a);
@@ -251,6 +269,7 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn conj_mul_add_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
 		unsafe {
 			let ab = cast!(a);
@@ -270,6 +289,7 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn conj_mul_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		unsafe {
 			let ab = cast!(a);
@@ -286,6 +306,7 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn conj_mul_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 		unsafe {
 			let ab = cast!(a);
@@ -478,6 +499,7 @@ impl Simd for Neon {
 	///
 	/// See the trait-level safety documentation.
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	unsafe fn mask_load_ptr_c32s(self, mask: MemMask<Self::m32s>, ptr: *const c32) -> Self::c32s {
 		let mask = mask.mask;
 		let ptr = ptr as *const f32;
@@ -509,6 +531,7 @@ impl Simd for Neon {
 	///
 	/// See the trait-level safety documentation.
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	unsafe fn mask_load_ptr_c64s(self, mask: MemMask<Self::m64s>, ptr: *const c64) -> Self::c64s {
 		let mask = mask.mask;
 		let ptr = ptr as *const f64;
@@ -580,6 +603,7 @@ impl Simd for Neon {
 	///
 	/// See the trait-level safety documentation.
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	unsafe fn mask_store_ptr_c32s(
 		self,
 		mask: MemMask<Self::m32s>,
@@ -606,6 +630,7 @@ impl Simd for Neon {
 	///
 	/// See the trait-level safety documentation.
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	unsafe fn mask_store_ptr_c64s(
 		self,
 		mask: MemMask<Self::m64s>,
@@ -687,6 +712,7 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn mul_add_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
 		unsafe {
 			let ab = cast!(a);
@@ -703,6 +729,7 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn mul_add_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
 		unsafe {
 			let ab = cast!(a);
@@ -742,6 +769,7 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn mul_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		unsafe {
 			let ab = cast!(a);
@@ -758,6 +786,7 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn mul_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 		unsafe {
 			let ab = cast!(a);
@@ -787,11 +816,13 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn neg_c32s(self, a: Self::c32s) -> Self::c32s {
 		self.xor_f32s(a, self.splat_f32s(-0.0))
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn neg_c64s(self, a: Self::c64s) -> Self::c64s {
 		self.xor_f64s(a, self.splat_f64s(-0.0))
 	}
@@ -896,6 +927,7 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn reduce_max_c32s(self, a: Self::c32s) -> c32 {
 		unsafe {
 			// a0 a1 a2 a3
@@ -909,6 +941,7 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn reduce_max_c64s(self, a: Self::c64s) -> c64 {
 		cast!(a)
 	}
@@ -924,6 +957,7 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn reduce_min_c32s(self, a: Self::c32s) -> c32 {
 		unsafe {
 			// a0 a1 a2 a3
@@ -937,6 +971,7 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn reduce_min_c64s(self, a: Self::c64s) -> c64 {
 		cast!(a)
 	}
@@ -962,6 +997,7 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn reduce_sum_c32s(self, a: Self::c32s) -> c32 {
 		unsafe {
 			// a0 a1 a2 a3
@@ -975,6 +1011,7 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn reduce_sum_c64s(self, a: Self::c64s) -> c64 {
 		cast!(a)
 	}
@@ -990,6 +1027,7 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn rotate_right_c32s(self, a: Self::c32s, amount: usize) -> Self::c32s {
 		unsafe {
 			cast!(vqtbl1q_u8(
@@ -1000,6 +1038,7 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn rotate_right_c64s(self, a: Self::c64s, _amount: usize) -> Self::c64s {
 		a
 	}
@@ -1045,11 +1084,13 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn splat_c32s(self, value: c32) -> Self::c32s {
 		cast!(self.splat_f64x2(cast!(value)))
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn splat_c64s(self, value: c64) -> Self::c64s {
 		cast!(value)
 	}
@@ -1075,11 +1116,13 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn sub_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		self.sub_f32x4(a, b)
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn sub_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 		self.sub_f64s(a, b)
 	}
@@ -1105,11 +1148,13 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn swap_re_im_c32s(self, a: Self::c32s) -> Self::c32s {
 		unsafe { cast!(vrev64q_f32(cast!(a))) }
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn swap_re_im_c64s(self, a: Self::c64s) -> Self::c64s {
 		unsafe {
 			cast!(vcombine_u64(
@@ -1232,7 +1277,9 @@ impl Simd for Neon {
 }
 
 impl Simd for NeonFcma {
+	#[cfg(feature = "complex")]
 	type c32s = f32x4;
+	#[cfg(feature = "complex")]
 	type c64s = f64x2;
 	type f32s = f32x4;
 	type f64s = f64x2;
@@ -1246,6 +1293,7 @@ impl Simd for NeonFcma {
 	const REGISTER_COUNT: usize = 32;
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn abs2_c32s(self, a: Self::c32s) -> Self::c32s {
 		unsafe {
 			let sqr = self.mul_f32s(a, a);
@@ -1255,6 +1303,7 @@ impl Simd for NeonFcma {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn abs2_c64s(self, a: Self::c64s) -> Self::c64s {
 		unsafe {
 			let sqr = self.mul_f64s(a, a);
@@ -1267,6 +1316,7 @@ impl Simd for NeonFcma {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn abs_max_c32s(self, a: Self::c32s) -> Self::c32s {
 		unsafe {
 			let max = self.max_f32s(a, a);
@@ -1276,6 +1326,7 @@ impl Simd for NeonFcma {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn abs_max_c64s(self, a: Self::c64s) -> Self::c64s {
 		unsafe {
 			let sqr = self.max_f64s(a, a);
@@ -1288,11 +1339,13 @@ impl Simd for NeonFcma {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn add_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		self.add_f32x4(a, b)
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn add_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 		self.add_f64s(a, b)
 	}
@@ -1338,16 +1391,19 @@ impl Simd for NeonFcma {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn conj_c32s(self, a: Self::c32s) -> Self::c32s {
 		self.xor_f32s(a, self.splat_c32s(c32 { re: 0.0, im: -0.0 }))
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn conj_c64s(self, a: Self::c64s) -> Self::c64s {
 		self.xor_f64s(a, self.splat_c64s(c64 { re: 0.0, im: -0.0 }))
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn conj_mul_add_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
 		let a = cast!(a);
 		let b = cast!(b);
@@ -1356,6 +1412,7 @@ impl Simd for NeonFcma {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn conj_mul_add_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
 		let a = cast!(a);
 		let b = cast!(b);
@@ -1364,11 +1421,13 @@ impl Simd for NeonFcma {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn conj_mul_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		self.conj_mul_add_c32s(a, b, self.splat_f32s(0.0))
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn conj_mul_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 		self.conj_mul_add_c64s(a, b, self.splat_f64s(0.0))
 	}
@@ -1477,6 +1536,7 @@ impl Simd for NeonFcma {
 	///
 	/// See the trait-level safety documentation.
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	unsafe fn mask_load_ptr_c32s(self, mask: MemMask<Self::m32s>, ptr: *const c32) -> Self::c32s {
 		let mask = mask.mask;
 		let ptr = ptr as *const f32;
@@ -1508,6 +1568,7 @@ impl Simd for NeonFcma {
 	///
 	/// See the trait-level safety documentation.
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	unsafe fn mask_load_ptr_c64s(self, mask: MemMask<Self::m64s>, ptr: *const c64) -> Self::c64s {
 		let mask = mask.mask;
 		let ptr = ptr as *const f64;
@@ -1579,6 +1640,7 @@ impl Simd for NeonFcma {
 	///
 	/// See the trait-level safety documentation.
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	unsafe fn mask_store_ptr_c32s(
 		self,
 		mask: MemMask<Self::m32s>,
@@ -1605,6 +1667,7 @@ impl Simd for NeonFcma {
 	///
 	/// See the trait-level safety documentation.
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	unsafe fn mask_store_ptr_c64s(
 		self,
 		mask: MemMask<Self::m64s>,
@@ -1686,6 +1749,7 @@ impl Simd for NeonFcma {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn mul_add_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
 		let a = cast!(a);
 		let b = cast!(b);
@@ -1694,6 +1758,7 @@ impl Simd for NeonFcma {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn mul_add_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
 		let a = cast!(a);
 		let b = cast!(b);
@@ -1722,11 +1787,13 @@ impl Simd for NeonFcma {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn mul_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		self.mul_add_c32s(a, b, self.splat_f32s(0.0))
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn mul_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 		self.mul_add_c64s(a, b, self.splat_f64s(0.0))
 	}
@@ -1742,11 +1809,13 @@ impl Simd for NeonFcma {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn neg_c32s(self, a: Self::c32s) -> Self::c32s {
 		self.xor_f32s(a, self.splat_f32s(-0.0))
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn neg_c64s(self, a: Self::c64s) -> Self::c64s {
 		self.xor_f64s(a, self.splat_f64s(-0.0))
 	}
@@ -1851,11 +1920,13 @@ impl Simd for NeonFcma {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn reduce_max_c32s(self, a: Self::c32s) -> c32 {
 		(*self).reduce_max_c32s(a)
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn reduce_max_c64s(self, a: Self::c64s) -> c64 {
 		cast!(a)
 	}
@@ -1871,11 +1942,13 @@ impl Simd for NeonFcma {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn reduce_min_c32s(self, a: Self::c32s) -> c32 {
 		(*self).reduce_min_c32s(a)
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn reduce_min_c64s(self, a: Self::c64s) -> c64 {
 		cast!(a)
 	}
@@ -1901,11 +1974,13 @@ impl Simd for NeonFcma {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn reduce_sum_c32s(self, a: Self::c32s) -> c32 {
 		(*self).reduce_sum_c32s(a)
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn reduce_sum_c64s(self, a: Self::c64s) -> c64 {
 		cast!(a)
 	}
@@ -1921,6 +1996,7 @@ impl Simd for NeonFcma {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn rotate_right_c32s(self, a: Self::c32s, amount: usize) -> Self::c32s {
 		unsafe {
 			cast!(vqtbl1q_u8(
@@ -1931,6 +2007,7 @@ impl Simd for NeonFcma {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn rotate_right_c64s(self, a: Self::c64s, _amount: usize) -> Self::c64s {
 		a
 	}
@@ -1976,11 +2053,13 @@ impl Simd for NeonFcma {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn splat_c32s(self, value: c32) -> Self::c32s {
 		cast!(self.splat_f64x2(cast!(value)))
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn splat_c64s(self, value: c64) -> Self::c64s {
 		cast!(value)
 	}
@@ -2006,11 +2085,13 @@ impl Simd for NeonFcma {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn sub_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		self.sub_f32x4(a, b)
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn sub_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 		self.sub_f64s(a, b)
 	}
@@ -2036,11 +2117,13 @@ impl Simd for NeonFcma {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn swap_re_im_c32s(self, a: Self::c32s) -> Self::c32s {
 		unsafe { cast!(vrev64q_f32(cast!(a))) }
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn swap_re_im_c64s(self, a: Self::c64s) -> Self::c64s {
 		unsafe {
 			cast!(vcombine_u64(
@@ -3000,6 +3083,7 @@ impl Neon {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	pub fn reduce_sum_c32x2(self, a: f32x4) -> c32 {
 		c32 {
 			re: a.0 + a.2,
@@ -3008,6 +3092,7 @@ impl Neon {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	pub fn reduce_sum_c64x1(self, a: f64x2) -> c64 {
 		cast!(a)
 	}
@@ -3559,16 +3644,19 @@ impl Default for Arch {
 
 #[cfg(test)]
 mod tests {
+	#[cfg(feature = "complex")]
 	use rand::random;
 
 	use super::*;
 
 	#[track_caller]
+	#[cfg(feature = "complex")]
 	fn assert_eq_c64(a: f64x2, b: f64x2) {
 		assert!((a.0 - b.0).abs() < 1e-14);
 		assert!((a.1 - b.1).abs() < 1e-14);
 	}
 	#[track_caller]
+	#[cfg(feature = "complex")]
 	fn assert_eq_c32(a: f32x4, b: f32x4) {
 		assert!((a.0 - b.0).abs() < 1e-5);
 		assert!((a.1 - b.1).abs() < 1e-5);
@@ -3577,6 +3665,7 @@ mod tests {
 	}
 
 	#[test]
+	#[cfg(feature = "complex")]
 	fn test_cplx64_mul() {
 		for _ in 0..100 {
 			let a = f64x2(random(), random());
@@ -3632,6 +3721,7 @@ mod tests {
 	}
 
 	#[test]
+	#[cfg(feature = "complex")]
 	fn test_cplx32_mul() {
 		for _ in 0..100 {
 			let a = f32x4(random(), random(), random(), random());

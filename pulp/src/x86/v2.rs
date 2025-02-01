@@ -1311,6 +1311,7 @@ impl V2 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	pub fn reduce_max_c32x2(self, a: f32x4) -> c32 {
 		// a0 a1 a2 a3
 		let a: __m128 = cast!(a);
@@ -1324,6 +1325,7 @@ impl V2 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	pub fn reduce_max_c64x1(self, a: f64x2) -> c64 {
 		cast!(a)
 	}
@@ -1347,6 +1349,7 @@ impl V2 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	pub fn reduce_min_c32x2(self, a: f32x4) -> c32 {
 		// a0 a1 a2 a3
 		let a: __m128 = cast!(a);
@@ -1360,6 +1363,7 @@ impl V2 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	pub fn reduce_min_c64x1(self, a: f64x2) -> c64 {
 		cast!(a)
 	}
@@ -1401,6 +1405,7 @@ impl V2 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	pub fn reduce_sum_c32x2(self, a: f32x4) -> c32 {
 		// a0 a1 a2 a3
 		let a: __m128 = cast!(a);
@@ -1414,6 +1419,7 @@ impl V2 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	pub fn reduce_sum_c64x1(self, a: f64x2) -> c64 {
 		cast!(a)
 	}

@@ -12,13 +12,14 @@ keywords = ["simd"]
 [dependencies]
 pulp-macro = { version = "0.1.1", path = "../pulp-macro", optional = true }
 bytemuck = { version = "1.15", features = ["aarch64_simd"] }
-num-complex = { version = "0.4.4", default-features = false, features = ["bytemuck"] }
+num-complex = { version = "0.4.4", default-features = false, features = ["bytemuck"], optional = true }
 libm = { version = "0.2", default-features = false }
 
 [features]
 default = [
   "std",
   "x86-v3",
+  "complex",
 ]
 nightly = [
   "bytemuck/nightly_stdsimd",
@@ -31,6 +32,8 @@ nightly-x86-v4 = [
 ]
 
 macro = ["dep:pulp-macro"]
+
+complex = ["dep:num-complex"]
 
 [dev-dependencies]
 aligned-vec = "0.6.0"
