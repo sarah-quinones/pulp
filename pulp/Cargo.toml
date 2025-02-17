@@ -16,6 +16,7 @@ num-complex = { version = "0.4.4", default-features = false, features = ["bytemu
 libm = { version = "0.2", default-features = false }
 reborrow = "0.5"
 cfg-if = "1.0.0"
+paste = "1"
 
 [features]
 default = [
