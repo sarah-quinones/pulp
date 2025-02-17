@@ -6,6 +6,457 @@ use core::arch::x86::*;
 #[cfg(target_arch = "x86_64")]
 use core::arch::x86_64::*;
 
+macro_rules! x86_call_128 {
+	($ext: expr, $func: ident, f32, $($arg: expr),*) => {
+		paste!($ext.[<_mm_ $func _ ps>]($($arg),*))
+	};
+	($ext: expr, $func: ident, f64, $($arg: expr),*) => {
+		paste!($ext.[<_mm_ $func _ pd>]($($arg),*))
+	};
+	($ext: expr, $func: ident, $ty: ty, $($arg: expr),*) => {
+		paste!($ext.[<_mm_ $func _ep $ty>]($($arg),*))
+	}
+}
+pub(crate) use x86_call_128;
+
+macro_rules! x86_call_256 {
+	($ext: expr, $func: ident, f32, $($arg: expr),*) => {
+		paste!($ext.[<_mm256_ $func _ ps>]($($arg),*))
+	};
+	($ext: expr, $func: ident, f64, $($arg: expr),*) => {
+		paste!($ext.[<_mm256_ $func _ pd>]($($arg),*))
+	};
+	($ext: expr, $func: ident, $ty: ty, $($arg: expr),*) => {
+		paste!($ext.[<_mm256_ $func _ep $ty>]($($arg),*))
+	}
+}
+pub(crate) use x86_call_256;
+
+macro_rules! x86_call_512 {
+	($ext: expr, $func: ident, f32, $($arg: expr),*) => {
+		paste!($ext.[<_mm512_ $func _ ps>]($($arg),*))
+	};
+	($ext: expr, $func: ident, f64, $($arg: expr),*) => {
+		paste!($ext.[<_mm512_ $func _ pd>]($($arg),*))
+	};
+	($ext: expr, $func: ident, $ty: ty, $($arg: expr),*) => {
+		paste!($ext.[<_mm512_ $func _ep $ty>]($($arg),*))
+	}
+}
+pub(crate) use x86_call_512;
+
+macro_rules! x86_call_512_mask {
+	($ext: expr, $func: ident, f32, $($arg: expr),*) => {
+		paste!($ext.[<_mm512_ $func _ ps_mask>]($($arg),*))
+	};
+	($ext: expr, $func: ident, f64, $($arg: expr),*) => {
+		paste!($ext.[<_mm512_ $func _ pd_mask>]($($arg),*))
+	};
+	($ext: expr, $func: ident, $ty: ty, $($arg: expr),*) => {
+		paste!($ext.[<_mm512_ $func _ep $ty _mask>]($($arg),*))
+	}
+}
+pub(crate) use x86_call_512_mask;
+
+macro_rules! x86_call_128_nosign {
+	($ext: expr, $func: ident, u8, $($arg: expr),*) => {
+		x86_call_128!($ext, $func, i8, $($arg),*)
+	};
+	($ext: expr, $func: ident, u16, $($arg: expr),*) => {
+		x86_call_128!($ext, $func, i16, $($arg),*)
+	};
+	($ext: expr, $func: ident, u32, $($arg: expr),*) => {
+		x86_call_128!($ext, $func, i32, $($arg),*)
+	};
+	($ext: expr, $func: ident, u64, $($arg: expr),*) => {
+		x86_call_128!($ext, $func, i64, $($arg),*)
+	};
+	($ext: expr, $func: ident, m8, $($arg: expr),*) => {
+		x86_call_128!($ext, $func, i8, $($arg),*)
+	};
+	($ext: expr, $func: ident, m16, $($arg: expr),*) => {
+		x86_call_128!($ext, $func, i16, $($arg),*)
+	};
+	($ext: expr, $func: ident, m32, $($arg: expr),*) => {
+		x86_call_128!($ext, $func, i32, $($arg),*)
+	};
+	($ext: expr, $func: ident, m64, $($arg: expr),*) => {
+		x86_call_128!($ext, $func, i64, $($arg),*)
+	};
+	($ext: expr, $func: ident, $ty: ident, $($arg: expr),*) => {
+		x86_call_128!($ext, $func, $ty, $($arg),*)
+	};
+}
+pub(crate) use x86_call_128_nosign;
+
+macro_rules! x86_call_256_nosign {
+	($ext: expr, $func: ident, u8, $($arg: expr),*) => {
+		x86_call_256!($ext, $func, i8, $($arg),*)
+	};
+	($ext: expr, $func: ident, u16, $($arg: expr),*) => {
+		x86_call_256!($ext, $func, i16, $($arg),*)
+	};
+	($ext: expr, $func: ident, u32, $($arg: expr),*) => {
+		x86_call_256!($ext, $func, i32, $($arg),*)
+	};
+	($ext: expr, $func: ident, u64, $($arg: expr),*) => {
+		x86_call_256!($ext, $func, i64, $($arg),*)
+	};
+	($ext: expr, $func: ident, m8, $($arg: expr),*) => {
+		x86_call_256!($ext, $func, i8, $($arg),*)
+	};
+	($ext: expr, $func: ident, m16, $($arg: expr),*) => {
+		x86_call_256!($ext, $func, i16, $($arg),*)
+	};
+	($ext: expr, $func: ident, m32, $($arg: expr),*) => {
+		x86_call_256!($ext, $func, i32, $($arg),*)
+	};
+	($ext: expr, $func: ident, m64, $($arg: expr),*) => {
+		x86_call_256!($ext, $func, i64, $($arg),*)
+	};
+	($ext: expr, $func: ident, $ty: ident, $($arg: expr),*) => {
+		x86_call_256!($ext, $func, $ty, $($arg),*)
+	};
+}
+pub(crate) use x86_call_256_nosign;
+
+macro_rules! x86_call_512_nosign {
+	($ext: expr, $func: ident, u8, $($arg: expr),*) => {
+		x86_call_512!($ext, $func, i8, $($arg),*)
+	};
+	($ext: expr, $func: ident, u16, $($arg: expr),*) => {
+		x86_call_512!($ext, $func, i16, $($arg),*)
+	};
+	($ext: expr, $func: ident, u32, $($arg: expr),*) => {
+		x86_call_512!($ext, $func, i32, $($arg),*)
+	};
+	($ext: expr, $func: ident, u64, $($arg: expr),*) => {
+		x86_call_512!($ext, $func, i64, $($arg),*)
+	};
+	($ext: expr, $func: ident, m8, $($arg: expr),*) => {
+		x86_call_512!($ext, $func, i8, $($arg),*)
+	};
+	($ext: expr, $func: ident, m16, $($arg: expr),*) => {
+		x86_call_512!($ext, $func, i16, $($arg),*)
+	};
+	($ext: expr, $func: ident, m32, $($arg: expr),*) => {
+		x86_call_512!($ext, $func, i32, $($arg),*)
+	};
+	($ext: expr, $func: ident, m64, $($arg: expr),*) => {
+		x86_call_512!($ext, $func, i64, $($arg),*)
+	};
+	($ext: expr, $func: ident, $ty: ident, $($arg: expr),*) => {
+		x86_call_512!($ext, $func, $ty, $($arg),*)
+	};
+}
+pub(crate) use x86_call_512_nosign;
+
+macro_rules! x86_call_512_nosign_mask {
+	($ext: expr, $func: ident, u8, $($arg: expr),*) => {
+		x86_call_512_mask!($ext, $func, i8, $($arg),*)
+	};
+	($ext: expr, $func: ident, u16, $($arg: expr),*) => {
+		x86_call_512_mask!($ext, $func, i16, $($arg),*)
+	};
+	($ext: expr, $func: ident, u32, $($arg: expr),*) => {
+		x86_call_512_mask!($ext, $func, i32, $($arg),*)
+	};
+	($ext: expr, $func: ident, u64, $($arg: expr),*) => {
+		x86_call_512_mask!($ext, $func, i64, $($arg),*)
+	};
+	($ext: expr, $func: ident, m8, $($arg: expr),*) => {
+		x86_call_512_mask!($ext, $func, i8, $($arg),*)
+	};
+	($ext: expr, $func: ident, m16, $($arg: expr),*) => {
+		x86_call_512_mask!($ext, $func, i16, $($arg),*)
+	};
+	($ext: expr, $func: ident, m32, $($arg: expr),*) => {
+		x86_call_512_mask!($ext, $func, i32, $($arg),*)
+	};
+	($ext: expr, $func: ident, m64, $($arg: expr),*) => {
+		x86_call_512_mask!($ext, $func, i64, $($arg),*)
+	};
+	($ext: expr, $func: ident, $ty: ident, $($arg: expr),*) => {
+		x86_call_512_mask!($ext, $func, $ty, $($arg),*)
+	};
+}
+pub(crate) use x86_call_512_nosign_mask;
+
+macro_rules! binop_128 {
+	($func: ident, $op: ident, $doc: literal, $ty: ident, $out: ident, $factor: literal, $ext: ident) => {
+		paste! {
+			#[inline(always)]
+			#[doc = $doc]
+			pub fn [<$func _ $ty x $factor>](self, a: [<$ty x $factor>], b: [<$ty x $factor>]) -> [<$out x $factor>] {
+				cast!(x86_call_128!(self.$ext, $op, $ty, cast!(a), cast!(b)))
+			}
+		}
+	};
+	($ext: ident: $op: ident, $doc: literal, $func: ident, $($ty: ident x $factor: literal => $out: ident),*) => {
+		$(binop_128!($func, $op, $doc, $ty, $out, $factor, $ext);)*
+	};
+	($ext: ident: $op: ident, $doc: literal, $($ty: ident x $factor: literal),*) => {
+		$(binop_128!($op, $op, $doc, $ty, $ty, $factor, $ext);)*
+	};
+	($ext: ident: $op: ident, $doc: literal, $func: ident, $($ty: ident x $factor: literal),*) => {
+		$(binop_128!($func, $op, $doc, $ty, $ty, $factor, $ext);)*
+	};
+}
+pub(crate) use binop_128;
+
+macro_rules! binop_256 {
+	($func: ident, $op: ident, $doc: literal, $ty: ident, $out: ident, $factor: literal, $ext: ident) => {
+		paste! {
+			#[inline(always)]
+			#[doc = $doc]
+			pub fn [<$func _ $ty x $factor>](self, a: [<$ty x $factor>], b: [<$ty x $factor>]) -> [<$out x $factor>] {
+				cast!(x86_call_256!(self.$ext, $op, $ty, cast!(a), cast!(b)))
+			}
+		}
+	};
+	($ext: ident: $op: ident, $doc: literal, $func: ident, $($ty: ident x $factor: literal => $out: ident),*) => {
+		$(binop_256!($func, $op, $doc, $ty, $out, $factor, $ext);)*
+	};
+	($ext: ident: $op: ident, $doc: literal, $($ty: ident x $factor: literal),*) => {
+		$(binop_256!($op, $op, $doc, $ty, $ty, $factor, $ext);)*
+	};
+	($ext: ident: $op: ident, $doc: literal, $func: ident, $($ty: ident x $factor: literal),*) => {
+		$(binop_256!($func, $op, $doc, $ty, $ty, $factor, $ext);)*
+	};
+}
+pub(crate) use binop_256;
+
+macro_rules! binop_512 {
+	($func: ident, $op: ident, $doc: literal, $ty: ident, $out: ident, $factor: literal, $ext: ident) => {
+		paste! {
+			#[inline(always)]
+			#[doc = $doc]
+			pub fn [<$func _ $ty x $factor>](self, a: [<$ty x $factor>], b: [<$ty x $factor>]) -> [<$out x $factor>] {
+				cast!(x86_call_512!(self.$ext, $op, $ty, cast!(a), cast!(b)))
+			}
+		}
+	};
+	($ext: ident: $op: ident, $doc: literal, $func: ident, $($ty: ident x $factor: literal => $out: ident),*) => {
+		$(binop_512!($func, $op, $doc, $ty, $out, $factor, $ext);)*
+	};
+	($ext: ident: $op: ident, $doc: literal, $($ty: ident x $factor: literal),*) => {
+		$(binop_512!($op, $op, $doc, $ty, $ty, $factor, $ext);)*
+	};
+	($ext: ident: $op: ident, $doc: literal, $func: ident, $($ty: ident x $factor: literal),*) => {
+		$(binop_512!($func, $op, $doc, $ty, $ty, $factor, $ext);)*
+	};
+}
+pub(crate) use binop_512;
+
+macro_rules! unop_128 {
+	($func: ident, $op: ident, $doc: literal, $ty: ident, $factor: literal, $ext: ident) => {
+		paste! {
+			#[inline(always)]
+			#[doc = $doc]
+			pub fn [<$func _ $ty x $factor>](self, a: [<$ty x $factor>]) -> [<$ty x $factor>] {
+				cast!(x86_call_128!(self.$ext, $op, $ty, cast!(a)))
+			}
+		}
+	};
+	($ext: ident: $op: ident, $doc: literal, $($ty: ident x $factor: literal),*) => {
+		$(unop_128!($op, $op, $doc, $ty, $factor, $ext);)*
+	};
+	($ext: ident: $op: ident, $doc: literal, $func: ident, $($ty: ident x $factor: literal),*) => {
+		$(unop_128!($func, $op, $doc, $ty, $factor, $ext);)*
+	};
+}
+pub(crate) use unop_128;
+
+macro_rules! unop_256 {
+	($func: ident, $op: ident, $doc: literal, $ty: ident, $factor: literal, $ext: ident) => {
+		paste! {
+			#[inline(always)]
+			#[doc = $doc]
+			pub fn [<$func _ $ty x $factor>](self, a: [<$ty x $factor>]) -> [<$ty x $factor>] {
+				cast!(x86_call_256!(self.$ext, $op, $ty, cast!(a)))
+			}
+		}
+	};
+	($ext: ident: $op: ident, $doc: literal, $($ty: ident x $factor: literal),*) => {
+		$(unop_256!($op, $op, $doc, $ty, $factor, $ext);)*
+	};
+	($ext: ident: $op: ident, $doc: literal, $func: ident, $($ty: ident x $factor: literal),*) => {
+		$(unop_256!($func, $op, $doc, $ty, $factor, $ext);)*
+	};
+}
+pub(crate) use unop_256;
+
+macro_rules! unop_512 {
+	($func: ident, $op: ident, $doc: literal, $ty: ident, $factor: literal, $ext: ident) => {
+		paste! {
+			#[inline(always)]
+			#[doc = $doc]
+			pub fn [<$func _ $ty x $factor>](self, a: [<$ty x $factor>]) -> [<$ty x $factor>] {
+				cast!(x86_call_512!(self.$ext, $op, $ty, cast!(a)))
+			}
+		}
+	};
+	($ext: ident: $op: ident, $doc: literal, $($ty: ident x $factor: literal),*) => {
+		$(unop_512!($op, $op, $doc, $ty, $factor, $ext);)*
+	};
+	($ext: ident: $op: ident, $doc: literal, $func: ident, $($ty: ident x $factor: literal),*) => {
+		$(unop_512!($func, $op, $doc, $ty, $factor, $ext);)*
+	};
+}
+pub(crate) use unop_512;
+
+macro_rules! binop_128_nosign {
+	($func: ident, $op: ident, $doc: literal, $ty: ident, $out: ident, $factor: literal, $ext: ident) => {
+		paste! {
+			#[inline(always)]
+			#[doc = $doc]
+			pub fn [<$func _ $ty x $factor>](self, a: [<$ty x $factor>], b: [<$ty x $factor>]) -> [<$out x $factor>] {
+				cast!(x86_call_128_nosign!(self.$ext, $op, $ty, cast!(a), cast!(b)))
+			}
+		}
+	};
+	($ext: ident: $op: ident, $doc: literal, $func: ident, $($ty: ident x $factor: literal => $out: ident),*) => {
+		$(binop_128_nosign!($func, $op, $doc, $ty, $out, $factor, $ext);)*
+	};
+	($ext: ident: $op: ident, $doc: literal, $func: ident, $($ty: ident x $factor: literal),*) => {
+		$(binop_128_nosign!($func, $op, $doc, $ty, $ty, $factor, $ext);)*
+	};
+	($ext: ident: $func: ident, $doc: literal, $($ty: ident x $factor: literal),*) => {
+		$(binop_128_nosign!($func, $func, $doc, $ty, $ty, $factor, $ext);)*
+	};
+}
+pub(crate) use binop_128_nosign;
+
+macro_rules! binop_256_nosign {
+	($func: ident, $op: ident, $doc: literal, $ty: ident, $out: ident, $factor: literal, $ext: ident) => {
+		paste! {
+			#[inline(always)]
+			#[doc = $doc]
+			pub fn [<$func _ $ty x $factor>](self, a: [<$ty x $factor>], b: [<$ty x $factor>]) -> [<$out x $factor>] {
+				cast!(x86_call_256_nosign!(self.$ext, $op, $ty, cast!(a), cast!(b)))
+			}
+		}
+	};
+	($ext: ident: $op: ident, $doc: literal, $func: ident, $($ty: ident x $factor: literal => $out: ident),*) => {
+		$(binop_256_nosign!($func, $op, $doc, $ty, $out, $factor, $ext);)*
+	};
+	($ext: ident: $op: ident, $doc: literal, $func: ident, $($ty: ident x $factor: literal),*) => {
+		$(binop_256_nosign!($func, $op, $doc, $ty, $ty, $factor, $ext);)*
+	};
+	($ext: ident: $func: ident, $doc: literal, $($ty: ident x $factor: literal),*) => {
+		$(binop_256_nosign!($func, $func, $doc, $ty, $ty, $factor, $ext);)*
+	};
+}
+pub(crate) use binop_256_nosign;
+
+macro_rules! binop_512_nosign {
+	($func: ident, $op: ident, $doc: literal, $ty: ident, $out: ident, $factor: literal, $ext: ident) => {
+		paste! {
+			#[inline(always)]
+			#[doc = $doc]
+			pub fn [<$func _ $ty x $factor>](self, a: [<$ty x $factor>], b: [<$ty x $factor>]) -> [<$out x $factor>] {
+				cast!(x86_call_512_nosign!(self.$ext, $op, $ty, cast!(a), cast!(b)))
+			}
+		}
+	};
+	($ext: ident: $op: ident, $doc: literal, $func: ident, $($ty: ident x $factor: literal => $out: ident),*) => {
+		$(binop_512_nosign!($func, $op, $doc, $ty, $out, $factor, $ext);)*
+	};
+	($ext: ident: $op: ident, $doc: literal, $func: ident, $($ty: ident x $factor: literal),*) => {
+		$(binop_512_nosign!($func, $op, $doc, $ty, $ty, $factor, $ext);)*
+	};
+	($ext: ident: $func: ident, $doc: literal, $($ty: ident x $factor: literal),*) => {
+		$(binop_512_nosign!($func, $func, $doc, $ty, $ty, $factor, $ext);)*
+	};
+}
+pub(crate) use binop_512_nosign;
+
+macro_rules! binop_512_nosign_mask {
+	($func: ident, $op: ident, $doc: literal, $ty: ident, $factor: literal, $ext: ident) => {
+		paste! {
+			#[inline(always)]
+			#[doc = $doc]
+			pub fn [<$func _ $ty x $factor>](self, a: [<$ty x $factor>], b: [<$ty x $factor>]) -> [<b $factor>] {
+				cast!(x86_call_512_nosign_mask!(self.$ext, $op, $ty, cast!(a), cast!(b)))
+			}
+		}
+	};
+	($ext: ident: $op: ident, $doc: literal, $func: ident, $($ty: ident x $factor: literal),*) => {
+		$(binop_512_nosign_mask!($func, $op, $doc, $ty, $factor, $ext);)*
+	};
+	($ext: ident: $func: ident, $doc: literal, $($ty: ident x $factor: literal),*) => {
+		$(binop_512_nosign_mask!($func, $func, $doc, $ty, $factor, $ext);)*
+	};
+}
+pub(crate) use binop_512_nosign_mask;
+
+macro_rules! binop_512_mask {
+	($func: ident, $op: ident, $doc: literal, $ty: ident, $factor: literal, $ext: ident) => {
+		paste! {
+			#[inline(always)]
+			#[doc = $doc]
+			pub fn [<$func _ $ty x $factor>](self, a: [<$ty x $factor>], b: [<$ty x $factor>]) -> [<b $factor>] {
+				cast!(x86_call_512_mask!(self.$ext, $op, $ty, cast!(a), cast!(b)))
+			}
+		}
+	};
+	($ext: ident: $op: ident, $doc: literal, $func: ident, $($ty: ident x $factor: literal),*) => {
+		$(binop_512_mask!($func, $op, $doc, $ty, $factor, $ext);)*
+	};
+	($ext: ident: $func: ident, $doc: literal, $($ty: ident x $factor: literal),*) => {
+		$(binop_512_mask!($func, $func, $doc, $ty, $factor, $ext);)*
+	};
+}
+pub(crate) use binop_512_mask;
+
+macro_rules! binop_128_full {
+	($func: ident, $doc: literal, $ty: ident, $factor: literal, $ext: ident) => {
+		paste! {
+			#[inline(always)]
+			#[doc = $doc]
+			pub fn [<$func _ $ty x $factor>](self, a: [<$ty x $factor>], b: [<$ty x $factor>]) -> [<$ty x $factor>] {
+				cast!(self.$ext.[<_mm_ $func _si128>](cast!(a), cast!(b)))
+			}
+		}
+	};
+	($ext: ident: $func: ident, $doc: literal, $($ty: ident x $factor: literal),*) => {
+		$(binop_128_full!($func, $doc, $ty, $factor, $ext);)*
+	};
+}
+pub(crate) use binop_128_full;
+
+macro_rules! binop_256_full {
+	($func: ident, $doc: literal, $ty: ident, $factor: literal, $ext: ident) => {
+		paste! {
+			#[inline(always)]
+			#[doc = $doc]
+			pub fn [<$func _ $ty x $factor>](self, a: [<$ty x $factor>], b: [<$ty x $factor>]) -> [<$ty x $factor>] {
+				cast!(self.$ext.[<_mm256_ $func _si256>](cast!(a), cast!(b)))
+			}
+		}
+	};
+	($ext: ident: $func: ident, $doc: literal, $($ty: ident x $factor: literal),*) => {
+		$(binop_256_full!($func, $doc, $ty, $factor, $ext);)*
+	};
+}
+pub(crate) use binop_256_full;
+
+macro_rules! binop_512_full {
+	($func: ident, $doc: literal, $ty: ident, $factor: literal, $ext: ident) => {
+		paste! {
+			#[inline(always)]
+			#[doc = $doc]
+			pub fn [<$func _ $ty x $factor>](self, a: [<$ty x $factor>], b: [<$ty x $factor>]) -> [<$ty x $factor>] {
+				cast!(self.$ext.[<_mm512_ $func _si512>](cast!(a), cast!(b)))
+			}
+		}
+	};
+	($ext: ident: $func: ident, $doc: literal, $($ty: ident x $factor: literal),*) => {
+		$(binop_512_full!($func, $doc, $ty, $factor, $ext);)*
+	};
+}
+pub(crate) use binop_512_full;
+
 mod v2;
 mod v3;
 
