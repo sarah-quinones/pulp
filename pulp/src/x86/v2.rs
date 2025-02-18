@@ -19,6 +19,137 @@ simd_type!({
 impl Seal for V2 {}
 
 impl V2 {
+	binop_128_nosign!(sse: add, "Computes `a + b` for each lane of `a` and `b`.", f32 x 4);
+
+	binop_128_nosign!(sse2: add, "Adds the elements of each lane of `a` and `b`.", f64 x 2);
+
+	binop_128_nosign!(sse2: add, "Adds the elements of each lane of `a` and `b`, with wrapping on overflow.", wrapping_add, u8 x 16, i8 x 16, u16 x 8, i16 x 8, u32 x 4, i32 x 4, u64 x 2, i64 x 2);
+
+	binop_128!(sse: and, "Returns `a & b` for each bit in `a` and `b`.", f32 x 4);
+
+	binop_128!(sse2: and, "Returns `a & b` for each bit in `a` and `b`.", f64 x 2);
+
+	binop_128_full!(sse2: and, "Returns `a & b` for each bit in `a` and `b`.", m8 x 16, u8 x 16, i8 x 16, m16 x 8, u16 x 8, i16 x 8, m32 x 4, u32 x 4, i32 x 4, m64 x 2, u64 x 2, i64 x 2);
+
+	binop_128!(sse: andnot, "Returns `!a & b` for each bit in `a` and `b`.", f32 x 4);
+
+	binop_128!(sse2: andnot, "Returns `!a & b` for each bit in `a` and `b`.", f64 x 2);
+
+	binop_128_full!(sse2: andnot, "Returns `!a & b` for each bit in `a` and `b`.", m8 x 16, u8 x 16, i8 x 16, m16 x 8, u16 x 8, i16 x 8, m32 x 4, u32 x 4, i32 x 4, m64 x 2, u64 x 2, i64 x 2);
+
+	binop_128!(ssse3: sign, r#"Applies the sign of each element of `sign` to the corresponding lane in `a`.
+- If `sign` is zero, the corresponding element is zeroed.
+- If `sign` is positive, the corresponding element is returned as is.
+- If `sign` is negative, the corresponding element is negated."#, apply_sign, i8 x 16, i16 x 8, i32 x 4);
+
+	binop_128!(sse2: avg, "Computes `average(a, b)` for each lane of `a` and `b`.", average, u8 x 16, u16 x 8);
+
+	unop_128!(sse4_1: ceil, "Returns `ceil(a)` for each lane of `a`, rounding towards positive infinity.", f32 x 4, f64 x 2);
+
+	binop_128_nosign!(sse: cmpeq, "Compares the elements in each lane of `a` and `b` for equality.", cmp_eq, f32 x 4 => m32);
+
+	binop_128_nosign!(sse2: cmpeq, "Compares the elements in each lane of `a` and `b` for equality.", cmp_eq, m8 x 16 => m8, u8 x 16 => m8, i8 x 16 => m8, m16 x 8 => m16, u16 x 8 => m16, i16 x 8 => m16, m32 x 4 => m32, u32 x 4 => m32, i32 x 4 => m32, f64 x 2 => m64);
+
+	binop_128_nosign!(sse4_1: cmpeq, "Compares the elements in each lane of `a` and `b` for equality.", cmp_eq, m64 x 2 => m64, u64 x 2 => m64, i64 x 2 => m64);
+
+	binop_128!(sse: cmpge, "Compares the elements in each lane of `a` and `b` for greater-than-or-equal-to.", cmp_ge, f32 x 4 => m32);
+
+	binop_128!(sse2: cmpge, "Compares the elements in each lane of `a` and `b` for greater-than-or-equal-to.", cmp_ge, f64 x 2 => m64);
+
+	binop_128!(sse: cmpgt, "Compares the elements in each lane of `a` and `b` for greater-than.", cmp_gt, f32 x 4 => m32);
+
+	binop_128!(sse2: cmpgt, "Compares the elements in each lane of `a` and `b` for equality.", cmp_gt, i8 x 16 => m8, i16 x 8 => m16, i32 x 4 => m32, f64 x 2 => m64);
+
+	binop_128!(sse4_2: cmpgt, "Compares the elements in each lane of `a` and `b` for equality.", cmp_gt, i64 x 2 => m64);
+
+	binop_128!(sse: cmplt, "Compares the elements in each lane of `a` and `b` for greater-than.", cmp_lt, f32 x 4 => m32);
+
+	binop_128!(sse2: cmplt, "Compares the elements in each lane of `a` and `b` for less-than.", cmp_lt, i8 x 16 => m8, i16 x 8 => m16, i32 x 4 => m32, f64 x 2 => m64);
+
+	binop_128!(sse: cmple, "Compares the elements in each lane of `a` and `b` for less-than-or-equal-to.", cmp_le, f32 x 4 => m32);
+
+	binop_128!(sse2: cmple, "Compares the elements in each lane of `a` and `b` for less-than-or-equal-to.", cmp_le, f64 x 2 => m64);
+
+	binop_128!(sse: cmpneq, "Compares the elements in each lane of `a` and `b` for inequality.", cmp_not_eq, f32 x 4 => m32);
+
+	binop_128!(sse2: cmpneq, "Compares the elements in each lane of `a` and `b` for inequality.", cmp_not_eq, f64 x 2 => m64);
+
+	binop_128!(sse: cmpnge, "Compares the elements in each lane of `a` and `b` for not-greater-than-or-equal.", cmp_not_ge, f32 x 4 => m32);
+
+	binop_128!(sse2: cmpnge, "Compares the elements in each lane of `a` and `b` for not-greater-than-or-equal.", cmp_not_ge, f64 x 2 => m64);
+
+	binop_128!(sse: cmpngt, "Compares the elements in each lane of `a` and `b` for not-greater-than.", cmp_not_gt, f32 x 4 => m32);
+
+	binop_128!(sse2: cmpngt, "Compares the elements in each lane of `a` and `b` for not-greater-than.", cmp_not_gt, f64 x 2 => m64);
+
+	binop_128!(sse: cmpnle, "Compares the elements in each lane of `a` and `b` for not-less-than-or-equal.", cmp_not_le, f32 x 4 => m32);
+
+	binop_128!(sse2: cmpnle, "Compares the elements in each lane of `a` and `b` for not-less-than-or-equal.", cmp_not_le, f64 x 2 => m64);
+
+	binop_128!(sse: cmpnlt, "Compares the elements in each lane of `a` and `b` for not-less-than.", cmp_not_lt, f32 x 4 => m32);
+
+	binop_128!(sse2: cmpnlt, "Compares the elements in each lane of `a` and `b` for not-less-than.", cmp_not_lt, f64 x 2 => m64);
+
+	binop_128!(sse: div, "Divides the elements of each lane of `a` and `b`.", f32 x 4);
+
+	binop_128!(sse2: div, "Divides the elements of each lane of `a` and `b`.", f64 x 2);
+
+	unop_128!(sse4_1: floor, "Rounds the elements of each lane of `a` to the nearest integer towards negative infinity.", f32 x 4, f64 x 2);
+
+	binop_128_nosign!(sse3: hadd, "[_mm_hadd_ps](core::arch::x86_64::_mm_hadd_ps)", horizontal_add_pack, f32 x 4, f64 x 2);
+
+	binop_128_nosign!(ssse3: hadd, "[_mm_hadd_ps](core::arch::x86_64::_mm_hadd_ps)", horizontal_add_pack, u16 x 8, i16 x 8, u32 x 4, i32 x 4);
+
+	binop_128_nosign!(sse3: hsub, "[_mm_hsub_ps](core::arch::x86_64::_mm_hsub_ps)", horizontal_sub_pack, f32 x 4, f64 x 2);
+
+	binop_128_nosign!(ssse3: hsub, "[_mm_hsub_ps](core::arch::x86_64::_mm_hsub_ps)", horizontal_sub_pack, u16 x 8, i16 x 8, u32 x 4, i32 x 4);
+
+	binop_128!(sse: max, "Computes `max(a, b)`. for each lane in `a` and `b`.", f32 x 4);
+
+	binop_128!(sse2: max, "Computes `max(a, b)`. for each lane in `a` and `b`.", u8 x 16, i16 x 8, f64 x 2);
+
+	binop_128!(sse4_1: max, "Computes `max(a, b)`. for each lane in `a` and `b`.", i8 x 16, u16 x 8, u32 x 4, i32 x 4);
+
+	binop_128!(sse: min, "Computes `max(a, b)`. for each lane in `a` and `b`.", f32 x 4);
+
+	binop_128!(sse2: min, "Computes `max(a, b)`. for each lane in `a` and `b`.", u8 x 16, i16 x 8, f64 x 2);
+
+	binop_128!(sse4_1: min, "Computes `max(a, b)`. for each lane in `a` and `b`.", i8 x 16, u16 x 8, u32 x 4, i32 x 4);
+
+	binop_128!(sse: mul, "Computes `a * b` for each lane in `a` and `b`.", f32 x 4);
+
+	binop_128!(sse2: mul, "Computes `a * b` for each lane in `a` and `b`.", f64 x 2);
+
+	binop_128_nosign!(sse2: mullo, "Computes `a * b` for each lane in `a` and `b`, with wrapping overflow.", wrapping_mul, u16 x 8, i16 x 8);
+
+	binop_128_nosign!(sse4_1: mullo, "Computes `a * b` for each lane in `a` and `b`, with wrapping overflow.", wrapping_mul, u32 x 4, i32 x 4);
+
+	binop_128!(sse: or, "Returns `a | b` for each bit in `a` and `b`.", f32 x 4);
+
+	binop_128!(sse2: or, "Returns `a | b` for each bit in `a` and `b`.", f64 x 2);
+
+	binop_128_full!(sse2: or, "Returns `a | b` for each bit in `a` and `b`.", m8 x 16, u8 x 16, i8 x 16, m16 x 8, u16 x 8, i16 x 8, m32 x 4, u32 x 4, i32 x 4, m64 x 2, u64 x 2, i64 x 2);
+
+	binop_128!(sse2: adds, "Adds the elements of each lane of `a` and `b`, with saturation.", saturating_add, u8 x 16, i8 x 16, u16 x 8, i16 x 8);
+
+	binop_128!(sse2: subs, "Subtracts the elements of each lane of `a` and `b`, with saturation.", saturating_sub, u8 x 16, i8 x 16, u16 x 8, i16 x 8);
+
+	binop_128_nosign!(sse: sub, "Subtracts the elements of each lane of `a` and `b`.", f32 x 4);
+
+	binop_128_nosign!(sse2: sub, "Subtracts the elements of each lane of `a` and `b`.", f64 x 2);
+
+	binop_128_nosign!(sse2: sub, "Subtracts the elements of each lane of `a` and `b`, with wrapping overflow.", wrapping_sub, u8 x 16, i8 x 16, u16 x 8, i16 x 8, u32 x 4, i32 x 4, u64 x 2, i64 x 2);
+
+	binop_128!(sse3: addsub, "Alternatively subtracts and adds the elements of each lane of `a` and `b`.", subadd, f32 x 4, f64 x 2);
+
+	unop_128!(ssse3: abs, "Computes the unsigned absolute value of the elements of each lane of `a`.", unsigned_abs, i8 x 16, i16 x 8, i32 x 4);
+
+	binop_128!(sse: xor, "Returns `a ^ b` for each bit in `a` and `b`.", f32 x 4);
+
+	binop_128!(sse2: xor, "Returns `a ^ b` for each bit in `a` and `b`.", f64 x 2);
+
+	binop_128_full!(sse2: xor, "Returns `a ^ b` for each bit in `a` and `b`.", m8 x 16, u8 x 16, i8 x 16, m16 x 8, u16 x 8, i16 x 8, m32 x 4, u32 x 4, i32 x 4, m64 x 2, u64 x 2, i64 x 2);
+
 	/// Computes `abs(a)` for each lane of `a`.
 	#[inline(always)]
 	pub fn abs_f32x4(self, a: f32x4) -> f32x4 {
@@ -31,213 +162,6 @@ impl V2 {
 		self.and_f64x2(a, cast!(self.splat_u64x2((1 << 63) - 1)))
 	}
 
-	/// Computes `a + b` for each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn add_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
-		cast!(self.sse._mm_add_ps(cast!(a), cast!(b)))
-	}
-
-	/// Computes `a + b` for each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn add_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
-		cast!(self.sse2._mm_add_pd(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn and_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
-		cast!(self.sse._mm_and_ps(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn and_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
-		cast!(self.sse2._mm_and_pd(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn and_i16x8(self, a: i16x8, b: i16x8) -> i16x8 {
-		cast!(self.sse2._mm_and_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn and_i32x4(self, a: i32x4, b: i32x4) -> i32x4 {
-		cast!(self.sse2._mm_and_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn and_i64x2(self, a: i64x2, b: i64x2) -> i64x2 {
-		cast!(self.sse2._mm_and_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn and_i8x16(self, a: i8x16, b: i8x16) -> i8x16 {
-		cast!(self.sse2._mm_and_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn and_m16x8(self, a: m16x8, b: m16x8) -> m16x8 {
-		cast!(self.sse2._mm_and_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn and_m32x4(self, a: m32x4, b: m32x4) -> m32x4 {
-		cast!(self.sse2._mm_and_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn and_m64x2(self, a: m64x2, b: m64x2) -> m64x2 {
-		cast!(self.sse2._mm_and_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn and_m8x16(self, a: m8x16, b: m8x16) -> m8x16 {
-		cast!(self.sse2._mm_and_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn and_u16x8(self, a: u16x8, b: u16x8) -> u16x8 {
-		cast!(self.sse2._mm_and_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn and_u32x4(self, a: u32x4, b: u32x4) -> u32x4 {
-		cast!(self.sse2._mm_and_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn and_u64x2(self, a: u64x2, b: u64x2) -> u64x2 {
-		cast!(self.sse2._mm_and_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn and_u8x16(self, a: u8x16, b: u8x16) -> u8x16 {
-		cast!(self.sse2._mm_and_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `!a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn andnot_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
-		cast!(self.sse._mm_andnot_ps(cast!(a), cast!(b)))
-	}
-
-	/// Returns `!a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn andnot_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
-		cast!(self.sse2._mm_andnot_pd(cast!(a), cast!(b)))
-	}
-
-	/// Returns `!a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn andnot_i16x8(self, a: i16x8, b: i16x8) -> i16x8 {
-		cast!(self.sse2._mm_andnot_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `!a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn andnot_i32x4(self, a: i32x4, b: i32x4) -> i32x4 {
-		cast!(self.sse2._mm_andnot_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `!a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn andnot_i64x2(self, a: i64x2, b: i64x2) -> i64x2 {
-		cast!(self.sse2._mm_andnot_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `!a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn andnot_i8x16(self, a: i8x16, b: i8x16) -> i8x16 {
-		cast!(self.sse2._mm_andnot_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `!a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn andnot_m16x8(self, a: m16x8, b: m16x8) -> m16x8 {
-		cast!(self.sse2._mm_andnot_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `!a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn andnot_m32x4(self, a: m32x4, b: m32x4) -> m32x4 {
-		cast!(self.sse2._mm_andnot_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `!a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn andnot_m64x2(self, a: m64x2, b: m64x2) -> m64x2 {
-		cast!(self.sse2._mm_andnot_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `!a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn andnot_m8x16(self, a: m8x16, b: m8x16) -> m8x16 {
-		cast!(self.sse2._mm_andnot_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `!a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn andnot_u16x8(self, a: u16x8, b: u16x8) -> u16x8 {
-		cast!(self.sse2._mm_andnot_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `!a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn andnot_u32x4(self, a: u32x4, b: u32x4) -> u32x4 {
-		cast!(self.sse2._mm_andnot_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `!a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn andnot_u64x2(self, a: u64x2, b: u64x2) -> u64x2 {
-		cast!(self.sse2._mm_andnot_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `!a & b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn andnot_u8x16(self, a: u8x16, b: u8x16) -> u8x16 {
-		cast!(self.sse2._mm_andnot_si128(cast!(a), cast!(b)))
-	}
-
-	/// Applies the sign of each element of `sign` to the corresponding lane in `a`.
-	/// - If `sign` is zero, the corresponding element is zeroed.
-	/// - If `sign` is positive, the corresponding element is returned as is.
-	/// - If `sign` is negative, the corresponding element is negated.
-	#[inline(always)]
-	pub fn apply_sign_i16x8(self, sign: i16x8, a: i16x8) -> i16x8 {
-		cast!(self.ssse3._mm_sign_epi16(cast!(a), cast!(sign)))
-	}
-
-	/// Applies the sign of each element of `sign` to the corresponding lane in `a`.
-	/// - If `sign` is zero, the corresponding element is zeroed.
-	/// - If `sign` is positive, the corresponding element is returned as is.
-	/// - If `sign` is negative, the corresponding element is negated.
-	#[inline(always)]
-	pub fn apply_sign_i32x4(self, sign: i32x4, a: i32x4) -> i32x4 {
-		cast!(self.ssse3._mm_sign_epi32(cast!(a), cast!(sign)))
-	}
-
-	/// Applies the sign of each element of `sign` to the corresponding lane in `a`.
-	/// - If `sign` is zero, the corresponding element is zeroed.
-	/// - If `sign` is positive, the corresponding element is returned as is.
-	/// - If `sign` is negative, the corresponding element is negated.
-	#[inline(always)]
-	pub fn apply_sign_i8x16(self, sign: i8x16, a: i8x16) -> i8x16 {
-		cast!(self.ssse3._mm_sign_epi8(cast!(a), cast!(sign)))
-	}
-
 	/// Computes the approximate reciprocal of the elements of each lane of `a`.
 	#[inline(always)]
 	pub fn approx_reciprocal_f32x4(self, a: f32x4) -> f32x4 {
@@ -248,102 +172,6 @@ impl V2 {
 	#[inline(always)]
 	pub fn approx_reciprocal_sqrt_f32x4(self, a: f32x4) -> f32x4 {
 		cast!(self.sse._mm_rsqrt_ps(cast!(a)))
-	}
-
-	/// Computes `average(a, b)` for each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn average_u16x8(self, a: u16x8, b: u16x8) -> u16x8 {
-		cast!(self.sse2._mm_avg_epu16(cast!(a), cast!(b)))
-	}
-
-	/// Computes `average(a, b)` for each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn average_u8x16(self, a: u8x16, b: u8x16) -> u8x16 {
-		cast!(self.sse2._mm_avg_epu8(cast!(a), cast!(b)))
-	}
-
-	/// Returns `ceil(a)` for each lane of `a`, rounding towards positive infinity.
-	#[inline(always)]
-	pub fn ceil_f32x4(self, a: f32x4) -> f32x4 {
-		cast!(self.sse4_1._mm_ceil_ps(cast!(a)))
-	}
-
-	/// Returns `ceil(a)` for each lane of `a`, rounding towards positive infinity.
-	#[inline(always)]
-	pub fn ceil_f64x2(self, a: f64x2) -> f64x2 {
-		cast!(self.sse4_1._mm_ceil_pd(cast!(a)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
-	pub fn cmp_eq_f32x4(self, a: f32x4, b: f32x4) -> m32x4 {
-		cast!(self.sse._mm_cmpeq_ps(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
-	pub fn cmp_eq_f64x2(self, a: f64x2, b: f64x2) -> m64x2 {
-		cast!(self.sse2._mm_cmpeq_pd(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
-	pub fn cmp_eq_i16x8(self, a: i16x8, b: i16x8) -> m16x8 {
-		cast!(self.sse2._mm_cmpeq_epi16(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
-	pub fn cmp_eq_i32x4(self, a: i32x4, b: i32x4) -> m32x4 {
-		cast!(self.sse2._mm_cmpeq_epi32(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
-	pub fn cmp_eq_i64x2(self, a: i64x2, b: i64x2) -> m64x2 {
-		cast!(self.sse4_1._mm_cmpeq_epi64(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
-	pub fn cmp_eq_i8x16(self, a: i8x16, b: i8x16) -> m8x16 {
-		cast!(self.sse2._mm_cmpeq_epi8(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
-	pub fn cmp_eq_u16x8(self, a: u16x8, b: u16x8) -> m16x8 {
-		cast!(self.sse2._mm_cmpeq_epi16(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
-	pub fn cmp_eq_u32x4(self, a: u32x4, b: u32x4) -> m32x4 {
-		cast!(self.sse2._mm_cmpeq_epi32(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
-	pub fn cmp_eq_u64x2(self, a: u64x2, b: u64x2) -> m64x2 {
-		cast!(self.sse4_1._mm_cmpeq_epi64(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
-	pub fn cmp_eq_u8x16(self, a: u8x16, b: u8x16) -> m8x16 {
-		cast!(self.sse2._mm_cmpeq_epi8(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than-or-equal-to.
-	#[inline(always)]
-	pub fn cmp_ge_f32x4(self, a: f32x4, b: f32x4) -> m32x4 {
-		cast!(self.sse._mm_cmpge_ps(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than-or-equal-to.
-	#[inline(always)]
-	pub fn cmp_ge_f64x2(self, a: f64x2, b: f64x2) -> m64x2 {
-		cast!(self.sse2._mm_cmpge_pd(cast!(a), cast!(b)))
 	}
 
 	/// Compares the elements in each lane of `a` and `b` for greater-than-or-equal-to.
@@ -396,42 +224,6 @@ impl V2 {
 
 	/// Compares the elements in each lane of `a` and `b` for greater-than.
 	#[inline(always)]
-	pub fn cmp_gt_f32x4(self, a: f32x4, b: f32x4) -> m32x4 {
-		cast!(self.sse._mm_cmpgt_ps(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than.
-	#[inline(always)]
-	pub fn cmp_gt_f64x2(self, a: f64x2, b: f64x2) -> m64x2 {
-		cast!(self.sse2._mm_cmpgt_pd(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than.
-	#[inline(always)]
-	pub fn cmp_gt_i16x8(self, a: i16x8, b: i16x8) -> m16x8 {
-		cast!(self.sse2._mm_cmpgt_epi16(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than.
-	#[inline(always)]
-	pub fn cmp_gt_i32x4(self, a: i32x4, b: i32x4) -> m32x4 {
-		cast!(self.sse2._mm_cmpgt_epi32(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than.
-	#[inline(always)]
-	pub fn cmp_gt_i64x2(self, a: i64x2, b: i64x2) -> m64x2 {
-		cast!(self.sse4_2._mm_cmpgt_epi64(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than.
-	#[inline(always)]
-	pub fn cmp_gt_i8x16(self, a: i8x16, b: i8x16) -> m8x16 {
-		cast!(self.sse2._mm_cmpgt_epi8(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than.
-	#[inline(always)]
 	pub fn cmp_gt_u16x8(self, a: u16x8, b: u16x8) -> m16x8 {
 		let k = self.splat_u16x8(0x8000);
 		self.cmp_gt_i16x8(cast!(self.xor_u16x8(a, k)), cast!(self.xor_u16x8(b, k)))
@@ -456,18 +248,6 @@ impl V2 {
 	pub fn cmp_gt_u8x16(self, a: u8x16, b: u8x16) -> m8x16 {
 		let k = self.splat_u8x16(0x80);
 		self.cmp_gt_i8x16(cast!(self.xor_u8x16(a, k)), cast!(self.xor_u8x16(b, k)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than-or-equal-to.
-	#[inline(always)]
-	pub fn cmp_le_f32x4(self, a: f32x4, b: f32x4) -> m32x4 {
-		cast!(self.sse._mm_cmple_ps(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than-or-equal-to.
-	#[inline(always)]
-	pub fn cmp_le_f64x2(self, a: f64x2, b: f64x2) -> m64x2 {
-		cast!(self.sse2._mm_cmple_pd(cast!(a), cast!(b)))
 	}
 
 	/// Compares the elements in each lane of `a` and `b` for less-than-or-equal-to.
@@ -520,38 +300,8 @@ impl V2 {
 
 	/// Compares the elements in each lane of `a` and `b` for less-than.
 	#[inline(always)]
-	pub fn cmp_lt_f32x4(self, a: f32x4, b: f32x4) -> m32x4 {
-		cast!(self.sse._mm_cmplt_ps(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than.
-	#[inline(always)]
-	pub fn cmp_lt_f64x2(self, a: f64x2, b: f64x2) -> m64x2 {
-		cast!(self.sse2._mm_cmplt_pd(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than.
-	#[inline(always)]
-	pub fn cmp_lt_i16x8(self, a: i16x8, b: i16x8) -> m16x8 {
-		cast!(self.sse2._mm_cmplt_epi16(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than.
-	#[inline(always)]
-	pub fn cmp_lt_i32x4(self, a: i32x4, b: i32x4) -> m32x4 {
-		cast!(self.sse2._mm_cmplt_epi32(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than.
-	#[inline(always)]
 	pub fn cmp_lt_i64x2(self, a: i64x2, b: i64x2) -> m64x2 {
 		cast!(self.sse4_2._mm_cmpgt_epi64(cast!(b), cast!(a)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than.
-	#[inline(always)]
-	pub fn cmp_lt_i8x16(self, a: i8x16, b: i8x16) -> m8x16 {
-		cast!(self.sse2._mm_cmplt_epi8(cast!(a), cast!(b)))
 	}
 
 	/// Compares the elements in each lane of `a` and `b` for less-than.
@@ -580,66 +330,6 @@ impl V2 {
 	pub fn cmp_lt_u8x16(self, a: u8x16, b: u8x16) -> m8x16 {
 		let k = self.splat_u8x16(0x80);
 		self.cmp_lt_i8x16(cast!(self.xor_u8x16(a, k)), cast!(self.xor_u8x16(b, k)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for inequality.
-	#[inline(always)]
-	pub fn cmp_not_eq_f32x4(self, a: f32x4, b: f32x4) -> m32x4 {
-		cast!(self.sse._mm_cmpneq_ps(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for inequality.
-	#[inline(always)]
-	pub fn cmp_not_eq_f64x2(self, a: f64x2, b: f64x2) -> m64x2 {
-		cast!(self.sse2._mm_cmpneq_pd(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for not-greater-than-or-equal.
-	#[inline(always)]
-	pub fn cmp_not_ge_f32x4(self, a: f32x4, b: f32x4) -> m32x4 {
-		cast!(self.sse._mm_cmpnge_ps(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for not-greater-than-or-equal.
-	#[inline(always)]
-	pub fn cmp_not_ge_f64x2(self, a: f64x2, b: f64x2) -> m64x2 {
-		cast!(self.sse2._mm_cmpnge_pd(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for not-greater-than.
-	#[inline(always)]
-	pub fn cmp_not_gt_f32x4(self, a: f32x4, b: f32x4) -> m32x4 {
-		cast!(self.sse._mm_cmpngt_ps(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for not-greater-than.
-	#[inline(always)]
-	pub fn cmp_not_gt_f64x2(self, a: f64x2, b: f64x2) -> m64x2 {
-		cast!(self.sse2._mm_cmpngt_pd(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for not-less-than-or-equal.
-	#[inline(always)]
-	pub fn cmp_not_le_f32x4(self, a: f32x4, b: f32x4) -> m32x4 {
-		cast!(self.sse._mm_cmpnle_ps(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for not-less-than-or-equal.
-	#[inline(always)]
-	pub fn cmp_not_le_f64x2(self, a: f64x2, b: f64x2) -> m64x2 {
-		cast!(self.sse2._mm_cmpnle_pd(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for not-less-than.
-	#[inline(always)]
-	pub fn cmp_not_lt_f32x4(self, a: f32x4, b: f32x4) -> m32x4 {
-		cast!(self.sse._mm_cmpnlt_ps(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for not-less-than.
-	#[inline(always)]
-	pub fn cmp_not_lt_f64x2(self, a: f64x2, b: f64x2) -> m64x2 {
-		cast!(self.sse2._mm_cmpnlt_pd(cast!(a), cast!(b)))
 	}
 
 	/// Converts a `f32x4` to `f64x2`, elementwise, while truncating the extra elements.
@@ -858,62 +548,6 @@ impl V2 {
 		cast!(self.sse4_1._mm_cvtepu8_epi64(cast!(a)))
 	}
 
-	/// Divides the elements of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn div_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
-		cast!(self.sse._mm_div_ps(cast!(a), cast!(b)))
-	}
-
-	/// Divides the elements of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn div_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
-		cast!(self.sse2._mm_div_pd(cast!(a), cast!(b)))
-	}
-
-	/// Rounds the elements of each lane of `a` to the nearest integer towards negative infinity.
-	#[inline(always)]
-	pub fn floor_f32x4(self, a: f32x4) -> f32x4 {
-		cast!(self.sse4_1._mm_floor_ps(cast!(a)))
-	}
-
-	/// Rounds the elements of each lane of `a` to the nearest integer towards negative infinity.
-	#[inline(always)]
-	pub fn floor_f64x2(self, a: f64x2) -> f64x2 {
-		cast!(self.sse4_1._mm_floor_pd(cast!(a)))
-	}
-
-	/// See [_mm_hadd_ps].
-	///
-	/// [_mm_hadd_ps]: core::arch::x86_64::_mm_hadd_ps
-	#[inline(always)]
-	pub fn horizontal_add_pack_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
-		cast!(self.sse3._mm_hadd_ps(cast!(a), cast!(b)))
-	}
-
-	/// See [_mm_hadd_pd].
-	///
-	/// [_mm_hadd_pd]: core::arch::x86_64::_mm_hadd_pd
-	#[inline(always)]
-	pub fn horizontal_add_pack_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
-		cast!(self.sse3._mm_hadd_pd(cast!(a), cast!(b)))
-	}
-
-	/// See [_mm_hadd_epi16].
-	///
-	/// [_mm_hadd_epi16]: core::arch::x86_64::_mm_hadd_epi16
-	#[inline(always)]
-	pub fn horizontal_add_pack_i16x8(self, a: i16x8, b: i16x8) -> i16x8 {
-		cast!(self.ssse3._mm_hadd_epi16(cast!(a), cast!(b)))
-	}
-
-	/// See [_mm_hadd_epi32].
-	///
-	/// [_mm_hadd_epi32]: core::arch::x86_64::_mm_hadd_epi32
-	#[inline(always)]
-	pub fn horizontal_add_pack_i32x4(self, a: i32x4, b: i32x4) -> i32x4 {
-		cast!(self.ssse3._mm_hadd_epi32(cast!(a), cast!(b)))
-	}
-
 	/// See [_mm_hadds_epi16].
 	///
 	/// [_mm_hadds_epi16]: core::arch::x86_64::_mm_hadds_epi16
@@ -928,38 +562,6 @@ impl V2 {
 	#[inline(always)]
 	pub fn horizontal_saturating_sub_pack_i16x8(self, a: i16x8, b: i16x8) -> i16x8 {
 		cast!(self.ssse3._mm_hsubs_epi16(cast!(a), cast!(b)))
-	}
-
-	/// See [_mm_hsub_ps].
-	///
-	/// [_mm_hsub_ps]: core::arch::x86_64::_mm_hsub_ps
-	#[inline(always)]
-	pub fn horizontal_sub_pack_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
-		cast!(self.sse3._mm_hsub_ps(cast!(a), cast!(b)))
-	}
-
-	/// See [_mm_hsub_pd].
-	///
-	/// [_mm_hsub_pd]: core::arch::x86_64::_mm_hsub_pd
-	#[inline(always)]
-	pub fn horizontal_sub_pack_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
-		cast!(self.sse3._mm_hsub_pd(cast!(a), cast!(b)))
-	}
-
-	/// See [_mm_hsub_epi16].
-	///
-	/// [_mm_hsub_epi16]: core::arch::x86_64::_mm_hsub_epi16
-	#[inline(always)]
-	pub fn horizontal_sub_pack_i16x8(self, a: i16x8, b: i16x8) -> i16x8 {
-		cast!(self.ssse3._mm_hsub_epi16(cast!(a), cast!(b)))
-	}
-
-	/// See [_mm_hsub_epi32].
-	///
-	/// [_mm_hsub_epi32]: core::arch::x86_64::_mm_hsub_epi32
-	#[inline(always)]
-	pub fn horizontal_sub_pack_i32x4(self, a: i32x4, b: i32x4) -> i32x4 {
-		cast!(self.ssse3._mm_hsub_epi32(cast!(a), cast!(b)))
 	}
 
 	/// Checks if the elements in each lane of `a` are NaN.
@@ -984,114 +586,6 @@ impl V2 {
 	#[inline(always)]
 	pub fn is_not_nan_f64x2(self, a: f64x2) -> m64x2 {
 		cast!(self.sse2._mm_cmpord_pd(cast!(a), cast!(a)))
-	}
-
-	/// Computes `max(a, b)`. for each lane in `a` and `b`.
-	#[inline(always)]
-	pub fn max_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
-		cast!(self.sse._mm_max_ps(cast!(a), cast!(b)))
-	}
-
-	/// Computes `max(a, b)`. for each lane in `a` and `b`.
-	#[inline(always)]
-	pub fn max_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
-		cast!(self.sse2._mm_max_pd(cast!(a), cast!(b)))
-	}
-
-	/// Computes `max(a, b)`. for each lane in `a` and `b`.
-	#[inline(always)]
-	pub fn max_i16x8(self, a: i16x8, b: i16x8) -> i16x8 {
-		cast!(self.sse2._mm_max_epi16(cast!(a), cast!(b)))
-	}
-
-	/// Computes `max(a, b)`. for each lane in `a` and `b`.
-	#[inline(always)]
-	pub fn max_i32x4(self, a: i32x4, b: i32x4) -> i32x4 {
-		cast!(self.sse4_1._mm_max_epi32(cast!(a), cast!(b)))
-	}
-
-	/// Computes `max(a, b)`. for each lane in `a` and `b`.
-	#[inline(always)]
-	pub fn max_i8x16(self, a: i8x16, b: i8x16) -> i8x16 {
-		cast!(self.sse4_1._mm_max_epi8(cast!(a), cast!(b)))
-	}
-
-	/// Computes `max(a, b)`. for each lane in `a` and `b`.
-	#[inline(always)]
-	pub fn max_u16x8(self, a: u16x8, b: u16x8) -> u16x8 {
-		cast!(self.sse4_1._mm_max_epu16(cast!(a), cast!(b)))
-	}
-
-	/// Computes `max(a, b)`. for each lane in `a` and `b`.
-	#[inline(always)]
-	pub fn max_u32x4(self, a: u32x4, b: u32x4) -> u32x4 {
-		cast!(self.sse4_1._mm_max_epu32(cast!(a), cast!(b)))
-	}
-
-	/// Computes `max(a, b)`. for each lane in `a` and `b`.
-	#[inline(always)]
-	pub fn max_u8x16(self, a: u8x16, b: u8x16) -> u8x16 {
-		cast!(self.sse2._mm_max_epu8(cast!(a), cast!(b)))
-	}
-
-	/// Computes `min(a, b)`. for each lane in `a` and `b`.
-	#[inline(always)]
-	pub fn min_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
-		cast!(self.sse._mm_min_ps(cast!(a), cast!(b)))
-	}
-
-	/// Computes `min(a, b)`. for each lane in `a` and `b`.
-	#[inline(always)]
-	pub fn min_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
-		cast!(self.sse2._mm_min_pd(cast!(a), cast!(b)))
-	}
-
-	/// Computes `min(a, b)`. for each lane in `a` and `b`.
-	#[inline(always)]
-	pub fn min_i16x8(self, a: i16x8, b: i16x8) -> i16x8 {
-		cast!(self.sse2._mm_min_epi16(cast!(a), cast!(b)))
-	}
-
-	/// Computes `min(a, b)`. for each lane in `a` and `b`.
-	#[inline(always)]
-	pub fn min_i32x4(self, a: i32x4, b: i32x4) -> i32x4 {
-		cast!(self.sse4_1._mm_min_epi32(cast!(a), cast!(b)))
-	}
-
-	/// Computes `min(a, b)`. for each lane in `a` and `b`.
-	#[inline(always)]
-	pub fn min_i8x16(self, a: i8x16, b: i8x16) -> i8x16 {
-		cast!(self.sse4_1._mm_min_epi8(cast!(a), cast!(b)))
-	}
-
-	/// Computes `min(a, b)`. for each lane in `a` and `b`.
-	#[inline(always)]
-	pub fn min_u16x8(self, a: u16x8, b: u16x8) -> u16x8 {
-		cast!(self.sse4_1._mm_min_epu16(cast!(a), cast!(b)))
-	}
-
-	/// Computes `min(a, b)`. for each lane in `a` and `b`.
-	#[inline(always)]
-	pub fn min_u32x4(self, a: u32x4, b: u32x4) -> u32x4 {
-		cast!(self.sse4_1._mm_min_epu32(cast!(a), cast!(b)))
-	}
-
-	/// Computes `min(a, b)`. for each lane in `a` and `b`.
-	#[inline(always)]
-	pub fn min_u8x16(self, a: u8x16, b: u8x16) -> u8x16 {
-		cast!(self.sse2._mm_min_epu8(cast!(a), cast!(b)))
-	}
-
-	/// Computes `a * b` for each lane in `a` and `b`.
-	#[inline(always)]
-	pub fn mul_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
-		cast!(self.sse._mm_mul_ps(cast!(a), cast!(b)))
-	}
-
-	/// Computes `a * b` for each lane in `a` and `b`.
-	#[inline(always)]
-	pub fn mul_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
-		cast!(self.sse2._mm_mul_pd(cast!(a), cast!(b)))
 	}
 
 	/// See [_mm_maddubs_epi16].
@@ -1192,90 +686,6 @@ impl V2 {
 	#[inline(always)]
 	pub fn not_u8x16(self, a: u8x16) -> u8x16 {
 		self.xor_u8x16(a, self.splat_u8x16(!0))
-	}
-
-	/// Returns `a | b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn or_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
-		cast!(self.sse._mm_or_ps(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a | b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn or_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
-		cast!(self.sse2._mm_or_pd(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a | b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn or_i16x8(self, a: i16x8, b: i16x8) -> i16x8 {
-		cast!(self.sse2._mm_or_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a | b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn or_i32x4(self, a: i32x4, b: i32x4) -> i32x4 {
-		cast!(self.sse2._mm_or_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a | b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn or_i64x2(self, a: i64x2, b: i64x2) -> i64x2 {
-		cast!(self.sse2._mm_or_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a | b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn or_i8x16(self, a: i8x16, b: i8x16) -> i8x16 {
-		cast!(self.sse2._mm_or_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a | b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn or_m16x8(self, a: m16x8, b: m16x8) -> m16x8 {
-		cast!(self.sse2._mm_or_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a | b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn or_m32x4(self, a: m32x4, b: m32x4) -> m32x4 {
-		cast!(self.sse2._mm_or_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a | b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn or_m64x2(self, a: m64x2, b: m64x2) -> m64x2 {
-		cast!(self.sse2._mm_or_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a | b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn or_m8x16(self, a: m8x16, b: m8x16) -> m8x16 {
-		cast!(self.sse2._mm_or_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a | b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn or_u16x8(self, a: u16x8, b: u16x8) -> u16x8 {
-		cast!(self.sse2._mm_or_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a | b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn or_u32x4(self, a: u32x4, b: u32x4) -> u32x4 {
-		cast!(self.sse2._mm_or_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a | b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn or_u64x2(self, a: u64x2, b: u64x2) -> u64x2 {
-		cast!(self.sse2._mm_or_si128(cast!(a), cast!(b)))
-	}
-
-	/// Returns `a | b` for each bit in `a` and `b`.
-	#[inline(always)]
-	pub fn or_u8x16(self, a: u8x16, b: u8x16) -> u8x16 {
-		cast!(self.sse2._mm_or_si128(cast!(a), cast!(b)))
 	}
 
 	/// See [_mm_packs_epi16].
@@ -1457,54 +867,6 @@ impl V2 {
 	pub fn round_f64x2(self, a: f64x2) -> f64x2 {
 		const ROUNDING: i32 = _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC;
 		cast!(self.sse4_1._mm_round_pd::<ROUNDING>(cast!(a)))
-	}
-
-	/// Adds the elements of each lane of `a` and `b`, with saturation.
-	#[inline(always)]
-	pub fn saturating_add_i16x8(self, a: i16x8, b: i16x8) -> i16x8 {
-		cast!(self.sse2._mm_adds_epi16(cast!(a), cast!(b)))
-	}
-
-	/// Adds the elements of each lane of `a` and `b`, with saturation.
-	#[inline(always)]
-	pub fn saturating_add_i8x16(self, a: i8x16, b: i8x16) -> i8x16 {
-		cast!(self.sse2._mm_adds_epi8(cast!(a), cast!(b)))
-	}
-
-	/// Adds the elements of each lane of `a` and `b`, with saturation.
-	#[inline(always)]
-	pub fn saturating_add_u16x8(self, a: u16x8, b: u16x8) -> u16x8 {
-		cast!(self.sse2._mm_adds_epu16(cast!(a), cast!(b)))
-	}
-
-	/// Adds the elements of each lane of `a` and `b`, with saturation.
-	#[inline(always)]
-	pub fn saturating_add_u8x16(self, a: u8x16, b: u8x16) -> u8x16 {
-		cast!(self.sse2._mm_adds_epu8(cast!(a), cast!(b)))
-	}
-
-	/// Subtracts the elements of each lane of `a` and `b`, with saturation.
-	#[inline(always)]
-	pub fn saturating_sub_i16x8(self, a: i16x8, b: i16x8) -> i16x8 {
-		cast!(self.sse2._mm_subs_epi16(cast!(a), cast!(b)))
-	}
-
-	/// Subtracts the elements of each lane of `a` and `b`, with saturation.
-	#[inline(always)]
-	pub fn saturating_sub_i8x16(self, a: i8x16, b: i8x16) -> i8x16 {
-		cast!(self.sse2._mm_subs_epi8(cast!(a), cast!(b)))
-	}
-
-	/// Subtracts the elements of each lane of `a` and `b`, with saturation.
-	#[inline(always)]
-	pub fn saturating_sub_u16x8(self, a: u16x8, b: u16x8) -> u16x8 {
-		cast!(self.sse2._mm_subs_epu16(cast!(a), cast!(b)))
-	}
-
-	/// Subtracts the elements of each lane of `a` and `b`, with saturation.
-	#[inline(always)]
-	pub fn saturating_sub_u8x16(self, a: u8x16, b: u8x16) -> u8x16 {
-		cast!(self.sse2._mm_subs_epu8(cast!(a), cast!(b)))
 	}
 
 	/// Combines `if_true` and `if_false`, selecting elements from `if_true` if the corresponding
@@ -1908,30 +1270,6 @@ impl V2 {
 		cast!(self.sse2._mm_sqrt_pd(cast!(a)))
 	}
 
-	/// Calculates `a - b` for each lane in `a` and `b`.
-	#[inline(always)]
-	pub fn sub_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
-		cast!(self.sse._mm_sub_ps(cast!(a), cast!(b)))
-	}
-
-	/// Calculates `a - b` for each lane in `a` and `b`.
-	#[inline(always)]
-	pub fn sub_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
-		cast!(self.sse2._mm_sub_pd(cast!(a), cast!(b)))
-	}
-
-	/// Alternatively subtracts and adds the elements of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn subadd_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
-		cast!(self.sse3._mm_addsub_ps(cast!(a), cast!(b)))
-	}
-
-	/// Alternatively subtracts and adds the elements of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn subadd_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
-		cast!(self.sse3._mm_addsub_pd(cast!(a), cast!(b)))
-	}
-
 	/// See [_mm_sad_epu8].
 	///
 	/// [_mm_sad_epu8]: core::arch::x86_64::_mm_sad_epu8
@@ -1952,24 +1290,6 @@ impl V2 {
 	pub fn truncate_f64x2(self, a: f64x2) -> f64x2 {
 		const ROUNDING: i32 = _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC;
 		cast!(self.sse4_1._mm_round_pd::<ROUNDING>(cast!(a)))
-	}
-
-	/// Computes the unsigned absolute value of the elements of each lane of `a`.
-	#[inline(always)]
-	pub fn unsigned_abs_i16x8(self, a: i16x8) -> u16x8 {
-		cast!(self.ssse3._mm_abs_epi16(cast!(a)))
-	}
-
-	/// Computes the unsigned absolute value of the elements of each lane of `a`.
-	#[inline(always)]
-	pub fn unsigned_abs_i32x4(self, a: i32x4) -> u32x4 {
-		cast!(self.ssse3._mm_abs_epi32(cast!(a)))
-	}
-
-	/// Computes the unsigned absolute value of the elements of each lane of `a`.
-	#[inline(always)]
-	pub fn unsigned_abs_i8x16(self, a: i8x16) -> u8x16 {
-		cast!(self.ssse3._mm_abs_epi8(cast!(a)))
 	}
 
 	/// Multiplies the elements of each lane of `a` and `b`, and returns separately the low and
@@ -2051,208 +1371,561 @@ impl V2 {
 
 		(cast!(ab_lo), cast!(ab_hi))
 	}
+}
 
-	/// Adds the elements of each lane of `a` and `b`, with wrapping on overflow.
-	#[inline(always)]
-	pub fn wrapping_add_i16x8(self, a: i16x8, b: i16x8) -> i16x8 {
-		cast!(self.sse2._mm_add_epi16(cast!(a), cast!(b)))
+macro_rules! impl_simd_binop {
+	($func: ident, $op: ident, $ty: ident, $out: ty, $factor: literal) => {
+		paste! {
+			#[inline(always)]
+			fn [<$func _ $ty s>](self, a: Self::[<$ty s>], b: Self::[<$ty s>]) -> Self::[<$out s>] {
+				self.[<$op _ $ty x $factor>](a, b)
+			}
+		}
+	};
+	($func: ident, $op: ident, $($ty: ident x $factor: literal => $out: ty),*) => {
+		$(impl_simd_binop!($func, $op, $ty, $out, $factor);)*
+	};
+	($func: ident, $op: ident, $($ty: ident x $factor: literal),*) => {
+		$(impl_simd_binop!($func, $op, $ty, $ty, $factor);)*
+	};
+	($func: ident, $($ty: ident x $factor: literal => $out: ty),*) => {
+		$(impl_simd_binop!($func, $func, $ty, $out, $factor);)*
+	};
+	($func: ident, $($ty: ident x $factor: literal),*) => {
+		$(impl_simd_binop!($func, $func, $ty, $ty, $factor);)*
+	};
+}
+
+macro_rules! impl_simd_unop {
+	($func: ident, $op: ident, $ty: ident, $out: ty, $factor: literal) => {
+		paste! {
+			#[inline(always)]
+			fn [<$func _ $ty s>](self, a: Self::[<$ty s>]) -> Self::[<$out s>] {
+				self.[<$op _ $ty x $factor>](a)
+			}
+		}
+	};
+	($func: ident, $($ty: ident x $factor: literal),*) => {
+		$(impl_simd_unop!($func, $func, $ty, $ty, $factor);)*
+	};
+}
+
+macro_rules! impl_scalar_binop {
+	($func: ident, $ty: ident, $out: ty, impl) => {
+		paste! {
+			#[inline(always)]
+			fn [<$func _ $ty s>](self, a: Self::[<$ty s>], b: Self::[<$ty s>]) -> Self::[<$out s>] {
+				Scalar128b.[<$func _ $ty s>](a, b)
+			}
+		}
+	};
+	($func: ident, $($ty: ident => $out: ty),*) => {
+		$(impl_scalar_binop!($func, $ty, $out, impl);)*
+	};
+	($func: ident, $($ty: ident),*) => {
+		$(impl_scalar_binop!($func, $ty, $ty, impl);)*
+	};
+}
+
+macro_rules! splat {
+	($ty: ty, $factor: literal) => {
+		paste! {
+			#[inline(always)]
+			fn [<splat_ $ty s>](self, value: $ty) -> Self::[<$ty s>] {
+				self.[<splat_ $ty x $factor>](value)
+			}
+		}
+	};
+	($($ty: ident x $factor: literal),*) => {
+		$(splat!($ty, $factor);)*
+	};
+}
+
+impl Simd for V2 {
+	type c32s = f32x4;
+	type c64s = f64x2;
+	type f32s = f32x4;
+	type f64s = f64x2;
+	type i16s = i16x8;
+	type i32s = i32x4;
+	type i64s = i64x2;
+	type i8s = i8x16;
+	type m16s = m16x8;
+	type m32s = m32x4;
+	type m64s = m64x2;
+	type m8s = m8x16;
+	type u16s = u16x8;
+	type u32s = u32x4;
+	type u64s = u64x2;
+	type u8s = u8x16;
+
+	const REGISTER_COUNT: usize = 16;
+
+	impl_simd_binop!(add, f32 x 4, f64 x 2);
+
+	impl_simd_binop!(add, wrapping_add, u8 x 16, i8 x 16, u16 x 8, i16 x 8, u32 x 4, i32 x 4, u64 x 2, i64 x 2);
+
+	impl_simd_binop!(sub, f32 x 4, f64 x 2);
+
+	impl_simd_binop!(sub, wrapping_sub, u8 x 16, i8 x 16, u16 x 8, i16 x 8, u32 x 4, i32 x 4, u64 x 2, i64 x 2);
+
+	impl_simd_binop!(mul, f32 x 4, f64 x 2);
+
+	impl_simd_binop!(mul, wrapping_mul, u16 x 8, i16 x 8, u32 x 4, i32 x 4);
+
+	impl_scalar_binop!(mul, u64, i64, c32, c64);
+
+	impl_simd_binop!(and, m8 x 16, u8 x 16, i8 x 16, m16 x 8, u16 x 8, i16 x 8, m32 x 4, u32 x 4, i32 x 4, m64 x 2, u64 x 2, i64 x 2, f32 x 4, f64 x 2);
+
+	impl_simd_binop!(or, m8 x 16, u8 x 16, i8 x 16, m16 x 8, u16 x 8, i16 x 8, m32 x 4, u32 x 4, i32 x 4, m64 x 2, u64 x 2, i64 x 2, f32 x 4, f64 x 2);
+
+	impl_simd_binop!(xor, m8 x 16, u8 x 16, i8 x 16, m16 x 8, u16 x 8, i16 x 8, m32 x 4, u32 x 4, i32 x 4, m64 x 2, u64 x 2, i64 x 2, f32 x 4, f64 x 2);
+
+	impl_simd_binop!(div, f32 x 4, f64 x 2);
+
+	impl_simd_binop!(equal, cmp_eq, u8 x 16 => m8, u16 x 8 => m16, u32 x 4 => m32, u64 x 2 => m64, f32 x 4 => m32, f64 x 2 => m64);
+
+	impl_simd_binop!(greater_than, cmp_gt, u8 x 16 => m8, i8 x 16 => m8, u16 x 8 => m16, i16 x 8 => m16, u32 x 4 => m32, i32 x 4 => m32, u64 x 2 => m64, i64 x 2 => m64, f32 x 4 => m32, f64 x 2 => m64);
+
+	impl_simd_binop!(greater_than_or_equal, cmp_ge, u8 x 16 => m8, i8 x 16 => m8, u16 x 8 => m16, i16 x 8 => m16, u32 x 4 => m32, i32 x 4 => m32, u64 x 2 => m64, i64 x 2 => m64, f32 x 4 => m32, f64 x 2 => m64);
+
+	impl_simd_binop!(less_than, cmp_lt, u8 x 16 => m8, i8 x 16 => m8, u16 x 8 => m16, i16 x 8 => m16, u32 x 4 => m32, i32 x 4 => m32, u64 x 2 => m64, i64 x 2 => m64, f32 x 4 => m32, f64 x 2 => m64);
+
+	impl_simd_binop!(less_than_or_equal, cmp_le, u8 x 16 => m8, i8 x 16 => m8, u16 x 8 => m16, i16 x 8 => m16, u32 x 4 => m32, i32 x 4 => m32, u64 x 2 => m64, i64 x 2 => m64, f32 x 4 => m32, f64 x 2 => m64);
+
+	impl_scalar_binop!(conj_mul, c32, c64);
+
+	splat!(u8 x 16, i8 x 16, u16 x 8, i16 x 8, u32 x 4, i32 x 4, u64 x 2, i64 x 2, f32 x 4, f64 x 2);
+
+	impl_simd_binop!(max, u8 x 16, i8 x 16, u16 x 8, i16 x 8, u32 x 4, i32 x 4, f32 x 4, f64 x 2);
+
+	impl_scalar_binop!(max, u64, i64);
+
+	impl_simd_binop!(min, u8 x 16, i8 x 16, u16 x 8, i16 x 8, u32 x 4, i32 x 4, f32 x 4, f64 x 2);
+
+	impl_scalar_binop!(min, u64, i64);
+
+	impl_simd_unop!(not, m8 x 16, u8 x 16, m16 x 8, u16 x 8, m32 x 4, u32 x 4, m64 x 2, u64 x 2);
+
+	fn abs2_c32s(self, a: Self::c32s) -> Self::c32s {
+		let sqr = self.mul_f32s(a, a);
+		let sqr_rev = self
+			.sse
+			._mm_shuffle_ps::<0b10_11_00_01>(cast!(sqr), cast!(sqr));
+		self.add_f32s(sqr, cast!(sqr_rev))
 	}
 
-	/// Adds the elements of each lane of `a` and `b`, with wrapping on overflow.
-	#[inline(always)]
-	pub fn wrapping_add_i32x4(self, a: i32x4, b: i32x4) -> i32x4 {
-		cast!(self.sse2._mm_add_epi32(cast!(a), cast!(b)))
+	fn abs2_c64s(self, a: Self::c64s) -> Self::c64s {
+		let sqr = self.mul_f64s(a, a);
+		let sqr_rev = self.sse2._mm_shuffle_pd::<0b0101>(cast!(sqr), cast!(sqr));
+		self.add_f64s(sqr, cast!(sqr_rev))
 	}
 
-	/// Adds the elements of each lane of `a` and `b`, with wrapping on overflow.
-	#[inline(always)]
-	pub fn wrapping_add_i64x2(self, a: i64x2, b: i64x2) -> i64x2 {
-		cast!(self.sse2._mm_add_epi64(cast!(a), cast!(b)))
+	fn abs_max_c32s(self, a: Self::c32s) -> Self::c32s {
+		let max = self.abs_f32s(a);
+		let max_rev = self.sse._mm_shuffle_ps::<0b10_11_00_01>(cast!(a), cast!(a));
+		self.max_f32s(max, cast!(max_rev))
 	}
 
-	/// Adds the elements of each lane of `a` and `b`, with wrapping on overflow.
-	#[inline(always)]
-	pub fn wrapping_add_i8x16(self, a: i8x16, b: i8x16) -> i8x16 {
-		cast!(self.sse2._mm_add_epi8(cast!(a), cast!(b)))
+	fn abs_max_c64s(self, a: Self::c64s) -> Self::c64s {
+		let max = self.abs_f64s(a);
+		let max_rev = self.sse2._mm_shuffle_pd::<0b0101>(cast!(max), cast!(max));
+		self.max_f64s(max, cast!(max_rev))
 	}
 
-	/// Adds the elements of each lane of `a` and `b`, with wrapping on overflow.
 	#[inline(always)]
-	pub fn wrapping_add_u16x8(self, a: u16x8, b: u16x8) -> u16x8 {
-		cast!(self.sse2._mm_add_epi16(cast!(a), cast!(b)))
+	fn add_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+		self.add_f32s(a, b)
 	}
 
-	/// Adds the elements of each lane of `a` and `b`, with wrapping on overflow.
 	#[inline(always)]
-	pub fn wrapping_add_u32x4(self, a: u32x4, b: u32x4) -> u32x4 {
-		cast!(self.sse2._mm_add_epi32(cast!(a), cast!(b)))
+	fn add_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+		self.add_f64s(a, b)
 	}
 
-	/// Adds the elements of each lane of `a` and `b`, with wrapping on overflow.
 	#[inline(always)]
-	pub fn wrapping_add_u64x2(self, a: u64x2, b: u64x2) -> u64x2 {
-		cast!(self.sse2._mm_add_epi64(cast!(a), cast!(b)))
+	fn equal_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::m32s {
+		self.equal_f32s(a, b)
 	}
 
-	/// Adds the elements of each lane of `a` and `b`, with wrapping on overflow.
 	#[inline(always)]
-	pub fn wrapping_add_u8x16(self, a: u8x16, b: u8x16) -> u8x16 {
-		cast!(self.sse2._mm_add_epi8(cast!(a), cast!(b)))
+	fn equal_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::m64s {
+		self.equal_f64s(a, b)
 	}
 
-	/// Multiplies the elements of each lane of `a` and `b`, with wrapping on overflow.
 	#[inline(always)]
-	pub fn wrapping_mul_i16x8(self, a: i16x8, b: i16x8) -> i16x8 {
-		cast!(self.sse2._mm_mullo_epi16(cast!(a), cast!(b)))
+	fn conj_c32s(self, a: Self::c32s) -> Self::c32s {
+		self.xor_f32s(a, self.splat_c32s(c32 { re: 0.0, im: -0.0 }))
 	}
 
-	/// Multiplies the elements of each lane of `a` and `b`, with wrapping on overflow.
 	#[inline(always)]
-	pub fn wrapping_mul_i32x4(self, a: i32x4, b: i32x4) -> i32x4 {
-		cast!(self.sse4_1._mm_mullo_epi32(cast!(a), cast!(b)))
+	fn conj_c64s(self, a: Self::c64s) -> Self::c64s {
+		self.xor_f64s(a, self.splat_c64s(c64 { re: 0.0, im: -0.0 }))
 	}
 
-	/// Multiplies the elements of each lane of `a` and `b`, with wrapping on overflow.
 	#[inline(always)]
-	pub fn wrapping_mul_u16x8(self, a: u16x8, b: u16x8) -> u16x8 {
-		cast!(self.sse2._mm_mullo_epi16(cast!(a), cast!(b)))
+	fn conj_mul_add_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+		Scalar128b.conj_mul_add_c32s(a, b, c)
 	}
 
-	/// Multiplies the elements of each lane of `a` and `b`, with wrapping on overflow.
 	#[inline(always)]
-	pub fn wrapping_mul_u32x4(self, a: u32x4, b: u32x4) -> u32x4 {
-		cast!(self.sse4_1._mm_mullo_epi32(cast!(a), cast!(b)))
+	fn conj_mul_add_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+		Scalar128b.conj_mul_add_c64s(a, b, c)
 	}
 
-	/// Subtracts the elements of each lane of `a` and `b`, with wrapping on overflow.
+	/// # Safety
+	///
+	/// See the trait-level safety documentation.
 	#[inline(always)]
-	pub fn wrapping_sub_i16x8(self, a: i16x8, b: i16x8) -> i16x8 {
-		cast!(self.sse2._mm_sub_epi16(cast!(a), cast!(b)))
+	unsafe fn mask_load_ptr_c32s(self, mask: MemMask<Self::m32s>, ptr: *const c32) -> Self::c32s {
+		cast!(self.mask_load_ptr_u32s(mask, ptr as _))
 	}
 
-	/// Subtracts the elements of each lane of `a` and `b`, with wrapping on overflow.
+	/// # Safety
+	///
+	/// See the trait-level safety documentation.
 	#[inline(always)]
-	pub fn wrapping_sub_i32x4(self, a: i32x4, b: i32x4) -> i32x4 {
-		cast!(self.sse2._mm_sub_epi32(cast!(a), cast!(b)))
+	unsafe fn mask_load_ptr_c64s(self, mask: MemMask<Self::m64s>, ptr: *const c64) -> Self::c64s {
+		cast!(self.mask_load_ptr_u64s(mask, ptr as _))
 	}
 
-	/// Subtracts the elements of each lane of `a` and `b`, with wrapping on overflow.
+	/// # Safety
+	///
+	/// See the trait-level safety documentation.
 	#[inline(always)]
-	pub fn wrapping_sub_i64x2(self, a: i64x2, b: i64x2) -> i64x2 {
-		cast!(self.sse2._mm_sub_epi64(cast!(a), cast!(b)))
+	unsafe fn mask_load_ptr_u8s(self, mask: MemMask<Self::m8s>, ptr: *const u8) -> Self::u8s {
+		Scalar128b.mask_load_ptr_u8s(mask, ptr)
 	}
 
-	/// Subtracts the elements of each lane of `a` and `b`, with wrapping on overflow.
+	/// # Safety
+	///
+	/// See the trait-level safety documentation.
 	#[inline(always)]
-	pub fn wrapping_sub_i8x16(self, a: i8x16, b: i8x16) -> i8x16 {
-		cast!(self.sse2._mm_sub_epi8(cast!(a), cast!(b)))
+	unsafe fn mask_load_ptr_u16s(self, mask: MemMask<Self::m16s>, ptr: *const u16) -> Self::u16s {
+		Scalar128b.mask_load_ptr_u16s(mask, ptr)
 	}
 
-	/// Subtracts the elements of each lane of `a` and `b`, with wrapping on overflow.
+	/// # Safety
+	///
+	/// See the trait-level safety documentation.
 	#[inline(always)]
-	pub fn wrapping_sub_u16x8(self, a: u16x8, b: u16x8) -> u16x8 {
-		cast!(self.sse2._mm_sub_epi16(cast!(a), cast!(b)))
+	unsafe fn mask_load_ptr_u32s(self, mask: MemMask<Self::m32s>, ptr: *const u32) -> Self::u32s {
+		Scalar128b.mask_load_ptr_u32s(mask, ptr)
 	}
 
-	/// Subtracts the elements of each lane of `a` and `b`, with wrapping on overflow.
+	/// # Safety
+	///
+	/// See the trait-level safety documentation.
 	#[inline(always)]
-	pub fn wrapping_sub_u32x4(self, a: u32x4, b: u32x4) -> u32x4 {
-		cast!(self.sse2._mm_sub_epi32(cast!(a), cast!(b)))
+	unsafe fn mask_load_ptr_u64s(self, mask: MemMask<Self::m64s>, ptr: *const u64) -> Self::u64s {
+		cast!(self.mask_load_ptr_u32s(
+			MemMask {
+				mask: cast!(mask.mask),
+				load: mask.load,
+				store: mask.store
+			},
+			ptr as _
+		))
 	}
 
-	/// Subtracts the elements of each lane of `a` and `b`, with wrapping on overflow.
+	/// # Safety
+	///
+	/// See the trait-level safety documentation.
 	#[inline(always)]
-	pub fn wrapping_sub_u64x2(self, a: u64x2, b: u64x2) -> u64x2 {
-		cast!(self.sse2._mm_sub_epi64(cast!(a), cast!(b)))
+	unsafe fn mask_store_ptr_c32s(
+		self,
+		mask: MemMask<Self::m32s>,
+		ptr: *mut c32,
+		values: Self::c32s,
+	) {
+		self.mask_store_ptr_u32s(mask, ptr as _, cast!(values))
 	}
 
-	/// Subtracts the elements of each lane of `a` and `b`, with wrapping on overflow.
+	/// # Safety
+	///
+	/// See the trait-level safety documentation.
 	#[inline(always)]
-	pub fn wrapping_sub_u8x16(self, a: u8x16, b: u8x16) -> u8x16 {
-		cast!(self.sse2._mm_sub_epi8(cast!(a), cast!(b)))
+	unsafe fn mask_store_ptr_c64s(
+		self,
+		mask: MemMask<Self::m64s>,
+		ptr: *mut c64,
+		values: Self::c64s,
+	) {
+		self.mask_store_ptr_u64s(mask, ptr as _, cast!(values))
 	}
 
-	/// Returns `a ^ b` for each bit in `a` and `b`.
+	/// # Safety
+	///
+	/// See the trait-level safety documentation.
 	#[inline(always)]
-	pub fn xor_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
-		cast!(self.sse._mm_xor_ps(cast!(a), cast!(b)))
+	unsafe fn mask_store_ptr_u8s(self, mask: MemMask<Self::m8s>, ptr: *mut u8, values: Self::u8s) {
+		Scalar128b.mask_store_ptr_u8s(mask, ptr, values);
 	}
 
-	/// Returns `a ^ b` for each bit in `a` and `b`.
+	/// # Safety
+	///
+	/// See the trait-level safety documentation.
 	#[inline(always)]
-	pub fn xor_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
-		cast!(self.sse2._mm_xor_pd(cast!(a), cast!(b)))
+	unsafe fn mask_store_ptr_u16s(
+		self,
+		mask: MemMask<Self::m16s>,
+		ptr: *mut u16,
+		values: Self::u16s,
+	) {
+		Scalar128b.mask_store_ptr_u16s(mask, ptr, values);
 	}
 
-	/// Returns `a ^ b` for each bit in `a` and `b`.
+	/// # Safety
+	///
+	/// See the trait-level safety documentation.
 	#[inline(always)]
-	pub fn xor_i16x8(self, a: i16x8, b: i16x8) -> i16x8 {
-		cast!(self.sse2._mm_xor_si128(cast!(a), cast!(b)))
+	unsafe fn mask_store_ptr_u32s(
+		self,
+		mask: MemMask<Self::m32s>,
+		ptr: *mut u32,
+		values: Self::u32s,
+	) {
+		Scalar128b.mask_store_ptr_u32s(mask, ptr, values);
 	}
 
-	/// Returns `a ^ b` for each bit in `a` and `b`.
+	/// # Safety
+	///
+	/// See the trait-level safety documentation.
 	#[inline(always)]
-	pub fn xor_i32x4(self, a: i32x4, b: i32x4) -> i32x4 {
-		cast!(self.sse2._mm_xor_si128(cast!(a), cast!(b)))
+	unsafe fn mask_store_ptr_u64s(
+		self,
+		mask: MemMask<Self::m64s>,
+		ptr: *mut u64,
+		values: Self::u64s,
+	) {
+		self.mask_store_ptr_u32s(
+			MemMask {
+				mask: cast!(mask.mask),
+				load: mask.load,
+				store: mask.store,
+			},
+			ptr as _,
+			cast!(values),
+		)
 	}
 
-	/// Returns `a ^ b` for each bit in `a` and `b`.
 	#[inline(always)]
-	pub fn xor_i64x2(self, a: i64x2, b: i64x2) -> i64x2 {
-		cast!(self.sse2._mm_xor_si128(cast!(a), cast!(b)))
+	fn mul_add_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+		Scalar128b.mul_add_c32s(a, b, c)
 	}
 
-	/// Returns `a ^ b` for each bit in `a` and `b`.
 	#[inline(always)]
-	pub fn xor_i8x16(self, a: i8x16, b: i8x16) -> i8x16 {
-		cast!(self.sse2._mm_xor_si128(cast!(a), cast!(b)))
+	fn mul_add_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+		Scalar128b.mul_add_c64s(a, b, c)
 	}
 
-	/// Returns `a ^ b` for each bit in `a` and `b`.
 	#[inline(always)]
-	pub fn xor_m16x8(self, a: m16x8, b: m16x8) -> m16x8 {
-		cast!(self.sse2._mm_xor_si128(cast!(a), cast!(b)))
+	fn mul_add_e_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+		self.mul_add_f32s(a, b, c)
 	}
 
-	/// Returns `a ^ b` for each bit in `a` and `b`.
 	#[inline(always)]
-	pub fn xor_m32x4(self, a: m32x4, b: m32x4) -> m32x4 {
-		cast!(self.sse2._mm_xor_si128(cast!(a), cast!(b)))
+	fn mul_add_e_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+		self.mul_add_f64s(a, b, c)
 	}
 
-	/// Returns `a ^ b` for each bit in `a` and `b`.
 	#[inline(always)]
-	pub fn xor_m64x2(self, a: m64x2, b: m64x2) -> m64x2 {
-		cast!(self.sse2._mm_xor_si128(cast!(a), cast!(b)))
+	fn mul_add_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+		Scalar128b.mul_add_f32s(a, b, c)
 	}
 
-	/// Returns `a ^ b` for each bit in `a` and `b`.
 	#[inline(always)]
-	pub fn xor_m8x16(self, a: m8x16, b: m8x16) -> m8x16 {
-		cast!(self.sse2._mm_xor_si128(cast!(a), cast!(b)))
+	fn mul_add_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+		Scalar128b.mul_add_f64s(a, b, c)
 	}
 
-	/// Returns `a ^ b` for each bit in `a` and `b`.
 	#[inline(always)]
-	pub fn xor_u16x8(self, a: u16x8, b: u16x8) -> u16x8 {
-		cast!(self.sse2._mm_xor_si128(cast!(a), cast!(b)))
+	fn neg_c32s(self, a: Self::c32s) -> Self::c32s {
+		self.xor_f32s(a, self.splat_f32s(-0.0))
 	}
 
-	/// Returns `a ^ b` for each bit in `a` and `b`.
 	#[inline(always)]
-	pub fn xor_u32x4(self, a: u32x4, b: u32x4) -> u32x4 {
-		cast!(self.sse2._mm_xor_si128(cast!(a), cast!(b)))
+	fn neg_c64s(self, a: Self::c64s) -> Self::c64s {
+		self.xor_f64s(a, self.splat_f64s(-0.0))
 	}
 
-	/// Returns `a ^ b` for each bit in `a` and `b`.
 	#[inline(always)]
-	pub fn xor_u64x2(self, a: u64x2, b: u64x2) -> u64x2 {
-		cast!(self.sse2._mm_xor_si128(cast!(a), cast!(b)))
+	fn reduce_max_c32s(self, a: Self::c32s) -> c32 {
+		self.reduce_max_c32x2(a)
 	}
 
-	/// Returns `a ^ b` for each bit in `a` and `b`.
 	#[inline(always)]
-	pub fn xor_u8x16(self, a: u8x16, b: u8x16) -> u8x16 {
-		cast!(self.sse2._mm_xor_si128(cast!(a), cast!(b)))
+	fn reduce_max_c64s(self, a: Self::c64s) -> c64 {
+		self.reduce_max_c64x1(a)
+	}
+
+	#[inline(always)]
+	fn reduce_max_f32s(self, a: Self::f32s) -> f32 {
+		self.reduce_max_f32x4(a)
+	}
+
+	#[inline(always)]
+	fn reduce_max_f64s(self, a: Self::f64s) -> f64 {
+		self.reduce_max_f64x2(a)
+	}
+
+	#[inline(always)]
+	fn reduce_min_c32s(self, a: Self::c32s) -> c32 {
+		self.reduce_min_c32x2(a)
+	}
+
+	#[inline(always)]
+	fn reduce_min_c64s(self, a: Self::c64s) -> c64 {
+		self.reduce_min_c64x1(a)
+	}
+
+	#[inline(always)]
+	fn reduce_min_f32s(self, a: Self::f32s) -> f32 {
+		self.reduce_min_f32x4(a)
+	}
+
+	#[inline(always)]
+	fn reduce_min_f64s(self, a: Self::f64s) -> f64 {
+		self.reduce_min_f64x2(a)
+	}
+
+	#[inline(always)]
+	fn reduce_product_f32s(self, a: Self::f32s) -> f32 {
+		self.reduce_product_f32x4(a)
+	}
+
+	#[inline(always)]
+	fn reduce_product_f64s(self, a: Self::f64s) -> f64 {
+		self.reduce_product_f64x2(a)
+	}
+
+	#[inline(always)]
+	fn reduce_sum_c32s(self, a: Self::c32s) -> c32 {
+		self.reduce_sum_c32x2(a)
+	}
+
+	#[inline(always)]
+	fn reduce_sum_c64s(self, a: Self::c64s) -> c64 {
+		self.reduce_sum_c64x1(a)
+	}
+
+	#[inline(always)]
+	fn reduce_sum_f32s(self, a: Self::f32s) -> f32 {
+		self.reduce_sum_f32x4(a)
+	}
+
+	#[inline(always)]
+	fn reduce_sum_f64s(self, a: Self::f64s) -> f64 {
+		self.reduce_sum_f64x2(a)
+	}
+
+	#[inline(always)]
+	fn rotate_right_c32s(self, a: Self::c32s, amount: usize) -> Self::c32s {
+		Scalar128b.rotate_right_c32s(a, amount)
+	}
+
+	#[inline(always)]
+	fn rotate_right_c64s(self, a: Self::c64s, amount: usize) -> Self::c64s {
+		Scalar128b.rotate_right_c64s(a, amount)
+	}
+
+	#[inline(always)]
+	fn rotate_right_u32s(self, a: Self::u32s, amount: usize) -> Self::u32s {
+		Scalar128b.rotate_right_u32s(a, amount)
+	}
+
+	#[inline(always)]
+	fn rotate_right_u64s(self, a: Self::u64s, amount: usize) -> Self::u64s {
+		Scalar128b.rotate_right_u64s(a, amount)
+	}
+
+	#[inline(always)]
+	fn select_u32s_m32s(
+		self,
+		mask: Self::m32s,
+		if_true: Self::u32s,
+		if_false: Self::u32s,
+	) -> Self::u32s {
+		let mask: __m128 = cast!(mask);
+		let if_true: __m128 = cast!(if_true);
+		let if_false: __m128 = cast!(if_false);
+
+		cast!(self.sse4_1._mm_blendv_ps(if_false, if_true, mask))
+	}
+
+	#[inline(always)]
+	fn select_u64s_m64s(
+		self,
+		mask: Self::m64s,
+		if_true: Self::u64s,
+		if_false: Self::u64s,
+	) -> Self::u64s {
+		let mask: __m128d = cast!(mask);
+		let if_true: __m128d = cast!(if_true);
+		let if_false: __m128d = cast!(if_false);
+
+		cast!(self.sse4_1._mm_blendv_pd(if_false, if_true, mask))
+	}
+
+	#[inline(always)]
+	fn splat_c32s(self, value: c32) -> Self::c32s {
+		cast!(self.splat_f64s(cast!(value)))
+	}
+
+	#[inline(always)]
+	fn splat_c64s(self, value: c64) -> Self::c64s {
+		Scalar128b.splat_c64s(value)
+	}
+
+	#[inline(always)]
+	fn sub_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+		self.sub_f32s(a, b)
+	}
+
+	#[inline(always)]
+	fn sub_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+		self.sub_f64s(a, b)
+	}
+
+	#[inline(always)]
+	fn swap_re_im_c32s(self, a: Self::c32s) -> Self::c32s {
+		Scalar128b.swap_re_im_c32s(a)
+	}
+
+	#[inline(always)]
+	fn swap_re_im_c64s(self, a: Self::c64s) -> Self::c64s {
+		Scalar128b.swap_re_im_c64s(a)
+	}
+
+	#[inline(always)]
+	fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
+		struct Impl<Op> {
+			this: V2,
+			op: Op,
+		}
+		impl<Op: WithSimd> crate::NullaryFnOnce for Impl<Op> {
+			type Output = Op::Output;
+
+			#[inline(always)]
+			fn call(self) -> Self::Output {
+				self.op.with_simd(self.this)
+			}
+		}
+		self.vectorize(Impl { this: self, op })
+	}
+
+	#[inline(always)]
+	fn widening_mul_u32s(self, a: Self::u32s, b: Self::u32s) -> (Self::u32s, Self::u32s) {
+		self.widening_mul_u32x4(a, b)
+	}
+
+	#[inline(always)]
+	fn wrapping_dyn_shl_u32s(self, a: Self::u32s, amount: Self::u32s) -> Self::u32s {
+		Scalar128b.wrapping_dyn_shl_u32s(a, amount)
+	}
+
+	#[inline(always)]
+	fn wrapping_dyn_shr_u32s(self, a: Self::u32s, amount: Self::u32s) -> Self::u32s {
+		Scalar128b.wrapping_dyn_shr_u32s(a, amount)
 	}
 }

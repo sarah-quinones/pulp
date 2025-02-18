@@ -118,19 +118,135 @@ static NEON_ROTATE_IDX: [u8x16; 16] = [
 	u8x16(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0),
 ];
 
+macro_rules! impl_binop {
+	($func: ident, $neon_fn: ident, $ty: ident, $factor: literal, $out: ident) => {
+		paste! {
+			#[inline(always)]
+			fn [<$func _ $ty s>](self, a: Self::[<$ty s>], b: Self::[<$ty s>]) -> Self::[<$out s>] {
+				self.[<$neon_fn _ $ty x $factor>](a, b)
+			}
+		}
+	};
+	($func: ident, $($ty: ident x $factor: literal),*) => {
+		$(impl_binop!($func, $func, $ty, $factor, $ty);)*
+	};
+	($func: ident, $neon_fn: ident, $($ty: ident x $factor: literal),*) => {
+		$(impl_binop!($func, $neon_fn, $ty, $factor, $ty);)*
+	};
+	($func: ident, $neon_fn: ident, $($ty: ident x $factor: literal => $out: ident),*) => {
+		$(impl_binop!($func, $neon_fn, $ty, $factor, $out);)*
+	};
+}
+
+macro_rules! impl_binop_scalar {
+	($func: ident, $ty: ident) => {
+		paste! {
+			#[inline(always)]
+			fn [<$func _ $ty s>](self, a: Self::[<$ty s>], b: Self::[<$ty s>]) -> Self::[<$ty s>] {
+				Scalar128b.[<$func _ $ty s>](a, b)
+			}
+		}
+	};
+	($func: ident, $($ty: ident),*) => {
+		$(impl_binop_scalar!($func, $ty);)*
+	}
+}
+
+macro_rules! impl_unop {
+	($func: ident, $neon_fn: ident, $ty: ident, $factor: literal, $out: ident) => {
+		paste! {
+			#[inline(always)]
+			fn [<$func _ $ty s>](self, a: Self::[<$ty s>]) -> Self::[<$out s>] {
+				self.[<$neon_fn _ $ty x $factor>](a)
+			}
+		}
+	};
+	($func: ident, $($ty: ident x $factor: literal),*) => {
+		$(impl_unop!($func, $func, $ty, $factor, $ty);)*
+	};
+	($func: ident, $neon_fn: ident, $($ty: ident x $factor: literal),*) => {
+		$(impl_unop!($func, $neon_fn, $ty, $factor, $ty);)*
+	};
+	($func: ident, $neon_fn: ident, $($ty: ident x $factor: literal => $out: ident),*) => {
+		$(impl_unop!($func, $neon_fn, $ty, $factor, $out);)*
+	};
+}
+
+macro_rules! splat {
+	($ty: ident, $factor: literal) => {
+		paste! {
+			#[inline(always)]
+			fn [<splat_ $ty s>](self, value: $ty) -> Self::[<$ty s>] {
+				cast!(self.[<splat_ $ty x $factor>](cast!(value)))
+			}
+		}
+	};
+	($($ty: ident x $factor: literal),*) => {
+		$(splat!($ty, $factor);)*
+	};
+}
+
 impl Simd for Neon {
 	type c32s = f32x4;
 	type c64s = f64x2;
 	type f32s = f32x4;
 	type f64s = f64x2;
+	type i16s = i16x8;
 	type i32s = i32x4;
 	type i64s = i64x2;
+	type i8s = i8x16;
+	type m16s = m16x8;
 	type m32s = m32x4;
 	type m64s = m64x2;
+	type m8s = m8x16;
+	type u16s = u16x8;
 	type u32s = u32x4;
 	type u64s = u64x2;
+	type u8s = u8x16;
 
 	const REGISTER_COUNT: usize = 32;
+
+	impl_binop!(add, f32 x 4, f64 x 2);
+
+	impl_binop!(add, wrapping_add, u8 x 16, u16 x 8, u32 x 4, u64 x 2);
+
+	impl_binop!(sub, f32 x 4, f64 x 2);
+
+	impl_binop!(sub, wrapping_sub, u8 x 16, i8 x 16, u16 x 8, i16 x 8, u32 x 4, i32 x 4, u64 x 2, i64 x 2);
+
+	impl_binop!(mul, u16 x 8, i16 x 8, u32 x 4, i32 x 4);
+
+	impl_binop_scalar!(mul, u64, i64);
+
+	impl_binop!(div, f32 x 4, f64 x 2);
+
+	impl_binop!(and, m8 x 16, u8 x 16, m16 x 8, u16 x 8, m32 x 4, u32 x 4, m64 x 2, u64 x 2);
+
+	impl_binop!(or, m8 x 16, u8 x 16, m16 x 8, u16 x 8, m32 x 4, u32 x 4, m64 x 2, u64 x 2);
+
+	impl_binop!(xor, m8 x 16, u8 x 16, m16 x 8, u16 x 8, m32 x 4, u32 x 4, m64 x 2, u64 x 2);
+
+	impl_binop!(equal, cmp_eq, u8 x 16 => m8, u16 x 8 => m16, u32 x 4 => m32, u64 x 2 => m64, f32 x 4 => m32, f64 x 2 => m64);
+
+	impl_binop!(greater_than, cmp_gt, u8 x 16 => m8, i8 x 16 => m8, u16 x 8 => m16, i16 x 8 => m16, u32 x 4 => m32, i32 x 4 => m32, u64 x 2 => m64, i64 x 2 => m64, f32 x 4 => m32, f64 x 2 => m64);
+
+	impl_binop!(greater_than_or_equal, cmp_ge, u8 x 16 => m8, i8 x 16 => m8, u16 x 8 => m16, i16 x 8 => m16, u32 x 4 => m32, i32 x 4 => m32, u64 x 2 => m64, i64 x 2 => m64, f32 x 4 => m32, f64 x 2 => m64);
+
+	impl_binop!(less_than_or_equal, cmp_le, u8 x 16 => m8, i8 x 16 => m8, u16 x 8 => m16, i16 x 8 => m16, u32 x 4 => m32, i32 x 4 => m32, u64 x 2 => m64, i64 x 2 => m64, f32 x 4 => m32, f64 x 2 => m64);
+
+	impl_binop!(less_than, cmp_lt, u8 x 16 => m8, i8 x 16 => m8, u16 x 8 => m16, i16 x 8 => m16, u32 x 4 => m32, i32 x 4 => m32, u64 x 2 => m64, i64 x 2 => m64, f32 x 4 => m32, f64 x 2 => m64);
+
+	impl_binop!(max, u8 x 16, i8 x 16, u16 x 8, i16 x 8, u32 x 4, i32 x 4, f32 x 4, f64 x 2);
+
+	impl_binop_scalar!(max, u64, i64);
+
+	impl_binop!(min, u8 x 16, i8 x 16, u16 x 8, i16 x 8, u32 x 4, i32 x 4, f32 x 4, f64 x 2);
+
+	impl_binop_scalar!(min, u64, i64);
+
+	impl_unop!(not, m8 x 16, u8 x 16, m16 x 8, u16 x 8, m32 x 4, u32 x 4, m64 x 2, u64 x 2);
+
+	splat!(u8 x 16, i8 x 16, u16 x 8, i16 x 8, u32 x 4, i32 x 4, u64 x 2, i64 x 2, f32 x 4, f64 x 2);
 
 	#[inline(always)]
 	fn abs2_c32s(self, a: Self::c32s) -> Self::c32s {
@@ -185,43 +301,13 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
-	fn add_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-		self.add_f32x4(a, b)
+	fn equal_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::m32s {
+		self.equal_f32s(a, b)
 	}
 
 	#[inline(always)]
-	fn add_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-		self.add_f64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn add_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
-		self.wrapping_add_u32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn add_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
-		self.wrapping_add_u64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn and_m32s(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
-		self.and_m32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn and_m64s(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
-		self.and_m64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn and_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
-		self.and_u32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn and_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
-		self.and_u64x2(a, b)
+	fn equal_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::m64s {
+		self.equal_f64s(a, b)
 	}
 
 	#[inline(always)]
@@ -335,46 +421,6 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
-	fn div_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-		self.div_f32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn div_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-		self.div_f64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn equal_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
-		self.cmp_eq_f32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn equal_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
-		self.cmp_eq_f64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn greater_than_or_equal_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
-		self.cmp_ge_u32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn greater_than_or_equal_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
-		self.cmp_ge_u64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn greater_than_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
-		self.cmp_gt_u32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn greater_than_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
-		self.cmp_gt_u64x2(a, b)
-	}
-
-	#[inline(always)]
 	fn interleave_shfl_f32s<T: Interleave>(self, values: T) -> T {
 		unsafe {
 			let mut out: T = core::mem::zeroed();
@@ -434,46 +480,6 @@ impl Simd for Neon {
 		}
 	}
 
-	#[inline(always)]
-	fn less_than_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
-		self.cmp_lt_f32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
-		self.cmp_lt_f64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_or_equal_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
-		self.cmp_le_f32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_or_equal_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
-		self.cmp_le_f64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_or_equal_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
-		self.cmp_le_u32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_or_equal_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
-		self.cmp_le_u64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
-		self.cmp_lt_u32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
-		self.cmp_lt_u64x2(a, b)
-	}
-
 	/// # Safety
 	///
 	/// See the trait-level safety documentation.
@@ -520,6 +526,146 @@ impl Simd for Neon {
 			},
 			if mask.1.is_set() {
 				*ptr.wrapping_add(1)
+			} else {
+				core::mem::zeroed()
+			},
+		)
+	}
+
+	/// # Safety
+	///
+	/// See the trait-level safety documentation.
+	#[inline(always)]
+	unsafe fn mask_load_ptr_u8s(self, mask: MemMask<Self::m8s>, ptr: *const u8) -> Self::u8s {
+		let mask = mask.mask;
+		u8x16(
+			if mask.0.is_set() {
+				*ptr.wrapping_add(0)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.1.is_set() {
+				*ptr.wrapping_add(1)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.2.is_set() {
+				*ptr.wrapping_add(2)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.3.is_set() {
+				*ptr.wrapping_add(3)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.4.is_set() {
+				*ptr.wrapping_add(4)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.5.is_set() {
+				*ptr.wrapping_add(5)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.6.is_set() {
+				*ptr.wrapping_add(6)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.7.is_set() {
+				*ptr.wrapping_add(7)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.8.is_set() {
+				*ptr.wrapping_add(8)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.9.is_set() {
+				*ptr.wrapping_add(9)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.10.is_set() {
+				*ptr.wrapping_add(10)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.11.is_set() {
+				*ptr.wrapping_add(11)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.12.is_set() {
+				*ptr.wrapping_add(12)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.13.is_set() {
+				*ptr.wrapping_add(13)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.14.is_set() {
+				*ptr.wrapping_add(14)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.15.is_set() {
+				*ptr.wrapping_add(15)
+			} else {
+				core::mem::zeroed()
+			},
+		)
+	}
+
+	/// # Safety
+	///
+	/// See the trait-level safety documentation.
+	#[inline(always)]
+	unsafe fn mask_load_ptr_u16s(self, mask: MemMask<Self::m16s>, ptr: *const u16) -> Self::u16s {
+		let mask = mask.mask;
+		u16x8(
+			if mask.0.is_set() {
+				*ptr.wrapping_add(0)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.1.is_set() {
+				*ptr.wrapping_add(1)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.2.is_set() {
+				*ptr.wrapping_add(2)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.3.is_set() {
+				*ptr.wrapping_add(3)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.4.is_set() {
+				*ptr.wrapping_add(4)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.5.is_set() {
+				*ptr.wrapping_add(5)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.6.is_set() {
+				*ptr.wrapping_add(6)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.7.is_set() {
+				*ptr.wrapping_add(7)
 			} else {
 				core::mem::zeroed()
 			},
@@ -626,6 +772,99 @@ impl Simd for Neon {
 	///
 	/// See the trait-level safety documentation.
 	#[inline(always)]
+	unsafe fn mask_store_ptr_u8s(self, mask: MemMask<Self::m8s>, ptr: *mut u8, values: Self::u8s) {
+		let mask = mask.mask;
+		if mask.0.is_set() {
+			*ptr.wrapping_add(0) = values.0
+		}
+		if mask.1.is_set() {
+			*ptr.wrapping_add(1) = values.1
+		}
+		if mask.2.is_set() {
+			*ptr.wrapping_add(2) = values.2
+		}
+		if mask.3.is_set() {
+			*ptr.wrapping_add(3) = values.3
+		}
+		if mask.4.is_set() {
+			*ptr.wrapping_add(4) = values.4
+		}
+		if mask.5.is_set() {
+			*ptr.wrapping_add(5) = values.5
+		}
+		if mask.6.is_set() {
+			*ptr.wrapping_add(6) = values.6
+		}
+		if mask.7.is_set() {
+			*ptr.wrapping_add(7) = values.7
+		}
+		if mask.8.is_set() {
+			*ptr.wrapping_add(8) = values.8
+		}
+		if mask.9.is_set() {
+			*ptr.wrapping_add(9) = values.9
+		}
+		if mask.10.is_set() {
+			*ptr.wrapping_add(10) = values.10
+		}
+		if mask.11.is_set() {
+			*ptr.wrapping_add(11) = values.11
+		}
+		if mask.12.is_set() {
+			*ptr.wrapping_add(12) = values.12
+		}
+		if mask.13.is_set() {
+			*ptr.wrapping_add(13) = values.13
+		}
+		if mask.14.is_set() {
+			*ptr.wrapping_add(14) = values.14
+		}
+		if mask.15.is_set() {
+			*ptr.wrapping_add(15) = values.15
+		}
+	}
+
+	/// # Safety
+	///
+	/// See the trait-level safety documentation.
+	#[inline(always)]
+	unsafe fn mask_store_ptr_u16s(
+		self,
+		mask: MemMask<Self::m16s>,
+		ptr: *mut u16,
+		values: Self::u16s,
+	) {
+		let mask = mask.mask;
+		if mask.0.is_set() {
+			*ptr.wrapping_add(0) = values.0
+		}
+		if mask.1.is_set() {
+			*ptr.wrapping_add(1) = values.1
+		}
+		if mask.2.is_set() {
+			*ptr.wrapping_add(2) = values.2
+		}
+		if mask.3.is_set() {
+			*ptr.wrapping_add(3) = values.3
+		}
+		if mask.4.is_set() {
+			*ptr.wrapping_add(4) = values.4
+		}
+		if mask.5.is_set() {
+			*ptr.wrapping_add(5) = values.5
+		}
+		if mask.6.is_set() {
+			*ptr.wrapping_add(6) = values.6
+		}
+		if mask.7.is_set() {
+			*ptr.wrapping_add(7) = values.7
+		}
+	}
+
+	/// # Safety
+	///
+	/// See the trait-level safety documentation.
+	#[inline(always)]
 	unsafe fn mask_store_ptr_u32s(
 		self,
 		mask: MemMask<Self::m32s>,
@@ -664,26 +903,6 @@ impl Simd for Neon {
 		if mask.1.is_set() {
 			*ptr.wrapping_add(1) = values.1
 		}
-	}
-
-	#[inline(always)]
-	fn max_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-		self.max_f32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn max_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-		self.max_f64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn min_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-		self.min_f32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn min_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-		self.min_f64x2(a, b)
 	}
 
 	#[inline(always)]
@@ -794,46 +1013,6 @@ impl Simd for Neon {
 	#[inline(always)]
 	fn neg_c64s(self, a: Self::c64s) -> Self::c64s {
 		self.xor_f64s(a, self.splat_f64s(-0.0))
-	}
-
-	#[inline(always)]
-	fn not_m32s(self, a: Self::m32s) -> Self::m32s {
-		self.not_m32x4(a)
-	}
-
-	#[inline(always)]
-	fn not_m64s(self, a: Self::m64s) -> Self::m64s {
-		self.not_m64x2(a)
-	}
-
-	#[inline(always)]
-	fn not_u32s(self, a: Self::u32s) -> Self::u32s {
-		self.not_u32x4(a)
-	}
-
-	#[inline(always)]
-	fn not_u64s(self, a: Self::u64s) -> Self::u64s {
-		self.not_u64x2(a)
-	}
-
-	#[inline(always)]
-	fn or_m32s(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
-		self.or_m32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn or_m64s(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
-		self.or_m64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn or_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
-		self.or_u32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn or_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
-		self.or_u64x2(a, b)
 	}
 
 	#[inline(always)]
@@ -1055,26 +1234,6 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
-	fn splat_f32s(self, value: f32) -> Self::f32s {
-		self.splat_f32x4(value)
-	}
-
-	#[inline(always)]
-	fn splat_f64s(self, value: f64) -> Self::f64s {
-		self.splat_f64x2(value)
-	}
-
-	#[inline(always)]
-	fn splat_u32s(self, value: u32) -> Self::u32s {
-		self.splat_u32x4(value)
-	}
-
-	#[inline(always)]
-	fn splat_u64s(self, value: u64) -> Self::u64s {
-		self.splat_u64x2(value)
-	}
-
-	#[inline(always)]
 	fn sub_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		self.sub_f32x4(a, b)
 	}
@@ -1082,26 +1241,6 @@ impl Simd for Neon {
 	#[inline(always)]
 	fn sub_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 		self.sub_f64s(a, b)
-	}
-
-	#[inline(always)]
-	fn sub_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-		self.sub_f32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn sub_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-		self.sub_f64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn sub_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
-		self.wrapping_sub_u32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn sub_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
-		self.wrapping_sub_u64x2(a, b)
 	}
 
 	#[inline(always)]
@@ -1169,66 +1308,6 @@ impl Simd for Neon {
 			a.3 >> amount.3,
 		)
 	}
-
-	#[inline(always)]
-	fn xor_m32s(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
-		self.xor_m32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn xor_m64s(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
-		self.xor_m64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn xor_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
-		self.xor_u32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn xor_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
-		self.xor_u64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn greater_than_or_equal_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::m32s {
-		self.cmp_ge_i32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn greater_than_or_equal_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::m64s {
-		self.cmp_ge_i64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn greater_than_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::m32s {
-		self.cmp_gt_i32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn greater_than_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::m64s {
-		self.cmp_gt_i64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_or_equal_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::m32s {
-		self.cmp_le_i32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_or_equal_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::m64s {
-		self.cmp_le_i64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::m32s {
-		self.cmp_lt_i32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::m64s {
-		self.cmp_lt_i64x2(a, b)
-	}
 }
 
 impl Simd for NeonFcma {
@@ -1236,14 +1315,62 @@ impl Simd for NeonFcma {
 	type c64s = f64x2;
 	type f32s = f32x4;
 	type f64s = f64x2;
+	type i16s = i16x8;
 	type i32s = i32x4;
 	type i64s = i64x2;
+	type i8s = i8x16;
+	type m16s = m16x8;
 	type m32s = m32x4;
 	type m64s = m64x2;
+	type m8s = m8x16;
+	type u16s = u16x8;
 	type u32s = u32x4;
 	type u64s = u64x2;
+	type u8s = u8x16;
 
 	const REGISTER_COUNT: usize = 32;
+
+	impl_binop!(add, f32 x 4, f64 x 2);
+
+	impl_binop!(add, wrapping_add, u8 x 16, u16 x 8, u32 x 4, u64 x 2);
+
+	impl_binop!(sub, f32 x 4, f64 x 2);
+
+	impl_binop!(sub, wrapping_sub, u8 x 16, i8 x 16, u16 x 8, i16 x 8, u32 x 4, i32 x 4, u64 x 2, i64 x 2);
+
+	impl_binop!(mul, u16 x 8, i16 x 8, u32 x 4, i32 x 4);
+
+	impl_binop_scalar!(mul, u64, i64);
+
+	impl_binop!(div, f32 x 4, f64 x 2);
+
+	impl_binop!(and, m8 x 16, u8 x 16, m16 x 8, u16 x 8, m32 x 4, u32 x 4, m64 x 2, u64 x 2);
+
+	impl_binop!(or, m8 x 16, u8 x 16, m16 x 8, u16 x 8, m32 x 4, u32 x 4, m64 x 2, u64 x 2);
+
+	impl_binop!(xor, m8 x 16, u8 x 16, m16 x 8, u16 x 8, m32 x 4, u32 x 4, m64 x 2, u64 x 2);
+
+	impl_binop!(equal, cmp_eq, u8 x 16 => m8, u16 x 8 => m16, u32 x 4 => m32, u64 x 2 => m64, f32 x 4 => m32, f64 x 2 => m64);
+
+	impl_binop!(greater_than, cmp_gt, u8 x 16 => m8, i8 x 16 => m8, u16 x 8 => m16, i16 x 8 => m16, u32 x 4 => m32, i32 x 4 => m32, u64 x 2 => m64, i64 x 2 => m64, f32 x 4 => m32, f64 x 2 => m64);
+
+	impl_binop!(greater_than_or_equal, cmp_ge, u8 x 16 => m8, i8 x 16 => m8, u16 x 8 => m16, i16 x 8 => m16, u32 x 4 => m32, i32 x 4 => m32, u64 x 2 => m64, i64 x 2 => m64, f32 x 4 => m32, f64 x 2 => m64);
+
+	impl_binop!(less_than_or_equal, cmp_le, u8 x 16 => m8, i8 x 16 => m8, u16 x 8 => m16, i16 x 8 => m16, u32 x 4 => m32, i32 x 4 => m32, u64 x 2 => m64, i64 x 2 => m64, f32 x 4 => m32, f64 x 2 => m64);
+
+	impl_binop!(less_than, cmp_lt, u8 x 16 => m8, i8 x 16 => m8, u16 x 8 => m16, i16 x 8 => m16, u32 x 4 => m32, i32 x 4 => m32, u64 x 2 => m64, i64 x 2 => m64, f32 x 4 => m32, f64 x 2 => m64);
+
+	impl_binop!(max, u8 x 16, i8 x 16, u16 x 8, i16 x 8, u32 x 4, i32 x 4, f32 x 4, f64 x 2);
+
+	impl_binop_scalar!(max, u64, i64);
+
+	impl_binop!(min, u8 x 16, i8 x 16, u16 x 8, i16 x 8, u32 x 4, i32 x 4, f32 x 4, f64 x 2);
+
+	impl_binop_scalar!(min, u64, i64);
+
+	impl_unop!(not, m8 x 16, u8 x 16, m16 x 8, u16 x 8, m32 x 4, u32 x 4, m64 x 2, u64 x 2);
+
+	splat!(u8 x 16, i8 x 16, u16 x 8, i16 x 8, u32 x 4, i32 x 4, u64 x 2, i64 x 2, f32 x 4, f64 x 2);
 
 	#[inline(always)]
 	fn abs2_c32s(self, a: Self::c32s) -> Self::c32s {
@@ -1298,43 +1425,13 @@ impl Simd for NeonFcma {
 	}
 
 	#[inline(always)]
-	fn add_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-		self.add_f32x4(a, b)
+	fn equal_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::m32s {
+		self.equal_f32s(a, b)
 	}
 
 	#[inline(always)]
-	fn add_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-		self.add_f64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn add_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
-		self.wrapping_add_u32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn add_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
-		self.wrapping_add_u64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn and_m32s(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
-		self.and_m32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn and_m64s(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
-		self.and_m64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn and_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
-		self.and_u32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn and_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
-		self.and_u64x2(a, b)
+	fn equal_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::m64s {
+		self.equal_f64s(a, b)
 	}
 
 	#[inline(always)]
@@ -1384,46 +1481,6 @@ impl Simd for NeonFcma {
 	}
 
 	#[inline(always)]
-	fn div_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-		self.div_f32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn div_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-		self.div_f64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn equal_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
-		self.cmp_eq_f32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn equal_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
-		self.cmp_eq_f64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn greater_than_or_equal_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
-		self.cmp_ge_u32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn greater_than_or_equal_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
-		self.cmp_ge_u64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn greater_than_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
-		self.cmp_gt_u32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn greater_than_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
-		self.cmp_gt_u64x2(a, b)
-	}
-
-	#[inline(always)]
 	fn interleave_shfl_f32s<T: Interleave>(self, values: T) -> T {
 		(*self).interleave_shfl_f32s(values)
 	}
@@ -1431,46 +1488,6 @@ impl Simd for NeonFcma {
 	#[inline(always)]
 	fn interleave_shfl_f64s<T: Interleave>(self, values: T) -> T {
 		(*self).interleave_shfl_f64s(values)
-	}
-
-	#[inline(always)]
-	fn less_than_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
-		self.cmp_lt_f32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
-		self.cmp_lt_f64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_or_equal_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
-		self.cmp_le_f32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_or_equal_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
-		self.cmp_le_f64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_or_equal_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
-		self.cmp_le_u32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_or_equal_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
-		self.cmp_le_u64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
-		self.cmp_lt_u32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
-		self.cmp_lt_u64x2(a, b)
 	}
 
 	/// # Safety
@@ -1519,6 +1536,146 @@ impl Simd for NeonFcma {
 			},
 			if mask.1.is_set() {
 				*ptr.wrapping_add(1)
+			} else {
+				core::mem::zeroed()
+			},
+		)
+	}
+
+	/// # Safety
+	///
+	/// See the trait-level safety documentation.
+	#[inline(always)]
+	unsafe fn mask_load_ptr_u8s(self, mask: MemMask<Self::m8s>, ptr: *const u8) -> Self::u8s {
+		let mask = mask.mask;
+		u8x16(
+			if mask.0.is_set() {
+				*ptr.wrapping_add(0)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.1.is_set() {
+				*ptr.wrapping_add(1)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.2.is_set() {
+				*ptr.wrapping_add(2)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.3.is_set() {
+				*ptr.wrapping_add(3)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.4.is_set() {
+				*ptr.wrapping_add(4)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.5.is_set() {
+				*ptr.wrapping_add(5)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.6.is_set() {
+				*ptr.wrapping_add(6)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.7.is_set() {
+				*ptr.wrapping_add(7)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.8.is_set() {
+				*ptr.wrapping_add(8)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.9.is_set() {
+				*ptr.wrapping_add(9)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.10.is_set() {
+				*ptr.wrapping_add(10)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.11.is_set() {
+				*ptr.wrapping_add(11)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.12.is_set() {
+				*ptr.wrapping_add(12)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.13.is_set() {
+				*ptr.wrapping_add(13)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.14.is_set() {
+				*ptr.wrapping_add(14)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.15.is_set() {
+				*ptr.wrapping_add(15)
+			} else {
+				core::mem::zeroed()
+			},
+		)
+	}
+
+	/// # Safety
+	///
+	/// See the trait-level safety documentation.
+	#[inline(always)]
+	unsafe fn mask_load_ptr_u16s(self, mask: MemMask<Self::m16s>, ptr: *const u16) -> Self::u16s {
+		let mask = mask.mask;
+		u16x8(
+			if mask.0.is_set() {
+				*ptr.wrapping_add(0)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.1.is_set() {
+				*ptr.wrapping_add(1)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.2.is_set() {
+				*ptr.wrapping_add(2)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.3.is_set() {
+				*ptr.wrapping_add(3)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.4.is_set() {
+				*ptr.wrapping_add(4)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.5.is_set() {
+				*ptr.wrapping_add(5)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.6.is_set() {
+				*ptr.wrapping_add(6)
+			} else {
+				core::mem::zeroed()
+			},
+			if mask.7.is_set() {
+				*ptr.wrapping_add(7)
 			} else {
 				core::mem::zeroed()
 			},
@@ -1625,6 +1782,99 @@ impl Simd for NeonFcma {
 	///
 	/// See the trait-level safety documentation.
 	#[inline(always)]
+	unsafe fn mask_store_ptr_u8s(self, mask: MemMask<Self::m8s>, ptr: *mut u8, values: Self::u8s) {
+		let mask = mask.mask;
+		if mask.0.is_set() {
+			*ptr.wrapping_add(0) = values.0
+		}
+		if mask.1.is_set() {
+			*ptr.wrapping_add(1) = values.1
+		}
+		if mask.2.is_set() {
+			*ptr.wrapping_add(2) = values.2
+		}
+		if mask.3.is_set() {
+			*ptr.wrapping_add(3) = values.3
+		}
+		if mask.4.is_set() {
+			*ptr.wrapping_add(4) = values.4
+		}
+		if mask.5.is_set() {
+			*ptr.wrapping_add(5) = values.5
+		}
+		if mask.6.is_set() {
+			*ptr.wrapping_add(6) = values.6
+		}
+		if mask.7.is_set() {
+			*ptr.wrapping_add(7) = values.7
+		}
+		if mask.8.is_set() {
+			*ptr.wrapping_add(8) = values.8
+		}
+		if mask.9.is_set() {
+			*ptr.wrapping_add(9) = values.9
+		}
+		if mask.10.is_set() {
+			*ptr.wrapping_add(10) = values.10
+		}
+		if mask.11.is_set() {
+			*ptr.wrapping_add(11) = values.11
+		}
+		if mask.12.is_set() {
+			*ptr.wrapping_add(12) = values.12
+		}
+		if mask.13.is_set() {
+			*ptr.wrapping_add(13) = values.13
+		}
+		if mask.14.is_set() {
+			*ptr.wrapping_add(14) = values.14
+		}
+		if mask.15.is_set() {
+			*ptr.wrapping_add(15) = values.15
+		}
+	}
+
+	/// # Safety
+	///
+	/// See the trait-level safety documentation.
+	#[inline(always)]
+	unsafe fn mask_store_ptr_u16s(
+		self,
+		mask: MemMask<Self::m16s>,
+		ptr: *mut u16,
+		values: Self::u16s,
+	) {
+		let mask = mask.mask;
+		if mask.0.is_set() {
+			*ptr.wrapping_add(0) = values.0
+		}
+		if mask.1.is_set() {
+			*ptr.wrapping_add(1) = values.1
+		}
+		if mask.2.is_set() {
+			*ptr.wrapping_add(2) = values.2
+		}
+		if mask.3.is_set() {
+			*ptr.wrapping_add(3) = values.3
+		}
+		if mask.4.is_set() {
+			*ptr.wrapping_add(4) = values.4
+		}
+		if mask.5.is_set() {
+			*ptr.wrapping_add(5) = values.5
+		}
+		if mask.6.is_set() {
+			*ptr.wrapping_add(6) = values.6
+		}
+		if mask.7.is_set() {
+			*ptr.wrapping_add(7) = values.7
+		}
+	}
+
+	/// # Safety
+	///
+	/// See the trait-level safety documentation.
+	#[inline(always)]
 	unsafe fn mask_store_ptr_u32s(
 		self,
 		mask: MemMask<Self::m32s>,
@@ -1663,26 +1913,6 @@ impl Simd for NeonFcma {
 		if mask.1.is_set() {
 			*ptr.wrapping_add(1) = values.1
 		}
-	}
-
-	#[inline(always)]
-	fn max_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-		self.max_f32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn max_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-		self.max_f64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn min_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-		self.min_f32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn min_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-		self.min_f64x2(a, b)
 	}
 
 	#[inline(always)]
@@ -1749,46 +1979,6 @@ impl Simd for NeonFcma {
 	#[inline(always)]
 	fn neg_c64s(self, a: Self::c64s) -> Self::c64s {
 		self.xor_f64s(a, self.splat_f64s(-0.0))
-	}
-
-	#[inline(always)]
-	fn not_m32s(self, a: Self::m32s) -> Self::m32s {
-		self.not_m32x4(a)
-	}
-
-	#[inline(always)]
-	fn not_m64s(self, a: Self::m64s) -> Self::m64s {
-		self.not_m64x2(a)
-	}
-
-	#[inline(always)]
-	fn not_u32s(self, a: Self::u32s) -> Self::u32s {
-		self.not_u32x4(a)
-	}
-
-	#[inline(always)]
-	fn not_u64s(self, a: Self::u64s) -> Self::u64s {
-		self.not_u64x2(a)
-	}
-
-	#[inline(always)]
-	fn or_m32s(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
-		self.or_m32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn or_m64s(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
-		self.or_m64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn or_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
-		self.or_u32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn or_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
-		self.or_u64x2(a, b)
 	}
 
 	#[inline(always)]
@@ -1986,26 +2176,6 @@ impl Simd for NeonFcma {
 	}
 
 	#[inline(always)]
-	fn splat_f32s(self, value: f32) -> Self::f32s {
-		self.splat_f32x4(value)
-	}
-
-	#[inline(always)]
-	fn splat_f64s(self, value: f64) -> Self::f64s {
-		self.splat_f64x2(value)
-	}
-
-	#[inline(always)]
-	fn splat_u32s(self, value: u32) -> Self::u32s {
-		self.splat_u32x4(value)
-	}
-
-	#[inline(always)]
-	fn splat_u64s(self, value: u64) -> Self::u64s {
-		self.splat_u64x2(value)
-	}
-
-	#[inline(always)]
 	fn sub_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		self.sub_f32x4(a, b)
 	}
@@ -2013,26 +2183,6 @@ impl Simd for NeonFcma {
 	#[inline(always)]
 	fn sub_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 		self.sub_f64s(a, b)
-	}
-
-	#[inline(always)]
-	fn sub_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-		self.sub_f32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn sub_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-		self.sub_f64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn sub_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
-		self.wrapping_sub_u32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn sub_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
-		self.wrapping_sub_u64x2(a, b)
 	}
 
 	#[inline(always)]
@@ -2100,66 +2250,6 @@ impl Simd for NeonFcma {
 			a.3 >> amount.3,
 		)
 	}
-
-	#[inline(always)]
-	fn xor_m32s(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
-		self.xor_m32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn xor_m64s(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
-		self.xor_m64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn xor_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
-		self.xor_u32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn xor_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
-		self.xor_u64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn greater_than_or_equal_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::m32s {
-		self.cmp_ge_i32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn greater_than_or_equal_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::m64s {
-		self.cmp_ge_i64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn greater_than_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::m32s {
-		self.cmp_gt_i32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn greater_than_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::m64s {
-		self.cmp_gt_i64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_or_equal_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::m32s {
-		self.cmp_le_i32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_or_equal_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::m64s {
-		self.cmp_le_i64x2(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::m32s {
-		self.cmp_lt_i32x4(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::m64s {
-		self.cmp_lt_i64x2(a, b)
-	}
 }
 
 #[cfg(miri)]
@@ -2188,18 +2278,83 @@ unsafe fn vfmaq_f32(c: float32x4_t, a: float32x4_t, b: float32x4_t) -> float32x4
 	))
 }
 
-impl Neon {
-	/// Adds the elements of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn add_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
-		unsafe { cast!(vaddq_f32(cast!(a), cast!(b))) }
-	}
+macro_rules! neon_ty {
+	($func: ident, i8) => {
+		paste!([<v $func q_ s8>])
+	};
+	($func: ident, i16) => {
+		paste!([<v $func q_ s16>])
+	};
+	($func: ident, i32) => {
+		paste!([<v $func q_ s32>])
+	};
+	($func: ident, i64) => {
+		paste!([<v $func q_ s64>])
+	};
+	($func: ident, m8) => {
+		paste!([<v $func q_ u8>])
+	};
+	($func: ident, m16) => {
+		paste!([<v $func q_ u16>])
+	};
+	($func: ident, m32) => {
+		paste!([<v $func q_ u32>])
+	};
+	($func: ident, m64) => {
+		paste!([<v $func q_ u64>])
+	};
+	($func: ident, $ty: ident) => {
+		paste!([<v $func q_ $ty>])
+	};
+}
 
-	/// Adds the elements of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn add_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
-		unsafe { cast!(vaddq_f64(cast!(a), cast!(b))) }
-	}
+macro_rules! simple_binop {
+	($func: ident, $docs: literal, $ty: ident, $out: ident, $factor: literal, $neon_fn: ident) => {
+		paste!{
+			#[inline(always)]
+			#[doc = $docs]
+			pub fn [<$func _ $ty x $factor>](self, a: [<$ty x $factor>], b: [<$ty x $factor>]) -> [<$out x $factor>] {
+				unsafe { cast!(neon_ty!($neon_fn, $ty)(cast!(a), cast!(b))) }
+			}
+		}
+	};
+	($func: ident, $docs: literal, $neon_fn: ident, $($ty: ident x $factor: literal => $out: ident),*) => {
+		$(simple_binop!($func, $docs, $ty, $out, $factor, $neon_fn);)*
+	};
+	($func: ident, $docs: literal, $neon_fn: ident, $($ty: ident x $factor: literal),*) => {
+		$(simple_binop!($func, $docs, $ty, $ty, $factor, $neon_fn);)*
+	};
+	($func: ident, $docs: literal, $($ty: ident x $factor: literal),*) => {
+		$(simple_binop!($func, $docs, $ty, $ty, $factor, $func);)*
+	};
+}
+
+impl Neon {
+	simple_binop!(add, "Adds the elements of each lane of `a` and `b`.", u8 x 16, u16 x 8, u32 x 4, u64 x 2, f32 x 4, f64 x 2);
+
+	simple_binop!(mul, "Multiplies the elements of each lane of `a` and `b`.", u8 x 16, i8 x 16, u16 x 8, i16 x 8, u32 x 4, i32 x 4, f32 x 4, f64 x 2);
+
+	simple_binop!(sub, "Multiplies the elements of each lane of `a` and `b`.", u8 x 16, u16 x 8, u32 x 4, u64 x 2, f32 x 4, f64 x 2);
+
+	simple_binop!(div, "Divides the elements of each lane of `a` and `b`.", f32 x 4, f64 x 2);
+
+	simple_binop!(and, "Returns the bitwise AND of `a` and `b`.", m8 x 16, u8 x 16, i8 x 16, m16 x 8, u16 x 8, i16 x 8, m32 x 4, u32 x 4, i32 x 4, m64 x 2, u64 x 2, i64 x 2);
+
+	simple_binop!(or, "Returns the bitwise OR of `a` and `b`.", orr, m8 x 16, u8 x 16, i8 x 16, m16 x 8, u16 x 8, i16 x 8, m32 x 4, u32 x 4, i32 x 4, m64 x 2, u64 x 2, i64 x 2);
+
+	simple_binop!(cmp_eq, "Compares the elements in each lane of `a` and `b` for equality.", ceq, u8 x 16 => m8, i8 x 16 => m8, u16 x 8 => m16, i16 x 8 => m16, u32 x 4 => m32, i32 x 4 => m32, u64 x 2 => m64, i64 x 2 => m64, f32 x 4 => m32, f64 x 2 => m64);
+
+	simple_binop!(cmp_gt, "Compares the elements in each lane of `a` and `b` for greater-than.", cgt, u8 x 16 => m8, i8 x 16 => m8, u16 x 8 => m16, i16 x 8 => m16, u32 x 4 => m32, i32 x 4 => m32, u64 x 2 => m64, i64 x 2 => m64, f32 x 4 => m32, f64 x 2 => m64);
+
+	simple_binop!(cmp_ge, "Compares the elements in each lane of `a` and `b` for greater-than-or-equal-to.", cge, u8 x 16 => m8, i8 x 16 => m8, u16 x 8 => m16, i16 x 8 => m16, u32 x 4 => m32, i32 x 4 => m32, u64 x 2 => m64, i64 x 2 => m64, f32 x 4 => m32, f64 x 2 => m64);
+
+	simple_binop!(cmp_le, "Compares the elements in each lane of `a` and `b` for less-than-or-equal-to.", cle, u8 x 16 => m8, i8 x 16 => m8, u16 x 8 => m16, i16 x 8 => m16, u32 x 4 => m32, i32 x 4 => m32, u64 x 2 => m64, i64 x 2 => m64, f32 x 4 => m32, f64 x 2 => m64);
+
+	simple_binop!(cmp_lt, "Compares the elements in each lane of `a` and `b` for less-than.", clt, u8 x 16 => m8, i8 x 16 => m8, u16 x 8 => m16, i16 x 8 => m16, u32 x 4 => m32, i32 x 4 => m32, u64 x 2 => m64, i64 x 2 => m64, f32 x 4 => m32, f64 x 2 => m64);
+
+	simple_binop!(min, "Computes the elementwise minimum of each lane of `a` and `b`.", u8 x 16, i8 x 16, u16 x 8, i16 x 8, u32 x 4, i32 x 4, f32 x 4, f64 x 2);
+
+	simple_binop!(max, "Computes the elementwise maximum of each lane of `a` and `b`.", u8 x 16, i8 x 16, u16 x 8, i16 x 8, u32 x 4, i32 x 4, f32 x 4, f64 x 2);
 
 	/// Returns the bitwise AND of `a` and `b`.
 	#[inline(always)]
@@ -2211,78 +2366,6 @@ impl Neon {
 	#[inline(always)]
 	pub fn and_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
 		unsafe { cast!(vandq_u64(cast!(a), cast!(b))) }
-	}
-
-	/// Returns the bitwise AND of `a` and `b`.
-	#[inline(always)]
-	pub fn and_i16x8(self, a: i16x8, b: i16x8) -> i16x8 {
-		unsafe { cast!(vandq_s16(cast!(a), cast!(b))) }
-	}
-
-	/// Returns the bitwise AND of `a` and `b`.
-	#[inline(always)]
-	pub fn and_i32x4(self, a: i32x4, b: i32x4) -> i32x4 {
-		unsafe { cast!(vandq_s32(cast!(a), cast!(b))) }
-	}
-
-	/// Returns the bitwise AND of `a` and `b`.
-	#[inline(always)]
-	pub fn and_i64x2(self, a: i64x2, b: i64x2) -> i64x2 {
-		unsafe { cast!(vandq_s64(cast!(a), cast!(b))) }
-	}
-
-	/// Returns the bitwise AND of `a` and `b`.
-	#[inline(always)]
-	pub fn and_i8x16(self, a: i8x16, b: i8x16) -> i8x16 {
-		unsafe { cast!(vandq_s8(cast!(a), cast!(b))) }
-	}
-
-	/// Returns the bitwise AND of `a` and `b`.
-	#[inline(always)]
-	pub fn and_m16x8(self, a: m16x8, b: m16x8) -> m16x8 {
-		unsafe { cast!(vandq_u16(cast!(a), cast!(b))) }
-	}
-
-	/// Returns the bitwise AND of `a` and `b`.
-	#[inline(always)]
-	pub fn and_m32x4(self, a: m32x4, b: m32x4) -> m32x4 {
-		unsafe { cast!(vandq_u32(cast!(a), cast!(b))) }
-	}
-
-	/// Returns the bitwise AND of `a` and `b`.
-	#[inline(always)]
-	pub fn and_m64x2(self, a: m64x2, b: m64x2) -> m64x2 {
-		unsafe { cast!(vandq_u64(cast!(a), cast!(b))) }
-	}
-
-	/// Returns the bitwise AND of `a` and `b`.
-	#[inline(always)]
-	pub fn and_m8x16(self, a: m8x16, b: m8x16) -> m8x16 {
-		unsafe { cast!(vandq_u8(cast!(a), cast!(b))) }
-	}
-
-	/// Returns the bitwise AND of `a` and `b`.
-	#[inline(always)]
-	pub fn and_u16x8(self, a: u16x8, b: u16x8) -> u16x8 {
-		unsafe { cast!(vandq_u16(cast!(a), cast!(b))) }
-	}
-
-	/// Returns the bitwise AND of `a` and `b`.
-	#[inline(always)]
-	pub fn and_u32x4(self, a: u32x4, b: u32x4) -> u32x4 {
-		unsafe { cast!(vandq_u32(cast!(a), cast!(b))) }
-	}
-
-	/// Returns the bitwise AND of `a` and `b`.
-	#[inline(always)]
-	pub fn and_u64x2(self, a: u64x2, b: u64x2) -> u64x2 {
-		unsafe { cast!(vandq_u64(cast!(a), cast!(b))) }
-	}
-
-	/// Returns the bitwise AND of `a` and `b`.
-	#[inline(always)]
-	pub fn and_u8x16(self, a: u8x16, b: u8x16) -> u8x16 {
-		unsafe { cast!(vandq_u8(cast!(a), cast!(b))) }
 	}
 
 	/// Returns the bitwise AND of NOT `a` and `b`.
@@ -2369,306 +2452,6 @@ impl Neon {
 		self.and_u8x16(self.not_u8x16(a), b)
 	}
 
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
-	pub fn cmp_eq_f32x4(self, a: f32x4, b: f32x4) -> m32x4 {
-		unsafe { cast!(vceqq_f32(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
-	pub fn cmp_eq_f64x2(self, a: f64x2, b: f64x2) -> m64x2 {
-		unsafe { cast!(vceqq_f64(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
-	pub fn cmp_eq_i16x8(self, a: i16x8, b: i16x8) -> m16x8 {
-		unsafe { cast!(vceqq_s16(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
-	pub fn cmp_eq_i32x4(self, a: i32x4, b: i32x4) -> m32x4 {
-		unsafe { cast!(vceqq_s32(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
-	pub fn cmp_eq_i64x2(self, a: i64x2, b: i64x2) -> m64x2 {
-		unsafe { cast!(vceqq_s64(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
-	pub fn cmp_eq_i8x16(self, a: i8x16, b: i8x16) -> m8x16 {
-		unsafe { cast!(vceqq_s8(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
-	pub fn cmp_eq_u16x8(self, a: u16x8, b: u16x8) -> m16x8 {
-		unsafe { cast!(vceqq_u16(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
-	pub fn cmp_eq_u32x4(self, a: u32x4, b: u32x4) -> m32x4 {
-		unsafe { cast!(vceqq_u32(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
-	pub fn cmp_eq_u64x2(self, a: u64x2, b: u64x2) -> m64x2 {
-		unsafe { cast!(vceqq_u64(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
-	pub fn cmp_eq_u8x16(self, a: u8x16, b: u8x16) -> m8x16 {
-		unsafe { cast!(vceqq_u8(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than-or-equal-to.
-	#[inline(always)]
-	pub fn cmp_ge_f32x4(self, a: f32x4, b: f32x4) -> m32x4 {
-		unsafe { cast!(vcgeq_f32(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than-or-equal-to.
-	#[inline(always)]
-	pub fn cmp_ge_f64x2(self, a: f64x2, b: f64x2) -> m64x2 {
-		unsafe { cast!(vcgeq_f64(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than-or-equal-to.
-	#[inline(always)]
-	pub fn cmp_ge_i16x8(self, a: i16x8, b: i16x8) -> m16x8 {
-		unsafe { cast!(vcgeq_s16(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than-or-equal-to.
-	#[inline(always)]
-	pub fn cmp_ge_i32x4(self, a: i32x4, b: i32x4) -> m32x4 {
-		unsafe { cast!(vcgeq_s32(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than-or-equal-to.
-	#[inline(always)]
-	pub fn cmp_ge_i64x2(self, a: i64x2, b: i64x2) -> m64x2 {
-		unsafe { cast!(vcgeq_s64(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than-or-equal-to.
-	#[inline(always)]
-	pub fn cmp_ge_i8x16(self, a: i8x16, b: i8x16) -> m8x16 {
-		unsafe { cast!(vcgeq_s8(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than-or-equal-to.
-	#[inline(always)]
-	pub fn cmp_ge_u16x8(self, a: u16x8, b: u16x8) -> m16x8 {
-		unsafe { cast!(vcgeq_u16(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than-or-equal-to.
-	#[inline(always)]
-	pub fn cmp_ge_u32x4(self, a: u32x4, b: u32x4) -> m32x4 {
-		unsafe { cast!(vcgeq_u32(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than-or-equal-to.
-	#[inline(always)]
-	pub fn cmp_ge_u64x2(self, a: u64x2, b: u64x2) -> m64x2 {
-		unsafe { cast!(vcgeq_u64(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than-or-equal-to.
-	#[inline(always)]
-	pub fn cmp_ge_u8x16(self, a: u8x16, b: u8x16) -> m8x16 {
-		unsafe { cast!(vcgeq_u8(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than.
-	#[inline(always)]
-	pub fn cmp_gt_f32x4(self, a: f32x4, b: f32x4) -> m32x4 {
-		unsafe { cast!(vcgtq_f32(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than.
-	#[inline(always)]
-	pub fn cmp_gt_f64x2(self, a: f64x2, b: f64x2) -> m64x2 {
-		unsafe { cast!(vcgtq_f64(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than.
-	#[inline(always)]
-	pub fn cmp_gt_i16x8(self, a: i16x8, b: i16x8) -> m16x8 {
-		unsafe { cast!(vcgtq_s16(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than.
-	#[inline(always)]
-	pub fn cmp_gt_i32x4(self, a: i32x4, b: i32x4) -> m32x4 {
-		unsafe { cast!(vcgtq_s32(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than.
-	#[inline(always)]
-	pub fn cmp_gt_i64x2(self, a: i64x2, b: i64x2) -> m64x2 {
-		unsafe { cast!(vcgtq_s64(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than.
-	#[inline(always)]
-	pub fn cmp_gt_i8x16(self, a: i8x16, b: i8x16) -> m8x16 {
-		unsafe { cast!(vcgtq_s8(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than.
-	#[inline(always)]
-	pub fn cmp_gt_u16x8(self, a: u16x8, b: u16x8) -> m16x8 {
-		unsafe { cast!(vcgtq_u16(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than.
-	#[inline(always)]
-	pub fn cmp_gt_u32x4(self, a: u32x4, b: u32x4) -> m32x4 {
-		unsafe { cast!(vcgtq_u32(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than.
-	#[inline(always)]
-	pub fn cmp_gt_u64x2(self, a: u64x2, b: u64x2) -> m64x2 {
-		unsafe { cast!(vcgtq_u64(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than.
-	#[inline(always)]
-	pub fn cmp_gt_u8x16(self, a: u8x16, b: u8x16) -> m8x16 {
-		unsafe { cast!(vcgtq_u8(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than-or-equal-to.
-	#[inline(always)]
-	pub fn cmp_le_f32x4(self, a: f32x4, b: f32x4) -> m32x4 {
-		unsafe { cast!(vcleq_f32(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than-or-equal-to.
-	#[inline(always)]
-	pub fn cmp_le_f64x2(self, a: f64x2, b: f64x2) -> m64x2 {
-		unsafe { cast!(vcleq_f64(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than-or-equal-to.
-	#[inline(always)]
-	pub fn cmp_le_i16x8(self, a: i16x8, b: i16x8) -> m16x8 {
-		unsafe { cast!(vcleq_s16(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than-or-equal-to.
-	#[inline(always)]
-	pub fn cmp_le_i32x4(self, a: i32x4, b: i32x4) -> m32x4 {
-		unsafe { cast!(vcleq_s32(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than-or-equal-to.
-	#[inline(always)]
-	pub fn cmp_le_i64x2(self, a: i64x2, b: i64x2) -> m64x2 {
-		unsafe { cast!(vcleq_s64(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than-or-equal-to.
-	#[inline(always)]
-	pub fn cmp_le_i8x16(self, a: i8x16, b: i8x16) -> m8x16 {
-		unsafe { cast!(vcleq_s8(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than-or-equal-to.
-	#[inline(always)]
-	pub fn cmp_le_u16x8(self, a: u16x8, b: u16x8) -> m16x8 {
-		unsafe { cast!(vcleq_u16(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than-or-equal-to.
-	#[inline(always)]
-	pub fn cmp_le_u32x4(self, a: u32x4, b: u32x4) -> m32x4 {
-		unsafe { cast!(vcleq_u32(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than-or-equal-to.
-	#[inline(always)]
-	pub fn cmp_le_u64x2(self, a: u64x2, b: u64x2) -> m64x2 {
-		unsafe { cast!(vcleq_u64(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than-or-equal-to.
-	#[inline(always)]
-	pub fn cmp_le_u8x16(self, a: u8x16, b: u8x16) -> m8x16 {
-		unsafe { cast!(vcleq_u8(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than.
-	#[inline(always)]
-	pub fn cmp_lt_f32x4(self, a: f32x4, b: f32x4) -> m32x4 {
-		unsafe { cast!(vcltq_f32(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than.
-	#[inline(always)]
-	pub fn cmp_lt_f64x2(self, a: f64x2, b: f64x2) -> m64x2 {
-		unsafe { cast!(vcltq_f64(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than.
-	#[inline(always)]
-	pub fn cmp_lt_i16x8(self, a: i16x8, b: i16x8) -> m16x8 {
-		unsafe { cast!(vcltq_s16(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than.
-	#[inline(always)]
-	pub fn cmp_lt_i32x4(self, a: i32x4, b: i32x4) -> m32x4 {
-		unsafe { cast!(vcltq_s32(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than.
-	#[inline(always)]
-	pub fn cmp_lt_i64x2(self, a: i64x2, b: i64x2) -> m64x2 {
-		unsafe { cast!(vcltq_s64(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than.
-	#[inline(always)]
-	pub fn cmp_lt_i8x16(self, a: i8x16, b: i8x16) -> m8x16 {
-		unsafe { cast!(vcltq_s8(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than.
-	#[inline(always)]
-	pub fn cmp_lt_u16x8(self, a: u16x8, b: u16x8) -> m16x8 {
-		unsafe { cast!(vcltq_u16(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than.
-	#[inline(always)]
-	pub fn cmp_lt_u32x4(self, a: u32x4, b: u32x4) -> m32x4 {
-		unsafe { cast!(vcltq_u32(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than.
-	#[inline(always)]
-	pub fn cmp_lt_u64x2(self, a: u64x2, b: u64x2) -> m64x2 {
-		unsafe { cast!(vcltq_u64(cast!(a), cast!(b))) }
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for less-than.
-	#[inline(always)]
-	pub fn cmp_lt_u8x16(self, a: u8x16, b: u8x16) -> m8x16 {
-		unsafe { cast!(vcltq_u8(cast!(a), cast!(b))) }
-	}
-
 	/// Compares the elements in each lane of `a` and `b` for inequality.
 	#[inline(always)]
 	pub fn cmp_not_eq_f32x4(self, a: f32x4, b: f32x4) -> m32x4 {
@@ -2729,18 +2512,6 @@ impl Neon {
 		unsafe { cast!(vcltq_f64(cast!(a), cast!(b))) }
 	}
 
-	/// Divides the elements of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn div_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
-		unsafe { cast!(vdivq_f32(cast!(a), cast!(b))) }
-	}
-
-	/// Divides the elements of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn div_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
-		unsafe { cast!(vdivq_f64(cast!(a), cast!(b))) }
-	}
-
 	/// Checks if the elements in each lane of `a` are NaN.
 	#[inline(always)]
 	pub fn is_nan_f32x4(self, a: f32x4) -> m32x4 {
@@ -2765,30 +2536,6 @@ impl Neon {
 		self.cmp_eq_f64x2(a, a)
 	}
 
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn max_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
-		unsafe { cast!(vmaxq_f32(cast!(a), cast!(b))) }
-	}
-
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn max_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
-		unsafe { cast!(vmaxq_f64(cast!(a), cast!(b))) }
-	}
-
-	/// Computes the elementwise minimum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn min_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
-		unsafe { cast!(vminq_f32(cast!(a), cast!(b))) }
-	}
-
-	/// Computes the elementwise minimum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn min_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
-		unsafe { cast!(vminq_f64(cast!(a), cast!(b))) }
-	}
-
 	/// Multiplies the elements of each lane of `a` and `b` and adds the result to `c`.
 	#[inline(always)]
 	pub fn mul_add_f32x4(self, a: f32x4, b: f32x4, c: f32x4) -> f32x4 {
@@ -2799,18 +2546,6 @@ impl Neon {
 	#[inline(always)]
 	pub fn mul_add_f64x2(self, a: f64x2, b: f64x2, c: f64x2) -> f64x2 {
 		unsafe { cast!(vfmaq_f64(cast!(c), cast!(a), cast!(b))) }
-	}
-
-	/// Multiplies the elements of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn mul_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
-		unsafe { cast!(vmulq_f32(cast!(a), cast!(b))) }
-	}
-
-	/// Multiplies the elements of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn mul_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
-		unsafe { cast!(vmulq_f64(cast!(a), cast!(b))) }
 	}
 
 	/// Returns the bitwise NOT of `a`.
@@ -2895,78 +2630,6 @@ impl Neon {
 	#[inline(always)]
 	pub fn or_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
 		unsafe { cast!(vorrq_u64(cast!(a), cast!(b))) }
-	}
-
-	/// Returns the bitwise OR of `a` and `b`.
-	#[inline(always)]
-	pub fn or_i16x8(self, a: i16x8, b: i16x8) -> i16x8 {
-		unsafe { cast!(vorrq_u16(cast!(a), cast!(b))) }
-	}
-
-	/// Returns the bitwise OR of `a` and `b`.
-	#[inline(always)]
-	pub fn or_i32x4(self, a: i32x4, b: i32x4) -> i32x4 {
-		unsafe { cast!(vorrq_u32(cast!(a), cast!(b))) }
-	}
-
-	/// Returns the bitwise OR of `a` and `b`.
-	#[inline(always)]
-	pub fn or_i64x2(self, a: i64x2, b: i64x2) -> i64x2 {
-		unsafe { cast!(vorrq_u64(cast!(a), cast!(b))) }
-	}
-
-	/// Returns the bitwise OR of `a` and `b`.
-	#[inline(always)]
-	pub fn or_i8x16(self, a: i8x16, b: i8x16) -> i8x16 {
-		unsafe { cast!(vorrq_u8(cast!(a), cast!(b))) }
-	}
-
-	/// Returns the bitwise OR of `a` and `b`.
-	#[inline(always)]
-	pub fn or_m16x8(self, a: m16x8, b: m16x8) -> m16x8 {
-		unsafe { cast!(vorrq_u16(cast!(a), cast!(b))) }
-	}
-
-	/// Returns the bitwise OR of `a` and `b`.
-	#[inline(always)]
-	pub fn or_m32x4(self, a: m32x4, b: m32x4) -> m32x4 {
-		unsafe { cast!(vorrq_u32(cast!(a), cast!(b))) }
-	}
-
-	/// Returns the bitwise OR of `a` and `b`.
-	#[inline(always)]
-	pub fn or_m64x2(self, a: m64x2, b: m64x2) -> m64x2 {
-		unsafe { cast!(vorrq_u64(cast!(a), cast!(b))) }
-	}
-
-	/// Returns the bitwise OR of `a` and `b`.
-	#[inline(always)]
-	pub fn or_m8x16(self, a: m8x16, b: m8x16) -> m8x16 {
-		unsafe { cast!(vorrq_u8(cast!(a), cast!(b))) }
-	}
-
-	/// Returns the bitwise OR of `a` and `b`.
-	#[inline(always)]
-	pub fn or_u16x8(self, a: u16x8, b: u16x8) -> u16x8 {
-		unsafe { cast!(vorrq_u16(cast!(a), cast!(b))) }
-	}
-
-	/// Returns the bitwise OR of `a` and `b`.
-	#[inline(always)]
-	pub fn or_u32x4(self, a: u32x4, b: u32x4) -> u32x4 {
-		unsafe { cast!(vorrq_u32(cast!(a), cast!(b))) }
-	}
-
-	/// Returns the bitwise OR of `a` and `b`.
-	#[inline(always)]
-	pub fn or_u64x2(self, a: u64x2, b: u64x2) -> u64x2 {
-		unsafe { cast!(vorrq_u64(cast!(a), cast!(b))) }
-	}
-
-	/// Returns the bitwise OR of `a` and `b`.
-	#[inline(always)]
-	pub fn or_u8x16(self, a: u8x16, b: u8x16) -> u8x16 {
-		unsafe { cast!(vorrq_u8(cast!(a), cast!(b))) }
 	}
 
 	#[inline(always)]
@@ -3326,18 +2989,6 @@ impl Neon {
 	#[inline(always)]
 	pub fn splat_u8x16(self, value: u8) -> u8x16 {
 		cast!(self.splat_i8x16(cast!(value)))
-	}
-
-	/// Subtracts the elements of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn sub_f32x4(self, a: f32x4, b: f32x4) -> f32x4 {
-		unsafe { cast!(vsubq_f32(cast!(a), cast!(b))) }
-	}
-
-	/// Subtracts the elements of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn sub_f64x2(self, a: f64x2, b: f64x2) -> f64x2 {
-		unsafe { cast!(vsubq_f64(cast!(a), cast!(b))) }
 	}
 
 	/// Adds the elements of each lane of `a` and `b`, with wrapping on overflow.

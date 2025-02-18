@@ -10,6 +10,8 @@ macro_rules! __impl {
 		}
 
 		impl $name {
+			/// # Safety
+			/// Not checked
 			#[inline(always)]
 			pub unsafe fn new_unchecked() -> Self {
 				Self { __private: () }
