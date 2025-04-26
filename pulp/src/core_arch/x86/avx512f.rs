@@ -1222,168 +1222,168 @@ impl Avx512f {
 		) -> __m512i;
 		unsafe fn _mm512_i32gather_pd<const SCALE: i32>(
 			offsets: __m256i,
-			slice: *const u8,
+			slice: *const f64,
 		) -> __m512d;
 		unsafe fn _mm512_mask_i32gather_pd<const SCALE: i32>(
 			src: __m512d,
 			mask: __mmask8,
 			offsets: __m256i,
-			slice: *const u8,
+			slice: *const f64,
 		) -> __m512d;
 		unsafe fn _mm512_i64gather_pd<const SCALE: i32>(
 			offsets: __m512i,
-			slice: *const u8,
+			slice: *const f64,
 		) -> __m512d;
 		unsafe fn _mm512_mask_i64gather_pd<const SCALE: i32>(
 			src: __m512d,
 			mask: __mmask8,
 			offsets: __m512i,
-			slice: *const u8,
+			slice: *const f64,
 		) -> __m512d;
 		unsafe fn _mm512_i64gather_ps<const SCALE: i32>(
 			offsets: __m512i,
-			slice: *const u8,
+			slice: *const f32,
 		) -> __m256;
 		unsafe fn _mm512_mask_i64gather_ps<const SCALE: i32>(
 			src: __m256,
 			mask: __mmask8,
 			offsets: __m512i,
-			slice: *const u8,
+			slice: *const f32,
 		) -> __m256;
 		unsafe fn _mm512_i32gather_ps<const SCALE: i32>(
 			offsets: __m512i,
-			slice: *const u8,
+			slice: *const f32,
 		) -> __m512;
 		unsafe fn _mm512_mask_i32gather_ps<const SCALE: i32>(
 			src: __m512,
 			mask: __mmask16,
 			offsets: __m512i,
-			slice: *const u8,
+			slice: *const f32,
 		) -> __m512;
 		unsafe fn _mm512_i32gather_epi32<const SCALE: i32>(
 			offsets: __m512i,
-			slice: *const u8,
+			slice: *const i32,
 		) -> __m512i;
 		unsafe fn _mm512_mask_i32gather_epi32<const SCALE: i32>(
 			src: __m512i,
 			mask: __mmask16,
 			offsets: __m512i,
-			slice: *const u8,
+			slice: *const i32,
 		) -> __m512i;
 		unsafe fn _mm512_i32gather_epi64<const SCALE: i32>(
 			offsets: __m256i,
-			slice: *const u8,
+			slice: *const i64,
 		) -> __m512i;
 		unsafe fn _mm512_mask_i32gather_epi64<const SCALE: i32>(
 			src: __m512i,
 			mask: __mmask8,
 			offsets: __m256i,
-			slice: *const u8,
+			slice: *const i64,
 		) -> __m512i;
 		unsafe fn _mm512_i64gather_epi64<const SCALE: i32>(
 			offsets: __m512i,
-			slice: *const u8,
+			slice: *const i64,
 		) -> __m512i;
 		unsafe fn _mm512_mask_i64gather_epi64<const SCALE: i32>(
 			src: __m512i,
 			mask: __mmask8,
 			offsets: __m512i,
-			slice: *const u8,
+			slice: *const i64,
 		) -> __m512i;
 		unsafe fn _mm512_i64gather_epi32<const SCALE: i32>(
 			offsets: __m512i,
-			slice: *const u8,
+			slice: *const i32,
 		) -> __m256i;
 		unsafe fn _mm512_mask_i64gather_epi32<const SCALE: i32>(
 			src: __m256i,
 			mask: __mmask8,
 			offsets: __m512i,
-			slice: *const u8,
+			slice: *const i32,
 		) -> __m256i;
 		unsafe fn _mm512_i32scatter_pd<const SCALE: i32>(
-			slice: *mut u8,
+			slice: *mut f64,
 			offsets: __m256i,
 			src: __m512d,
 		);
 		unsafe fn _mm512_mask_i32scatter_pd<const SCALE: i32>(
-			slice: *mut u8,
+			slice: *mut f64,
 			mask: __mmask8,
 			offsets: __m256i,
 			src: __m512d,
 		);
 		unsafe fn _mm512_i64scatter_pd<const SCALE: i32>(
-			slice: *mut u8,
+			slice: *mut f64,
 			offsets: __m512i,
 			src: __m512d,
 		);
 		unsafe fn _mm512_mask_i64scatter_pd<const SCALE: i32>(
-			slice: *mut u8,
+			slice: *mut f64,
 			mask: __mmask8,
 			offsets: __m512i,
 			src: __m512d,
 		);
 		unsafe fn _mm512_i32scatter_ps<const SCALE: i32>(
-			slice: *mut u8,
+			slice: *mut f32,
 			offsets: __m512i,
 			src: __m512,
 		);
 		unsafe fn _mm512_mask_i32scatter_ps<const SCALE: i32>(
-			slice: *mut u8,
+			slice: *mut f32,
 			mask: __mmask16,
 			offsets: __m512i,
 			src: __m512,
 		);
 		unsafe fn _mm512_i64scatter_ps<const SCALE: i32>(
-			slice: *mut u8,
+			slice: *mut f32,
 			offsets: __m512i,
 			src: __m256,
 		);
 		unsafe fn _mm512_mask_i64scatter_ps<const SCALE: i32>(
-			slice: *mut u8,
+			slice: *mut f32,
 			mask: __mmask8,
 			offsets: __m512i,
 			src: __m256,
 		);
 		unsafe fn _mm512_i32scatter_epi64<const SCALE: i32>(
-			slice: *mut u8,
+			slice: *mut i64,
 			offsets: __m256i,
 			src: __m512i,
 		);
 		unsafe fn _mm512_mask_i32scatter_epi64<const SCALE: i32>(
-			slice: *mut u8,
+			slice: *mut i64,
 			mask: __mmask8,
 			offsets: __m256i,
 			src: __m512i,
 		);
 		unsafe fn _mm512_i64scatter_epi64<const SCALE: i32>(
-			slice: *mut u8,
+			slice: *mut i64,
 			offsets: __m512i,
 			src: __m512i,
 		);
 		unsafe fn _mm512_mask_i64scatter_epi64<const SCALE: i32>(
-			slice: *mut u8,
+			slice: *mut i64,
 			mask: __mmask8,
 			offsets: __m512i,
 			src: __m512i,
 		);
 		unsafe fn _mm512_i32scatter_epi32<const SCALE: i32>(
-			slice: *mut u8,
+			slice: *mut i32,
 			offsets: __m512i,
 			src: __m512i,
 		);
 		unsafe fn _mm512_mask_i32scatter_epi32<const SCALE: i32>(
-			slice: *mut u8,
+			slice: *mut i32,
 			mask: __mmask16,
 			offsets: __m512i,
 			src: __m512i,
 		);
 		unsafe fn _mm512_i64scatter_epi32<const SCALE: i32>(
-			slice: *mut u8,
+			slice: *mut i32,
 			offsets: __m512i,
 			src: __m256i,
 		);
 		unsafe fn _mm512_mask_i64scatter_epi32<const SCALE: i32>(
-			slice: *mut u8,
+			slice: *mut i32,
 			mask: __mmask8,
 			offsets: __m512i,
 			src: __m256i,
@@ -1396,10 +1396,10 @@ impl Avx512f {
 		fn _mm512_maskz_compress_ps(k: __mmask16, a: __m512) -> __m512;
 		fn _mm512_mask_compress_pd(src: __m512d, k: __mmask8, a: __m512d) -> __m512d;
 		fn _mm512_maskz_compress_pd(k: __mmask8, a: __m512d) -> __m512d;
-		unsafe fn _mm512_mask_compressstoreu_epi32(base_addr: *mut u8, k: __mmask16, a: __m512i);
-		unsafe fn _mm512_mask_compressstoreu_epi64(base_addr: *mut u8, k: __mmask8, a: __m512i);
-		unsafe fn _mm512_mask_compressstoreu_ps(base_addr: *mut u8, k: __mmask16, a: __m512);
-		unsafe fn _mm512_mask_compressstoreu_pd(base_addr: *mut u8, k: __mmask8, a: __m512d);
+		unsafe fn _mm512_mask_compressstoreu_epi32(base_addr: *mut i32, k: __mmask16, a: __m512i);
+		unsafe fn _mm512_mask_compressstoreu_epi64(base_addr: *mut i64, k: __mmask8, a: __m512i);
+		unsafe fn _mm512_mask_compressstoreu_ps(base_addr: *mut f32, k: __mmask16, a: __m512);
+		unsafe fn _mm512_mask_compressstoreu_pd(base_addr: *mut f64, k: __mmask8, a: __m512d);
 		fn _mm512_mask_expand_epi32(src: __m512i, k: __mmask16, a: __m512i) -> __m512i;
 		fn _mm512_maskz_expand_epi32(k: __mmask16, a: __m512i) -> __m512i;
 		fn _mm512_mask_expand_epi64(src: __m512i, k: __mmask8, a: __m512i) -> __m512i;
@@ -2027,7 +2027,7 @@ impl Avx512f {
 		fn _mm512_mask_testn_epi64_mask(k: __mmask8, a: __m512i, b: __m512i) -> __mmask8;
 		unsafe fn _mm512_stream_ps(mem_addr: *mut f32, a: __m512);
 		unsafe fn _mm512_stream_pd(mem_addr: *mut f64, a: __m512d);
-		unsafe fn _mm512_stream_si512(mem_addr: *mut i32, a: __m512i);
+		unsafe fn _mm512_stream_si512(mem_addr: *mut __m512i, a: __m512i);
 		fn _mm512_set_ps(
 			e0: f32,
 			e1: f32,
@@ -2305,31 +2305,31 @@ impl Avx512f {
 		// This intrinsic has no corresponding instruction.
 		fn _mm512_undefined() -> __m512;
 		unsafe fn _mm512_loadu_epi32(mem_addr: *const i32) -> __m512i;
-		unsafe fn _mm512_mask_cvtepi32_storeu_epi16(mem_addr: *mut i8, k: __mmask16, a: __m512i);
-		unsafe fn _mm512_mask_cvtsepi32_storeu_epi16(mem_addr: *mut i8, k: __mmask16, a: __m512i);
-		unsafe fn _mm512_mask_cvtusepi32_storeu_epi16(mem_addr: *mut i8, k: __mmask16, a: __m512i);
+		unsafe fn _mm512_mask_cvtepi32_storeu_epi16(mem_addr: *mut i16, k: __mmask16, a: __m512i);
+		unsafe fn _mm512_mask_cvtsepi32_storeu_epi16(mem_addr: *mut i16, k: __mmask16, a: __m512i);
+		unsafe fn _mm512_mask_cvtusepi32_storeu_epi16(mem_addr: *mut i16, k: __mmask16, a: __m512i);
 		unsafe fn _mm512_mask_cvtepi32_storeu_epi8(mem_addr: *mut i8, k: __mmask16, a: __m512i);
 		unsafe fn _mm512_mask_cvtsepi32_storeu_epi8(mem_addr: *mut i8, k: __mmask16, a: __m512i);
 		unsafe fn _mm512_mask_cvtusepi32_storeu_epi8(mem_addr: *mut i8, k: __mmask16, a: __m512i);
-		unsafe fn _mm512_mask_cvtepi64_storeu_epi16(mem_addr: *mut i8, k: __mmask8, a: __m512i);
-		unsafe fn _mm512_mask_cvtsepi64_storeu_epi16(mem_addr: *mut i8, k: __mmask8, a: __m512i);
-		unsafe fn _mm512_mask_cvtusepi64_storeu_epi16(mem_addr: *mut i8, k: __mmask8, a: __m512i);
+		unsafe fn _mm512_mask_cvtepi64_storeu_epi16(mem_addr: *mut i16, k: __mmask8, a: __m512i);
+		unsafe fn _mm512_mask_cvtsepi64_storeu_epi16(mem_addr: *mut i16, k: __mmask8, a: __m512i);
+		unsafe fn _mm512_mask_cvtusepi64_storeu_epi16(mem_addr: *mut i16, k: __mmask8, a: __m512i);
 		unsafe fn _mm512_mask_cvtepi64_storeu_epi8(mem_addr: *mut i8, k: __mmask8, a: __m512i);
 		unsafe fn _mm512_mask_cvtsepi64_storeu_epi8(mem_addr: *mut i8, k: __mmask8, a: __m512i);
 		unsafe fn _mm512_mask_cvtusepi64_storeu_epi8(mem_addr: *mut i8, k: __mmask8, a: __m512i);
-		unsafe fn _mm512_mask_cvtepi64_storeu_epi32(mem_addr: *mut i8, k: __mmask8, a: __m512i);
-		unsafe fn _mm512_mask_cvtsepi64_storeu_epi32(mem_addr: *mut i8, k: __mmask8, a: __m512i);
-		unsafe fn _mm512_mask_cvtusepi64_storeu_epi32(mem_addr: *mut i8, k: __mmask8, a: __m512i);
+		unsafe fn _mm512_mask_cvtepi64_storeu_epi32(mem_addr: *mut i32, k: __mmask8, a: __m512i);
+		unsafe fn _mm512_mask_cvtsepi64_storeu_epi32(mem_addr: *mut i32, k: __mmask8, a: __m512i);
+		unsafe fn _mm512_mask_cvtusepi64_storeu_epi32(mem_addr: *mut i32, k: __mmask8, a: __m512i);
 		unsafe fn _mm512_storeu_epi32(mem_addr: *mut i32, a: __m512i);
 		unsafe fn _mm512_loadu_epi64(mem_addr: *const i64) -> __m512i;
 		unsafe fn _mm512_storeu_epi64(mem_addr: *mut i64, a: __m512i);
-		unsafe fn _mm512_loadu_si512(mem_addr: *const i32) -> __m512i;
+		unsafe fn _mm512_loadu_si512(mem_addr: *const __m512i) -> __m512i;
 		unsafe fn _mm512_storeu_si512(mem_addr: *mut __m512i, a: __m512i);
 		unsafe fn _mm512_loadu_pd(mem_addr: *const f64) -> __m512d;
 		unsafe fn _mm512_storeu_pd(mem_addr: *mut f64, a: __m512d);
 		unsafe fn _mm512_loadu_ps(mem_addr: *const f32) -> __m512;
 		unsafe fn _mm512_storeu_ps(mem_addr: *mut f32, a: __m512);
-		unsafe fn _mm512_load_si512(mem_addr: *const i32) -> __m512i;
+		unsafe fn _mm512_load_si512(mem_addr: *const __m512i) -> __m512i;
 		unsafe fn _mm512_store_si512(mem_addr: *mut __m512i, a: __m512i);
 		unsafe fn _mm512_load_epi32(mem_addr: *const i32) -> __m512i;
 		unsafe fn _mm512_store_epi32(mem_addr: *mut i32, a: __m512i);
@@ -3901,14 +3901,14 @@ impl Avx512f {
 		fn _mm256_maskz_compress_pd(k: __mmask8, a: __m256d) -> __m256d;
 		fn _mm_mask_compress_pd(src: __m128d, k: __mmask8, a: __m128d) -> __m128d;
 		fn _mm_maskz_compress_pd(k: __mmask8, a: __m128d) -> __m128d;
-		unsafe fn _mm256_mask_compressstoreu_epi32(base_addr: *mut u8, k: __mmask8, a: __m256i);
-		unsafe fn _mm_mask_compressstoreu_epi32(base_addr: *mut u8, k: __mmask8, a: __m128i);
-		unsafe fn _mm256_mask_compressstoreu_epi64(base_addr: *mut u8, k: __mmask8, a: __m256i);
-		unsafe fn _mm_mask_compressstoreu_epi64(base_addr: *mut u8, k: __mmask8, a: __m128i);
-		unsafe fn _mm256_mask_compressstoreu_ps(base_addr: *mut u8, k: __mmask8, a: __m256);
-		unsafe fn _mm_mask_compressstoreu_ps(base_addr: *mut u8, k: __mmask8, a: __m128);
-		unsafe fn _mm256_mask_compressstoreu_pd(base_addr: *mut u8, k: __mmask8, a: __m256d);
-		unsafe fn _mm_mask_compressstoreu_pd(base_addr: *mut u8, k: __mmask8, a: __m128d);
+		unsafe fn _mm256_mask_compressstoreu_epi32(base_addr: *mut i32, k: __mmask8, a: __m256i);
+		unsafe fn _mm_mask_compressstoreu_epi32(base_addr: *mut i32, k: __mmask8, a: __m128i);
+		unsafe fn _mm256_mask_compressstoreu_epi64(base_addr: *mut i64, k: __mmask8, a: __m256i);
+		unsafe fn _mm_mask_compressstoreu_epi64(base_addr: *mut i64, k: __mmask8, a: __m128i);
+		unsafe fn _mm256_mask_compressstoreu_ps(base_addr: *mut f32, k: __mmask8, a: __m256);
+		unsafe fn _mm_mask_compressstoreu_ps(base_addr: *mut f32, k: __mmask8, a: __m128);
+		unsafe fn _mm256_mask_compressstoreu_pd(base_addr: *mut f64, k: __mmask8, a: __m256d);
+		unsafe fn _mm_mask_compressstoreu_pd(base_addr: *mut f64, k: __mmask8, a: __m128d);
 		fn _mm256_mask_expand_epi32(src: __m256i, k: __mmask8, a: __m256i) -> __m256i;
 		fn _mm256_maskz_expand_epi32(k: __mmask8, a: __m256i) -> __m256i;
 		fn _mm_mask_expand_epi32(src: __m128i, k: __mmask8, a: __m128i) -> __m128i;
@@ -4681,36 +4681,36 @@ impl Avx512f {
 		) -> __mmask8;
 		unsafe fn _mm256_loadu_epi32(mem_addr: *const i32) -> __m256i;
 		unsafe fn _mm_loadu_epi32(mem_addr: *const i32) -> __m128i;
-		unsafe fn _mm256_mask_cvtepi32_storeu_epi16(mem_addr: *mut i8, k: __mmask8, a: __m256i);
-		unsafe fn _mm_mask_cvtepi32_storeu_epi16(mem_addr: *mut i8, k: __mmask8, a: __m128i);
-		unsafe fn _mm256_mask_cvtsepi32_storeu_epi16(mem_addr: *mut i8, k: __mmask8, a: __m256i);
-		unsafe fn _mm_mask_cvtsepi32_storeu_epi16(mem_addr: *mut i8, k: __mmask8, a: __m128i);
-		unsafe fn _mm256_mask_cvtusepi32_storeu_epi16(mem_addr: *mut i8, k: __mmask8, a: __m256i);
-		unsafe fn _mm_mask_cvtusepi32_storeu_epi16(mem_addr: *mut i8, k: __mmask8, a: __m128i);
+		unsafe fn _mm256_mask_cvtepi32_storeu_epi16(mem_addr: *mut i16, k: __mmask8, a: __m256i);
+		unsafe fn _mm_mask_cvtepi32_storeu_epi16(mem_addr: *mut i16, k: __mmask8, a: __m128i);
+		unsafe fn _mm256_mask_cvtsepi32_storeu_epi16(mem_addr: *mut i16, k: __mmask8, a: __m256i);
+		unsafe fn _mm_mask_cvtsepi32_storeu_epi16(mem_addr: *mut i16, k: __mmask8, a: __m128i);
+		unsafe fn _mm256_mask_cvtusepi32_storeu_epi16(mem_addr: *mut i16, k: __mmask8, a: __m256i);
+		unsafe fn _mm_mask_cvtusepi32_storeu_epi16(mem_addr: *mut i16, k: __mmask8, a: __m128i);
 		unsafe fn _mm256_mask_cvtepi32_storeu_epi8(mem_addr: *mut i8, k: __mmask8, a: __m256i);
 		unsafe fn _mm_mask_cvtepi32_storeu_epi8(mem_addr: *mut i8, k: __mmask8, a: __m128i);
 		unsafe fn _mm256_mask_cvtsepi32_storeu_epi8(mem_addr: *mut i8, k: __mmask8, a: __m256i);
 		unsafe fn _mm_mask_cvtsepi32_storeu_epi8(mem_addr: *mut i8, k: __mmask8, a: __m128i);
 		unsafe fn _mm256_mask_cvtusepi32_storeu_epi8(mem_addr: *mut i8, k: __mmask8, a: __m256i);
 		unsafe fn _mm_mask_cvtusepi32_storeu_epi8(mem_addr: *mut i8, k: __mmask8, a: __m128i);
-		unsafe fn _mm256_mask_cvtepi64_storeu_epi16(mem_addr: *mut i8, k: __mmask8, a: __m256i);
-		unsafe fn _mm_mask_cvtepi64_storeu_epi16(mem_addr: *mut i8, k: __mmask8, a: __m128i);
-		unsafe fn _mm256_mask_cvtsepi64_storeu_epi16(mem_addr: *mut i8, k: __mmask8, a: __m256i);
-		unsafe fn _mm_mask_cvtsepi64_storeu_epi16(mem_addr: *mut i8, k: __mmask8, a: __m128i);
-		unsafe fn _mm256_mask_cvtusepi64_storeu_epi16(mem_addr: *mut i8, k: __mmask8, a: __m256i);
-		unsafe fn _mm_mask_cvtusepi64_storeu_epi16(mem_addr: *mut i8, k: __mmask8, a: __m128i);
+		unsafe fn _mm256_mask_cvtepi64_storeu_epi16(mem_addr: *mut i16, k: __mmask8, a: __m256i);
+		unsafe fn _mm_mask_cvtepi64_storeu_epi16(mem_addr: *mut i16, k: __mmask8, a: __m128i);
+		unsafe fn _mm256_mask_cvtsepi64_storeu_epi16(mem_addr: *mut i16, k: __mmask8, a: __m256i);
+		unsafe fn _mm_mask_cvtsepi64_storeu_epi16(mem_addr: *mut i16, k: __mmask8, a: __m128i);
+		unsafe fn _mm256_mask_cvtusepi64_storeu_epi16(mem_addr: *mut i16, k: __mmask8, a: __m256i);
+		unsafe fn _mm_mask_cvtusepi64_storeu_epi16(mem_addr: *mut i16, k: __mmask8, a: __m128i);
 		unsafe fn _mm256_mask_cvtepi64_storeu_epi8(mem_addr: *mut i8, k: __mmask8, a: __m256i);
 		unsafe fn _mm_mask_cvtepi64_storeu_epi8(mem_addr: *mut i8, k: __mmask8, a: __m128i);
 		unsafe fn _mm256_mask_cvtsepi64_storeu_epi8(mem_addr: *mut i8, k: __mmask8, a: __m256i);
 		unsafe fn _mm_mask_cvtsepi64_storeu_epi8(mem_addr: *mut i8, k: __mmask8, a: __m128i);
 		unsafe fn _mm256_mask_cvtusepi64_storeu_epi8(mem_addr: *mut i8, k: __mmask8, a: __m256i);
 		unsafe fn _mm_mask_cvtusepi64_storeu_epi8(mem_addr: *mut i8, k: __mmask8, a: __m128i);
-		unsafe fn _mm256_mask_cvtepi64_storeu_epi32(mem_addr: *mut i8, k: __mmask8, a: __m256i);
-		unsafe fn _mm_mask_cvtepi64_storeu_epi32(mem_addr: *mut i8, k: __mmask8, a: __m128i);
-		unsafe fn _mm256_mask_cvtsepi64_storeu_epi32(mem_addr: *mut i8, k: __mmask8, a: __m256i);
-		unsafe fn _mm_mask_cvtsepi64_storeu_epi32(mem_addr: *mut i8, k: __mmask8, a: __m128i);
-		unsafe fn _mm256_mask_cvtusepi64_storeu_epi32(mem_addr: *mut i8, k: __mmask8, a: __m256i);
-		unsafe fn _mm_mask_cvtusepi64_storeu_epi32(mem_addr: *mut i8, k: __mmask8, a: __m128i);
+		unsafe fn _mm256_mask_cvtepi64_storeu_epi32(mem_addr: *mut i32, k: __mmask8, a: __m256i);
+		unsafe fn _mm_mask_cvtepi64_storeu_epi32(mem_addr: *mut i32, k: __mmask8, a: __m128i);
+		unsafe fn _mm256_mask_cvtsepi64_storeu_epi32(mem_addr: *mut i32, k: __mmask8, a: __m256i);
+		unsafe fn _mm_mask_cvtsepi64_storeu_epi32(mem_addr: *mut i32, k: __mmask8, a: __m128i);
+		unsafe fn _mm256_mask_cvtusepi64_storeu_epi32(mem_addr: *mut i32, k: __mmask8, a: __m256i);
+		unsafe fn _mm_mask_cvtusepi64_storeu_epi32(mem_addr: *mut i32, k: __mmask8, a: __m128i);
 		unsafe fn _mm256_storeu_epi32(mem_addr: *mut i32, a: __m256i);
 		unsafe fn _mm_storeu_epi32(mem_addr: *mut i32, a: __m128i);
 		unsafe fn _mm256_loadu_epi64(mem_addr: *const i64) -> __m256i;

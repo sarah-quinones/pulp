@@ -37,7 +37,7 @@ mod nightly {
 		);
 		let avx = simd.avx512f;
 		let rand_vec =
-			unsafe { avx._mm512_i64gather_epi64::<8>(cast(rand_index), a.as_ptr() as *const u8) };
+			unsafe { avx._mm512_i64gather_epi64::<8>(cast(rand_index), a.as_ptr() as *const i64) };
 		let sort = sort_zmm_64bit(simd, cast(rand_vec));
 		sort.4
 	}
