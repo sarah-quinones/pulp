@@ -65,7 +65,10 @@ macro_rules! feature_detected {
 #[cfg(all(
 	not(feature = "std"),
 	feature = "raw-cpuid",
-	any(target_arch = "x86", target_arch = "x86_64")
+	any(
+		all(target_arch = "x86", not(target_env = "sgx"), target_feature = "sse"),
+		all(target_arch = "x86_64", not(target_env = "sgx"))
+	)
 ))]
 #[macro_use]
 mod raw_cpuid_detect;
@@ -77,7 +80,10 @@ mod raw_cpuid_detect;
 	),
 	all(
 		feature = "raw-cpuid",
-		any(target_arch = "x86", target_arch = "x86_64")
+		any(
+			all(target_arch = "x86", not(target_env = "sgx"), target_feature = "sse"),
+			all(target_arch = "x86_64", not(target_env = "sgx"))
+		)
 	),
 )))]
 #[macro_export]
