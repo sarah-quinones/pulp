@@ -143,7 +143,9 @@ static V4_U64_LAST_MASKS: [u8; 9] = [
 impl Seal for V4 {}
 
 impl Simd for V4 {
+	#[cfg(feature = "complex")]
 	type c32s = f32x16;
+	#[cfg(feature = "complex")]
 	type c64s = f64x8;
 	type f32s = f32x16;
 	type f64s = f64x8;
@@ -157,6 +159,7 @@ impl Simd for V4 {
 	const REGISTER_COUNT: usize = 32;
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn abs2_c32s(self, a: Self::c32s) -> Self::c32s {
 		let sqr = self.mul_f32s(a, a);
 		let sqr_rev = self
@@ -166,6 +169,7 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn abs2_c64s(self, a: Self::c64s) -> Self::c64s {
 		let sqr = self.mul_f64s(a, a);
 		let sqr_rev = self
@@ -175,6 +179,7 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn abs_max_c32s(self, a: Self::c32s) -> Self::c32s {
 		let max = self.abs_f32s(a);
 		let max_rev = self
@@ -184,6 +189,7 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn abs_max_c64s(self, a: Self::c64s) -> Self::c64s {
 		let max = self.abs_f64s(a);
 		let max_rev = self
@@ -193,11 +199,13 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn add_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		self.add_f32s(a, b)
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn add_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 		self.add_f64s(a, b)
 	}
@@ -243,16 +251,19 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn conj_c32s(self, a: Self::c32s) -> Self::c32s {
 		self.xor_f32s(a, self.splat_c32s(c32 { re: 0.0, im: -0.0 }))
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn conj_c64s(self, a: Self::c64s) -> Self::c64s {
 		self.xor_f64s(a, self.splat_c64s(c64 { re: 0.0, im: -0.0 }))
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn conj_mul_add_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
 		let ab = cast!(a);
 		let xy = cast!(b);
@@ -269,6 +280,7 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn conj_mul_add_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
 		let ab = cast!(a);
 		let xy = cast!(b);
@@ -285,6 +297,7 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn conj_mul_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		let ab = cast!(a);
 		let xy = cast!(b);
@@ -300,6 +313,7 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn conj_mul_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 		let ab = cast!(a);
 		let xy = cast!(b);
@@ -608,6 +622,7 @@ impl Simd for V4 {
 	///
 	/// See the trait-level safety documentation.
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	unsafe fn mask_load_ptr_c32s(self, mask: MemMask<Self::m32s>, ptr: *const c32) -> Self::c32s {
 		cast!(self.mask_load_ptr_u32s(mask, ptr as _))
 	}
@@ -616,6 +631,7 @@ impl Simd for V4 {
 	///
 	/// See the trait-level safety documentation.
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	unsafe fn mask_load_ptr_c64s(self, mask: MemMask<Self::m64s>, ptr: *const c64) -> Self::c64s {
 		cast!(self.mask_load_ptr_u64s(mask, ptr as _))
 	}
@@ -646,6 +662,7 @@ impl Simd for V4 {
 	///
 	/// See the trait-level safety documentation.
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	unsafe fn mask_store_ptr_c32s(
 		self,
 		mask: MemMask<Self::m32s>,
@@ -659,6 +676,7 @@ impl Simd for V4 {
 	///
 	/// See the trait-level safety documentation.
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	unsafe fn mask_store_ptr_c64s(
 		self,
 		mask: MemMask<Self::m64s>,
@@ -727,6 +745,7 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn mul_add_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
 		let ab = cast!(a);
 		let xy = cast!(b);
@@ -743,6 +762,7 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn mul_add_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
 		let ab = cast!(a);
 		let xy = cast!(b);
@@ -779,6 +799,7 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn mul_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		let ab = cast!(a);
 		let xy = cast!(b);
@@ -794,6 +815,7 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn mul_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 		let ab = cast!(a);
 		let xy = cast!(b);
@@ -819,11 +841,13 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn neg_c32s(self, a: Self::c32s) -> Self::c32s {
 		self.xor_f32s(a, self.splat_f32s(-0.0))
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn neg_c64s(self, a: Self::c64s) -> Self::c64s {
 		self.xor_f64s(a, self.splat_f64s(-0.0))
 	}
@@ -895,6 +919,7 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn reduce_max_c32s(self, a: Self::c32s) -> c32 {
 		let a: __m512 = cast!(a);
 		let r = self.avx._mm256_max_ps(
@@ -905,6 +930,7 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn reduce_max_c64s(self, a: Self::c64s) -> c64 {
 		let a: __m512d = cast!(a);
 		let r = self.avx._mm256_max_pd(
@@ -935,6 +961,7 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn reduce_min_c32s(self, a: Self::c32s) -> c32 {
 		let a: __m512 = cast!(a);
 		let r = self.avx._mm256_min_ps(
@@ -945,6 +972,7 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn reduce_min_c64s(self, a: Self::c64s) -> c64 {
 		let a: __m512d = cast!(a);
 		let r = self.avx._mm256_min_pd(
@@ -995,6 +1023,7 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn reduce_sum_c32s(self, a: Self::c32s) -> c32 {
 		let a: __m512 = cast!(a);
 		let r = self.avx._mm256_add_ps(
@@ -1005,6 +1034,7 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn reduce_sum_c64s(self, a: Self::c64s) -> c64 {
 		let a: __m512d = cast!(a);
 		let r = self.avx._mm256_add_pd(
@@ -1035,6 +1065,7 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn rotate_right_c32s(self, a: Self::c32s, amount: usize) -> Self::c32s {
 		cast!(
 			self.avx512f
@@ -1043,6 +1074,7 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn rotate_right_c64s(self, a: Self::c64s, amount: usize) -> Self::c64s {
 		cast!(
 			self.avx512f
@@ -1095,11 +1127,13 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn splat_c32s(self, value: c32) -> Self::c32s {
 		cast!(self.splat_f64s(cast!(value)))
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn splat_c64s(self, value: c64) -> Self::c64s {
 		cast!(self.avx512f._mm512_broadcast_f32x4(cast!(value)))
 	}
@@ -1125,11 +1159,13 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn sub_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		self.sub_f32s(a, b)
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn sub_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 		self.sub_f64s(a, b)
 	}
@@ -1155,11 +1191,13 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn swap_re_im_c32s(self, a: Self::c32s) -> Self::c32s {
 		cast!(self.avx512f._mm512_permute_ps::<0b10_11_00_01>(cast!(a)))
 	}
 
 	#[inline(always)]
+	#[cfg(feature = "complex")]
 	fn swap_re_im_c64s(self, a: Self::c64s) -> Self::c64s {
 		cast!(self.avx512f._mm512_permute_pd::<0b01010101>(cast!(a)))
 	}
