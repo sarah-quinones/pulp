@@ -62,10 +62,30 @@ macro_rules! feature_detected {
 	};
 }
 
-#[cfg(any(
+#[cfg(all(
 	not(feature = "std"),
-	not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))
+	feature = "raw-cpuid",
+	any(
+		all(target_arch = "x86", not(target_env = "sgx"), target_feature = "sse"),
+		all(target_arch = "x86_64", not(target_env = "sgx"))
+	)
 ))]
+#[macro_use]
+mod raw_cpuid_detect;
+
+#[cfg(not(any(
+	all(
+		feature = "std",
+		any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")
+	),
+	all(
+		feature = "raw-cpuid",
+		any(
+			all(target_arch = "x86", not(target_env = "sgx"), target_feature = "sse"),
+			all(target_arch = "x86_64", not(target_env = "sgx"))
+		)
+	),
+)))]
 #[macro_export]
 macro_rules! feature_detected {
 	($feature: tt) => {

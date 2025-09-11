@@ -16,6 +16,7 @@ num-complex = { version = "0.4.4", default-features = false, features = ["bytemu
 libm = { version = "0.2", default-features = false }
 reborrow = "0.5"
 cfg-if = "1.0.0"
+raw-cpuid = { version = "11.5.0", default-features = false, optional = true }
 paste = "1"
 
 [features]
@@ -34,6 +35,7 @@ nightly-x86-v4 = [
 ]
 
 macro = ["dep:pulp-macro"]
+raw-cpuid = ["dep:raw-cpuid"]
 
 [dev-dependencies]
 aligned-vec = "0.6.0"
