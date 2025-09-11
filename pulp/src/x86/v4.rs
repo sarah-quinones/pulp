@@ -142,19 +142,320 @@ static V4_U64_LAST_MASKS: [u8; 9] = [
 
 impl Seal for V4 {}
 
+macro_rules! x86_call_512 {
+	($ext: expr, $func: ident, f32, $($arg: expr),*) => {
+		paste!($ext.[<_mm512_ $func _ ps>]($($arg),*))
+	};
+	($ext: expr, $func: ident, f64, $($arg: expr),*) => {
+		paste!($ext.[<_mm512_ $func _ pd>]($($arg),*))
+	};
+	($ext: expr, $func: ident, $ty: ty, $($arg: expr),*) => {
+		paste!($ext.[<_mm512_ $func _ep $ty>]($($arg),*))
+	}
+}
+
+macro_rules! x86_call_512_mask {
+	($ext: expr, $func: ident, f32, $($arg: expr),*) => {
+		paste!($ext.[<_mm512_ $func _ ps_mask>]($($arg),*))
+	};
+	($ext: expr, $func: ident, f64, $($arg: expr),*) => {
+		paste!($ext.[<_mm512_ $func _ pd_mask>]($($arg),*))
+	};
+	($ext: expr, $func: ident, $ty: ty, $($arg: expr),*) => {
+		paste!($ext.[<_mm512_ $func _ep $ty _mask>]($($arg),*))
+	}
+}
+
+macro_rules! x86_call_512_nosign {
+	($ext: expr, $func: ident, u8, $($arg: expr),*) => {
+		x86_call_512!($ext, $func, i8, $($arg),*)
+	};
+	($ext: expr, $func: ident, u16, $($arg: expr),*) => {
+		x86_call_512!($ext, $func, i16, $($arg),*)
+	};
+	($ext: expr, $func: ident, u32, $($arg: expr),*) => {
+		x86_call_512!($ext, $func, i32, $($arg),*)
+	};
+	($ext: expr, $func: ident, u64, $($arg: expr),*) => {
+		x86_call_512!($ext, $func, i64, $($arg),*)
+	};
+	($ext: expr, $func: ident, m8, $($arg: expr),*) => {
+		x86_call_512!($ext, $func, i8, $($arg),*)
+	};
+	($ext: expr, $func: ident, m16, $($arg: expr),*) => {
+		x86_call_512!($ext, $func, i16, $($arg),*)
+	};
+	($ext: expr, $func: ident, m32, $($arg: expr),*) => {
+		x86_call_512!($ext, $func, i32, $($arg),*)
+	};
+	($ext: expr, $func: ident, m64, $($arg: expr),*) => {
+		x86_call_512!($ext, $func, i64, $($arg),*)
+	};
+	($ext: expr, $func: ident, $ty: ident, $($arg: expr),*) => {
+		x86_call_512!($ext, $func, $ty, $($arg),*)
+	};
+}
+
+macro_rules! x86_call_512_nosign_mask {
+	($ext: expr, $func: ident, u8, $($arg: expr),*) => {
+		x86_call_512_mask!($ext, $func, i8, $($arg),*)
+	};
+	($ext: expr, $func: ident, u16, $($arg: expr),*) => {
+		x86_call_512_mask!($ext, $func, i16, $($arg),*)
+	};
+	($ext: expr, $func: ident, u32, $($arg: expr),*) => {
+		x86_call_512_mask!($ext, $func, i32, $($arg),*)
+	};
+	($ext: expr, $func: ident, u64, $($arg: expr),*) => {
+		x86_call_512_mask!($ext, $func, i64, $($arg),*)
+	};
+	($ext: expr, $func: ident, m8, $($arg: expr),*) => {
+		x86_call_512_mask!($ext, $func, i8, $($arg),*)
+	};
+	($ext: expr, $func: ident, m16, $($arg: expr),*) => {
+		x86_call_512_mask!($ext, $func, i16, $($arg),*)
+	};
+	($ext: expr, $func: ident, m32, $($arg: expr),*) => {
+		x86_call_512_mask!($ext, $func, i32, $($arg),*)
+	};
+	($ext: expr, $func: ident, m64, $($arg: expr),*) => {
+		x86_call_512_mask!($ext, $func, i64, $($arg),*)
+	};
+	($ext: expr, $func: ident, $ty: ident, $($arg: expr),*) => {
+		x86_call_512_mask!($ext, $func, $ty, $($arg),*)
+	};
+}
+
+macro_rules! binop_512 {
+	($func: ident, $op: ident, $doc: literal, $ty: ident, $out: ident, $factor: literal, $ext: ident) => {
+		paste! {
+			#[inline(always)]
+			#[doc = $doc]
+			pub fn [<$func _ $ty x $factor>](self, a: [<$ty x $factor>], b: [<$ty x $factor>]) -> [<$out x $factor>] {
+				cast!(x86_call_512!(self.$ext, $op, $ty, cast!(a), cast!(b)))
+			}
+		}
+	};
+	($ext: ident: $op: ident, $doc: literal, $func: ident, $($ty: ident x $factor: literal => $out: ident),*) => {
+		$(binop_512!($func, $op, $doc, $ty, $out, $factor, $ext);)*
+	};
+	($ext: ident: $op: ident, $doc: literal, $($ty: ident x $factor: literal),*) => {
+		$(binop_512!($op, $op, $doc, $ty, $ty, $factor, $ext);)*
+	};
+	($ext: ident: $op: ident, $doc: literal, $func: ident, $($ty: ident x $factor: literal),*) => {
+		$(binop_512!($func, $op, $doc, $ty, $ty, $factor, $ext);)*
+	};
+}
+
+macro_rules! unop_512 {
+	($func: ident, $op: ident, $doc: literal, $ty: ident, $factor: literal, $ext: ident) => {
+		paste! {
+			#[inline(always)]
+			#[doc = $doc]
+			pub fn [<$func _ $ty x $factor>](self, a: [<$ty x $factor>]) -> [<$ty x $factor>] {
+				cast!(x86_call_512!(self.$ext, $op, $ty, cast!(a)))
+			}
+		}
+	};
+	($ext: ident: $op: ident, $doc: literal, $($ty: ident x $factor: literal),*) => {
+		$(unop_512!($op, $op, $doc, $ty, $factor, $ext);)*
+	};
+	($ext: ident: $op: ident, $doc: literal, $func: ident, $($ty: ident x $factor: literal),*) => {
+		$(unop_512!($func, $op, $doc, $ty, $factor, $ext);)*
+	};
+}
+
+macro_rules! binop_512_nosign {
+	($func: ident, $op: ident, $doc: literal, $ty: ident, $out: ident, $factor: literal, $ext: ident) => {
+		paste! {
+			#[inline(always)]
+			#[doc = $doc]
+			pub fn [<$func _ $ty x $factor>](self, a: [<$ty x $factor>], b: [<$ty x $factor>]) -> [<$out x $factor>] {
+				cast!(x86_call_512_nosign!(self.$ext, $op, $ty, cast!(a), cast!(b)))
+			}
+		}
+	};
+	($ext: ident: $op: ident, $doc: literal, $func: ident, $($ty: ident x $factor: literal => $out: ident),*) => {
+		$(binop_512_nosign!($func, $op, $doc, $ty, $out, $factor, $ext);)*
+	};
+	($ext: ident: $op: ident, $doc: literal, $func: ident, $($ty: ident x $factor: literal),*) => {
+		$(binop_512_nosign!($func, $op, $doc, $ty, $ty, $factor, $ext);)*
+	};
+	($ext: ident: $func: ident, $doc: literal, $($ty: ident x $factor: literal),*) => {
+		$(binop_512_nosign!($func, $func, $doc, $ty, $ty, $factor, $ext);)*
+	};
+}
+
+macro_rules! binop_512_nosign_mask {
+	($func: ident, $op: ident, $doc: literal, $ty: ident, $factor: literal, $ext: ident) => {
+		paste! {
+			#[inline(always)]
+			#[doc = $doc]
+			pub fn [<$func _ $ty x $factor>](self, a: [<$ty x $factor>], b: [<$ty x $factor>]) -> [<b $factor>] {
+				cast!(x86_call_512_nosign_mask!(self.$ext, $op, $ty, cast!(a), cast!(b)))
+			}
+		}
+	};
+	($ext: ident: $op: ident, $doc: literal, $func: ident, $($ty: ident x $factor: literal),*) => {
+		$(binop_512_nosign_mask!($func, $op, $doc, $ty, $factor, $ext);)*
+	};
+	($ext: ident: $func: ident, $doc: literal, $($ty: ident x $factor: literal),*) => {
+		$(binop_512_nosign_mask!($func, $func, $doc, $ty, $factor, $ext);)*
+	};
+}
+
+macro_rules! binop_512_mask {
+	($func: ident, $op: ident, $doc: literal, $ty: ident, $factor: literal, $ext: ident) => {
+		paste! {
+			#[inline(always)]
+			#[doc = $doc]
+			pub fn [<$func _ $ty x $factor>](self, a: [<$ty x $factor>], b: [<$ty x $factor>]) -> [<b $factor>] {
+				cast!(x86_call_512_mask!(self.$ext, $op, $ty, cast!(a), cast!(b)))
+			}
+		}
+	};
+	($ext: ident: $op: ident, $doc: literal, $func: ident, $($ty: ident x $factor: literal),*) => {
+		$(binop_512_mask!($func, $op, $doc, $ty, $factor, $ext);)*
+	};
+	($ext: ident: $func: ident, $doc: literal, $($ty: ident x $factor: literal),*) => {
+		$(binop_512_mask!($func, $func, $doc, $ty, $factor, $ext);)*
+	};
+}
+
+macro_rules! binop_512_full {
+	($func: ident, $doc: literal, $ty: ident, $factor: literal, $ext: ident) => {
+		paste! {
+			#[inline(always)]
+			#[doc = $doc]
+			pub fn [<$func _ $ty x $factor>](self, a: [<$ty x $factor>], b: [<$ty x $factor>]) -> [<$ty x $factor>] {
+				cast!(self.$ext.[<_mm512_ $func _si512>](cast!(a), cast!(b)))
+			}
+		}
+	};
+	($ext: ident: $func: ident, $doc: literal, $($ty: ident x $factor: literal),*) => {
+		$(binop_512_full!($func, $doc, $ty, $factor, $ext);)*
+	};
+}
+
+macro_rules! splat {
+	($ty: ty, $factor: literal) => {
+		paste! {
+			#[inline(always)]
+			fn [<splat_ $ty s>](self, value: $ty) -> Self::[<$ty s>] {
+				self.[<splat_ $ty x $factor>](value)
+			}
+		}
+	};
+	($($ty: ident x $factor: literal),*) => {
+		$(splat!($ty, $factor);)*
+	};
+}
+
+macro_rules! impl_simd_binop {
+	($func: ident, $op: ident, $ty: ident, $factor: literal) => {
+		paste! {
+			#[inline(always)]
+			fn [<$func _ $ty s>](self, a: Self::[<$ty s>], b: Self::[<$ty s>]) -> Self::[<$ty s>] {
+				self.[<$op _ $ty x $factor>](a, b)
+			}
+		}
+	};
+	($func: ident, $op: ident, $($ty: ident x $factor: literal),*) => {
+		$(impl_simd_binop!($func, $op, $ty, $factor);)*
+	};
+	($func: ident, $($ty: ident x $factor: literal),*) => {
+		$(impl_simd_binop!($func, $func, $ty, $factor);)*
+	};
+}
+
+macro_rules! impl_simd_binop_mask {
+	($func: ident, $op: ident, $ty: ident, $factor: literal) => {
+		paste! {
+			#[inline(always)]
+			fn [<$func _ $ty s>](self, a: Self::[<$ty s>], b: Self::[<$ty s>]) -> [<b $factor>] {
+				self.[<$op _ $ty x $factor>](a, b)
+			}
+		}
+	};
+	($func: ident, $op: ident, $($ty: ident x $factor: literal),*) => {
+		$(impl_simd_binop_mask!($func, $op, $ty, $factor);)*
+	};
+	($func: ident, $($ty: ident x $factor: literal),*) => {
+		$(impl_simd_binop_mask!($func, $func, $ty, $factor);)*
+	};
+}
+
+macro_rules! impl_simd_unop {
+	($func: ident, $op: ident, $ty: ident, $out: ty, $factor: literal) => {
+		paste! {
+			#[inline(always)]
+			fn [<$func _ $ty s>](self, a: Self::[<$ty s>]) -> Self::[<$out s>] {
+				self.[<$op _ $ty x $factor>](a)
+			}
+		}
+	};
+	($func: ident, $($ty: ident x $factor: literal),*) => {
+		$(impl_simd_unop!($func, $func, $ty, $ty, $factor);)*
+	};
+}
+
 impl Simd for V4 {
 	type c32s = f32x16;
 	type c64s = f64x8;
 	type f32s = f32x16;
 	type f64s = f64x8;
+	type i16s = i16x32;
 	type i32s = i32x16;
 	type i64s = i64x8;
+	type i8s = i8x64;
+	type m16s = b32;
 	type m32s = b16;
 	type m64s = b8;
+	type m8s = b64;
+	type u16s = u16x32;
 	type u32s = u32x16;
 	type u64s = u64x8;
+	type u8s = u8x64;
 
 	const REGISTER_COUNT: usize = 32;
+
+	impl_simd_binop!(add, f32 x 16, f64 x 8);
+
+	impl_simd_binop!(add, wrapping_add, u8 x 64, i8 x 64, u16 x 32, i16 x 32, u32 x 16, i32 x 16, u64 x 8, i64 x 8);
+
+	impl_simd_binop!(sub, f32 x 16, f64 x 8);
+
+	impl_simd_binop!(sub, wrapping_sub, u8 x 64, i8 x 64, u16 x 32, i16 x 32, u32 x 16, i32 x 16, u64 x 8, i64 x 8);
+
+	impl_simd_binop!(mul, f32 x 16, f64 x 8);
+
+	impl_simd_binop!(mul, wrapping_mul, u16 x 32, i16 x 32, u32 x 16, i32 x 16, u64 x 8, i64 x 8);
+
+	impl_simd_binop!(and, u8 x 64, i8 x 64, u16 x 32, i16 x 32, u32 x 16, i32 x 16, u64 x 8, i64 x 8, f32 x 16, f64 x 8);
+
+	impl_simd_binop!(or, u8 x 64, i8 x 64, u16 x 32, i16 x 32, u32 x 16, i32 x 16, u64 x 8, i64 x 8, f32 x 16, f64 x 8);
+
+	impl_simd_binop!(xor, u8 x 64, i8 x 64, u16 x 32, i16 x 32, u32 x 16, i32 x 16, u64 x 8, i64 x 8, f32 x 16, f64 x 8);
+
+	impl_simd_binop!(div, f32 x 16, f64 x 8);
+
+	impl_simd_binop_mask!(equal, cmp_eq, u8 x 64, u16 x 32, u32 x 16, u64 x 8, f32 x 16, f64 x 8);
+
+	impl_simd_binop_mask!(greater_than, cmp_gt, u8 x 64, i8 x 64, u16 x 32, i16 x 32, u32 x 16, i32 x 16, u64 x 8, i64 x 8, f32 x 16, f64 x 8);
+
+	impl_simd_binop_mask!(greater_than_or_equal, cmp_ge, u8 x 64, i8 x 64, u16 x 32, i16 x 32, u32 x 16, i32 x 16, u64 x 8, i64 x 8, f32 x 16, f64 x 8);
+
+	impl_simd_binop_mask!(less_than, cmp_lt, u8 x 64, i8 x 64, u16 x 32, i16 x 32, u32 x 16, i32 x 16, u64 x 8, i64 x 8, f32 x 16, f64 x 8);
+
+	impl_simd_binop_mask!(less_than_or_equal, cmp_le, u8 x 64, i8 x 64, u16 x 32, i16 x 32, u32 x 16, i32 x 16, u64 x 8, i64 x 8, f32 x 16, f64 x 8);
+
+	splat!(u8 x 64, i8 x 64, u16 x 32, i16 x 32, u32 x 16, i32 x 16, u64 x 8, i64 x 8, f32 x 16, f64 x 8);
+
+	impl_simd_binop!(max, u8 x 64, i8 x 64, u16 x 32, i16 x 32, u32 x 16, i32 x 16, u64 x 8, i64 x 8, f32 x 16, f64 x 8);
+
+	impl_simd_binop!(min, u8 x 64, i8 x 64, u16 x 32, i16 x 32, u32 x 16, i32 x 16, u64 x 8, i64 x 8, f32 x 16, f64 x 8);
+
+	impl_simd_unop!(not, u8 x 64, u16 x 32, u32 x 16, u64 x 8);
 
 	#[inline(always)]
 	fn abs2_c32s(self, a: Self::c32s) -> Self::c32s {
@@ -203,23 +504,13 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
-	fn add_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-		cast!(self.avx512f._mm512_add_ps(cast!(a), cast!(b)))
+	fn equal_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::m32s {
+		self.equal_f32s(a, b)
 	}
 
 	#[inline(always)]
-	fn add_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-		cast!(self.avx512f._mm512_add_pd(cast!(a), cast!(b)))
-	}
-
-	#[inline(always)]
-	fn add_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
-		cast!(self.avx512f._mm512_add_epi32(cast!(a), cast!(b)))
-	}
-
-	#[inline(always)]
-	fn add_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
-		cast!(self.avx512f._mm512_add_epi64(cast!(a), cast!(b)))
+	fn equal_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::m64s {
+		self.equal_f64s(a, b)
 	}
 
 	#[inline(always)]
@@ -230,16 +521,6 @@ impl Simd for V4 {
 	#[inline(always)]
 	fn and_m64s(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
 		b8(a.0 & b.0)
-	}
-
-	#[inline(always)]
-	fn and_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
-		cast!(self.avx512f._mm512_and_si512(cast!(a), cast!(b)))
-	}
-
-	#[inline(always)]
-	fn and_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
-		cast!(self.avx512f._mm512_and_si512(cast!(a), cast!(b)))
 	}
 
 	#[inline(always)]
@@ -435,52 +716,6 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
-	fn div_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-		cast!(self.avx512f._mm512_div_ps(cast!(a), cast!(b)))
-	}
-
-	#[inline(always)]
-	fn div_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-		cast!(self.avx512f._mm512_div_pd(cast!(a), cast!(b)))
-	}
-
-	#[inline(always)]
-	fn equal_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
-		cast!(
-			self.avx512f
-				._mm512_cmp_ps_mask::<_CMP_EQ_OQ>(cast!(a), cast!(b))
-		)
-	}
-
-	#[inline(always)]
-	fn equal_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
-		cast!(
-			self.avx512f
-				._mm512_cmp_pd_mask::<_CMP_EQ_OQ>(cast!(a), cast!(b))
-		)
-	}
-
-	#[inline(always)]
-	fn greater_than_or_equal_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
-		self.cmp_ge_u32x16(a, b)
-	}
-
-	#[inline(always)]
-	fn greater_than_or_equal_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
-		self.cmp_ge_u64x8(a, b)
-	}
-
-	#[inline(always)]
-	fn greater_than_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
-		self.cmp_gt_u32x16(a, b)
-	}
-
-	#[inline(always)]
-	fn greater_than_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
-		self.cmp_gt_u64x8(a, b)
-	}
-
-	#[inline(always)]
 	fn interleave_shfl_f32s<T: Interleave>(self, values: T) -> T {
 		if try_const! {
 			(core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f32s>())
@@ -531,58 +766,6 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
-	fn less_than_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
-		cast!(
-			self.avx512f
-				._mm512_cmp_ps_mask::<_CMP_LT_OQ>(cast!(a), cast!(b))
-		)
-	}
-
-	#[inline(always)]
-	fn less_than_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
-		cast!(
-			self.avx512f
-				._mm512_cmp_pd_mask::<_CMP_LT_OQ>(cast!(a), cast!(b))
-		)
-	}
-
-	#[inline(always)]
-	fn less_than_or_equal_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
-		cast!(
-			self.avx512f
-				._mm512_cmp_ps_mask::<_CMP_LE_OQ>(cast!(a), cast!(b))
-		)
-	}
-
-	#[inline(always)]
-	fn less_than_or_equal_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
-		cast!(
-			self.avx512f
-				._mm512_cmp_pd_mask::<_CMP_LE_OQ>(cast!(a), cast!(b))
-		)
-	}
-
-	#[inline(always)]
-	fn less_than_or_equal_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
-		self.cmp_le_u32x16(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_or_equal_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
-		self.cmp_le_u64x8(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
-		self.cmp_lt_u32x16(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
-		self.cmp_lt_u64x8(a, b)
-	}
-
-	#[inline(always)]
 	fn mask_between_m32s(self, start: u32, end: u32) -> MemMask<Self::m32s> {
 		let start = start.min(16) as usize;
 		let end = end.min(16) as usize;
@@ -618,6 +801,31 @@ impl Simd for V4 {
 	#[inline(always)]
 	unsafe fn mask_load_ptr_c64s(self, mask: MemMask<Self::m64s>, ptr: *const c64) -> Self::c64s {
 		cast!(self.mask_load_ptr_u64s(mask, ptr as _))
+	}
+
+	/// # Safety
+	///
+	/// See the trait-level safety documentation.
+	#[inline(always)]
+	unsafe fn mask_load_ptr_u8s(self, mask: MemMask<Self::m8s>, ptr: *const u8) -> Self::u8s {
+		match mask.load {
+			Some(load) => cast!(avx512_ld_u32s(ptr as _, load)),
+			None => cast!(self.avx512bw._mm512_maskz_loadu_epi8(mask.mask.0, ptr as _)),
+		}
+	}
+
+	/// # Safety
+	///
+	/// See the trait-level safety documentation.
+	#[inline(always)]
+	unsafe fn mask_load_ptr_u16s(self, mask: MemMask<Self::m16s>, ptr: *const u16) -> Self::u16s {
+		match mask.load {
+			Some(load) => cast!(avx512_ld_u32s(ptr as _, load)),
+			None => cast!(
+				self.avx512bw
+					._mm512_maskz_loadu_epi16(mask.mask.0, ptr as _)
+			),
+		}
 	}
 
 	/// # Safety
@@ -672,6 +880,39 @@ impl Simd for V4 {
 	///
 	/// See the trait-level safety documentation.
 	#[inline(always)]
+	unsafe fn mask_store_ptr_u8s(self, mask: MemMask<Self::m8s>, ptr: *mut u8, values: Self::u8s) {
+		match mask.store {
+			Some(store) => avx512_st_u32s(ptr as _, cast!(values), store),
+			None => {
+				self.avx512bw
+					._mm512_mask_storeu_epi8(ptr as *mut _, mask.mask.0, cast!(values))
+			},
+		}
+	}
+
+	/// # Safety
+	///
+	/// See the trait-level safety documentation.
+	#[inline(always)]
+	unsafe fn mask_store_ptr_u16s(
+		self,
+		mask: MemMask<Self::m16s>,
+		ptr: *mut u16,
+		values: Self::u16s,
+	) {
+		match mask.store {
+			Some(store) => avx512_st_u32s(ptr as _, cast!(values), store),
+			None => {
+				self.avx512bw
+					._mm512_mask_storeu_epi16(ptr as *mut _, mask.mask.0, cast!(values))
+			},
+		}
+	}
+
+	/// # Safety
+	///
+	/// See the trait-level safety documentation.
+	#[inline(always)]
 	unsafe fn mask_store_ptr_u32s(
 		self,
 		mask: MemMask<Self::m32s>,
@@ -704,26 +945,6 @@ impl Simd for V4 {
 					._mm512_mask_storeu_epi64(ptr as *mut _, mask.mask.0, cast!(values))
 			},
 		}
-	}
-
-	#[inline(always)]
-	fn max_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-		cast!(self.avx512f._mm512_max_ps(cast!(a), cast!(b)))
-	}
-
-	#[inline(always)]
-	fn max_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-		cast!(self.avx512f._mm512_max_pd(cast!(a), cast!(b)))
-	}
-
-	#[inline(always)]
-	fn min_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-		cast!(self.avx512f._mm512_min_ps(cast!(a), cast!(b)))
-	}
-
-	#[inline(always)]
-	fn min_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-		cast!(self.avx512f._mm512_min_pd(cast!(a), cast!(b)))
 	}
 
 	#[inline(always)]
@@ -809,16 +1030,6 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
-	fn mul_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-		cast!(self.avx512f._mm512_mul_ps(cast!(a), cast!(b)))
-	}
-
-	#[inline(always)]
-	fn mul_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-		cast!(self.avx512f._mm512_mul_pd(cast!(a), cast!(b)))
-	}
-
-	#[inline(always)]
 	fn neg_c32s(self, a: Self::c32s) -> Self::c32s {
 		self.xor_f32s(a, self.splat_f32s(-0.0))
 	}
@@ -826,6 +1037,16 @@ impl Simd for V4 {
 	#[inline(always)]
 	fn neg_c64s(self, a: Self::c64s) -> Self::c64s {
 		self.xor_f64s(a, self.splat_f64s(-0.0))
+	}
+
+	#[inline(always)]
+	fn not_m8s(self, a: Self::m8s) -> Self::m8s {
+		b64(!a.0)
+	}
+
+	#[inline(always)]
+	fn not_m16s(self, a: Self::m16s) -> Self::m16s {
+		b32(!a.0)
 	}
 
 	#[inline(always)]
@@ -839,22 +1060,6 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
-	fn not_u32s(self, a: Self::u32s) -> Self::u32s {
-		cast!(
-			self.avx512f
-				._mm512_xor_si512(self.avx512f._mm512_set1_epi32(-1), cast!(a))
-		)
-	}
-
-	#[inline(always)]
-	fn not_u64s(self, a: Self::u64s) -> Self::u64s {
-		cast!(
-			self.avx512f
-				._mm512_xor_si512(self.avx512f._mm512_set1_epi32(-1), cast!(a))
-		)
-	}
-
-	#[inline(always)]
 	fn or_m32s(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
 		b16(a.0 | b.0)
 	}
@@ -862,16 +1067,6 @@ impl Simd for V4 {
 	#[inline(always)]
 	fn or_m64s(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
 		b8(a.0 | b.0)
-	}
-
-	#[inline(always)]
-	fn or_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
-		cast!(self.avx512f._mm512_or_si512(cast!(a), cast!(b)))
-	}
-
-	#[inline(always)]
-	fn or_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
-		cast!(self.avx512f._mm512_or_si512(cast!(a), cast!(b)))
 	}
 
 	#[inline(always)]
@@ -1105,26 +1300,6 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
-	fn splat_f32s(self, value: f32) -> Self::f32s {
-		cast!(self.avx512f._mm512_set1_ps(value))
-	}
-
-	#[inline(always)]
-	fn splat_f64s(self, value: f64) -> Self::f64s {
-		cast!(self.avx512f._mm512_set1_pd(value))
-	}
-
-	#[inline(always)]
-	fn splat_u32s(self, value: u32) -> Self::u32s {
-		cast!(self.avx512f._mm512_set1_epi32(value as i32))
-	}
-
-	#[inline(always)]
-	fn splat_u64s(self, value: u64) -> Self::u64s {
-		cast!(self.avx512f._mm512_set1_epi64(value as i64))
-	}
-
-	#[inline(always)]
 	fn sub_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		self.sub_f32s(a, b)
 	}
@@ -1132,26 +1307,6 @@ impl Simd for V4 {
 	#[inline(always)]
 	fn sub_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 		self.sub_f64s(a, b)
-	}
-
-	#[inline(always)]
-	fn sub_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-		cast!(self.avx512f._mm512_sub_ps(cast!(a), cast!(b)))
-	}
-
-	#[inline(always)]
-	fn sub_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-		cast!(self.avx512f._mm512_sub_pd(cast!(a), cast!(b)))
-	}
-
-	#[inline(always)]
-	fn sub_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
-		cast!(self.avx512f._mm512_sub_epi32(cast!(a), cast!(b)))
-	}
-
-	#[inline(always)]
-	fn sub_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
-		cast!(self.avx512f._mm512_sub_epi64(cast!(a), cast!(b)))
 	}
 
 	#[inline(always)]
@@ -1205,59 +1360,81 @@ impl Simd for V4 {
 	fn xor_m64s(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
 		b8(a.0 ^ b.0)
 	}
-
-	#[inline(always)]
-	fn xor_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
-		cast!(self.avx512f._mm512_xor_si512(cast!(a), cast!(b)))
-	}
-
-	#[inline(always)]
-	fn xor_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
-		cast!(self.avx512f._mm512_xor_si512(cast!(a), cast!(b)))
-	}
-
-	#[inline(always)]
-	fn greater_than_or_equal_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::m32s {
-		self.cmp_ge_i32x16(a, b)
-	}
-
-	#[inline(always)]
-	fn greater_than_or_equal_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::m64s {
-		self.cmp_ge_i64x8(a, b)
-	}
-
-	#[inline(always)]
-	fn greater_than_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::m32s {
-		self.cmp_gt_i32x16(a, b)
-	}
-
-	#[inline(always)]
-	fn greater_than_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::m64s {
-		self.cmp_gt_i64x8(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_or_equal_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::m32s {
-		self.cmp_le_i32x16(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_or_equal_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::m64s {
-		self.cmp_le_i64x8(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::m32s {
-		self.cmp_lt_i32x16(a, b)
-	}
-
-	#[inline(always)]
-	fn less_than_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::m64s {
-		self.cmp_lt_i64x8(a, b)
-	}
 }
 
 impl V4 {
+	binop_512_nosign!(avx512f: add, "Adds the elements of each lane of `a` and `b`.", f32 x 16, f64 x 8);
+
+	binop_512_nosign!(avx512f: add, "Adds the elements of each lane of `a` and `b`, with wrapping on overflow.", wrapping_add, u32 x 16, i32 x 16, u64 x 8, i64 x 8);
+
+	binop_512_nosign!(avx512bw: add, "Adds the elements of each lane of `a` and `b`, with wrapping on overflow.", wrapping_add, u8 x 64, i8 x 64, u16 x 32, i16 x 32);
+
+	binop_512!(avx512dq: and, "Returns `a & b` for each bit in `a` and `b`.", f32 x 16, f64 x 8);
+
+	binop_512_full!(avx512f: and, "Returns `a & b` for each bit in `a` and `b`.", m8 x 64, u8 x 64, i8 x 64, m16 x 32, u16 x 32, i16 x 32, m32 x 16, u32 x 16, i32 x 16, m64 x 8, u64 x 8, i64 x 8);
+
+	binop_512!(avx512dq: andnot, "Returns `!a & b` for each bit in `a` and `b`.", f32 x 16, f64 x 8);
+
+	binop_512_full!(avx512f: andnot, "Returns `!a & b` for each bit in `a` and `b`.", m8 x 64, u8 x 64, i8 x 64, m16 x 32, u16 x 32, i16 x 32, m32 x 16, u32 x 16, i32 x 16, m64 x 8, u64 x 8, i64 x 8);
+
+	binop_512!(avx512bw: avg, "Computes `average(a, b)` for each lane of `a` and `b`.", average, u8 x 64, u16 x 32);
+
+	binop_512_nosign_mask!(avx512f: cmpeq, "Compares the elements in each lane of `a` and `b` for equality.", cmp_eq, u32 x 16, i32 x 16, u64 x 8, i64 x 8);
+
+	binop_512_nosign_mask!(avx512bw: cmpeq, "Compares the elements in each lane of `a` and `b` for equality.", cmp_eq, u8 x 64, i8 x 64, u16 x 32, i16 x 32);
+
+	binop_512_mask!(avx512f: cmpgt, "Compares the elements in each lane of `a` and `b` for equality.", cmp_gt, u32 x 16, i32 x 16, u64 x 8, i64 x 8);
+
+	binop_512_mask!(avx512bw: cmpgt, "Compares the elements in each lane of `a` and `b` for equality.", cmp_gt, u8 x 64, i8 x 64, u16 x 32, i16 x 32);
+
+	binop_512!(avx512f: div, "Divides the elements of each lane of `a` and `b`.", f32 x 16, f64 x 8);
+
+	binop_128!(avx512f: max, "Computes `max(a, b)`. for each lane in `a` and `b`.", u64 x 2, i64 x 2);
+
+	binop_256!(avx512f: max, "Computes `max(a, b)`. for each lane in `a` and `b`.", u64 x 4, i64 x 4);
+
+	binop_512!(avx512f: max, "Computes `max(a, b)`. for each lane in `a` and `b`.", u32 x 16, i32 x 16, u64 x 8, i64 x 8, f32 x 16, f64 x 8);
+
+	binop_512!(avx512bw: max, "Computes `max(a, b)`. for each lane in `a` and `b`.", u8 x 64, i8 x 64, u16 x 32, i16 x 32);
+
+	binop_256!(avx512f: min, "Computes `min(a, b)`. for each lane in `a` and `b`.", u64 x 4, i64 x 4);
+
+	binop_512!(avx512f: min, "Computes `min(a, b)`. for each lane in `a` and `b`.", u32 x 16, i32 x 16, u64 x 8, i64 x 8, f32 x 16, f64 x 8);
+
+	binop_512!(avx512bw: min, "Computes `min(a, b)`. for each lane in `a` and `b`.", u8 x 64, i8 x 64, u16 x 32, i16 x 32);
+
+	binop_512!(avx512f: mul, "Computes `a * b` for each lane in `a` and `b`.", f32 x 16, f64 x 8);
+
+	binop_512_nosign!(avx512f: mullo, "Computes `a * b` for each lane in `a` and `b`, with wrapping overflow.", wrapping_mul, u32 x 16, i32 x 16);
+
+	binop_512_nosign!(avx512bw: mullo, "Computes `a * b` for each lane in `a` and `b`, with wrapping overflow.", wrapping_mul, u16 x 32, i16 x 32);
+
+	binop_512_nosign!(avx512dq: mullo, "Computes `a * b` for each lane in `a` and `b`, with wrapping overflow.", wrapping_mul, u64 x 8, i64 x 8);
+
+	binop_512!(avx512dq: or, "Returns `a | b` for each bit in `a` and `b`.", f32 x 16, f64 x 8);
+
+	binop_512_full!(avx512f: or, "Returns `a | b` for each bit in `a` and `b`.", u8 x 64, i8 x 64, u16 x 32, i16 x 32, u32 x 16, i32 x 16, u64 x 8, i64 x 8);
+
+	binop_512!(avx512bw: adds, "Adds the elements of each lane of `a` and `b`, with saturation.", saturating_add, u8 x 64, i8 x 64, u16 x 32, i16 x 32);
+
+	binop_512!(avx512bw: subs, "Subtracts the elements of each lane of `a` and `b`, with saturation.", saturating_sub, u8 x 64, i8 x 64, u16 x 32, i16 x 32);
+
+	binop_512_nosign!(avx512f: sub, "Subtracts the elements of each lane of `a` and `b`.", f32 x 16, f64 x 8);
+
+	binop_512_nosign!(avx512f: sub, "Subtracts the elements of each lane of `a` and `b`, with wrapping overflow.", wrapping_sub, u32 x 16, i32 x 16, u64 x 8, i64 x 8);
+
+	binop_512_nosign!(avx512bw: sub, "Subtracts the elements of each lane of `a` and `b`, with wrapping overflow.", wrapping_sub, u8 x 64, i8 x 64, u16 x 32, i16 x 32);
+
+	unop_256!(avx512f: abs, "Computes the unsigned absolute value of the elements of each lane of `a`.", unsigned_abs, i64 x 4);
+
+	unop_512!(avx512f: abs, "Computes the unsigned absolute value of the elements of each lane of `a`.", unsigned_abs, i32 x 16, i64 x 8);
+
+	unop_512!(avx512bw: abs, "Computes the unsigned absolute value of the elements of each lane of `a`.", unsigned_abs, i8 x 64, i16 x 32);
+
+	binop_512!(avx512dq: xor, "Returns `a ^ b` for each bit in `a` and `b`.", f32 x 16, f64 x 8);
+
+	binop_512_full!(avx512f: xor, "Returns `a ^ b` for each bit in `a` and `b`.", u8 x 64, i8 x 64, u16 x 32, i16 x 32, u32 x 16, i32 x 16, u64 x 8, i64 x 8);
+
 	/// Computes the absolute value of the elements of each lane of `a`.
 	#[inline(always)]
 	pub fn abs_f32x16(self, a: f32x16) -> f32x16 {
@@ -1268,150 +1445,6 @@ impl V4 {
 	#[inline(always)]
 	pub fn abs_f64x8(self, a: f64x8) -> f64x8 {
 		cast!(self.avx512f._mm512_abs_pd(cast!(a)))
-	}
-
-	/// Adds the elements of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn add_f32x16(self, a: f32x16, b: f32x16) -> f32x16 {
-		cast!(self.avx512f._mm512_add_ps(cast!(a), cast!(b)))
-	}
-
-	/// Adds the elements of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn add_f64x8(self, a: f64x8, b: f64x8) -> f64x8 {
-		cast!(self.avx512f._mm512_add_pd(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise AND of `a` and `b`.
-	#[inline(always)]
-	pub fn and_f32x16(self, a: f32x16, b: f32x16) -> f32x16 {
-		cast!(self.avx512f._mm512_and_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise AND of `a` and `b`.
-	#[inline(always)]
-	pub fn and_f64x8(self, a: f64x8, b: f64x8) -> f64x8 {
-		cast!(self.avx512f._mm512_and_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise AND of `a` and `b`.
-	#[inline(always)]
-	pub fn and_i16x32(self, a: i16x32, b: i16x32) -> i16x32 {
-		cast!(self.avx512f._mm512_and_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise AND of `a` and `b`.
-	#[inline(always)]
-	pub fn and_i32x16(self, a: i32x16, b: i32x16) -> i32x16 {
-		cast!(self.avx512f._mm512_and_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise AND of `a` and `b`.
-	#[inline(always)]
-	pub fn and_i64x8(self, a: i64x8, b: i64x8) -> i64x8 {
-		cast!(self.avx512f._mm512_and_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise AND of `a` and `b`.
-	#[inline(always)]
-	pub fn and_i8x64(self, a: i8x64, b: i8x64) -> i8x64 {
-		cast!(self.avx512f._mm512_and_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise AND of `a` and `b`.
-	#[inline(always)]
-	pub fn and_u16x32(self, a: u16x32, b: u16x32) -> u16x32 {
-		cast!(self.avx512f._mm512_and_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise AND of `a` and `b`.
-	#[inline(always)]
-	pub fn and_u32x16(self, a: u32x16, b: u32x16) -> u32x16 {
-		cast!(self.avx512f._mm512_and_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise AND of `a` and `b`.
-	#[inline(always)]
-	pub fn and_u64x8(self, a: u64x8, b: u64x8) -> u64x8 {
-		cast!(self.avx512f._mm512_and_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise AND of `a` and `b`.
-	#[inline(always)]
-	pub fn and_u8x64(self, a: u8x64, b: u8x64) -> u8x64 {
-		cast!(self.avx512f._mm512_and_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise AND of NOT `a` and `b`.
-	#[inline(always)]
-	pub fn andnot_f32x16(self, a: f32x16, b: f32x16) -> f32x16 {
-		cast!(self.avx512f._mm512_andnot_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise AND of NOT `a` and `b`.
-	#[inline(always)]
-	pub fn andnot_f64x8(self, a: f64x8, b: f64x8) -> f64x8 {
-		cast!(self.avx512f._mm512_andnot_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise AND of NOT `a` and `b`.
-	#[inline(always)]
-	pub fn andnot_i16x32(self, a: i16x32, b: i16x32) -> i16x32 {
-		cast!(self.avx512f._mm512_andnot_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise AND of NOT `a` and `b`.
-	#[inline(always)]
-	pub fn andnot_i32x16(self, a: i32x16, b: i32x16) -> i32x16 {
-		cast!(self.avx512f._mm512_andnot_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise AND of NOT `a` and `b`.
-	#[inline(always)]
-	pub fn andnot_i64x8(self, a: i64x8, b: i64x8) -> i64x8 {
-		cast!(self.avx512f._mm512_andnot_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise AND of NOT `a` and `b`.
-	#[inline(always)]
-	pub fn andnot_i8x64(self, a: i8x64, b: i8x64) -> i8x64 {
-		cast!(self.avx512f._mm512_andnot_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise AND of NOT `a` and `b`.
-	#[inline(always)]
-	pub fn andnot_u16x32(self, a: u16x32, b: u16x32) -> u16x32 {
-		cast!(self.avx512f._mm512_andnot_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise AND of NOT `a` and `b`.
-	#[inline(always)]
-	pub fn andnot_u32x16(self, a: u32x16, b: u32x16) -> u32x16 {
-		cast!(self.avx512f._mm512_andnot_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise AND of NOT `a` and `b`.
-	#[inline(always)]
-	pub fn andnot_u64x8(self, a: u64x8, b: u64x8) -> u64x8 {
-		cast!(self.avx512f._mm512_andnot_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise AND of NOT `a` and `b`.
-	#[inline(always)]
-	pub fn andnot_u8x64(self, a: u8x64, b: u8x64) -> u8x64 {
-		cast!(self.avx512f._mm512_andnot_si512(cast!(a), cast!(b)))
-	}
-
-	/// Averages the elements of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn average_u16x32(self, a: u16x32, b: u16x32) -> u16x32 {
-		cast!(self.avx512bw._mm512_avg_epu16(cast!(a), cast!(b)))
-	}
-
-	/// Averages the elements of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn average_u8x64(self, a: u8x64, b: u8x64) -> u8x64 {
-		cast!(self.avx512bw._mm512_avg_epu8(cast!(a), cast!(b)))
 	}
 
 	/// Rounds the elements of each lane of `a` to the nearest integer towards positive infinity.
@@ -1477,18 +1510,6 @@ impl V4 {
 
 	/// Compares the elements in each lane of `a` and `b` for equality.
 	#[inline(always)]
-	pub fn cmp_eq_i16x32(self, a: i16x32, b: i16x32) -> b32 {
-		cast!(self.avx512bw._mm512_cmpeq_epi16_mask(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
-	pub fn cmp_eq_i32x16(self, a: i32x16, b: i32x16) -> b16 {
-		cast!(self.avx512f._mm512_cmpeq_epi32_mask(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
 	pub fn cmp_eq_i32x8(self, a: i32x8, b: i32x8) -> b8 {
 		let simd = self.avx512f;
 		cast!(simd._mm256_cmpeq_epi32_mask(cast!(a), cast!(b)))
@@ -1503,12 +1524,6 @@ impl V4 {
 
 	/// Compares the elements in each lane of `a` and `b` for equality.
 	#[inline(always)]
-	pub fn cmp_eq_i64x8(self, a: i64x8, b: i64x8) -> b8 {
-		cast!(self.avx512f._mm512_cmpeq_epi64_mask(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
 	pub fn cmp_eq_i8x32(self, a: i8x32, b: i8x32) -> b32 {
 		let simd = self.avx512bw;
 		cast!(simd._mm256_cmpeq_epi8_mask(cast!(a), cast!(b)))
@@ -1516,27 +1531,9 @@ impl V4 {
 
 	/// Compares the elements in each lane of `a` and `b` for equality.
 	#[inline(always)]
-	pub fn cmp_eq_i8x64(self, a: i8x64, b: i8x64) -> b64 {
-		cast!(self.avx512bw._mm512_cmpeq_epi8_mask(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
 	pub fn cmp_eq_u16x16(self, a: u16x16, b: u16x16) -> b16 {
 		let simd = self.avx512bw;
 		cast!(simd._mm256_cmpeq_epi16_mask(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
-	pub fn cmp_eq_u16x32(self, a: u16x32, b: u16x32) -> b32 {
-		cast!(self.avx512bw._mm512_cmpeq_epi16_mask(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
-	pub fn cmp_eq_u32x16(self, a: u32x16, b: u32x16) -> b16 {
-		cast!(self.avx512f._mm512_cmpeq_epi32_mask(cast!(a), cast!(b)))
 	}
 
 	/// Compares the elements in each lane of `a` and `b` for equality.
@@ -1555,21 +1552,9 @@ impl V4 {
 
 	/// Compares the elements in each lane of `a` and `b` for equality.
 	#[inline(always)]
-	pub fn cmp_eq_u64x8(self, a: u64x8, b: u64x8) -> b8 {
-		cast!(self.avx512f._mm512_cmpeq_epi64_mask(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
 	pub fn cmp_eq_u8x32(self, a: u8x32, b: u8x32) -> b32 {
 		let simd = self.avx512bw;
 		cast!(simd._mm256_cmpeq_epi8_mask(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for equality.
-	#[inline(always)]
-	pub fn cmp_eq_u8x64(self, a: u8x64, b: u8x64) -> b64 {
-		cast!(self.avx512bw._mm512_cmpeq_epi8_mask(cast!(a), cast!(b)))
 	}
 
 	/// Compares the elements in each lane of `a` and `b` for greater-than-or-equal-to.
@@ -1757,18 +1742,6 @@ impl V4 {
 
 	/// Compares the elements in each lane of `a` and `b` for greater-than.
 	#[inline(always)]
-	pub fn cmp_gt_i16x32(self, a: i16x32, b: i16x32) -> b32 {
-		cast!(self.avx512bw._mm512_cmpgt_epi16_mask(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than.
-	#[inline(always)]
-	pub fn cmp_gt_i32x16(self, a: i32x16, b: i32x16) -> b16 {
-		cast!(self.avx512f._mm512_cmpgt_epi32_mask(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than.
-	#[inline(always)]
 	pub fn cmp_gt_i32x8(self, a: i32x8, b: i32x8) -> b8 {
 		let simd = self.avx512f;
 		cast!(simd._mm256_cmpgt_epi32_mask(cast!(a), cast!(b)))
@@ -1783,12 +1756,6 @@ impl V4 {
 
 	/// Compares the elements in each lane of `a` and `b` for greater-than.
 	#[inline(always)]
-	pub fn cmp_gt_i64x8(self, a: i64x8, b: i64x8) -> b8 {
-		cast!(self.avx512f._mm512_cmpgt_epi64_mask(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than.
-	#[inline(always)]
 	pub fn cmp_gt_i8x32(self, a: i8x32, b: i8x32) -> b32 {
 		let simd = self.avx512bw;
 		cast!(simd._mm256_cmpgt_epi8_mask(cast!(a), cast!(b)))
@@ -1796,27 +1763,9 @@ impl V4 {
 
 	/// Compares the elements in each lane of `a` and `b` for greater-than.
 	#[inline(always)]
-	pub fn cmp_gt_i8x64(self, a: i8x64, b: i8x64) -> b64 {
-		cast!(self.avx512bw._mm512_cmpgt_epi8_mask(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than.
-	#[inline(always)]
 	pub fn cmp_gt_u16x16(self, a: u16x16, b: u16x16) -> b16 {
 		let simd = self.avx512bw;
 		cast!(simd._mm256_cmpgt_epu16_mask(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than.
-	#[inline(always)]
-	pub fn cmp_gt_u16x32(self, a: u16x32, b: u16x32) -> b32 {
-		cast!(self.avx512bw._mm512_cmpgt_epu16_mask(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than.
-	#[inline(always)]
-	pub fn cmp_gt_u32x16(self, a: u32x16, b: u32x16) -> b16 {
-		cast!(self.avx512f._mm512_cmpgt_epu32_mask(cast!(a), cast!(b)))
 	}
 
 	/// Compares the elements in each lane of `a` and `b` for greater-than.
@@ -1835,21 +1784,9 @@ impl V4 {
 
 	/// Compares the elements in each lane of `a` and `b` for greater-than.
 	#[inline(always)]
-	pub fn cmp_gt_u64x8(self, a: u64x8, b: u64x8) -> b8 {
-		cast!(self.avx512f._mm512_cmpgt_epu64_mask(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than.
-	#[inline(always)]
 	pub fn cmp_gt_u8x32(self, a: u8x32, b: u8x32) -> b32 {
 		let simd = self.avx512bw;
 		cast!(simd._mm256_cmpgt_epu8_mask(cast!(a), cast!(b)))
-	}
-
-	/// Compares the elements in each lane of `a` and `b` for greater-than.
-	#[inline(always)]
-	pub fn cmp_gt_u8x64(self, a: u8x64, b: u8x64) -> b64 {
-		cast!(self.avx512bw._mm512_cmpgt_epu8_mask(cast!(a), cast!(b)))
 	}
 
 	/// Compares the elements in each lane of `a` and `b` for less-than-or-equal-to.
@@ -3080,18 +3017,6 @@ impl V4 {
 		cast!(a)
 	}
 
-	/// Divides the elements of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn div_f32x16(self, a: f32x16, b: f32x16) -> f32x16 {
-		cast!(self.avx512f._mm512_div_ps(cast!(a), cast!(b)))
-	}
-
-	/// Divides the elements of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn div_f64x8(self, a: f64x8, b: f64x8) -> f64x8 {
-		cast!(self.avx512f._mm512_div_pd(cast!(a), cast!(b)))
-	}
-
 	/// Rounds the elements of each lane of `a` to the nearest integer towards negative infinity.
 	#[inline(always)]
 	pub fn floor_f32x16(self, a: f32x16) -> f32x16 {
@@ -3182,166 +3107,10 @@ impl V4 {
 		)
 	}
 
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn max_f32x16(self, a: f32x16, b: f32x16) -> f32x16 {
-		cast!(self.avx512f._mm512_max_ps(cast!(a), cast!(b)))
-	}
-
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn max_f64x8(self, a: f64x8, b: f64x8) -> f64x8 {
-		cast!(self.avx512f._mm512_max_pd(cast!(a), cast!(b)))
-	}
-
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn max_i16x32(self, a: i16x32, b: i16x32) -> i16x32 {
-		cast!(self.avx512bw._mm512_max_epi16(cast!(a), cast!(b)))
-	}
-
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn max_i32x16(self, a: i32x16, b: i32x16) -> i32x16 {
-		cast!(self.avx512f._mm512_max_epi32(cast!(a), cast!(b)))
-	}
-
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn max_i64x2(self, a: i64x2, b: i64x2) -> i64x2 {
-		cast!(self.avx512f._mm_max_epi64(cast!(a), cast!(b)))
-	}
-
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn max_i64x4(self, a: i64x4, b: i64x4) -> i64x4 {
-		cast!(self.avx512f._mm256_max_epi64(cast!(a), cast!(b)))
-	}
-
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn max_i64x8(self, a: i64x8, b: i64x8) -> i64x8 {
-		cast!(self.avx512f._mm512_max_epi64(cast!(a), cast!(b)))
-	}
-
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn max_i8x64(self, a: i8x64, b: i8x64) -> i8x64 {
-		cast!(self.avx512bw._mm512_max_epi8(cast!(a), cast!(b)))
-	}
-
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn max_u16x32(self, a: u16x32, b: u16x32) -> u16x32 {
-		cast!(self.avx512bw._mm512_max_epu16(cast!(a), cast!(b)))
-	}
-
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn max_u32x16(self, a: u32x16, b: u32x16) -> u32x16 {
-		cast!(self.avx512f._mm512_max_epu32(cast!(a), cast!(b)))
-	}
-
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn max_u64x2(self, a: u64x2, b: u64x2) -> u64x2 {
-		cast!(self.avx512f._mm_max_epu64(cast!(a), cast!(b)))
-	}
-
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn max_u64x4(self, a: u64x4, b: u64x4) -> u64x4 {
-		cast!(self.avx512f._mm256_max_epu64(cast!(a), cast!(b)))
-	}
-
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn max_u64x8(self, a: u64x8, b: u64x8) -> u64x8 {
-		cast!(self.avx512f._mm512_max_epu64(cast!(a), cast!(b)))
-	}
-
-	/// Computes the elementwise maximum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn max_u8x64(self, a: u8x64, b: u8x64) -> u8x64 {
-		cast!(self.avx512bw._mm512_max_epu8(cast!(a), cast!(b)))
-	}
-
-	/// Computes the elementwise minimum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn min_f32x16(self, a: f32x16, b: f32x16) -> f32x16 {
-		cast!(self.avx512f._mm512_min_ps(cast!(a), cast!(b)))
-	}
-
-	/// Computes the elementwise minimum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn min_f64x8(self, a: f64x8, b: f64x8) -> f64x8 {
-		cast!(self.avx512f._mm512_min_pd(cast!(a), cast!(b)))
-	}
-
-	/// Computes the elementwise minimum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn min_i16x32(self, a: i16x32, b: i16x32) -> i16x32 {
-		cast!(self.avx512bw._mm512_min_epi16(cast!(a), cast!(b)))
-	}
-
-	/// Computes the elementwise minimum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn min_i32x16(self, a: i32x16, b: i32x16) -> i32x16 {
-		cast!(self.avx512f._mm512_min_epi32(cast!(a), cast!(b)))
-	}
-
-	/// Computes the elementwise minimum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn min_i64x4(self, a: i64x4, b: i64x4) -> i64x4 {
-		cast!(self.avx512f._mm256_min_epi64(cast!(a), cast!(b)))
-	}
-
-	/// Computes the elementwise minimum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn min_i64x8(self, a: i64x8, b: i64x8) -> i64x8 {
-		cast!(self.avx512f._mm512_min_epi64(cast!(a), cast!(b)))
-	}
-
-	/// Computes the elementwise minimum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn min_i8x64(self, a: i8x64, b: i8x64) -> i8x64 {
-		cast!(self.avx512bw._mm512_min_epi8(cast!(a), cast!(b)))
-	}
-
-	/// Computes the elementwise minimum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn min_u16x32(self, a: u16x32, b: u16x32) -> u16x32 {
-		cast!(self.avx512bw._mm512_min_epu16(cast!(a), cast!(b)))
-	}
-
-	/// Computes the elementwise minimum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn min_u32x16(self, a: u32x16, b: u32x16) -> u32x16 {
-		cast!(self.avx512f._mm512_min_epu32(cast!(a), cast!(b)))
-	}
-
 	/// Computes the elementwise minimum of each lane of `a` and `b`.
 	#[inline(always)]
 	pub fn min_u64x2(self, a: u64x2, b: u64x2) -> u64x2 {
 		cast!(self.avx512f._mm_min_epu64(cast!(a), cast!(b)))
-	}
-
-	/// Computes the elementwise minimum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn min_u64x4(self, a: u64x4, b: u64x4) -> u64x4 {
-		cast!(self.avx512f._mm256_min_epu64(cast!(a), cast!(b)))
-	}
-
-	/// Computes the elementwise minimum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn min_u64x8(self, a: u64x8, b: u64x8) -> u64x8 {
-		cast!(self.avx512f._mm512_min_epu64(cast!(a), cast!(b)))
-	}
-
-	/// Computes the elementwise minimum of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn min_u8x64(self, a: u8x64, b: u8x64) -> u8x64 {
-		cast!(self.avx512bw._mm512_min_epu8(cast!(a), cast!(b)))
 	}
 
 	/// Multiplies the elements in each lane of `a` and `b`, and adds the results to each lane of
@@ -3378,18 +3147,6 @@ impl V4 {
 			cast!(b),
 			cast!(self.sub_f64x8(self.splat_f64x8(-0.0), c)),
 		))
-	}
-
-	/// Multiplies the elements of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn mul_f32x16(self, a: f32x16, b: f32x16) -> f32x16 {
-		cast!(self.avx512f._mm512_mul_ps(cast!(a), cast!(b)))
-	}
-
-	/// Multiplies the elements of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn mul_f64x8(self, a: f64x8, b: f64x8) -> f64x8 {
-		cast!(self.avx512f._mm512_mul_pd(cast!(a), cast!(b)))
 	}
 
 	/// Multiplies the elements in each lane of `a` and `b`, and subtracts each lane of `c` from
@@ -3514,66 +3271,6 @@ impl V4 {
 		self.xor_u8x64(a, self.splat_u8x64(!0))
 	}
 
-	/// Returns the bitwise OR of `a` and `b`.
-	#[inline(always)]
-	pub fn or_f32x16(self, a: f32x16, b: f32x16) -> f32x16 {
-		cast!(self.avx512f._mm512_or_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise OR of `a` and `b`.
-	#[inline(always)]
-	pub fn or_f64x8(self, a: f64x8, b: f64x8) -> f64x8 {
-		cast!(self.avx512f._mm512_or_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise OR of `a` and `b`.
-	#[inline(always)]
-	pub fn or_i16x32(self, a: i16x32, b: i16x32) -> i16x32 {
-		cast!(self.avx512f._mm512_or_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise OR of `a` and `b`.
-	#[inline(always)]
-	pub fn or_i32x16(self, a: i32x16, b: i32x16) -> i32x16 {
-		cast!(self.avx512f._mm512_or_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise OR of `a` and `b`.
-	#[inline(always)]
-	pub fn or_i64x8(self, a: i64x8, b: i64x8) -> i64x8 {
-		cast!(self.avx512f._mm512_or_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise OR of `a` and `b`.
-	#[inline(always)]
-	pub fn or_i8x64(self, a: i8x64, b: i8x64) -> i8x64 {
-		cast!(self.avx512f._mm512_or_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise OR of `a` and `b`.
-	#[inline(always)]
-	pub fn or_u16x32(self, a: u16x32, b: u16x32) -> u16x32 {
-		cast!(self.avx512f._mm512_or_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise OR of `a` and `b`.
-	#[inline(always)]
-	pub fn or_u32x16(self, a: u32x16, b: u32x16) -> u32x16 {
-		cast!(self.avx512f._mm512_or_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise OR of `a` and `b`.
-	#[inline(always)]
-	pub fn or_u64x8(self, a: u64x8, b: u64x8) -> u64x8 {
-		cast!(self.avx512f._mm512_or_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise OR of `a` and `b`.
-	#[inline(always)]
-	pub fn or_u8x64(self, a: u8x64, b: u8x64) -> u8x64 {
-		cast!(self.avx512f._mm512_or_si512(cast!(a), cast!(b)))
-	}
-
 	/// See `_mm512_packs_epi16`
 	#[inline(always)]
 	pub fn pack_with_signed_saturation_i16x32(self, a: i16x32, b: i16x32) -> i8x64 {
@@ -3616,54 +3313,6 @@ impl V4 {
 			self.avx512f
 				._mm512_roundscale_pd::<_MM_FROUND_TO_NEAREST_INT>(cast!(a)),
 		)
-	}
-
-	/// Adds the elements of each lane of `a` and `b`, with saturation.
-	#[inline(always)]
-	pub fn saturating_add_i16x32(self, a: i16x32, b: i16x32) -> i16x32 {
-		cast!(self.avx512bw._mm512_adds_epi16(cast!(a), cast!(b)))
-	}
-
-	/// Adds the elements of each lane of `a` and `b`, with saturation.
-	#[inline(always)]
-	pub fn saturating_add_i8x64(self, a: i8x64, b: i8x64) -> i8x64 {
-		cast!(self.avx512bw._mm512_adds_epi8(cast!(a), cast!(b)))
-	}
-
-	/// Adds the elements of each lane of `a` and `b`, with saturation.
-	#[inline(always)]
-	pub fn saturating_add_u16x32(self, a: u16x32, b: u16x32) -> u16x32 {
-		cast!(self.avx512bw._mm512_adds_epu16(cast!(a), cast!(b)))
-	}
-
-	/// Adds the elements of each lane of `a` and `b`, with saturation.
-	#[inline(always)]
-	pub fn saturating_add_u8x64(self, a: u8x64, b: u8x64) -> u8x64 {
-		cast!(self.avx512bw._mm512_adds_epu8(cast!(a), cast!(b)))
-	}
-
-	/// Subtracts the elements of each lane of `a` and `b`, with saturation.
-	#[inline(always)]
-	pub fn saturating_sub_i16x32(self, a: i16x32, b: i16x32) -> i16x32 {
-		cast!(self.avx512bw._mm512_subs_epi16(cast!(a), cast!(b)))
-	}
-
-	/// Subtracts the elements of each lane of `a` and `b`, with saturation.
-	#[inline(always)]
-	pub fn saturating_sub_i8x64(self, a: i8x64, b: i8x64) -> i8x64 {
-		cast!(self.avx512bw._mm512_subs_epi8(cast!(a), cast!(b)))
-	}
-
-	/// Subtracts the elements of each lane of `a` and `b`, with saturation.
-	#[inline(always)]
-	pub fn saturating_sub_u16x32(self, a: u16x32, b: u16x32) -> u16x32 {
-		cast!(self.avx512bw._mm512_subs_epu16(cast!(a), cast!(b)))
-	}
-
-	/// Subtracts the elements of each lane of `a` and `b`, with saturation.
-	#[inline(always)]
-	pub fn saturating_sub_u8x64(self, a: u8x64, b: u8x64) -> u8x64 {
-		cast!(self.avx512bw._mm512_subs_epu8(cast!(a), cast!(b)))
 	}
 
 	/// Combines `if_true` and `if_false`, selecting elements from `if_true` if the corresponding
@@ -4342,18 +3991,6 @@ impl V4 {
 		cast!(self.avx512f._mm512_sqrt_pd(cast!(a)))
 	}
 
-	/// Subtracts the elements of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn sub_f32x16(self, a: f32x16, b: f32x16) -> f32x16 {
-		cast!(self.avx512f._mm512_sub_ps(cast!(a), cast!(b)))
-	}
-
-	/// Subtracts the elements of each lane of `a` and `b`.
-	#[inline(always)]
-	pub fn sub_f64x8(self, a: f64x8, b: f64x8) -> f64x8 {
-		cast!(self.avx512f._mm512_sub_pd(cast!(a), cast!(b)))
-	}
-
 	/// See `_mm512_sad_epu8`
 	#[inline(always)]
 	pub fn sum_of_absolute_differences_u8x64(self, a: u8x64, b: u8x64) -> u64x8 {
@@ -4376,36 +4013,6 @@ impl V4 {
 			self.avx512f
 				._mm512_roundscale_pd::<_MM_FROUND_TO_ZERO>(cast!(a)),
 		)
-	}
-
-	/// Computes the unsigned absolute value of the elements of each lane of `a`.
-	#[inline(always)]
-	pub fn unsigned_abs_i16x32(self, a: i16x32) -> u16x32 {
-		cast!(self.avx512bw._mm512_abs_epi16(cast!(a)))
-	}
-
-	/// Computes the unsigned absolute value of the elements of each lane of `a`.
-	#[inline(always)]
-	pub fn unsigned_abs_i32x16(self, a: i32x16) -> u32x16 {
-		cast!(self.avx512f._mm512_abs_epi32(cast!(a)))
-	}
-
-	/// Computes the unsigned absolute value of the elements of each lane of `a`.
-	#[inline(always)]
-	pub fn unsigned_abs_i64x4(self, a: i64x4) -> u64x4 {
-		cast!(self.avx512f._mm256_abs_epi64(cast!(a)))
-	}
-
-	/// Computes the unsigned absolute value of the elements of each lane of `a`.
-	#[inline(always)]
-	pub fn unsigned_abs_i64x8(self, a: i64x8) -> u64x8 {
-		cast!(self.avx512f._mm512_abs_epi64(cast!(a)))
-	}
-
-	/// Computes the unsigned absolute value of the elements of each lane of `a`.
-	#[inline(always)]
-	pub fn unsigned_abs_i8x64(self, a: i8x64) -> u8x64 {
-		cast!(self.avx512bw._mm512_abs_epi8(cast!(a)))
 	}
 
 	/// Multiplies the elements of each lane of `a` and `b`, and returns separately the low and
@@ -4494,198 +4101,6 @@ impl V4 {
 		);
 
 		(cast!(ab_lo), cast!(ab_hi))
-	}
-
-	/// Adds the elements of each lane of `a` and `b`, with wrapping on overflow.
-	#[inline(always)]
-	pub fn wrapping_add_i16x32(self, a: i16x32, b: i16x32) -> i16x32 {
-		cast!(self.avx512bw._mm512_add_epi16(cast!(a), cast!(b)))
-	}
-
-	/// Adds the elements of each lane of `a` and `b`, with wrapping on overflow.
-	#[inline(always)]
-	pub fn wrapping_add_i32x16(self, a: i32x16, b: i32x16) -> i32x16 {
-		cast!(self.avx512f._mm512_add_epi32(cast!(a), cast!(b)))
-	}
-
-	/// Adds the elements of each lane of `a` and `b`, with wrapping on overflow.
-	#[inline(always)]
-	pub fn wrapping_add_i64x8(self, a: i64x8, b: i64x8) -> i64x8 {
-		cast!(self.avx512f._mm512_add_epi64(cast!(a), cast!(b)))
-	}
-
-	/// Adds the elements of each lane of `a` and `b`, with wrapping on overflow.
-	#[inline(always)]
-	pub fn wrapping_add_i8x64(self, a: i8x64, b: i8x64) -> i8x64 {
-		cast!(self.avx512bw._mm512_add_epi8(cast!(a), cast!(b)))
-	}
-
-	/// Adds the elements of each lane of `a` and `b`, with wrapping on overflow.
-	#[inline(always)]
-	pub fn wrapping_add_u16x32(self, a: u16x32, b: u16x32) -> u16x32 {
-		cast!(self.avx512bw._mm512_add_epi16(cast!(a), cast!(b)))
-	}
-
-	/// Adds the elements of each lane of `a` and `b`, with wrapping on overflow.
-	#[inline(always)]
-	pub fn wrapping_add_u32x16(self, a: u32x16, b: u32x16) -> u32x16 {
-		cast!(self.avx512f._mm512_add_epi32(cast!(a), cast!(b)))
-	}
-
-	/// Adds the elements of each lane of `a` and `b`, with wrapping on overflow.
-	#[inline(always)]
-	pub fn wrapping_add_u64x8(self, a: u64x8, b: u64x8) -> u64x8 {
-		cast!(self.avx512f._mm512_add_epi64(cast!(a), cast!(b)))
-	}
-
-	/// Adds the elements of each lane of `a` and `b`, with wrapping on overflow.
-	#[inline(always)]
-	pub fn wrapping_add_u8x64(self, a: u8x64, b: u8x64) -> u8x64 {
-		cast!(self.avx512bw._mm512_add_epi8(cast!(a), cast!(b)))
-	}
-
-	/// Multiplies the elements of each lane of `a` and `b`, with wrapping on overflow.
-	#[inline(always)]
-	pub fn wrapping_mul_i16x32(self, a: i16x32, b: i16x32) -> i16x32 {
-		cast!(self.avx512bw._mm512_mullo_epi16(cast!(a), cast!(b)))
-	}
-
-	/// Multiplies the elements of each lane of `a` and `b`, with wrapping on overflow.
-	#[inline(always)]
-	pub fn wrapping_mul_i32x16(self, a: i32x16, b: i32x16) -> i32x16 {
-		cast!(self.avx512f._mm512_mullo_epi32(cast!(a), cast!(b)))
-	}
-
-	/// Multiplies the elements of each lane of `a` and `b`, with wrapping on overflow.
-	#[inline(always)]
-	pub fn wrapping_mul_i64x8(self, a: i64x8, b: i64x8) -> i64x8 {
-		cast!(self.avx512f._mm512_mullox_epi64(cast!(a), cast!(b)))
-	}
-
-	/// Multiplies the elements of each lane of `a` and `b`, with wrapping on overflow.
-	#[inline(always)]
-	pub fn wrapping_mul_u16x32(self, a: u16x32, b: u16x32) -> u16x32 {
-		cast!(self.avx512bw._mm512_mullo_epi16(cast!(a), cast!(b)))
-	}
-
-	/// Multiplies the elements of each lane of `a` and `b`, with wrapping on overflow.
-	#[inline(always)]
-	pub fn wrapping_mul_u32x16(self, a: u32x16, b: u32x16) -> u32x16 {
-		cast!(self.avx512f._mm512_mullo_epi32(cast!(a), cast!(b)))
-	}
-
-	/// Multiplies the elements of each lane of `a` and `b`, with wrapping on overflow.
-	#[inline(always)]
-	pub fn wrapping_mul_u64x8(self, a: u64x8, b: u64x8) -> u64x8 {
-		cast!(self.avx512f._mm512_mullox_epi64(cast!(a), cast!(b)))
-	}
-
-	/// Subtracts the elements of each lane of `a` and `b`, with wrapping on overflow.
-	#[inline(always)]
-	pub fn wrapping_sub_i16x32(self, a: i16x32, b: i16x32) -> i16x32 {
-		cast!(self.avx512bw._mm512_sub_epi16(cast!(a), cast!(b)))
-	}
-
-	/// Subtracts the elements of each lane of `a` and `b`, with wrapping on overflow.
-	#[inline(always)]
-	pub fn wrapping_sub_i32x16(self, a: i32x16, b: i32x16) -> i32x16 {
-		cast!(self.avx512f._mm512_sub_epi32(cast!(a), cast!(b)))
-	}
-
-	/// Subtracts the elements of each lane of `a` and `b`, with wrapping on overflow.
-	#[inline(always)]
-	pub fn wrapping_sub_i64x8(self, a: i64x8, b: i64x8) -> i64x8 {
-		cast!(self.avx512f._mm512_sub_epi64(cast!(a), cast!(b)))
-	}
-
-	/// Subtracts the elements of each lane of `a` and `b`, with wrapping on overflow.
-	#[inline(always)]
-	pub fn wrapping_sub_i8x64(self, a: i8x64, b: i8x64) -> i8x64 {
-		cast!(self.avx512bw._mm512_sub_epi8(cast!(a), cast!(b)))
-	}
-
-	/// Subtracts the elements of each lane of `a` and `b`, with wrapping on overflow.
-	#[inline(always)]
-	pub fn wrapping_sub_u16x32(self, a: u16x32, b: u16x32) -> u16x32 {
-		cast!(self.avx512bw._mm512_sub_epi16(cast!(a), cast!(b)))
-	}
-
-	/// Subtracts the elements of each lane of `a` and `b`, with wrapping on overflow.
-	#[inline(always)]
-	pub fn wrapping_sub_u32x16(self, a: u32x16, b: u32x16) -> u32x16 {
-		cast!(self.avx512f._mm512_sub_epi32(cast!(a), cast!(b)))
-	}
-
-	/// Subtracts the elements of each lane of `a` and `b`, with wrapping on overflow.
-	#[inline(always)]
-	pub fn wrapping_sub_u64x8(self, a: u64x8, b: u64x8) -> u64x8 {
-		cast!(self.avx512f._mm512_sub_epi64(cast!(a), cast!(b)))
-	}
-
-	/// Subtracts the elements of each lane of `a` and `b`, with wrapping on overflow.
-	#[inline(always)]
-	pub fn wrapping_sub_u8x64(self, a: u8x64, b: u8x64) -> u8x64 {
-		cast!(self.avx512bw._mm512_sub_epi8(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise XOR of `a` and `b`.
-	#[inline(always)]
-	pub fn xor_f32x16(self, a: f32x16, b: f32x16) -> f32x16 {
-		cast!(self.avx512f._mm512_xor_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise XOR of `a` and `b`.
-	#[inline(always)]
-	pub fn xor_f64x8(self, a: f64x8, b: f64x8) -> f64x8 {
-		cast!(self.avx512f._mm512_xor_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise XOR of `a` and `b`.
-	#[inline(always)]
-	pub fn xor_i16x32(self, a: i16x32, b: i16x32) -> i16x32 {
-		cast!(self.avx512f._mm512_xor_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise XOR of `a` and `b`.
-	#[inline(always)]
-	pub fn xor_i32x16(self, a: i32x16, b: i32x16) -> i32x16 {
-		cast!(self.avx512f._mm512_xor_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise XOR of `a` and `b`.
-	#[inline(always)]
-	pub fn xor_i64x8(self, a: i64x8, b: i64x8) -> i64x8 {
-		cast!(self.avx512f._mm512_xor_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise XOR of `a` and `b`.
-	#[inline(always)]
-	pub fn xor_i8x64(self, a: i8x64, b: i8x64) -> i8x64 {
-		cast!(self.avx512f._mm512_xor_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise XOR of `a` and `b`.
-	#[inline(always)]
-	pub fn xor_u16x32(self, a: u16x32, b: u16x32) -> u16x32 {
-		cast!(self.avx512f._mm512_xor_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise XOR of `a` and `b`.
-	#[inline(always)]
-	pub fn xor_u32x16(self, a: u32x16, b: u32x16) -> u32x16 {
-		cast!(self.avx512f._mm512_xor_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise XOR of `a` and `b`.
-	#[inline(always)]
-	pub fn xor_u64x8(self, a: u64x8, b: u64x8) -> u64x8 {
-		cast!(self.avx512f._mm512_xor_si512(cast!(a), cast!(b)))
-	}
-
-	/// Returns the bitwise XOR of `a` and `b`.
-	#[inline(always)]
-	pub fn xor_u8x64(self, a: u8x64, b: u8x64) -> u8x64 {
-		cast!(self.avx512f._mm512_xor_si512(cast!(a), cast!(b)))
 	}
 }
 

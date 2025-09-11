@@ -66,7 +66,10 @@
 	clippy::type_complexity,
 	clippy::missing_transmute_annotations,
 	clippy::tabs_in_doc_comments,
-	clippy::modulo_one
+	clippy::modulo_one,
+	clippy::missing_transmute_annotations,
+	clippy::useless_transmute,
+	clippy::not_unsafe_ptr_arg_deref
 )]
 #![cfg_attr(
 	all(feature = "nightly", any(target_arch = "x86", target_arch = "x86_64")),
@@ -216,13 +219,15 @@ macro_rules! cast {
 	}};
 }
 
-use bytemuck::{AnyBitPattern, NoUninit, Pod, Zeroable};
+use bytemuck::{AnyBitPattern, CheckedBitPattern, NoUninit, Pod, Zeroable, checked};
 use core::fmt::Debug;
 use core::marker::PhantomData;
 use core::mem::MaybeUninit;
 use core::slice::{from_raw_parts, from_raw_parts_mut};
 use num_complex::Complex;
+use paste::paste;
 use seal::Seal;
+use std::ops::*;
 
 /// Requires the first non-lifetime generic parameter, as well as the function's
 /// first input parameter to be the SIMD type.
@@ -236,59 +241,62 @@ pub use {bytemuck, num_complex};
 pub type c32 = Complex<f32>;
 pub type c64 = Complex<f64>;
 
-match_cfg!(item, match cfg!() {
-	const { any(target_arch = "x86_64", target_arch = "x86") } => {
-		#[derive(Debug, Copy, Clone)]
-		pub struct MemMask<T> {
-			mask: T,
-			load: Option<unsafe extern "C" fn()>,
-			store: Option<unsafe extern "C" fn()>,
-		}
+match_cfg!(
+	item,
+	match cfg!() {
+		const { any(target_arch = "x86_64", target_arch = "x86") } => {
+			#[derive(Debug, Copy, Clone)]
+			pub struct MemMask<T> {
+				mask: T,
+				load: Option<unsafe extern "C" fn()>,
+				store: Option<unsafe extern "C" fn()>,
+			}
 
-		impl<T> MemMask<T> {
-			#[inline]
-			pub fn new(mask: T) -> Self {
-				Self {
-					mask,
-					load: None,
-					store: None,
+			impl<T> MemMask<T> {
+				#[inline]
+				pub fn new(mask: T) -> Self {
+					Self {
+						mask,
+						load: None,
+						store: None,
+					}
 				}
 			}
-		}
 
-		impl<T> From<T> for MemMask<T> {
-			#[inline]
-			fn from(value: T) -> Self {
-				Self {
-					mask: value,
-					load: None,
-					store: None,
+			impl<T> From<T> for MemMask<T> {
+				#[inline]
+				fn from(value: T) -> Self {
+					Self {
+						mask: value,
+						load: None,
+						store: None,
+					}
 				}
 			}
-		}
-	},
+		},
 
-	_ => {
-		#[derive(Debug, Copy, Clone)]
-		pub struct MemMask<T> {
-			mask: T,
-		}
-
-		impl<T> MemMask<T> {
-			#[inline]
-			pub fn new(mask: T) -> Self {
-				Self { mask }
+		_ => {
+			#[derive(Debug, Copy, Clone)]
+			pub struct MemMask<T> {
+				mask: T,
 			}
-		}
 
-		impl<T> From<T> for MemMask<T> {
-			#[inline]
-			fn from(value: T) -> Self {
-				Self { mask: value }
+			impl<T> MemMask<T> {
+				#[inline]
+				pub fn new(mask: T) -> Self {
+					Self { mask }
+				}
 			}
-		}
-	},
-});
+
+			impl<T> From<T> for MemMask<T> {
+				#[inline]
+				fn from(value: T) -> Self {
+					Self { mask: value }
+				}
+			}
+		},
+	}
+);
 
 impl<T: Copy> MemMask<T> {
 	#[inline]
@@ -407,6 +415,132 @@ unsafe fn deinterleave_fallback<Unit: Pod, Reg: Pod, SoaReg>(y: SoaReg) -> SoaRe
 	}
 }
 
+macro_rules! define_binop {
+	($func: ident, $ty: ident, $out: ident) => {
+		paste! {
+			fn [<$func _ $ty s>](self, a: Self::[<$ty s>], b: Self::[<$ty s>]) -> Self::[<$out s>];
+		}
+	};
+}
+
+macro_rules! define_binop_all {
+	($func: ident, $($ty: ident),*) => {
+		$(define_binop!($func, $ty, $ty);)*
+	};
+	($func: ident, $($ty: ident => $out: ident),*) => {
+		$(define_binop!($func, $ty, $out);)*
+	};
+}
+
+macro_rules! transmute_binop {
+	($func: ident, $ty: ident, $to: ident) => {
+		paste! {
+			fn [<$func _ $ty s>](self, a: Self::[<$ty s>], b: Self::[<$ty s>]) -> Self::[<$ty s>] {
+				self.[<transmute_ $ty s_ $to s>](
+					self.[<$func _ $to s>](self.[<transmute_ $to s_ $ty s>](a), self.[<transmute_ $to s_ $ty s>](b)),
+				)
+			}
+		}
+	};
+	($func: ident, $($ty: ident => $to: ident),*) => {
+		$(transmute_binop!($func, $ty, $to);)*
+	};
+}
+
+macro_rules! define_unop {
+	($func: ident, $ty: ident, $out: ident) => {
+		paste! {
+			fn [<$func _ $ty s>](self, a: Self::[<$ty s>]) -> Self::[<$out s>];
+		}
+	};
+}
+
+macro_rules! define_unop_all {
+	($func: ident, $($ty: ident),*) => {
+		$(define_unop!($func, $ty, $ty);)*
+	};
+	($func: ident, $($ty: ident => $out: ident),*) => {
+		$(define_unop!($func, $ty, $out);)*
+	};
+}
+
+macro_rules! transmute_unop {
+	($func: ident, $ty: ident, $to: ident) => {
+		paste! {
+			fn [<$func _ $ty s>](self, a: Self::[<$ty s>]) -> Self::[<$ty s>] {
+				self.[<transmute_ $ty s_ $to s>](
+					self.[<$func _ $to s>](self.[<transmute_ $to s_ $ty s>](a)),
+				)
+			}
+		}
+	};
+	($func: ident, $($ty: ident => $to: ident),*) => {
+		$(transmute_unop!($func, $ty, $to);)*
+	};
+}
+
+macro_rules! transmute_cmp {
+	($func: ident, $ty: ident, $to: ident, $out: ident) => {
+		paste! {
+			fn [<$func _ $ty s>](self, a: Self::[<$ty s>], b: Self::[<$ty s>]) -> Self::[<$out s>] {
+				self.[<$func _ $to s>](self.[<transmute_ $to s_ $ty s>](a), self.[<transmute_ $to s_ $ty s>](b))
+			}
+		}
+	};
+	($func: ident, $($ty: ident => $to: ident => $out: ident),*) => {
+		$(transmute_cmp!($func, $ty, $to, $out);)*
+	};
+}
+
+macro_rules! define_splat {
+	($ty: ty) => {
+		paste! {
+			fn [<splat_ $ty s>](self, value: $ty) -> Self::[<$ty s>];
+		}
+	};
+	($($ty: ident),*) => {
+		$(define_splat!($ty);)*
+	};
+}
+
+macro_rules! split_slice {
+	($ty: ident) => {
+		paste! {
+			#[inline(always)]
+			fn [<as_mut_rsimd_ $ty s>](slice: &mut [$ty]) -> (&mut [$ty], &mut [Self::[<$ty s>]]) {
+				unsafe { rsplit_mut_slice(slice) }
+			}
+			#[inline(always)]
+			fn [<as_rsimd_ $ty s>](slice: &[$ty]) -> (&[$ty], &[Self::[<$ty s>]]) {
+				unsafe { rsplit_slice(slice) }
+			}
+			#[inline(always)]
+			fn [<as_mut_simd_ $ty s>](slice: &mut [$ty]) -> (&mut [Self::[<$ty s>]], &mut [$ty]) {
+				unsafe { split_mut_slice(slice) }
+			}
+			#[inline(always)]
+			fn [<as_simd_ $ty s>](slice: &[$ty]) -> (&[Self::[<$ty s>]], &[$ty]) {
+				unsafe { split_slice(slice) }
+			}
+			#[inline(always)]
+			fn [<as_uninit_mut_rsimd_ $ty s>](
+				slice: &mut [MaybeUninit<$ty>],
+			) -> (&mut [MaybeUninit<$ty>], &mut [MaybeUninit<Self::[<$ty s>]>]) {
+				unsafe { rsplit_mut_slice(slice) }
+			}
+			#[inline(always)]
+			fn [<as_uninit_mut_simd_ $ty s>](
+				slice: &mut [MaybeUninit<$ty>],
+			) -> (&mut [MaybeUninit<Self::[<$ty s>]>], &mut [MaybeUninit<$ty>]) {
+				unsafe { split_mut_slice(slice) }
+			}
+		}
+	};
+	($($ty: ident),*) => {
+		$(split_slice!($ty);)*
+	};
+}
+
 /// Types that allow \[de\]interleaving.
 ///
 /// # Safety
@@ -417,25 +551,43 @@ unsafe impl<T: Pod> Interleave for T {}
 pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	const IS_SCALAR: bool = false;
 
+	const M64_LANES: usize = core::mem::size_of::<Self::m64s>() / core::mem::size_of::<m64>();
 	const U64_LANES: usize = core::mem::size_of::<Self::u64s>() / core::mem::size_of::<u64>();
 	const I64_LANES: usize = core::mem::size_of::<Self::i64s>() / core::mem::size_of::<i64>();
 	const F64_LANES: usize = core::mem::size_of::<Self::f64s>() / core::mem::size_of::<f64>();
 	const C64_LANES: usize = core::mem::size_of::<Self::c64s>() / core::mem::size_of::<c64>();
 
+	const M32_LANES: usize = core::mem::size_of::<Self::m32s>() / core::mem::size_of::<m32>();
 	const U32_LANES: usize = core::mem::size_of::<Self::u32s>() / core::mem::size_of::<u32>();
 	const I32_LANES: usize = core::mem::size_of::<Self::i32s>() / core::mem::size_of::<i32>();
 	const F32_LANES: usize = core::mem::size_of::<Self::f32s>() / core::mem::size_of::<f32>();
 	const C32_LANES: usize = core::mem::size_of::<Self::c32s>() / core::mem::size_of::<c32>();
 
+	const M16_LANES: usize = core::mem::size_of::<Self::m16s>() / core::mem::size_of::<m16>();
+	const U16_LANES: usize = core::mem::size_of::<Self::u16s>() / core::mem::size_of::<u16>();
+	const I16_LANES: usize = core::mem::size_of::<Self::i16s>() / core::mem::size_of::<i16>();
+
+	const M8_LANES: usize = core::mem::size_of::<Self::m8s>() / core::mem::size_of::<m8>();
+	const U8_LANES: usize = core::mem::size_of::<Self::u8s>() / core::mem::size_of::<u8>();
+	const I8_LANES: usize = core::mem::size_of::<Self::i8s>() / core::mem::size_of::<i8>();
+
 	const REGISTER_COUNT: usize;
 
-	type m32s: Debug + Copy + Send + Sync + Zeroable + NoUninit + 'static;
+	type m8s: Debug + Copy + Send + Sync + Zeroable + NoUninit + CheckedBitPattern + 'static;
+	type i8s: Debug + Copy + Send + Sync + Pod + 'static;
+	type u8s: Debug + Copy + Send + Sync + Pod + 'static;
+
+	type m16s: Debug + Copy + Send + Sync + Zeroable + NoUninit + CheckedBitPattern + 'static;
+	type i16s: Debug + Copy + Send + Sync + Pod + 'static;
+	type u16s: Debug + Copy + Send + Sync + Pod + 'static;
+
+	type m32s: Debug + Copy + Send + Sync + Zeroable + NoUninit + CheckedBitPattern + 'static;
 	type f32s: Debug + Copy + Send + Sync + Pod + 'static;
 	type c32s: Debug + Copy + Send + Sync + Pod + 'static;
 	type i32s: Debug + Copy + Send + Sync + Pod + 'static;
 	type u32s: Debug + Copy + Send + Sync + Pod + 'static;
 
-	type m64s: Debug + Copy + Send + Sync + Zeroable + NoUninit + 'static;
+	type m64s: Debug + Copy + Send + Sync + Zeroable + NoUninit + CheckedBitPattern + 'static;
 	type f64s: Debug + Copy + Send + Sync + Pod + 'static;
 	type c64s: Debug + Copy + Send + Sync + Pod + 'static;
 	type i64s: Debug + Copy + Send + Sync + Pod + 'static;
@@ -458,286 +610,46 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	fn abs_max_c32s(self, a: Self::c32s) -> Self::c32s;
 	/// Contains the max norm in both the real and imaginary components.
 	fn abs_max_c64s(self, a: Self::c64s) -> Self::c64s;
-	fn add_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s;
-	fn add_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s;
-	fn add_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
-	fn add_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
-	#[inline]
-	fn add_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::i32s {
-		self.transmute_i32s_u32s(
-			self.add_u32s(self.transmute_u32s_i32s(a), self.transmute_u32s_i32s(b)),
-		)
-	}
-	#[inline]
-	fn add_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::i64s {
-		self.transmute_i64s_u64s(
-			self.add_u64s(self.transmute_u64s_i64s(a), self.transmute_u64s_i64s(b)),
-		)
-	}
-	fn add_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s;
-	fn add_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s;
-	#[inline]
-	fn and_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-		self.transmute_f32s_u32s(
-			self.and_u32s(self.transmute_u32s_f32s(a), self.transmute_u32s_f32s(b)),
-		)
-	}
-	#[inline]
-	fn and_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-		self.transmute_f64s_u64s(
-			self.and_u64s(self.transmute_u64s_f64s(a), self.transmute_u64s_f64s(b)),
-		)
-	}
-	#[inline]
-	fn and_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::i32s {
-		self.transmute_i32s_u32s(
-			self.and_u32s(self.transmute_u32s_i32s(a), self.transmute_u32s_i32s(b)),
-		)
-	}
-	#[inline]
-	fn and_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::i64s {
-		self.transmute_i64s_u64s(
-			self.and_u64s(self.transmute_u64s_i64s(a), self.transmute_u64s_i64s(b)),
-		)
-	}
-	fn and_m32s(self, a: Self::m32s, b: Self::m32s) -> Self::m32s;
-	fn and_m64s(self, a: Self::m64s, b: Self::m64s) -> Self::m64s;
-	fn and_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s;
-	fn and_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s;
-	#[inline(always)]
-	fn as_mut_rsimd_c32s(slice: &mut [c32]) -> (&mut [c32], &mut [Self::c32s]) {
-		unsafe { rsplit_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_mut_rsimd_c64s(slice: &mut [c64]) -> (&mut [c64], &mut [Self::c64s]) {
-		unsafe { rsplit_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_mut_rsimd_f32s(slice: &mut [f32]) -> (&mut [f32], &mut [Self::f32s]) {
-		unsafe { rsplit_mut_slice(slice) }
-	}
 
-	#[inline(always)]
-	fn as_mut_rsimd_f64s(slice: &mut [f64]) -> (&mut [f64], &mut [Self::f64s]) {
-		unsafe { rsplit_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_mut_rsimd_i32s(slice: &mut [i32]) -> (&mut [i32], &mut [Self::i32s]) {
-		unsafe { rsplit_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_mut_rsimd_i64s(slice: &mut [i64]) -> (&mut [i64], &mut [Self::i64s]) {
-		unsafe { rsplit_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_mut_rsimd_u32s(slice: &mut [u32]) -> (&mut [u32], &mut [Self::u32s]) {
-		unsafe { rsplit_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_mut_rsimd_u64s(slice: &mut [u64]) -> (&mut [u64], &mut [Self::u64s]) {
-		unsafe { rsplit_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_mut_simd_c32s(slice: &mut [c32]) -> (&mut [Self::c32s], &mut [c32]) {
-		unsafe { split_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_mut_simd_c64s(slice: &mut [c64]) -> (&mut [Self::c64s], &mut [c64]) {
-		unsafe { split_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_mut_simd_f32s(slice: &mut [f32]) -> (&mut [Self::f32s], &mut [f32]) {
-		unsafe { split_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_mut_simd_f64s(slice: &mut [f64]) -> (&mut [Self::f64s], &mut [f64]) {
-		unsafe { split_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_mut_simd_i32s(slice: &mut [i32]) -> (&mut [Self::i32s], &mut [i32]) {
-		unsafe { split_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_mut_simd_i64s(slice: &mut [i64]) -> (&mut [Self::i64s], &mut [i64]) {
-		unsafe { split_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_mut_simd_u32s(slice: &mut [u32]) -> (&mut [Self::u32s], &mut [u32]) {
-		unsafe { split_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_mut_simd_u64s(slice: &mut [u64]) -> (&mut [Self::u64s], &mut [u64]) {
-		unsafe { split_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_rsimd_c32s(slice: &[c32]) -> (&[c32], &[Self::c32s]) {
-		unsafe { rsplit_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_rsimd_c64s(slice: &[c64]) -> (&[c64], &[Self::c64s]) {
-		unsafe { rsplit_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_rsimd_f32s(slice: &[f32]) -> (&[f32], &[Self::f32s]) {
-		unsafe { rsplit_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_rsimd_f64s(slice: &[f64]) -> (&[f64], &[Self::f64s]) {
-		unsafe { rsplit_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_rsimd_i32s(slice: &[i32]) -> (&[i32], &[Self::i32s]) {
-		unsafe { rsplit_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_rsimd_i64s(slice: &[i64]) -> (&[i64], &[Self::i64s]) {
-		unsafe { rsplit_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_rsimd_u32s(slice: &[u32]) -> (&[u32], &[Self::u32s]) {
-		unsafe { rsplit_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_rsimd_u64s(slice: &[u64]) -> (&[u64], &[Self::u64s]) {
-		unsafe { rsplit_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_simd_c32s(slice: &[c32]) -> (&[Self::c32s], &[c32]) {
-		unsafe { split_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_simd_c64s(slice: &[c64]) -> (&[Self::c64s], &[c64]) {
-		unsafe { split_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_simd_f32s(slice: &[f32]) -> (&[Self::f32s], &[f32]) {
-		unsafe { split_slice(slice) }
-	}
+	define_binop_all!(add, c32, c64, f32, f64, u8, u16, u32, u64);
+	define_binop_all!(
+		sub, c32, c64, f32, f64, u8, i8, u16, i16, u32, i32, u64, i64
+	);
+	define_binop_all!(mul, c32, c64, f32, f64, u16, i16, u32, i32, u64, i64);
+	define_binop_all!(div, f32, f64);
+	define_binop_all!(equal, u8 => m8, u16 => m16, u32 => m32, u64 => m64, c32 => m32, f32 => m32, c64 => m64, f64 => m64);
+	define_binop_all!(greater_than, u8 => m8, i8 => m8, u16 => m16, i16 => m16, u32 => m32, i32 => m32, u64 => m64, i64 => m64, f32 => m32, f64 => m64);
+	define_binop_all!(greater_than_or_equal, u8 => m8, i8 => m8, u16 => m16, i16 => m16, u32 => m32, i32 => m32, u64 => m64, i64 => m64, f32 => m32, f64 => m64);
+	define_binop_all!(less_than_or_equal, u8 => m8, i8 => m8, u16 => m16, i16 => m16, u32 => m32, i32 => m32, u64 => m64, i64 => m64, f32 => m32, f64 => m64);
+	define_binop_all!(less_than, u8 => m8, i8 => m8, u16 => m16, i16 => m16, u32 => m32, i32 => m32, u64 => m64, i64 => m64, f32 => m32, f64 => m64);
 
-	#[inline(always)]
-	fn as_simd_f64s(slice: &[f64]) -> (&[Self::f64s], &[f64]) {
-		unsafe { split_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_simd_i32s(slice: &[i32]) -> (&[Self::i32s], &[i32]) {
-		unsafe { split_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_simd_i64s(slice: &[i64]) -> (&[Self::i64s], &[i64]) {
-		unsafe { split_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_simd_u32s(slice: &[u32]) -> (&[Self::u32s], &[u32]) {
-		unsafe { split_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_simd_u64s(slice: &[u64]) -> (&[Self::u64s], &[u64]) {
-		unsafe { split_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_uninit_mut_rsimd_c32s(
-		slice: &mut [MaybeUninit<c32>],
-	) -> (&mut [MaybeUninit<c32>], &mut [MaybeUninit<Self::c32s>]) {
-		unsafe { rsplit_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_uninit_mut_rsimd_c64s(
-		slice: &mut [MaybeUninit<c64>],
-	) -> (&mut [MaybeUninit<c64>], &mut [MaybeUninit<Self::c64s>]) {
-		unsafe { rsplit_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_uninit_mut_rsimd_f32s(
-		slice: &mut [MaybeUninit<f32>],
-	) -> (&mut [MaybeUninit<f32>], &mut [MaybeUninit<Self::f32s>]) {
-		unsafe { rsplit_mut_slice(slice) }
-	}
+	define_binop_all!(and, u8, u16, u32, u64);
+	define_binop_all!(or, u8, u16, u32, u64);
+	define_binop_all!(xor, u8, u16, u32, u64);
 
-	#[inline(always)]
-	fn as_uninit_mut_rsimd_f64s(
-		slice: &mut [MaybeUninit<f64>],
-	) -> (&mut [MaybeUninit<f64>], &mut [MaybeUninit<Self::f64s>]) {
-		unsafe { rsplit_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_uninit_mut_rsimd_i32s(
-		slice: &mut [MaybeUninit<i32>],
-	) -> (&mut [MaybeUninit<i32>], &mut [MaybeUninit<Self::i32s>]) {
-		unsafe { rsplit_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_uninit_mut_rsimd_i64s(
-		slice: &mut [MaybeUninit<i64>],
-	) -> (&mut [MaybeUninit<i64>], &mut [MaybeUninit<Self::i64s>]) {
-		unsafe { rsplit_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_uninit_mut_rsimd_u32s(
-		slice: &mut [MaybeUninit<u32>],
-	) -> (&mut [MaybeUninit<u32>], &mut [MaybeUninit<Self::u32s>]) {
-		unsafe { rsplit_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_uninit_mut_rsimd_u64s(
-		slice: &mut [MaybeUninit<u64>],
-	) -> (&mut [MaybeUninit<u64>], &mut [MaybeUninit<Self::u64s>]) {
-		unsafe { rsplit_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_uninit_mut_simd_c32s(
-		slice: &mut [MaybeUninit<c32>],
-	) -> (&mut [MaybeUninit<Self::c32s>], &mut [MaybeUninit<c32>]) {
-		unsafe { split_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_uninit_mut_simd_c64s(
-		slice: &mut [MaybeUninit<c64>],
-	) -> (&mut [MaybeUninit<Self::c64s>], &mut [MaybeUninit<c64>]) {
-		unsafe { split_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_uninit_mut_simd_f32s(
-		slice: &mut [MaybeUninit<f32>],
-	) -> (&mut [MaybeUninit<Self::f32s>], &mut [MaybeUninit<f32>]) {
-		unsafe { split_mut_slice(slice) }
-	}
+	transmute_binop!(and, m8 => u8, i8 => u8, m16 => u16, i16 => u16, m32 => u32, i32 => u32, m64 => u64, i64 => u64, f32 => u32, f64 => u64);
+	transmute_binop!(or, m8 => u8, i8 => u8, m16 => u16, i16 => u16, m32 => u32, i32 => u32, m64 => u64, i64 => u64, f32 => u32, f64 => u64);
+	transmute_binop!(xor, m8 => u8, i8 => u8, m16 => u16, i16 => u16, m32 => u32, i32 => u32, m64 => u64, i64 => u64, f32 => u32, f64 => u64);
 
-	#[inline(always)]
-	fn as_uninit_mut_simd_f64s(
-		slice: &mut [MaybeUninit<f64>],
-	) -> (&mut [MaybeUninit<Self::f64s>], &mut [MaybeUninit<f64>]) {
-		unsafe { split_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_uninit_mut_simd_i32s(
-		slice: &mut [MaybeUninit<i32>],
-	) -> (&mut [MaybeUninit<Self::i32s>], &mut [MaybeUninit<i32>]) {
-		unsafe { split_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_uninit_mut_simd_i64s(
-		slice: &mut [MaybeUninit<i64>],
-	) -> (&mut [MaybeUninit<Self::i64s>], &mut [MaybeUninit<i64>]) {
-		unsafe { split_mut_slice(slice) }
-	}
-	#[inline(always)]
-	fn as_uninit_mut_simd_u32s(
-		slice: &mut [MaybeUninit<u32>],
-	) -> (&mut [MaybeUninit<Self::u32s>], &mut [MaybeUninit<u32>]) {
-		unsafe { split_mut_slice(slice) }
-	}
+	transmute_binop!(add, i8 => u8, i16 => u16, i32 => u32, i64 => u64);
+	transmute_cmp!(equal, m8 => u8 => m8, i8 => u8 => m8, m16 => u16 => m16, i16 => u16 => m16, m32 => u32 => m32, i32 => u32 => m32, m64 => u64 => m64, i64 => u64 => m64);
 
-	#[inline(always)]
-	fn as_uninit_mut_simd_u64s(
-		slice: &mut [MaybeUninit<u64>],
-	) -> (&mut [MaybeUninit<Self::u64s>], &mut [MaybeUninit<u64>]) {
-		unsafe { split_mut_slice(slice) }
-	}
+	define_binop_all!(min, f32, f64, u8, i8, u16, i16, u32, i32, u64, i64);
+	define_binop_all!(max, f32, f64, u8, i8, u16, i16, u32, i32, u64, i64);
+
+	define_unop_all!(neg, c32, c64);
+	define_unop_all!(not, m8, u8, m16, u16, m32, u32, m64, u64);
+
+	transmute_unop!(not, i8 => u8, i16 => u16, i32 => u32, i64 => u64, f32 => u32, f64 => u64);
+
+	split_slice!(u8, i8, u16, i16, u32, i32, u64, i64, c32, f32, c64, f64);
+	define_splat!(u8, i8, u16, i16, u32, i32, u64, i64, c32, f32, c64, f64);
+
 	fn conj_c32s(self, a: Self::c32s) -> Self::c32s;
 	fn conj_c64s(self, a: Self::c64s) -> Self::c64s;
 	fn conj_mul_add_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s;
-
 	fn conj_mul_add_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s;
+
 	/// Computes `conj(a) * b + c`
 	#[inline]
 	fn conj_mul_add_e_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
@@ -770,11 +682,55 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	fn deinterleave_shfl_f64s<T: Interleave>(self, values: T) -> T {
 		unsafe { deinterleave_fallback::<f64, Self::f64s, T>(values) }
 	}
-	fn div_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
-	fn div_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
-	fn equal_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::m32s;
 
-	fn equal_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::m64s;
+	#[inline(always)]
+	fn first_true_m8s(self, mask: Self::m8s) -> usize {
+		if try_const! { core::mem::size_of::<Self::m8s>() == core::mem::size_of::<Self::u8s>() } {
+			let mask: Self::u8s = bytemuck::cast(mask);
+			let slice = bytemuck::cast_slice::<Self::u8s, u8>(core::slice::from_ref(&mask));
+			let mut i = 0;
+			for &x in slice.iter() {
+				if x != 0 {
+					break;
+				}
+				i += 1;
+			}
+			i
+		} else if try_const! { core::mem::size_of::<Self::m8s>() == core::mem::size_of::<u8>() } {
+			let mask: u8 = bytemuck::cast(mask);
+			mask.leading_zeros() as usize
+		} else if try_const! { core::mem::size_of::<Self::m8s>() == core::mem::size_of::<u16>() } {
+			let mask: u16 = bytemuck::cast(mask);
+			mask.leading_zeros() as usize
+		} else {
+			panic!()
+		}
+	}
+
+	#[inline(always)]
+	fn first_true_m16s(self, mask: Self::m16s) -> usize {
+		if try_const! { core::mem::size_of::<Self::m16s>() == core::mem::size_of::<Self::u16s>() } {
+			let mask: Self::u16s = bytemuck::cast(mask);
+			let slice = bytemuck::cast_slice::<Self::u16s, u16>(core::slice::from_ref(&mask));
+			let mut i = 0;
+			for &x in slice.iter() {
+				if x != 0 {
+					break;
+				}
+				i += 1;
+			}
+			i
+		} else if try_const! { core::mem::size_of::<Self::m16s>() == core::mem::size_of::<u8>() } {
+			let mask: u8 = bytemuck::cast(mask);
+			mask.leading_zeros() as usize
+		} else if try_const! { core::mem::size_of::<Self::m16s>() == core::mem::size_of::<u16>() } {
+			let mask: u16 = bytemuck::cast(mask);
+			mask.leading_zeros() as usize
+		} else {
+			panic!()
+		}
+	}
+
 	#[inline(always)]
 	fn first_true_m32s(self, mask: Self::m32s) -> usize {
 		if try_const! { core::mem::size_of::<Self::m32s>() == core::mem::size_of::<Self::u32s>() } {
@@ -823,33 +779,6 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 		}
 	}
 
-	#[inline]
-	fn greater_than_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
-		self.less_than_f32s(b, a)
-	}
-
-	#[inline]
-	fn greater_than_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
-		self.less_than_f64s(b, a)
-	}
-	#[inline]
-	fn greater_than_or_equal_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
-		self.less_than_or_equal_f32s(b, a)
-	}
-	#[inline]
-	fn greater_than_or_equal_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
-		self.less_than_or_equal_f64s(b, a)
-	}
-
-	fn greater_than_or_equal_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::m32s;
-	fn greater_than_or_equal_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::m64s;
-	fn greater_than_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::m32s;
-	fn greater_than_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::m64s;
-	fn greater_than_or_equal_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s;
-	fn greater_than_or_equal_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s;
-	fn greater_than_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s;
-	fn greater_than_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s;
-
 	#[inline(always)]
 	fn interleave_shfl_f32s<T: Interleave>(self, values: T) -> T {
 		unsafe { interleave_fallback::<f32, Self::f32s, T>(values) }
@@ -860,19 +789,26 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 		unsafe { interleave_fallback::<f64, Self::f64s, T>(values) }
 	}
 
-	fn less_than_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::m32s;
-	fn less_than_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::m64s;
-	fn less_than_or_equal_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::m32s;
-	fn less_than_or_equal_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::m64s;
+	#[inline(always)]
+	fn mask_between_m8s(self, start: u8, end: u8) -> MemMask<Self::m8s> {
+		let iota: Self::u8s = try_const! { unsafe { core::mem::transmute_copy(&iota_8::<u8>()) } };
+		self.and_m8s(
+			self.greater_than_or_equal_u8s(iota, self.splat_u8s(start)),
+			self.less_than_u8s(iota, self.splat_u8s(end)),
+		)
+		.into()
+	}
 
-	fn less_than_or_equal_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::m32s;
-	fn less_than_or_equal_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::m64s;
-	fn less_than_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::m32s;
-	fn less_than_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::m64s;
-	fn less_than_or_equal_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s;
-	fn less_than_or_equal_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s;
-	fn less_than_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s;
-	fn less_than_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s;
+	#[inline(always)]
+	fn mask_between_m16s(self, start: u16, end: u16) -> MemMask<Self::m16s> {
+		let iota: Self::u16s =
+			try_const! { unsafe { core::mem::transmute_copy(&iota_16::<u16>()) } };
+		self.and_m16s(
+			self.greater_than_or_equal_u16s(iota, self.splat_u16s(start)),
+			self.less_than_u16s(iota, self.splat_u16s(end)),
+		)
+		.into()
+	}
 
 	#[inline(always)]
 	fn mask_between_m32s(self, start: u32, end: u32) -> MemMask<Self::m32s> {
@@ -927,6 +863,22 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	/// Addresses corresponding to enabled lanes in the mask have the same restrictions as
 	/// [`core::ptr::read`].
 	#[inline(always)]
+	unsafe fn mask_load_ptr_i8s(self, mask: MemMask<Self::m8s>, ptr: *const i8) -> Self::i8s {
+		self.transmute_i8s_u8s(self.mask_load_ptr_u8s(mask, ptr as *const u8))
+	}
+	/// # Safety
+	///
+	/// Addresses corresponding to enabled lanes in the mask have the same restrictions as
+	/// [`core::ptr::read`].
+	#[inline(always)]
+	unsafe fn mask_load_ptr_i16s(self, mask: MemMask<Self::m16s>, ptr: *const i16) -> Self::i16s {
+		self.transmute_i16s_u16s(self.mask_load_ptr_u16s(mask, ptr as *const u16))
+	}
+	/// # Safety
+	///
+	/// Addresses corresponding to enabled lanes in the mask have the same restrictions as
+	/// [`core::ptr::read`].
+	#[inline(always)]
 	unsafe fn mask_load_ptr_i32s(self, mask: MemMask<Self::m32s>, ptr: *const i32) -> Self::i32s {
 		self.transmute_i32s_u32s(self.mask_load_ptr_u32s(mask, ptr as *const u32))
 	}
@@ -938,6 +890,19 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	unsafe fn mask_load_ptr_i64s(self, mask: MemMask<Self::m64s>, ptr: *const i64) -> Self::i64s {
 		self.transmute_i64s_u64s(self.mask_load_ptr_u64s(mask, ptr as *const u64))
 	}
+
+	/// # Safety
+	///
+	/// Addresses corresponding to enabled lanes in the mask have the same restrictions as
+	/// [`core::ptr::read`].
+	unsafe fn mask_load_ptr_u8s(self, mask: MemMask<Self::m8s>, ptr: *const u8) -> Self::u8s;
+
+	/// # Safety
+	///
+	/// Addresses corresponding to enabled lanes in the mask have the same restrictions as
+	/// [`core::ptr::read`].
+	unsafe fn mask_load_ptr_u16s(self, mask: MemMask<Self::m16s>, ptr: *const u16) -> Self::u16s;
+
 	/// # Safety
 	///
 	/// Addresses corresponding to enabled lanes in the mask have the same restrictions as
@@ -1001,6 +966,27 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	/// Addresses corresponding to enabled lanes in the mask have the same restrictions as
 	/// [`core::ptr::write`].
 	#[inline(always)]
+	unsafe fn mask_store_ptr_i8s(self, mask: MemMask<Self::m8s>, ptr: *mut i8, values: Self::i8s) {
+		self.mask_store_ptr_u8s(mask, ptr as *mut u8, self.transmute_u8s_i8s(values));
+	}
+	/// # Safety
+	///
+	/// Addresses corresponding to enabled lanes in the mask have the same restrictions as
+	/// [`core::ptr::write`].
+	#[inline(always)]
+	unsafe fn mask_store_ptr_i16s(
+		self,
+		mask: MemMask<Self::m16s>,
+		ptr: *mut i16,
+		values: Self::i16s,
+	) {
+		self.mask_store_ptr_u16s(mask, ptr as *mut u16, self.transmute_u16s_i16s(values));
+	}
+	/// # Safety
+	///
+	/// Addresses corresponding to enabled lanes in the mask have the same restrictions as
+	/// [`core::ptr::write`].
+	#[inline(always)]
 	unsafe fn mask_store_ptr_i32s(
 		self,
 		mask: MemMask<Self::m32s>,
@@ -1022,6 +1008,24 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	) {
 		self.mask_store_ptr_u64s(mask, ptr as *mut u64, self.transmute_u64s_i64s(values));
 	}
+
+	/// # Safety
+	///
+	/// Addresses corresponding to enabled lanes in the mask have the same restrictions as
+	/// [`core::ptr::write`].
+	unsafe fn mask_store_ptr_u8s(self, mask: MemMask<Self::m8s>, ptr: *mut u8, values: Self::u8s);
+
+	/// # Safety
+	///
+	/// Addresses corresponding to enabled lanes in the mask have the same restrictions as
+	/// [`core::ptr::write`].
+	unsafe fn mask_store_ptr_u16s(
+		self,
+		mask: MemMask<Self::m16s>,
+		ptr: *mut u16,
+		values: Self::u16s,
+	);
+
 	/// # Safety
 	///
 	/// Addresses corresponding to enabled lanes in the mask have the same restrictions as
@@ -1043,10 +1047,6 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 		ptr: *mut u64,
 		values: Self::u64s,
 	);
-	fn max_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
-	fn max_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
-	fn min_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
-	fn min_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
 
 	fn mul_add_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s;
 	fn mul_add_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s;
@@ -1064,9 +1064,6 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	fn mul_add_e_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s;
 	fn mul_add_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s;
 	fn mul_add_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s;
-	fn mul_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s;
-
-	fn mul_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s;
 	/// Computes `a * b`
 	#[inline]
 	fn mul_e_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
@@ -1076,10 +1073,6 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	fn mul_e_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 		self.mul_c64s(a, b)
 	}
-	fn mul_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
-	fn mul_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
-	fn neg_c32s(self, a: Self::c32s) -> Self::c32s;
-	fn neg_c64s(self, a: Self::c64s) -> Self::c64s;
 
 	#[inline]
 	fn neg_f32s(self, a: Self::f32s) -> Self::f32s {
@@ -1089,57 +1082,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	fn neg_f64s(self, a: Self::f64s) -> Self::f64s {
 		self.xor_f64s(a, self.splat_f64s(-0.0))
 	}
-	#[inline]
-	fn not_f32s(self, a: Self::f32s) -> Self::f32s {
-		self.transmute_f32s_u32s(self.not_u32s(self.transmute_u32s_f32s(a)))
-	}
 
-	#[inline]
-	fn not_f64s(self, a: Self::f64s) -> Self::f64s {
-		self.transmute_f64s_u64s(self.not_u64s(self.transmute_u64s_f64s(a)))
-	}
-	#[inline]
-	fn not_i32s(self, a: Self::i32s) -> Self::i32s {
-		self.transmute_i32s_u32s(self.not_u32s(self.transmute_u32s_i32s(a)))
-	}
-	#[inline]
-	fn not_i64s(self, a: Self::i64s) -> Self::i64s {
-		self.transmute_i64s_u64s(self.not_u64s(self.transmute_u64s_i64s(a)))
-	}
-
-	fn not_m32s(self, a: Self::m32s) -> Self::m32s;
-	fn not_m64s(self, a: Self::m64s) -> Self::m64s;
-	fn not_u32s(self, a: Self::u32s) -> Self::u32s;
-	fn not_u64s(self, a: Self::u64s) -> Self::u64s;
-	#[inline]
-	fn or_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-		self.transmute_f32s_u32s(
-			self.or_u32s(self.transmute_u32s_f32s(a), self.transmute_u32s_f32s(b)),
-		)
-	}
-	#[inline]
-	fn or_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-		self.transmute_f64s_u64s(
-			self.or_u64s(self.transmute_u64s_f64s(a), self.transmute_u64s_f64s(b)),
-		)
-	}
-	#[inline]
-	fn or_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::i32s {
-		self.transmute_i32s_u32s(
-			self.or_u32s(self.transmute_u32s_i32s(a), self.transmute_u32s_i32s(b)),
-		)
-	}
-	#[inline]
-	fn or_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::i64s {
-		self.transmute_i64s_u64s(
-			self.or_u64s(self.transmute_u64s_i64s(a), self.transmute_u64s_i64s(b)),
-		)
-	}
-	fn or_m32s(self, a: Self::m32s, b: Self::m32s) -> Self::m32s;
-
-	fn or_m64s(self, a: Self::m64s, b: Self::m64s) -> Self::m64s;
-	fn or_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s;
-	fn or_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s;
 	#[inline(always)]
 	fn partial_load_c32s(self, slice: &[c32]) -> Self::c32s {
 		cast(self.partial_load_f64s(bytemuck::cast_slice(slice)))
@@ -1157,12 +1100,35 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 		cast(self.partial_load_u64s(bytemuck::cast_slice(slice)))
 	}
 	#[inline(always)]
+	fn partial_load_i8s(self, slice: &[i8]) -> Self::i8s {
+		cast(self.partial_load_u8s(bytemuck::cast_slice(slice)))
+	}
+	#[inline(always)]
+	fn partial_load_i16s(self, slice: &[i16]) -> Self::i16s {
+		cast(self.partial_load_u16s(bytemuck::cast_slice(slice)))
+	}
+	#[inline(always)]
 	fn partial_load_i32s(self, slice: &[i32]) -> Self::i32s {
 		cast(self.partial_load_u32s(bytemuck::cast_slice(slice)))
 	}
 	#[inline(always)]
 	fn partial_load_i64s(self, slice: &[i64]) -> Self::i64s {
 		cast(self.partial_load_u64s(bytemuck::cast_slice(slice)))
+	}
+	#[inline(always)]
+	fn partial_load_u8s(self, slice: &[u8]) -> Self::u8s {
+		unsafe {
+			self.mask_load_ptr_u8s(self.mask_between_m8s(0, slice.len() as u8), slice.as_ptr())
+		}
+	}
+	#[inline(always)]
+	fn partial_load_u16s(self, slice: &[u16]) -> Self::u16s {
+		unsafe {
+			self.mask_load_ptr_u16s(
+				self.mask_between_m16s(0, slice.len() as u16),
+				slice.as_ptr(),
+			)
+		}
 	}
 	#[inline(always)]
 	fn partial_load_u32s(self, slice: &[u32]) -> Self::u32s {
@@ -1201,12 +1167,40 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 		self.partial_store_u64s(bytemuck::cast_slice_mut(slice), cast(values))
 	}
 	#[inline(always)]
+	fn partial_store_i8s(self, slice: &mut [i8], values: Self::i8s) {
+		self.partial_store_u16s(bytemuck::cast_slice_mut(slice), cast(values))
+	}
+	#[inline(always)]
+	fn partial_store_i16s(self, slice: &mut [i16], values: Self::i16s) {
+		self.partial_store_u16s(bytemuck::cast_slice_mut(slice), cast(values))
+	}
+	#[inline(always)]
 	fn partial_store_i32s(self, slice: &mut [i32], values: Self::i32s) {
 		self.partial_store_u32s(bytemuck::cast_slice_mut(slice), cast(values))
 	}
 	#[inline(always)]
 	fn partial_store_i64s(self, slice: &mut [i64], values: Self::i64s) {
 		self.partial_store_u64s(bytemuck::cast_slice_mut(slice), cast(values))
+	}
+	#[inline(always)]
+	fn partial_store_u8s(self, slice: &mut [u8], values: Self::u8s) {
+		unsafe {
+			self.mask_store_ptr_u8s(
+				self.mask_between_m8s(0, slice.len() as u8),
+				slice.as_mut_ptr(),
+				values,
+			)
+		}
+	}
+	#[inline(always)]
+	fn partial_store_u16s(self, slice: &mut [u16], values: Self::u16s) {
+		unsafe {
+			self.mask_store_ptr_u16s(
+				self.mask_between_m16s(0, slice.len() as u16),
+				slice.as_mut_ptr(),
+				values,
+			)
+		}
 	}
 	#[inline(always)]
 	fn partial_store_u32s(self, slice: &mut [u32], values: Self::u32s) {
@@ -1364,44 +1358,10 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 		if_true: Self::u64s,
 		if_false: Self::u64s,
 	) -> Self::u64s;
-	fn splat_c32s(self, value: c32) -> Self::c32s;
-	fn splat_c64s(self, value: c64) -> Self::c64s;
-	fn splat_f32s(self, value: f32) -> Self::f32s;
-	fn splat_f64s(self, value: f64) -> Self::f64s;
 
-	#[inline]
-	fn splat_i32s(self, value: i32) -> Self::i32s {
-		self.transmute_i32s_u32s(self.splat_u32s(value as u32))
-	}
-	#[inline]
-	fn splat_i64s(self, value: i64) -> Self::i64s {
-		self.transmute_i64s_u64s(self.splat_u64s(value as u64))
-	}
-	fn splat_u32s(self, value: u32) -> Self::u32s;
-	fn splat_u64s(self, value: u64) -> Self::u64s;
-
-	fn sub_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s;
-	fn sub_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s;
-	fn sub_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
-	fn sub_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s;
-
-	#[inline]
-	fn sub_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::i32s {
-		self.transmute_i32s_u32s(
-			self.sub_u32s(self.transmute_u32s_i32s(a), self.transmute_u32s_i32s(b)),
-		)
-	}
-	#[inline]
-	fn sub_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::i64s {
-		self.transmute_i64s_u64s(
-			self.sub_u64s(self.transmute_u64s_i64s(a), self.transmute_u64s_i64s(b)),
-		)
-	}
-
-	fn sub_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s;
-	fn sub_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s;
 	fn swap_re_im_c32s(self, a: Self::c32s) -> Self::c32s;
 	fn swap_re_im_c64s(self, a: Self::c64s) -> Self::c64s;
+
 	#[inline]
 	fn transmute_f32s_i32s(self, a: Self::i32s) -> Self::f32s {
 		cast(a)
@@ -1421,6 +1381,54 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	}
 	#[inline]
 	fn transmute_i32s_f32s(self, a: Self::f32s) -> Self::i32s {
+		cast(a)
+	}
+	#[inline]
+	fn transmute_m8s_u8s(self, a: Self::u8s) -> Self::m8s {
+		checked::cast(a)
+	}
+	#[inline]
+	fn transmute_u8s_m8s(self, a: Self::m8s) -> Self::u8s {
+		cast(a)
+	}
+	#[inline]
+	fn transmute_m16s_u16s(self, a: Self::u16s) -> Self::m16s {
+		checked::cast(a)
+	}
+	#[inline]
+	fn transmute_u16s_m16s(self, a: Self::m16s) -> Self::u16s {
+		cast(a)
+	}
+	#[inline]
+	fn transmute_m32s_u32s(self, a: Self::u32s) -> Self::m32s {
+		checked::cast(a)
+	}
+	#[inline]
+	fn transmute_u32s_m32s(self, a: Self::m32s) -> Self::u32s {
+		cast(a)
+	}
+	#[inline]
+	fn transmute_m64s_u64s(self, a: Self::u64s) -> Self::m64s {
+		checked::cast(a)
+	}
+	#[inline]
+	fn transmute_u64s_m64s(self, a: Self::m64s) -> Self::u64s {
+		cast(a)
+	}
+	#[inline]
+	fn transmute_i8s_u8s(self, a: Self::u8s) -> Self::i8s {
+		cast(a)
+	}
+	#[inline]
+	fn transmute_u8s_i8s(self, a: Self::i8s) -> Self::u8s {
+		cast(a)
+	}
+	#[inline]
+	fn transmute_u16s_i16s(self, a: Self::i16s) -> Self::u16s {
+		cast(a)
+	}
+	#[inline]
+	fn transmute_i16s_u16s(self, a: Self::u16s) -> Self::i16s {
 		cast(a)
 	}
 	#[inline]
@@ -1457,36 +1465,6 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	fn widening_mul_u32s(self, a: Self::u32s, b: Self::u32s) -> (Self::u32s, Self::u32s);
 	fn wrapping_dyn_shl_u32s(self, a: Self::u32s, amount: Self::u32s) -> Self::u32s;
 	fn wrapping_dyn_shr_u32s(self, a: Self::u32s, amount: Self::u32s) -> Self::u32s;
-
-	#[inline]
-	fn xor_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-		self.transmute_f32s_u32s(
-			self.xor_u32s(self.transmute_u32s_f32s(a), self.transmute_u32s_f32s(b)),
-		)
-	}
-	#[inline]
-	fn xor_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-		self.transmute_f64s_u64s(
-			self.xor_u64s(self.transmute_u64s_f64s(a), self.transmute_u64s_f64s(b)),
-		)
-	}
-	#[inline]
-	fn xor_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::i32s {
-		self.transmute_i32s_u32s(
-			self.xor_u32s(self.transmute_u32s_i32s(a), self.transmute_u32s_i32s(b)),
-		)
-	}
-	#[inline]
-	fn xor_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::i64s {
-		self.transmute_i64s_u64s(
-			self.xor_u64s(self.transmute_u64s_i64s(a), self.transmute_u64s_i64s(b)),
-		)
-	}
-
-	fn xor_m32s(self, a: Self::m32s, b: Self::m32s) -> Self::m32s;
-	fn xor_m64s(self, a: Self::m64s, b: Self::m64s) -> Self::m64s;
-	fn xor_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s;
-	fn xor_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s;
 }
 
 pub trait PortableSimd: Simd {}
@@ -1506,172 +1484,271 @@ pub struct Scalar256b;
 #[derive(Debug, Copy, Clone)]
 pub struct Scalar512b;
 
+macro_rules! scalar_simd_binop_impl {
+	($func: ident, $op: ident, $ty: ty) => {
+		paste! {
+			#[inline]
+			fn [<$func _ $ty s>](self, a: Self::[<$ty s>], b: Self::[<$ty s>],) -> Self::[<$ty s>] {
+				let mut out = [<$ty as Default>::default(); Self::[<$ty:upper _LANES>]];
+				let a: [$ty; Self::[<$ty:upper _LANES>]] = cast(a);
+				let b: [$ty; Self::[<$ty:upper _LANES>]] = cast(b);
+
+				for i in 0..Self::[<$ty:upper _LANES>] {
+					out[i] = a[i].$op(b[i]);
+				}
+
+				cast(out)
+			}
+		}
+	};
+}
+
+macro_rules! scalar_simd_binop {
+	($func: ident, op $op: ident, $($ty: ty),*) => {
+		$(scalar_simd_binop_impl!($func, $op, $ty);)*
+	};
+	($func: ident, $($ty: ty),*) => {
+		$(scalar_simd_binop_impl!($func, $func, $ty);)*
+	};
+}
+
+macro_rules! scalar_simd_unop_impl {
+	($func: ident, $op: ident, $ty: ty) => {
+		paste! {
+			#[inline]
+			fn [<$func _ $ty s>](self, a: Self::[<$ty s>]) -> Self::[<$ty s>] {
+				let mut out = [<$ty as Default>::default(); Self::[<$ty:upper _LANES>]];
+				let a: [$ty; Self::[<$ty:upper _LANES>]] = cast(a);
+
+				for i in 0..Self::[<$ty:upper _LANES>] {
+					out[i] = a[i].$op();
+				}
+
+				cast(out)
+			}
+		}
+	};
+}
+
+macro_rules! scalar_simd_unop {
+	($func: ident, $($ty: ty),*) => {
+		$(scalar_simd_unop_impl!($func, $func, $ty);)*
+	};
+}
+
+macro_rules! scalar_simd_cmp {
+	($func: ident, $op: ident, $ty: ty, $mask: ty) => {
+		paste! {
+			#[inline]
+			fn [<$func _ $ty s>](self, a: Self::[<$ty s>], b: Self::[<$ty s>]) -> Self::[<$mask s>] {
+				let mut out = [$mask::new(false); Self::[<$ty:upper _LANES>]];
+				let a: [$ty; Self::[<$ty:upper _LANES>]] = cast(a);
+				let b: [$ty; Self::[<$ty:upper _LANES>]] = cast(b);
+				for i in 0..Self::[<$ty:upper _LANES>] {
+					out[i] = $mask::new(a[i].$op(&b[i]));
+				}
+				cast(out)
+			}
+		}
+	};
+	($func: ident, op $op: ident, $($ty: ty => $mask: ty),*) => {
+		$(scalar_simd_cmp!($func, $op, $ty, $mask);)*
+	};
+	($func: ident, $($ty: ty => $mask: ty),*) => {
+		$(scalar_simd_cmp!($func, $func, $ty, $mask);)*
+	};
+}
+
+macro_rules! scalar_splat {
+	($ty: ident) => {
+		paste! {
+			#[inline]
+			fn [<splat_ $ty s>](self, value: $ty) -> Self::[<$ty s>] {
+				cast([value; Self::[<$ty:upper _LANES>]])
+			}
+		}
+	};
+	($($ty: ident),*) => {
+		$(scalar_splat!($ty);)*
+	};
+}
+
+macro_rules! scalar_partial_load {
+	($ty: ident) => {
+		paste! {
+			#[inline]
+			fn [<partial_load_ $ty s>](self, slice: &[$ty]) -> Self::[<$ty s>] {
+				let mut values = [<$ty as Default>::default(); Self::[<$ty:upper _LANES>]];
+				for i in 0..Ord::min(values.len(), slice.len()) {
+					values[i] = slice[i];
+				}
+				cast(values)
+			}
+		}
+	};
+	($($ty: ident),*) => {
+		$(scalar_partial_load!($ty);)*
+	};
+}
+
+macro_rules! scalar_partial_store {
+	($ty: ident) => {
+		paste! {
+			#[inline]
+			fn [<partial_store_ $ty s>](self, slice: &mut [$ty], values: Self::[<$ty s>]) {
+				let values: [$ty; Self::[<$ty:upper _LANES>]] = cast(values);
+				for i in 0..Ord::min(values.len(), slice.len()) {
+					slice[i] = values[i];
+				}
+			}
+		}
+	};
+	($($ty: ident),*) => {
+		$(scalar_partial_store!($ty);)*
+	};
+}
+
+macro_rules! mask_load_ptr {
+	($ty: ident, $mask: ident) => {
+		paste! {
+			#[inline]
+			unsafe fn [<mask_load_ptr_ $ty s>](
+				self,
+				mask: MemMask<Self::[<$mask s>]>,
+				ptr: *const $ty,
+			) -> Self::[<$ty s>] {
+				let mut values = [<$ty as Default>::default(); Self::[<$ty:upper _LANES>]];
+				let mask: [$mask; Self::[<$ty:upper _LANES>]] = cast(mask.mask());
+				for i in 0..Self::[<$ty:upper _LANES>] {
+					if mask[i].is_set() {
+						values[i] = *ptr.add(i);
+					}
+				}
+				cast(values)
+			}
+		}
+	};
+	(cast $ty: ident, $to: ident, $mask: ident) => {
+		paste! {
+			#[inline]
+			unsafe fn [<mask_load_ptr_ $ty s>](
+				self,
+				mask: MemMask<Self::[<$mask s>]>,
+				ptr: *const $ty,
+			) -> Self::[<$ty s>] {
+				cast(self.[<mask_load_ptr_ $to s>](mask, ptr as *const $to))
+			}
+		}
+	};
+	($($ty: ident: $mask: ident),*) => {
+		$(mask_load_ptr!($ty, $mask);)*
+	};
+	(cast $($ty: ident: $mask: ident => $to: ident),*) => {
+		$(mask_load_ptr!(cast $ty, $to, $mask);)*
+	};
+}
+
+macro_rules! mask_store_ptr {
+	($ty: ident, $mask: ident) => {
+		paste! {
+			#[inline]
+			unsafe fn [<mask_store_ptr_ $ty s>](
+				self,
+				mask: MemMask<Self::[<$mask s>]>,
+				ptr: *mut $ty,
+				values: Self::[<$ty s>],
+			) {
+				let mask: [$mask; Self::[<$ty:upper _LANES>]] = cast(mask.mask());
+				let values: [$ty; Self::[<$ty:upper _LANES>]] = cast(values);
+				for i in 0..Self::[<$ty:upper _LANES>] {
+					if mask[i].is_set() {
+						*ptr.add(i) = values[i];
+					}
+				}
+			}
+		}
+	};
+	(cast $ty: ident, $to: ident, $mask: ident) => {
+		paste! {
+			#[inline]
+			unsafe fn [<mask_store_ptr_ $ty s>](
+				self,
+				mask: MemMask<Self::[<$mask s>]>,
+				ptr: *mut $ty,
+				values: Self::[<$ty s>],
+			) {
+				self.[<mask_store_ptr_ $to s>](mask, ptr as *mut $to, cast(values));
+			}
+		}
+	};
+	($($ty: ident: $mask: ident),*) => {
+		$(mask_store_ptr!($ty, $mask);)*
+	};
+	(cast $($ty: ident: $mask: ident => $to: ident),*) => {
+		$(mask_store_ptr!(cast $ty, $to, $mask);)*
+	};
+}
+
 macro_rules! scalar_simd {
-	($ty: ty, $register_count: expr, $m32s: ty, $f32s: ty, $i32s: ty, $u32s: ty, $m64s: ty, $f64s: ty, $i64s: ty, $u64s: ty $(,)?) => {
+	($ty: ty, $register_count: expr, $m8s: ty, $i8s: ty, $u8s: ty, $m16s: ty, $i16s: ty, $u16s: ty, $m32s: ty, $f32s: ty, $i32s: ty, $u32s: ty, $m64s: ty, $f64s: ty, $i64s: ty, $u64s: ty $(,)?) => {
 		impl Seal for $ty {}
 		impl Simd for $ty {
+			type m8s = $m8s;
+			type m16s = $m16s;
 			type c32s = $f32s;
 			type c64s = $f64s;
 			type f32s = $f32s;
 			type f64s = $f64s;
+			type i16s = $i16s;
 			type i32s = $i32s;
 			type i64s = $i64s;
+			type i8s = $i8s;
 			type m32s = $m32s;
 			type m64s = $m64s;
+			type u16s = $u16s;
 			type u32s = $u32s;
 			type u64s = $u64s;
+			type u8s = $u8s;
 
 			const REGISTER_COUNT: usize = $register_count;
+
+			scalar_simd_binop!(min, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64);
+
+			scalar_simd_binop!(max, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64);
+
+			scalar_simd_binop!(add, c32, f32, c64, f64);
+			scalar_simd_binop!(add, op wrapping_add, u8, i8, u16, i16, u32, i32, u64, i64);
+			scalar_simd_binop!(sub, c32, f32, c64, f64);
+			scalar_simd_binop!(sub, op wrapping_sub, u8, i8, u16, i16, u32, i32, u64, i64);
+			scalar_simd_binop!(mul, c32, f32, c64, f64);
+			scalar_simd_binop!(mul, op wrapping_mul, u16, i16, u32, i32, u64, i64);
+			scalar_simd_binop!(div, f32, f64);
+
+			scalar_simd_binop!(and, op bitand, u8, u16, u32, u64);
+			scalar_simd_binop!(or,  op bitor, u8, u16, u32, u64);
+			scalar_simd_binop!(xor, op bitxor, u8, u16, u32, u64);
+
+			scalar_simd_cmp!(equal, op eq, u8 => m8, u16 => m16, u32 => m32, u64 => m64, c32 => m32, f32 => m32, c64 => m64, f64 => m64);
+			scalar_simd_cmp!(greater_than, op gt, u8 => m8, i8 => m8, u16 => m16, i16 => m16, u32 => m32, i32 => m32, u64 => m64, i64 => m64, f32 => m32, f64 => m64);
+			scalar_simd_cmp!(greater_than_or_equal, op ge, u8 => m8, i8 => m8, u16 => m16, i16 => m16, u32 => m32, i32 => m32, u64 => m64, i64 => m64, f32 => m32, f64 => m64);
+			scalar_simd_cmp!(less_than_or_equal, op le, u8 => m8, i8 => m8, u16 => m16, i16 => m16, u32 => m32, i32 => m32, u64 => m64, i64 => m64, f32 => m32, f64 => m64);
+			scalar_simd_cmp!(less_than, op lt, u8 => m8, i8 => m8, u16 => m16, i16 => m16, u32 => m32, i32 => m32, u64 => m64, i64 => m64, f32 => m32, f64 => m64);
+
+			scalar_simd_unop!(not, m8, u8, m16, u16, m32, u32, m64, u64);
+
+			scalar_splat!(u8, i8, u16, i16, u32, i32, u64, i64, f32, f64);
+
+			scalar_partial_load!(u8, i8, u16, i16, u32, i32, u64, i64, f32, f64);
+			scalar_partial_store!(u8, i8, u16, i16, u32, i32, u64, i64, f32, f64);
+
+			mask_load_ptr!(u8: m8, u16: m16, u32: m32, u64: m64);
+			mask_load_ptr!(cast i8: m8 => u8, i16: m16 => u16, i32: m32 => u32, i64: m64 => u64, c32: m32 => u32, f32: m32 => u32, c64: m64 => u64, f64: m64 => u64);
+			mask_store_ptr!(u8: m8, u16: m16, u32: m32, u64: m64);
+			mask_store_ptr!(cast i8: m8 => u8, i16: m16 => u16, i32: m32 => u32, i64: m64 => u64, c32: m32 => u32, f32: m32 => u32, c64: m64 => u64, f64: m64 => u64);
 
 			#[inline]
 			fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
 				op.with_simd(self)
-			}
-
-			#[inline]
-			unsafe fn mask_load_ptr_u32s(
-				self,
-				mask: MemMask<Self::m32s>,
-				ptr: *const u32,
-			) -> Self::u32s {
-				let mut values = [0u32; Self::F32_LANES];
-				let mask: [m32; Self::F32_LANES] = cast(mask.mask());
-				for i in 0..Self::F32_LANES {
-					if mask[i].is_set() {
-						values[i] = *ptr.add(i);
-					}
-				}
-				cast(values)
-			}
-
-			#[inline]
-			unsafe fn mask_load_ptr_c32s(
-				self,
-				mask: MemMask<Self::m32s>,
-				ptr: *const c32,
-			) -> Self::c32s {
-				cast(self.mask_load_ptr_u32s(mask, ptr as *const u32))
-			}
-
-			#[inline]
-			unsafe fn mask_store_ptr_u32s(
-				self,
-				mask: MemMask<Self::m32s>,
-				ptr: *mut u32,
-				values: Self::u32s,
-			) {
-				let mask: [m32; Self::F32_LANES] = cast(mask.mask());
-				let values: [u32; Self::F32_LANES] = cast(values);
-				for i in 0..Self::F32_LANES {
-					if mask[i].is_set() {
-						*ptr.add(i) = values[i];
-					}
-				}
-			}
-
-			#[inline]
-			unsafe fn mask_store_ptr_c32s(
-				self,
-				mask: MemMask<Self::m32s>,
-				ptr: *mut c32,
-				values: Self::c32s,
-			) {
-				self.mask_store_ptr_u32s(mask, ptr as *mut u32, cast(values))
-			}
-
-			#[inline]
-			unsafe fn mask_load_ptr_u64s(
-				self,
-				mask: MemMask<Self::m64s>,
-				ptr: *const u64,
-			) -> Self::u64s {
-				let mut values = [0u64; Self::F64_LANES];
-				let mask: [m64; Self::F64_LANES] = cast(mask.mask());
-				for i in 0..Self::F64_LANES {
-					if mask[i].is_set() {
-						values[i] = *ptr.add(i);
-					}
-				}
-				cast(values)
-			}
-
-			#[inline]
-			unsafe fn mask_load_ptr_c64s(
-				self,
-				mask: MemMask<Self::m64s>,
-				ptr: *const c64,
-			) -> Self::c64s {
-				cast(self.mask_load_ptr_u64s(mask, ptr as *const u64))
-			}
-
-			#[inline]
-			unsafe fn mask_store_ptr_u64s(
-				self,
-				mask: MemMask<Self::m64s>,
-				ptr: *mut u64,
-				values: Self::u64s,
-			) {
-				let mask: [m64; Self::F64_LANES] = cast(mask.mask());
-				let values: [u64; Self::F64_LANES] = cast(values);
-				for i in 0..Self::F64_LANES {
-					if mask[i].is_set() {
-						*ptr.add(i) = values[i];
-					}
-				}
-			}
-
-			#[inline]
-			unsafe fn mask_store_ptr_c64s(
-				self,
-				mask: MemMask<Self::m64s>,
-				ptr: *mut c64,
-				values: Self::c64s,
-			) {
-				self.mask_store_ptr_u64s(mask, ptr as *mut u64, cast(values))
-			}
-
-			#[inline]
-			fn partial_load_u32s(self, slice: &[u32]) -> Self::u32s {
-				let mut values = [0u32; Self::F32_LANES];
-				for i in 0..Ord::min(values.len(), slice.len()) {
-					values[i] = slice[i];
-				}
-				cast(values)
-			}
-
-			#[inline]
-			fn partial_store_u32s(self, slice: &mut [u32], values: Self::u32s) {
-				let values: [u32; Self::F32_LANES] = cast(values);
-				for i in 0..Ord::min(values.len(), slice.len()) {
-					slice[i] = values[i];
-				}
-			}
-
-			#[inline]
-			fn partial_load_u64s(self, slice: &[u64]) -> Self::u64s {
-				let mut values = [0u64; Self::F64_LANES];
-				for i in 0..Ord::min(values.len(), slice.len()) {
-					values[i] = slice[i];
-				}
-				cast(values)
-			}
-
-			#[inline]
-			fn partial_store_u64s(self, slice: &mut [u64], values: Self::u64s) {
-				let values: [u64; Self::F64_LANES] = cast(values);
-				for i in 0..Ord::min(values.len(), slice.len()) {
-					slice[i] = values[i];
-				}
-			}
-
-			#[inline]
-			fn not_m32s(self, a: Self::m32s) -> Self::m32s {
-				let mut out = [m32::new(false); Self::F32_LANES];
-				let a: [m32; Self::F32_LANES] = cast(a);
-				for i in 0..Self::F32_LANES {
-					out[i] = !a[i];
-				}
-				cast(out)
 			}
 
 			#[inline]
@@ -1708,16 +1785,6 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
-			fn not_m64s(self, a: Self::m64s) -> Self::m64s {
-				let mut out = [m64::new(false); Self::F64_LANES];
-				let a: [m64; Self::F64_LANES] = cast(a);
-				for i in 0..Self::F64_LANES {
-					out[i] = !a[i];
-				}
-				cast(out)
-			}
-
-			#[inline]
 			fn and_m64s(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
 				let mut out = [m64::new(false); Self::F64_LANES];
 				let a: [m64; Self::F64_LANES] = cast(a);
@@ -1744,92 +1811,6 @@ macro_rules! scalar_simd {
 				let mut out = [m64::new(false); Self::F64_LANES];
 				let a: [m64; Self::F64_LANES] = cast(a);
 				let b: [m64; Self::F64_LANES] = cast(b);
-				for i in 0..Self::F64_LANES {
-					out[i] = a[i] ^ b[i];
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn not_u32s(self, a: Self::u32s) -> Self::u32s {
-				let mut out = [0u32; Self::F32_LANES];
-				let a: [u32; Self::F32_LANES] = cast(a);
-				for i in 0..Self::F32_LANES {
-					out[i] = !a[i];
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn and_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
-				let mut out = [0u32; Self::F32_LANES];
-				let a: [u32; Self::F32_LANES] = cast(a);
-				let b: [u32; Self::F32_LANES] = cast(b);
-				for i in 0..Self::F32_LANES {
-					out[i] = a[i] & b[i];
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn or_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
-				let mut out = [0u32; Self::F32_LANES];
-				let a: [u32; Self::F32_LANES] = cast(a);
-				let b: [u32; Self::F32_LANES] = cast(b);
-				for i in 0..Self::F32_LANES {
-					out[i] = a[i] | b[i];
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn xor_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
-				let mut out = [0u32; Self::F32_LANES];
-				let a: [u32; Self::F32_LANES] = cast(a);
-				let b: [u32; Self::F32_LANES] = cast(b);
-				for i in 0..Self::F32_LANES {
-					out[i] = a[i] ^ b[i];
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn not_u64s(self, a: Self::u64s) -> Self::u64s {
-				let mut out = [0u64; Self::F64_LANES];
-				let a: [u64; Self::F64_LANES] = cast(a);
-				for i in 0..Self::F64_LANES {
-					out[i] = !a[i];
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn and_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
-				let mut out = [0u64; Self::F64_LANES];
-				let a: [u64; Self::F64_LANES] = cast(a);
-				let b: [u64; Self::F64_LANES] = cast(b);
-				for i in 0..Self::F64_LANES {
-					out[i] = a[i] & b[i];
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn or_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
-				let mut out = [0u64; Self::F64_LANES];
-				let a: [u64; Self::F64_LANES] = cast(a);
-				let b: [u64; Self::F64_LANES] = cast(b);
-				for i in 0..Self::F64_LANES {
-					out[i] = a[i] | b[i];
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn xor_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
-				let mut out = [0u64; Self::F64_LANES];
-				let a: [u64; Self::F64_LANES] = cast(a);
-				let b: [u64; Self::F64_LANES] = cast(b);
 				for i in 0..Self::F64_LANES {
 					out[i] = a[i] ^ b[i];
 				}
@@ -1883,121 +1864,6 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
-			fn splat_u32s(self, value: u32) -> Self::u32s {
-				cast([value; Self::F32_LANES])
-			}
-
-			#[inline]
-			fn add_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
-				let mut out = [0u32; Self::F32_LANES];
-				let a: [u32; Self::F32_LANES] = cast(a);
-				let b: [u32; Self::F32_LANES] = cast(b);
-				for i in 0..Self::F32_LANES {
-					out[i] = a[i].wrapping_add(b[i]);
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn sub_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
-				let mut out = [0u32; Self::F32_LANES];
-				let a: [u32; Self::F32_LANES] = cast(a);
-				let b: [u32; Self::F32_LANES] = cast(b);
-				for i in 0..Self::F32_LANES {
-					out[i] = a[i].wrapping_sub(b[i]);
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn less_than_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
-				let mut out = [m32::new(false); Self::F32_LANES];
-				let a: [u32; Self::F32_LANES] = cast(a);
-				let b: [u32; Self::F32_LANES] = cast(b);
-				for i in 0..Self::F32_LANES {
-					out[i] = m32::new(a[i] < b[i]);
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn greater_than_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
-				let mut out = [m32::new(false); Self::F32_LANES];
-				let a: [u32; Self::F32_LANES] = cast(a);
-				let b: [u32; Self::F32_LANES] = cast(b);
-				for i in 0..Self::F32_LANES {
-					out[i] = m32::new(a[i] > b[i]);
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn less_than_or_equal_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
-				let mut out = [m32::new(false); Self::F32_LANES];
-				let a: [u32; Self::F32_LANES] = cast(a);
-				let b: [u32; Self::F32_LANES] = cast(b);
-				for i in 0..Self::F32_LANES {
-					out[i] = m32::new(a[i] <= b[i]);
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn greater_than_or_equal_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
-				let mut out = [m32::new(false); Self::F32_LANES];
-				let a: [u32; Self::F32_LANES] = cast(a);
-				let b: [u32; Self::F32_LANES] = cast(b);
-				for i in 0..Self::F32_LANES {
-					out[i] = m32::new(a[i] >= b[i]);
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn less_than_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::m32s {
-				let mut out = [m32::new(false); Self::F32_LANES];
-				let a: [i32; Self::F32_LANES] = cast(a);
-				let b: [i32; Self::F32_LANES] = cast(b);
-				for i in 0..Self::F32_LANES {
-					out[i] = m32::new(a[i] < b[i]);
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn greater_than_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::m32s {
-				let mut out = [m32::new(false); Self::F32_LANES];
-				let a: [i32; Self::F32_LANES] = cast(a);
-				let b: [i32; Self::F32_LANES] = cast(b);
-				for i in 0..Self::F32_LANES {
-					out[i] = m32::new(a[i] > b[i]);
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn less_than_or_equal_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::m32s {
-				let mut out = [m32::new(false); Self::F32_LANES];
-				let a: [i32; Self::F32_LANES] = cast(a);
-				let b: [i32; Self::F32_LANES] = cast(b);
-				for i in 0..Self::F32_LANES {
-					out[i] = m32::new(a[i] <= b[i]);
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn greater_than_or_equal_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::m32s {
-				let mut out = [m32::new(false); Self::F32_LANES];
-				let a: [i32; Self::F32_LANES] = cast(a);
-				let b: [i32; Self::F32_LANES] = cast(b);
-				for i in 0..Self::F32_LANES {
-					out[i] = m32::new(a[i] >= b[i]);
-				}
-				cast(out)
-			}
-
-			#[inline]
 			fn wrapping_dyn_shl_u32s(self, a: Self::u32s, amount: Self::u32s) -> Self::u32s {
 				let mut out = [0u32; Self::F32_LANES];
 				let a: [u32; Self::F32_LANES] = cast(a);
@@ -2034,178 +1900,6 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
-			fn splat_u64s(self, value: u64) -> Self::u64s {
-				cast([value; Self::F64_LANES])
-			}
-
-			#[inline]
-			fn add_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
-				let mut out = [0u64; Self::F64_LANES];
-				let a: [u64; Self::F64_LANES] = cast(a);
-				let b: [u64; Self::F64_LANES] = cast(b);
-				for i in 0..Self::F64_LANES {
-					out[i] = a[i].wrapping_add(b[i]);
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn sub_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
-				let mut out = [0u64; Self::F64_LANES];
-				let a: [u64; Self::F64_LANES] = cast(a);
-				let b: [u64; Self::F64_LANES] = cast(b);
-				for i in 0..Self::F64_LANES {
-					out[i] = a[i].wrapping_sub(b[i]);
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn less_than_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
-				let mut out = [m64::new(false); Self::F64_LANES];
-				let a: [u64; Self::F64_LANES] = cast(a);
-				let b: [u64; Self::F64_LANES] = cast(b);
-				for i in 0..Self::F64_LANES {
-					out[i] = m64::new(a[i] < b[i]);
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn greater_than_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
-				let mut out = [m64::new(false); Self::F64_LANES];
-				let a: [u64; Self::F64_LANES] = cast(a);
-				let b: [u64; Self::F64_LANES] = cast(b);
-				for i in 0..Self::F64_LANES {
-					out[i] = m64::new(a[i] > b[i]);
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn less_than_or_equal_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
-				let mut out = [m64::new(false); Self::F64_LANES];
-				let a: [u64; Self::F64_LANES] = cast(a);
-				let b: [u64; Self::F64_LANES] = cast(b);
-				for i in 0..Self::F64_LANES {
-					out[i] = m64::new(a[i] <= b[i]);
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn greater_than_or_equal_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
-				let mut out = [m64::new(false); Self::F64_LANES];
-				let a: [u64; Self::F64_LANES] = cast(a);
-				let b: [u64; Self::F64_LANES] = cast(b);
-				for i in 0..Self::F64_LANES {
-					out[i] = m64::new(a[i] >= b[i]);
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn less_than_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::m64s {
-				let mut out = [m64::new(false); Self::F64_LANES];
-				let a: [i64; Self::F64_LANES] = cast(a);
-				let b: [i64; Self::F64_LANES] = cast(b);
-				for i in 0..Self::F64_LANES {
-					out[i] = m64::new(a[i] < b[i]);
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn greater_than_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::m64s {
-				let mut out = [m64::new(false); Self::F64_LANES];
-				let a: [i64; Self::F64_LANES] = cast(a);
-				let b: [i64; Self::F64_LANES] = cast(b);
-				for i in 0..Self::F64_LANES {
-					out[i] = m64::new(a[i] > b[i]);
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn less_than_or_equal_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::m64s {
-				let mut out = [m64::new(false); Self::F64_LANES];
-				let a: [i64; Self::F64_LANES] = cast(a);
-				let b: [i64; Self::F64_LANES] = cast(b);
-				for i in 0..Self::F64_LANES {
-					out[i] = m64::new(a[i] <= b[i]);
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn greater_than_or_equal_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::m64s {
-				let mut out = [m64::new(false); Self::F64_LANES];
-				let a: [i64; Self::F64_LANES] = cast(a);
-				let b: [i64; Self::F64_LANES] = cast(b);
-				for i in 0..Self::F64_LANES {
-					out[i] = m64::new(a[i] >= b[i]);
-				}
-				cast(out)
-			}
-
-			#[inline]
-			fn splat_f32s(self, value: f32) -> Self::f32s {
-				cast([value; Self::F32_LANES])
-			}
-
-			#[inline]
-			fn add_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-				let mut out = [0.0f32; Self::F32_LANES];
-				let a: [f32; Self::F32_LANES] = cast(a);
-				let b: [f32; Self::F32_LANES] = cast(b);
-
-				for i in 0..Self::F32_LANES {
-					out[i] = a[i] + b[i];
-				}
-
-				cast(out)
-			}
-
-			#[inline]
-			fn sub_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-				let mut out = [0.0f32; Self::F32_LANES];
-				let a: [f32; Self::F32_LANES] = cast(a);
-				let b: [f32; Self::F32_LANES] = cast(b);
-
-				for i in 0..Self::F32_LANES {
-					out[i] = a[i] - b[i];
-				}
-
-				cast(out)
-			}
-
-			#[inline]
-			fn mul_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-				let mut out = [0.0f32; Self::F32_LANES];
-				let a: [f32; Self::F32_LANES] = cast(a);
-				let b: [f32; Self::F32_LANES] = cast(b);
-
-				for i in 0..Self::F32_LANES {
-					out[i] = a[i] * b[i];
-				}
-
-				cast(out)
-			}
-
-			#[inline]
-			fn div_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-				let mut out = [0.0f32; Self::F32_LANES];
-				let a: [f32; Self::F32_LANES] = cast(a);
-				let b: [f32; Self::F32_LANES] = cast(b);
-
-				for i in 0..Self::F32_LANES {
-					out[i] = a[i] / b[i];
-				}
-
-				cast(out)
-			}
-
-			#[inline]
 			fn mul_add_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
 				let mut out = [0.0f32; Self::F32_LANES];
 				let a: [f32; Self::F32_LANES] = cast(a);
@@ -2214,71 +1908,6 @@ macro_rules! scalar_simd {
 
 				for i in 0..Self::F32_LANES {
 					out[i] = fma_f32(a[i], b[i], c[i]);
-				}
-
-				cast(out)
-			}
-
-			#[inline]
-			fn equal_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
-				let mut out = [m32::new(false); Self::F32_LANES];
-				let a: [f32; Self::F32_LANES] = cast(a);
-				let b: [f32; Self::F32_LANES] = cast(b);
-
-				for i in 0..Self::F32_LANES {
-					out[i] = m32::new(a[i] == b[i]);
-				}
-
-				cast(out)
-			}
-
-			#[inline]
-			fn less_than_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
-				let mut out = [m32::new(false); Self::F32_LANES];
-				let a: [f32; Self::F32_LANES] = cast(a);
-				let b: [f32; Self::F32_LANES] = cast(b);
-
-				for i in 0..Self::F32_LANES {
-					out[i] = m32::new(a[i] < b[i]);
-				}
-
-				cast(out)
-			}
-
-			#[inline]
-			fn less_than_or_equal_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
-				let mut out = [m32::new(false); Self::F32_LANES];
-				let a: [f32; Self::F32_LANES] = cast(a);
-				let b: [f32; Self::F32_LANES] = cast(b);
-
-				for i in 0..Self::F32_LANES {
-					out[i] = m32::new(a[i] <= b[i]);
-				}
-
-				cast(out)
-			}
-
-			#[inline]
-			fn min_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-				let mut out = [0.0f32; Self::F32_LANES];
-				let a: [f32; Self::F32_LANES] = cast(a);
-				let b: [f32; Self::F32_LANES] = cast(b);
-
-				for i in 0..Self::F32_LANES {
-					out[i] = f32::min(a[i], b[i]);
-				}
-
-				cast(out)
-			}
-
-			#[inline]
-			fn max_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-				let mut out = [0.0f32; Self::F32_LANES];
-				let a: [f32; Self::F32_LANES] = cast(a);
-				let b: [f32; Self::F32_LANES] = cast(b);
-
-				for i in 0..Self::F32_LANES {
-					out[i] = f32::max(a[i], b[i]);
 				}
 
 				cast(out)
@@ -2380,46 +2009,6 @@ macro_rules! scalar_simd {
 
 				for i in 0..Self::C32_LANES {
 					out[i] = c32::new(a[i].im, a[i].re);
-				}
-
-				cast(out)
-			}
-
-			#[inline]
-			fn add_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
-				let mut out = [c32::ZERO; Self::C32_LANES];
-				let a: [c32; Self::C32_LANES] = cast(a);
-				let b: [c32; Self::C32_LANES] = cast(b);
-
-				for i in 0..Self::C32_LANES {
-					out[i] = c32::new(a[i].re + b[i].re, a[i].im + b[i].im);
-				}
-
-				cast(out)
-			}
-
-			#[inline]
-			fn sub_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
-				let mut out = [c32::ZERO; Self::C32_LANES];
-				let a: [c32; Self::C32_LANES] = cast(a);
-				let b: [c32; Self::C32_LANES] = cast(b);
-
-				for i in 0..Self::C32_LANES {
-					out[i] = c32::new(a[i].re - b[i].re, a[i].im - b[i].im);
-				}
-
-				cast(out)
-			}
-
-			#[inline]
-			fn mul_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
-				let mut out = [c32::ZERO; Self::C32_LANES];
-				let a: [c32; Self::C32_LANES] = cast(a);
-				let b: [c32; Self::C32_LANES] = cast(b);
-
-				for i in 0..Self::C32_LANES {
-					out[i].re = fma_f32(a[i].re, b[i].re, -(a[i].im * b[i].im));
-					out[i].im = fma_f32(a[i].re, b[i].im, a[i].im * b[i].re);
 				}
 
 				cast(out)
@@ -2562,63 +2151,6 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
-			fn splat_f64s(self, value: f64) -> Self::f64s {
-				cast([value; Self::F64_LANES])
-			}
-
-			#[inline]
-			fn add_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-				let mut out = [0.0f64; Self::F64_LANES];
-				let a: [f64; Self::F64_LANES] = cast(a);
-				let b: [f64; Self::F64_LANES] = cast(b);
-
-				for i in 0..Self::F64_LANES {
-					out[i] = a[i] + b[i];
-				}
-
-				cast(out)
-			}
-
-			#[inline]
-			fn sub_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-				let mut out = [0.0f64; Self::F64_LANES];
-				let a: [f64; Self::F64_LANES] = cast(a);
-				let b: [f64; Self::F64_LANES] = cast(b);
-
-				for i in 0..Self::F64_LANES {
-					out[i] = a[i] - b[i];
-				}
-
-				cast(out)
-			}
-
-			#[inline]
-			fn mul_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-				let mut out = [0.0f64; Self::F64_LANES];
-				let a: [f64; Self::F64_LANES] = cast(a);
-				let b: [f64; Self::F64_LANES] = cast(b);
-
-				for i in 0..Self::F64_LANES {
-					out[i] = a[i] * b[i];
-				}
-
-				cast(out)
-			}
-
-			#[inline]
-			fn div_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-				let mut out = [0.0f64; Self::F64_LANES];
-				let a: [f64; Self::F64_LANES] = cast(a);
-				let b: [f64; Self::F64_LANES] = cast(b);
-
-				for i in 0..Self::F64_LANES {
-					out[i] = a[i] / b[i];
-				}
-
-				cast(out)
-			}
-
-			#[inline]
 			fn mul_add_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
 				let mut out = [0.0f64; Self::F64_LANES];
 				let a: [f64; Self::F64_LANES] = cast(a);
@@ -2627,71 +2159,6 @@ macro_rules! scalar_simd {
 
 				for i in 0..Self::F64_LANES {
 					out[i] = fma_f64(a[i], b[i], c[i]);
-				}
-
-				cast(out)
-			}
-
-			#[inline]
-			fn equal_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
-				let mut out = [m64::new(false); Self::F64_LANES];
-				let a: [f64; Self::F64_LANES] = cast(a);
-				let b: [f64; Self::F64_LANES] = cast(b);
-
-				for i in 0..Self::F64_LANES {
-					out[i] = m64::new(a[i] == b[i]);
-				}
-
-				cast(out)
-			}
-
-			#[inline]
-			fn less_than_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
-				let mut out = [m64::new(false); Self::F64_LANES];
-				let a: [f64; Self::F64_LANES] = cast(a);
-				let b: [f64; Self::F64_LANES] = cast(b);
-
-				for i in 0..Self::F64_LANES {
-					out[i] = m64::new(a[i] < b[i]);
-				}
-
-				cast(out)
-			}
-
-			#[inline]
-			fn less_than_or_equal_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
-				let mut out = [m64::new(false); Self::F64_LANES];
-				let a: [f64; Self::F64_LANES] = cast(a);
-				let b: [f64; Self::F64_LANES] = cast(b);
-
-				for i in 0..Self::F64_LANES {
-					out[i] = m64::new(a[i] <= b[i]);
-				}
-
-				cast(out)
-			}
-
-			#[inline]
-			fn min_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-				let mut out = [0.0f64; Self::F64_LANES];
-				let a: [f64; Self::F64_LANES] = cast(a);
-				let b: [f64; Self::F64_LANES] = cast(b);
-
-				for i in 0..Self::F64_LANES {
-					out[i] = f64::min(a[i], b[i]);
-				}
-
-				cast(out)
-			}
-
-			#[inline]
-			fn max_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-				let mut out = [0.0f64; Self::F64_LANES];
-				let a: [f64; Self::F64_LANES] = cast(a);
-				let b: [f64; Self::F64_LANES] = cast(b);
-
-				for i in 0..Self::F64_LANES {
-					out[i] = f64::max(a[i], b[i]);
 				}
 
 				cast(out)
@@ -2793,46 +2260,6 @@ macro_rules! scalar_simd {
 
 				for i in 0..Self::C64_LANES {
 					out[i] = c64::new(a[i].im, a[i].re);
-				}
-
-				cast(out)
-			}
-
-			#[inline]
-			fn add_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
-				let mut out = [c64::ZERO; Self::C64_LANES];
-				let a: [c64; Self::C64_LANES] = cast(a);
-				let b: [c64; Self::C64_LANES] = cast(b);
-
-				for i in 0..Self::C64_LANES {
-					out[i] = c64::new(a[i].re + b[i].re, a[i].im + b[i].im);
-				}
-
-				cast(out)
-			}
-
-			#[inline]
-			fn sub_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
-				let mut out = [c64::ZERO; Self::C64_LANES];
-				let a: [c64; Self::C64_LANES] = cast(a);
-				let b: [c64; Self::C64_LANES] = cast(b);
-
-				for i in 0..Self::C64_LANES {
-					out[i] = c64::new(a[i].re - b[i].re, a[i].im - b[i].im);
-				}
-
-				cast(out)
-			}
-
-			#[inline]
-			fn mul_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
-				let mut out = [c64::ZERO; Self::C64_LANES];
-				let a: [c64; Self::C64_LANES] = cast(a);
-				let b: [c64; Self::C64_LANES] = cast(b);
-
-				for i in 0..Self::C64_LANES {
-					out[i].re = fma_f64(a[i].re, b[i].re, -(a[i].im * b[i].im));
-					out[i].im = fma_f64(a[i].re, b[i].im, a[i].im * b[i].re);
 				}
 
 				cast(out)
@@ -2988,13 +2415,16 @@ macro_rules! scalar_simd {
 }
 
 scalar_simd!(
-	Scalar128b, 16, m32x4, f32x4, i32x4, u32x4, m64x2, f64x2, i64x2, u64x2
+	Scalar128b, 16, m8x16, i8x16, u8x16, m16x8, i16x8, u16x8, m32x4, f32x4, i32x4, u32x4, m64x2,
+	f64x2, i64x2, u64x2
 );
 scalar_simd!(
-	Scalar256b, 16, m32x8, f32x8, i32x8, u32x8, m64x4, f64x4, i64x4, u64x4
+	Scalar256b, 16, m8x32, i8x32, u8x32, m16x16, i16x16, u16x16, m32x8, f32x8, i32x8, u32x8, m64x4,
+	f64x4, i64x4, u64x4
 );
 scalar_simd!(
-	Scalar512b, 8, m32x16, f32x16, i32x16, u32x16, m64x8, f64x8, i64x8, u64x8
+	Scalar512b, 8, m8x64, i8x64, u8x64, m16x32, i16x32, u16x32, m32x16, f32x16, i32x16, u32x16,
+	m64x8, f64x8, i64x8, u64x8
 );
 
 impl Default for Scalar {
@@ -3011,21 +2441,132 @@ impl Scalar {
 	}
 }
 
+macro_rules! impl_primitive_binop {
+	($func: ident, $op: ident, $ty: ident, $out: ty) => {
+		paste! {
+			#[inline(always)]
+			fn [<$func _ $ty s>](self, a: Self::[<$ty s>], b: Self::[<$ty s>]) -> Self::[<$out s>] {
+				a.$op(b)
+			}
+		}
+	};
+	(ref $func: ident, $op: ident, $ty: ident, $out: ty) => {
+		paste! {
+			#[inline(always)]
+			fn [<$func _ $ty s>](self, a: Self::[<$ty s>], b: Self::[<$ty s>]) -> Self::[<$out s>] {
+				a.$op(&b)
+			}
+		}
+	};
+}
+
+macro_rules! primitive_binop {
+	(ref $func: ident, op $op: ident, $($ty: ident => $out: ty),*) => {
+		$(impl_primitive_binop!(ref $func, $op, $ty, $out);)*
+	};
+	($func: ident, $($ty: ident => $out: ty),*) => {
+		$(impl_primitive_binop!($func, $func, $ty, $out);)*
+	};
+	($func: ident, op $op: ident, $($ty: ident),*) => {
+		$(impl_primitive_binop!($func, $op, $ty, $ty);)*
+	};
+	($func: ident, $($ty: ident),*) => {
+		$(impl_primitive_binop!($func, $func, $ty, $ty);)*
+	};
+}
+
+macro_rules! impl_primitive_unop {
+	($func: ident, $op: ident, $ty: ident, $out: ty) => {
+		paste! {
+			#[inline(always)]
+			fn [<$func _ $ty s>](self, a: Self::[<$ty s>]) -> Self::[<$out s>] {
+				a.$op()
+			}
+		}
+	};
+}
+
+macro_rules! primitive_unop {
+	($func: ident, $($ty: ident),*) => {
+		$(impl_primitive_unop!($func, $func, $ty, $ty);)*
+	};
+}
+
+macro_rules! splat_primitive {
+	($ty: ty) => {
+		paste! {
+			#[inline]
+			fn [<splat_ $ty s>](self, value: $ty) -> Self::[<$ty s>] {
+				value
+			}
+		}
+	};
+	($($ty: ty),*) => {
+		$(splat_primitive!($ty);)*
+	}
+}
+
 impl Seal for Scalar {}
 impl Simd for Scalar {
 	type c32s = c32;
 	type c64s = c64;
 	type f32s = f32;
 	type f64s = f64;
+	type i16s = i16;
 	type i32s = i32;
 	type i64s = i64;
+	type i8s = i8;
+	type m16s = bool;
 	type m32s = bool;
 	type m64s = bool;
+	type m8s = bool;
+	type u16s = u16;
 	type u32s = u32;
 	type u64s = u64;
+	type u8s = u8;
 
 	const IS_SCALAR: bool = true;
 	const REGISTER_COUNT: usize = 16;
+
+	primitive_binop!(add, c32, f32, c64, f64);
+
+	primitive_binop!(add, op wrapping_add, u8, i8, u16, i16, u32, i32, u64, i64);
+
+	primitive_binop!(sub, c32, f32, c64, f64);
+
+	primitive_binop!(sub, op wrapping_sub, u8, i8, u16, i16, u32, i32, u64, i64);
+
+	primitive_binop!(mul, f32, f64);
+
+	primitive_binop!(mul, op wrapping_mul, u16, i16, u32, i32, u64, i64);
+
+	primitive_binop!(div, f32, f64);
+
+	primitive_binop!(and, op bitand, m8, u8, m16, u16, m32, u32, m64, u64);
+
+	primitive_binop!(or, op bitor, m8, u8, m16, u16, m32, u32, m64, u64);
+
+	primitive_binop!(xor, op bitxor, m8, u8, m16, u16, m32, u32, m64, u64);
+
+	primitive_binop!(ref equal, op eq, m8 => m8, u8 => m8, m16 => m16, u16 => m16, m32 => m32, u32 => m32, m64 => m64, u64 => m64, c32 => m32, f32 => m32, c64 => m64, f64 => m64);
+
+	primitive_binop!(ref greater_than, op gt, u8 => m8, i8 => m8, u16 => m16, i16 => m16, u32 => m32, i32 => m32, u64 => m64, i64 => m64, f32 => m32, f64 => m64);
+
+	primitive_binop!(ref greater_than_or_equal, op ge, u8 => m8, i8 => m8, u16 => m16, i16 => m16, u32 => m32, i32 => m32, u64 => m64, i64 => m64, f32 => m32, f64 => m64);
+
+	primitive_binop!(ref less_than, op lt, u8 => m8, i8 => m8, u16 => m16, i16 => m16, u32 => m32, i32 => m32, u64 => m64, i64 => m64, f32 => m32, f64 => m64);
+
+	primitive_binop!(ref less_than_or_equal, op le, u8 => m8, i8 => m8, u16 => m16, i16 => m16, u32 => m32, i32 => m32, u64 => m64, i64 => m64, f32 => m32, f64 => m64);
+
+	primitive_binop!(min, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64);
+
+	primitive_binop!(max, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64);
+
+	primitive_unop!(neg, c32, c64, f32, f64);
+
+	primitive_unop!(not, m8, u8, m16, u16, m32, u32, m64, u64);
+
+	splat_primitive!(u8, i8, u16, i16, u32, i32, u64, i64, c32, f32, c64, f64);
 
 	#[inline]
 	fn abs2_c32s(self, a: Self::c32s) -> Self::c32s {
@@ -3051,56 +2592,6 @@ impl Simd for Scalar {
 		let re = if a.re > a.im { a.re } else { a.im };
 		let im = re;
 		Complex { re, im }
-	}
-
-	#[inline]
-	fn add_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
-		a + b
-	}
-
-	#[inline]
-	fn add_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
-		a + b
-	}
-
-	#[inline]
-	fn add_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-		a + b
-	}
-
-	#[inline]
-	fn add_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-		a + b
-	}
-
-	#[inline]
-	fn add_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
-		a.wrapping_add(b)
-	}
-
-	#[inline]
-	fn add_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
-		a.wrapping_add(b)
-	}
-
-	#[inline]
-	fn and_m32s(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
-		a & b
-	}
-
-	#[inline]
-	fn and_m64s(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
-		a & b
-	}
-
-	#[inline]
-	fn and_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
-		a & b
-	}
-
-	#[inline]
-	fn and_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
-		a & b
 	}
 
 	#[inline]
@@ -3161,26 +2652,6 @@ impl Simd for Scalar {
 		a.conj() * b
 	}
 
-	#[inline]
-	fn div_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-		a / b
-	}
-
-	#[inline]
-	fn div_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-		a / b
-	}
-
-	#[inline]
-	fn equal_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
-		a == b
-	}
-
-	#[inline]
-	fn equal_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
-		a == b
-	}
-
 	#[inline(always)]
 	fn first_true_m32s(self, mask: Self::m32s) -> usize {
 		if mask { 0 } else { 1 }
@@ -3189,106 +2660,6 @@ impl Simd for Scalar {
 	#[inline(always)]
 	fn first_true_m64s(self, mask: Self::m64s) -> usize {
 		if mask { 0 } else { 1 }
-	}
-
-	#[inline]
-	fn greater_than_or_equal_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
-		a >= b
-	}
-
-	#[inline(always)]
-	fn greater_than_or_equal_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
-		a >= b
-	}
-
-	#[inline]
-	fn greater_than_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
-		a > b
-	}
-
-	#[inline(always)]
-	fn greater_than_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
-		a > b
-	}
-
-	#[inline]
-	fn greater_than_or_equal_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::m32s {
-		a >= b
-	}
-
-	#[inline(always)]
-	fn greater_than_or_equal_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::m64s {
-		a >= b
-	}
-
-	#[inline]
-	fn greater_than_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::m32s {
-		a > b
-	}
-
-	#[inline(always)]
-	fn greater_than_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::m64s {
-		a > b
-	}
-
-	#[inline]
-	fn less_than_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
-		a < b
-	}
-
-	#[inline]
-	fn less_than_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
-		a < b
-	}
-
-	#[inline]
-	fn less_than_or_equal_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::m32s {
-		a <= b
-	}
-
-	#[inline]
-	fn less_than_or_equal_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::m64s {
-		a <= b
-	}
-
-	#[inline]
-	fn less_than_or_equal_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
-		a <= b
-	}
-
-	#[inline(always)]
-	fn less_than_or_equal_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
-		a <= b
-	}
-
-	#[inline]
-	fn less_than_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::m32s {
-		a < b
-	}
-
-	#[inline(always)]
-	fn less_than_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::m64s {
-		a < b
-	}
-
-	#[inline]
-	fn less_than_or_equal_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::m32s {
-		a <= b
-	}
-
-	#[inline(always)]
-	fn less_than_or_equal_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::m64s {
-		a <= b
-	}
-
-	#[inline]
-	fn less_than_i32s(self, a: Self::i32s, b: Self::i32s) -> Self::m32s {
-		a < b
-	}
-
-	#[inline(always)]
-	fn less_than_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::m64s {
-		a < b
 	}
 
 	#[inline(always)]
@@ -3336,6 +2707,25 @@ impl Simd for Scalar {
 	}
 
 	#[inline(always)]
+	unsafe fn mask_store_ptr_u8s(self, mask: MemMask<Self::m8s>, ptr: *mut u8, values: Self::u8s) {
+		if mask.mask {
+			*ptr = values
+		}
+	}
+
+	#[inline(always)]
+	unsafe fn mask_store_ptr_u16s(
+		self,
+		mask: MemMask<Self::m16s>,
+		ptr: *mut u16,
+		values: Self::u16s,
+	) {
+		if mask.mask {
+			*ptr = values
+		}
+	}
+
+	#[inline(always)]
 	unsafe fn mask_store_ptr_u32s(
 		self,
 		mask: MemMask<Self::m32s>,
@@ -3357,26 +2747,6 @@ impl Simd for Scalar {
 		if mask.mask {
 			*ptr = values
 		}
-	}
-
-	#[inline]
-	fn max_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-		a.max(b)
-	}
-
-	#[inline]
-	fn max_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-		a.max(b)
-	}
-
-	#[inline]
-	fn min_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-		a.min(b)
-	}
-
-	#[inline]
-	fn min_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-		a.min(b)
 	}
 
 	#[inline]
@@ -3445,66 +2815,6 @@ impl Simd for Scalar {
 	#[inline]
 	fn mul_e_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
 		a * b
-	}
-
-	#[inline]
-	fn mul_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-		a * b
-	}
-
-	#[inline]
-	fn mul_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-		a * b
-	}
-
-	#[inline]
-	fn neg_c32s(self, a: Self::c32s) -> Self::c32s {
-		-a
-	}
-
-	#[inline]
-	fn neg_c64s(self, a: Self::c64s) -> Self::c64s {
-		-a
-	}
-
-	#[inline]
-	fn not_m32s(self, a: Self::m32s) -> Self::m32s {
-		!a
-	}
-
-	#[inline]
-	fn not_m64s(self, a: Self::m64s) -> Self::m64s {
-		!a
-	}
-
-	#[inline]
-	fn not_u32s(self, a: Self::u32s) -> Self::u32s {
-		!a
-	}
-
-	#[inline]
-	fn not_u64s(self, a: Self::u64s) -> Self::u64s {
-		!a
-	}
-
-	#[inline]
-	fn or_m32s(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
-		a | b
-	}
-
-	#[inline]
-	fn or_m64s(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
-		a | b
-	}
-
-	#[inline]
-	fn or_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
-		a | b
-	}
-
-	#[inline]
-	fn or_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
-		a | b
 	}
 
 	#[inline]
@@ -3666,66 +2976,6 @@ impl Simd for Scalar {
 	}
 
 	#[inline]
-	fn splat_c32s(self, value: c32) -> Self::c32s {
-		value
-	}
-
-	#[inline]
-	fn splat_c64s(self, value: c64) -> Self::c64s {
-		value
-	}
-
-	#[inline]
-	fn splat_f32s(self, value: f32) -> Self::f32s {
-		value
-	}
-
-	#[inline]
-	fn splat_f64s(self, value: f64) -> Self::f64s {
-		value
-	}
-
-	#[inline]
-	fn splat_u32s(self, value: u32) -> Self::u32s {
-		value
-	}
-
-	#[inline]
-	fn splat_u64s(self, value: u64) -> Self::u64s {
-		value
-	}
-
-	#[inline]
-	fn sub_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
-		a - b
-	}
-
-	#[inline]
-	fn sub_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
-		a - b
-	}
-
-	#[inline]
-	fn sub_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s {
-		a - b
-	}
-
-	#[inline]
-	fn sub_f64s(self, a: Self::f64s, b: Self::f64s) -> Self::f64s {
-		a - b
-	}
-
-	#[inline]
-	fn sub_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
-		a.wrapping_sub(b)
-	}
-
-	#[inline]
-	fn sub_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
-		a.wrapping_sub(b)
-	}
-
-	#[inline]
 	fn swap_re_im_c32s(self, a: Self::c32s) -> Self::c32s {
 		c32 { re: a.im, im: a.re }
 	}
@@ -3757,24 +3007,12 @@ impl Simd for Scalar {
 		a.wrapping_shr(amount)
 	}
 
-	#[inline]
-	fn xor_m32s(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
-		a ^ b
+	unsafe fn mask_load_ptr_u8s(self, mask: MemMask<Self::m8s>, ptr: *const u8) -> Self::u8s {
+		if mask.mask { *ptr } else { 0 }
 	}
 
-	#[inline]
-	fn xor_m64s(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
-		a ^ b
-	}
-
-	#[inline]
-	fn xor_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s {
-		a ^ b
-	}
-
-	#[inline]
-	fn xor_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s {
-		a ^ b
+	unsafe fn mask_load_ptr_u16s(self, mask: MemMask<Self::m16s>, ptr: *const u16) -> Self::u16s {
+		if mask.mask { *ptr } else { 0 }
 	}
 }
 
@@ -3850,39 +3088,42 @@ unsafe fn rsplit_mut_slice<T, U>(slice: &mut [T]) -> (&mut [T], &mut [U]) {
 	)
 }
 
-match_cfg!(item, match cfg!() {
-	const { any(target_arch = "x86", target_arch = "x86_64") } => {
-		pub use x86::Arch;
-	},
-	const { target_arch = "aarch64" } => {
-		pub use aarch64::Arch;
-	},
-	_ => {
-		#[derive(Debug, Clone, Copy)]
-		#[non_exhaustive]
-		pub enum Arch {
-			Scalar,
-		}
-
-		impl Arch {
-			#[inline(always)]
-			pub fn new() -> Self {
-				Self::Scalar
+match_cfg!(
+	item,
+	match cfg!() {
+		const { any(target_arch = "x86", target_arch = "x86_64") } => {
+			pub use x86::Arch;
+		},
+		const { target_arch = "aarch64" } => {
+			pub use aarch64::Arch;
+		},
+		_ => {
+			#[derive(Debug, Clone, Copy)]
+			#[non_exhaustive]
+			pub enum Arch {
+				Scalar,
 			}
 
-			#[inline(always)]
-			pub fn dispatch<Op: WithSimd>(self, op: Op) -> Op::Output {
-				op.with_simd(Scalar)
+			impl Arch {
+				#[inline(always)]
+				pub fn new() -> Self {
+					Self::Scalar
+				}
+
+				#[inline(always)]
+				pub fn dispatch<Op: WithSimd>(self, op: Op) -> Op::Output {
+					op.with_simd(Scalar)
+				}
 			}
-		}
-		impl Default for Arch {
-			#[inline]
-			fn default() -> Self {
-				Self::new()
+			impl Default for Arch {
+				#[inline]
+				fn default() -> Self {
+					Self::new()
+				}
 			}
-		}
-	},
-});
+		},
+	}
+);
 
 #[doc(hidden)]
 pub struct CheckSameSize<T, U>(PhantomData<(T, U)>);
@@ -4057,22 +3298,22 @@ pub mod aarch64;
 
 /// Mask type with 8 bits. Its bit pattern is either all ones or all zeros. Unsafe code must not
 /// depend on this, however.
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Default)]
 #[repr(transparent)]
 pub struct m8(u8);
 /// Mask type with 16 bits. Its bit pattern is either all ones or all zeros. Unsafe code must not
 /// depend on this, however.
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Default)]
 #[repr(transparent)]
 pub struct m16(u16);
 /// Mask type with 32 bits. Its bit pattern is either all ones or all zeros. Unsafe code must not
 /// depend on this, however.
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Default)]
 #[repr(transparent)]
 pub struct m32(u32);
 /// Mask type with 64 bits. Its bit pattern is either all ones or all zeros. Unsafe code must not
 /// depend on this, however.
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Default)]
 #[repr(transparent)]
 pub struct m64(u64);
 
@@ -5030,6 +4271,76 @@ pub struct m8x32(
 	pub m8,
 );
 
+/// A 512-bit SIMD vector with 64 elements of type [`m8`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct m8x64(
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+	pub m8,
+);
+
 /// A 128-bit SIMD vector with 8 elements of type [`i16`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
@@ -5191,6 +4502,43 @@ pub struct m16x8(
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
 pub struct m16x16(
+	pub m16,
+	pub m16,
+	pub m16,
+	pub m16,
+	pub m16,
+	pub m16,
+	pub m16,
+	pub m16,
+	pub m16,
+	pub m16,
+	pub m16,
+	pub m16,
+	pub m16,
+	pub m16,
+	pub m16,
+	pub m16,
+);
+/// A 512-bit SIMD vector with 32 elements of type [`m16`].
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(C)]
+pub struct m16x32(
+	pub m16,
+	pub m16,
+	pub m16,
+	pub m16,
+	pub m16,
+	pub m16,
+	pub m16,
+	pub m16,
+	pub m16,
+	pub m16,
+	pub m16,
+	pub m16,
+	pub m16,
+	pub m16,
+	pub m16,
+	pub m16,
 	pub m16,
 	pub m16,
 	pub m16,
@@ -5485,8 +4833,10 @@ unsafe impl Pod for u8x32 {}
 unsafe impl Pod for u8x64 {}
 unsafe impl Zeroable for m8x16 {}
 unsafe impl Zeroable for m8x32 {}
+unsafe impl Zeroable for m8x64 {}
 unsafe impl Pod for m8x16 {}
 unsafe impl Pod for m8x32 {}
+unsafe impl Pod for m8x64 {}
 
 unsafe impl Zeroable for i16x8 {}
 unsafe impl Zeroable for i16x16 {}
@@ -5502,8 +4852,10 @@ unsafe impl Pod for u16x16 {}
 unsafe impl Pod for u16x32 {}
 unsafe impl Zeroable for m16x8 {}
 unsafe impl Zeroable for m16x16 {}
+unsafe impl Zeroable for m16x32 {}
 unsafe impl Pod for m16x8 {}
 unsafe impl Pod for m16x16 {}
+unsafe impl Pod for m16x32 {}
 
 unsafe impl Zeroable for f32x4 {}
 unsafe impl Zeroable for f32x8 {}
@@ -5555,8 +4907,8 @@ unsafe impl Pod for m64x2 {}
 unsafe impl Pod for m64x4 {}
 unsafe impl Pod for m64x8 {}
 
-macro_rules! iota_32 {
-	($T: ty) => {{
+macro_rules! iota {
+	($T: ty, $int: ty) => {{
 		let mut iota = core::mem::MaybeUninit::uninit();
 		unsafe {
 			{
@@ -5564,36 +4916,11 @@ macro_rules! iota_32 {
 					&mut *((&mut iota) as *mut MaybeUninit<[$T; 32]> as *mut [MaybeUninit<$T>; 32]);
 				let mut i = 0;
 				while i < 32 {
-					let v = (&mut iota[i]) as *mut _ as *mut u32;
+					let v = (&mut iota[i]) as *mut _ as *mut $int;
 
 					let mut j = 0;
-					while j < core::mem::size_of::<$T>() / core::mem::size_of::<u32>() {
-						v.add(j).write_unaligned(i as u32);
-						j += 1;
-					}
-
-					i += 1;
-				}
-			}
-			iota.assume_init()
-		}
-	}};
-}
-
-macro_rules! iota_64 {
-	($T: ty) => {{
-		let mut iota = core::mem::MaybeUninit::uninit();
-		unsafe {
-			{
-				let iota =
-					&mut *((&mut iota) as *mut MaybeUninit<[$T; 32]> as *mut [MaybeUninit<$T>; 32]);
-				let mut i = 0;
-				while i < 32 {
-					let v = (&mut iota[i]) as *mut _ as *mut u64;
-
-					let mut j = 0;
-					while j < core::mem::size_of::<$T>() / core::mem::size_of::<u64>() {
-						v.add(j).write_unaligned(i as u64);
+					while j < core::mem::size_of::<$T>() / core::mem::size_of::<$int>() {
+						v.add(j).write_unaligned(i as $int);
 						j += 1;
 					}
 
@@ -5606,21 +4933,37 @@ macro_rules! iota_64 {
 }
 
 #[cfg(libpulp_const)]
+pub const fn iota_8<T: Interleave>() -> [T; 32] {
+	iota!(T, u8)
+}
+#[cfg(libpulp_const)]
+pub const fn iota_16<T: Interleave>() -> [T; 32] {
+	iota!(T, u16)
+}
+#[cfg(libpulp_const)]
 pub const fn iota_32<T: Interleave>() -> [T; 32] {
-	iota_32!(T)
+	iota!(T, u32)
 }
 #[cfg(libpulp_const)]
 pub const fn iota_64<T: Interleave>() -> [T; 32] {
-	iota_64!(T)
+	iota!(T, u64)
 }
 
 #[cfg(not(libpulp_const))]
+pub fn iota_8<T: Interleave>() -> [T; 32] {
+	iota!(T, u8)
+}
+#[cfg(not(libpulp_const))]
+pub fn iota_16<T: Interleave>() -> [T; 32] {
+	iota!(T, u16)
+}
+#[cfg(not(libpulp_const))]
 pub fn iota_32<T: Interleave>() -> [T; 32] {
-	iota_32!(T)
+	iota!(T, u32)
 }
 #[cfg(not(libpulp_const))]
 pub fn iota_64<T: Interleave>() -> [T; 32] {
-	iota_64!(T)
+	iota!(T, u64)
 }
 
 #[cfg(target_arch = "x86_64")]
