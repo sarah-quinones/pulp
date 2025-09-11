@@ -17,6 +17,7 @@ libm = { version = "0.2", default-features = false }
 reborrow = "0.5"
 cfg-if = "1.0.0"
 raw-cpuid = { version = "11.5.0", default-features = false, optional = true }
+paste = "1"
 
 [features]
 default = [

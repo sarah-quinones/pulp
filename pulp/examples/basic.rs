@@ -20,6 +20,7 @@ mod x86 {
 	}
 
 	#[target_feature(enable = "avx512f")]
+	#[allow(clippy::missing_transmute_annotations)]
 	unsafe fn sum_stdarch_imp(v: &[f64]) -> f64 {
 		let mut acc0 = _mm512_set1_pd(0.0);
 		let mut acc1 = _mm512_set1_pd(0.0);
