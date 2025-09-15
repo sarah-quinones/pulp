@@ -67,9 +67,9 @@
 	clippy::missing_transmute_annotations,
 	clippy::tabs_in_doc_comments,
 	clippy::modulo_one,
-	clippy::missing_transmute_annotations,
 	clippy::useless_transmute,
-	clippy::not_unsafe_ptr_arg_deref
+	clippy::not_unsafe_ptr_arg_deref,
+	clippy::manual_is_multiple_of
 )]
 #![cfg_attr(
 	all(feature = "nightly", any(target_arch = "aarch64")),
