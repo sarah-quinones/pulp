@@ -252,6 +252,7 @@ macro_rules! binop_256_full {
 }
 pub(crate) use binop_256_full;
 
+mod v1;
 mod v2;
 mod v3;
 
@@ -259,6 +260,7 @@ mod v3;
 #[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 mod v4;
 
+pub use v1::*;
 pub use v2::*;
 pub use v3::*;
 

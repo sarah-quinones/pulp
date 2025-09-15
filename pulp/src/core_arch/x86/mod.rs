@@ -7,7 +7,7 @@ macro_rules! __impl {
 			/// # Safety
 			/// requires the corresponding feature
 			#[inline(always)]
-			pub unsafe fn new_unchecked() -> Self {
+			pub const unsafe fn new_unchecked() -> Self {
 				Self { __private: () }
 			}
 

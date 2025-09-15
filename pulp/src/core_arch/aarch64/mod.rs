@@ -13,7 +13,7 @@ macro_rules! __impl {
 			/// # Safety
 			/// Not checked
 			#[inline(always)]
-			pub unsafe fn new_unchecked() -> Self {
+			pub const unsafe fn new_unchecked() -> Self {
 				Self { __private: () }
 			}
 

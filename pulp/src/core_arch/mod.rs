@@ -253,7 +253,7 @@ macro_rules! simd_type {
                 /// # Safety
                 /// - the required CPU features must be available.
                 #[inline]
-                pub unsafe fn new_unchecked() -> Self {
+                pub const unsafe fn new_unchecked() -> Self {
                     unsafe{Self{
                         $($ident: <$crate::core_arch::__impl_type!($feature)>::new_unchecked(),)*
                     }}
@@ -328,7 +328,7 @@ macro_rules! simd_type {
                         f.call()
                     }
 
-                    if $crate::try_const! { ::core::mem::size_of::<F>() <= 8 * ::core::mem::size_of::<::core::primitive::usize>() } {
+                    if const { ::core::mem::size_of::<F>() <= 8 * ::core::mem::size_of::<::core::primitive::usize>() } {
                         union Pad<T> {
                             t: ::core::mem::ManuallyDrop<T>,
                             __u: ::core::mem::MaybeUninit<[usize; 8]>,

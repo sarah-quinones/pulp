@@ -599,7 +599,7 @@ impl Simd for V4 {
 	fn deinterleave_shfl_f32s<T: Interleave>(self, values: T) -> T {
 		let avx = self.avx512f;
 
-		if try_const! { core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f32s>() } {
+		if const { core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f32s>() } {
 			let values: [__m512d; 2] = unsafe { core::mem::transmute_copy(&values) };
 			// a0 b0 a1 b1 a2 b2 a3 b3
 			// a4 b4 a5 b5 a6 b6 a7 b7
@@ -619,8 +619,7 @@ impl Simd for V4 {
 			];
 
 			unsafe { core::mem::transmute_copy(&values) }
-		} else if try_const! { core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f32s>() }
-		{
+		} else if const { core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f32s>() } {
 			// a0 b0 c0 d0 a1 b1 c1 d1
 			// a2 b2 c2 d2 a3 b3 c3 d3
 			// a4 b4 c4 d4 a5 b5 c5 d5
@@ -666,7 +665,7 @@ impl Simd for V4 {
 	fn deinterleave_shfl_f64s<T: Interleave>(self, values: T) -> T {
 		let avx = self.avx512f;
 
-		if try_const! { core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f64s>() } {
+		if const { core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f64s>() } {
 			let values: [__m512d; 2] = unsafe { core::mem::transmute_copy(&values) };
 			unsafe {
 				core::mem::transmute_copy(&[
@@ -674,8 +673,7 @@ impl Simd for V4 {
 					avx._mm512_unpackhi_pd(values[0], values[1]),
 				])
 			}
-		} else if try_const! { core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f64s>() }
-		{
+		} else if const { core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f64s>() } {
 			let values: [__m512d; 4] = unsafe { core::mem::transmute_copy(&values) };
 
 			// a0 b0 c0 d0
@@ -717,7 +715,7 @@ impl Simd for V4 {
 
 	#[inline(always)]
 	fn interleave_shfl_f32s<T: Interleave>(self, values: T) -> T {
-		if try_const! {
+		if const {
 			(core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f32s>())
 				|| (core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f32s>())
 		} {
@@ -730,7 +728,7 @@ impl Simd for V4 {
 
 	#[inline(always)]
 	fn interleave_shfl_f64s<T: Interleave>(self, values: T) -> T {
-		if try_const! { core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f64s>() } {
+		if const { core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f64s>() } {
 			let values: [__m512d; 4] = unsafe { core::mem::transmute_copy(&values) };
 			let avx = self.avx512f;
 
@@ -756,8 +754,7 @@ impl Simd for V4 {
 					avx._mm512_unpackhi_pd(values[2], values[3]),
 				])
 			}
-		} else if try_const! { core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f64s>() }
-		{
+		} else if const { core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f64s>() } {
 			// permutation is inverse of itself in this case
 			self.deinterleave_shfl_f64s(values)
 		} else {
@@ -1262,7 +1259,7 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
-	fn select_u32s_m32s(
+	fn select_u32s(
 		self,
 		mask: Self::m32s,
 		if_true: Self::u32s,
@@ -1276,7 +1273,7 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
-	fn select_u64s_m64s(
+	fn select_u64s(
 		self,
 		mask: Self::m64s,
 		if_true: Self::u64s,
@@ -4018,7 +4015,7 @@ impl V4 {
 	/// Multiplies the elements of each lane of `a` and `b`, and returns separately the low and
 	/// high bits of the result.
 	#[inline(always)]
-	pub fn widening_mul_i16x32(self, a: i16x32, b: i16x32) -> (i16x32, i16x32) {
+	pub fn widening_mul_i16x32(self, a: i16x32, b: i16x32) -> (u16x32, i16x32) {
 		(
 			cast!(self.avx512bw._mm512_mullo_epi16(cast!(a), cast!(b))),
 			cast!(self.avx512bw._mm512_mulhi_epi16(cast!(a), cast!(b))),
@@ -4028,7 +4025,7 @@ impl V4 {
 	/// Multiplies the elements of each lane of `a` and `b`, and returns separately the low and
 	/// high bits of the result.
 	#[inline(always)]
-	pub fn widening_mul_i32x16(self, a: i32x16, b: i32x16) -> (i32x16, i32x16) {
+	pub fn widening_mul_i32x16(self, a: i32x16, b: i32x16) -> (u32x16, i32x16) {
 		let a = cast!(a);
 		let b = cast!(b);
 		let avx512f = self.avx512f;

@@ -531,7 +531,7 @@ impl Simd for V3 {
 	fn deinterleave_shfl_f32s<T: Interleave>(self, values: T) -> T {
 		let avx = self.avx;
 
-		if try_const! { core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f32s>() } {
+		if const { core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f32s>() } {
 			let values: [__m256d; 2] = unsafe { core::mem::transmute_copy(&values) };
 			// a0 b0 a1 b1 a2 b2 a3 b3
 			// a4 b4 a5 b5 a6 b6 a7 b7
@@ -551,8 +551,7 @@ impl Simd for V3 {
 			];
 
 			unsafe { core::mem::transmute_copy(&values) }
-		} else if try_const! { core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f32s>() }
-		{
+		} else if const { core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f32s>() } {
 			// a0 b0 c0 d0 a1 b1 c1 d1
 			// a2 b2 c2 d2 a3 b3 c3 d3
 			// a4 b4 c4 d4 a5 b5 c5 d5
@@ -598,15 +597,14 @@ impl Simd for V3 {
 	fn deinterleave_shfl_f64s<T: Interleave>(self, values: T) -> T {
 		let avx = self.avx;
 
-		if try_const! { core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f64s>() } {
+		if const { core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f64s>() } {
 			let values: [__m256d; 2] = unsafe { core::mem::transmute_copy(&values) };
 			let values = [
 				avx._mm256_unpacklo_pd(values[0], values[1]),
 				avx._mm256_unpackhi_pd(values[0], values[1]),
 			];
 			unsafe { core::mem::transmute_copy(&values) }
-		} else if try_const! { core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f64s>() }
-		{
+		} else if const { core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f64s>() } {
 			let values: [__m256d; 4] = unsafe { core::mem::transmute_copy(&values) };
 
 			// a0 b0 c0 d0
@@ -644,7 +642,7 @@ impl Simd for V3 {
 
 	#[inline(always)]
 	fn interleave_shfl_f32s<T: Interleave>(self, values: T) -> T {
-		if try_const! {
+		if const {
 			(core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f32s>())
 				|| (core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f32s>())
 		} {
@@ -657,7 +655,7 @@ impl Simd for V3 {
 
 	#[inline(always)]
 	fn interleave_shfl_f64s<T: Interleave>(self, values: T) -> T {
-		if try_const! {
+		if const {
 			(core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f64s>())
 				|| (core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f64s>())
 		} {
@@ -1121,7 +1119,7 @@ impl Simd for V3 {
 	}
 
 	#[inline(always)]
-	fn select_u32s_m32s(
+	fn select_u32s(
 		self,
 		mask: Self::m32s,
 		if_true: Self::u32s,
@@ -1135,7 +1133,7 @@ impl Simd for V3 {
 	}
 
 	#[inline(always)]
-	fn select_u64s_m64s(
+	fn select_u64s(
 		self,
 		mask: Self::m64s,
 		if_true: Self::u64s,
@@ -1790,7 +1788,7 @@ impl Simd for V3_128b {
 	}
 
 	#[inline(always)]
-	fn select_u32s_m32s(
+	fn select_u32s(
 		self,
 		mask: Self::m32s,
 		if_true: Self::u32s,
@@ -1800,7 +1798,7 @@ impl Simd for V3_128b {
 	}
 
 	#[inline(always)]
-	fn select_u64s_m64s(
+	fn select_u64s(
 		self,
 		mask: Self::m64s,
 		if_true: Self::u64s,
@@ -2071,13 +2069,13 @@ impl Simd for V3_256b {
 		fn rotate_right_c64s(self, a: Self::c64s, amount: usize) -> Self::c64s;
 		fn rotate_right_u32s(self, a: Self::u32s, amount: usize) -> Self::u32s;
 		fn rotate_right_u64s(self, a: Self::u64s, amount: usize) -> Self::u64s;
-		fn select_u32s_m32s(
+		fn select_u32s(
 			self,
 			mask: Self::m32s,
 			if_true: Self::u32s,
 			if_false: Self::u32s,
 		) -> Self::u32s;
-		fn select_u64s_m64s(
+		fn select_u64s(
 			self,
 			mask: Self::m64s,
 			if_true: Self::u64s,
@@ -2255,13 +2253,13 @@ impl Simd for V3_512b {
 		fn or_u16s(self, a: Self::u16s, b: Self::u16s) -> Self::u16s;
 		fn or_u32s(self, a: Self::u32s, b: Self::u32s) -> Self::u32s;
 		fn or_u64s(self, a: Self::u64s, b: Self::u64s) -> Self::u64s;
-		fn select_u32s_m32s(
+		fn select_u32s(
 			self,
 			mask: Self::m32s,
 			if_true: Self::u32s,
 			if_false: Self::u32s,
 		) -> Self::u32s;
-		fn select_u64s_m64s(
+		fn select_u64s(
 			self,
 			mask: Self::m64s,
 			if_true: Self::u64s,
@@ -2328,8 +2326,8 @@ impl Simd for V3_512b {
 		let a1 = simd.rotate_right_c32s(a1, amount);
 
 		cast!([
-			simd.select_f32s_m32s(mask, a1, a0),
-			simd.select_f32s_m32s(mask, a0, a1),
+			simd.select_f32s(mask, a1, a0),
+			simd.select_f32s(mask, a0, a1),
 		])
 	}
 
@@ -2347,8 +2345,8 @@ impl Simd for V3_512b {
 		let a1 = simd.rotate_right_c64s(a1, amount);
 
 		cast!([
-			simd.select_f64s_m64s(mask, a1, a0),
-			simd.select_f64s_m64s(mask, a0, a1),
+			simd.select_f64s(mask, a1, a0),
+			simd.select_f64s(mask, a0, a1),
 		])
 	}
 
@@ -2366,8 +2364,8 @@ impl Simd for V3_512b {
 		let a1 = simd.rotate_right_u32s(a1, amount);
 
 		cast!([
-			simd.select_u32s_m32s(mask, a1, a0),
-			simd.select_u32s_m32s(mask, a0, a1),
+			simd.select_u32s(mask, a1, a0),
+			simd.select_u32s(mask, a0, a1),
 		])
 	}
 
@@ -2385,8 +2383,8 @@ impl Simd for V3_512b {
 		let a1 = simd.rotate_right_u64s(a1, amount);
 
 		cast!([
-			simd.select_u64s_m64s(mask, a1, a0),
-			simd.select_u64s_m64s(mask, a0, a1),
+			simd.select_u64s(mask, a1, a0),
+			simd.select_u64s(mask, a0, a1),
 		])
 	}
 
@@ -4022,7 +4020,7 @@ impl V3 {
 	/// Shifting by a value greater than the bit width of the type sets the result to zero if the
 	/// sign bit is not set, and to `-1` if the sign bit is set.
 	#[inline(always)]
-	pub fn shr_dyn_i32x4(self, a: i32x4, amount: i32x4) -> i32x4 {
+	pub fn shr_dyn_i32x4(self, a: i32x4, amount: u32x4) -> i32x4 {
 		cast!(self.avx2._mm_srav_epi32(cast!(a), cast!(amount)))
 	}
 
@@ -4031,7 +4029,7 @@ impl V3 {
 	/// Shifting by a value greater than the bit width of the type sets the result to zero if the
 	/// sign bit is not set, and to `-1` if the sign bit is set.
 	#[inline(always)]
-	pub fn shr_dyn_i32x8(self, a: i32x8, amount: i32x8) -> i32x8 {
+	pub fn shr_dyn_i32x8(self, a: i32x8, amount: u32x8) -> i32x8 {
 		cast!(self.avx2._mm256_srav_epi32(cast!(a), cast!(amount)))
 	}
 
@@ -4230,7 +4228,7 @@ impl V3 {
 	/// Multiplies the elements of each lane of `a` and `b`, and returns separately the low and
 	/// high bits of the result.
 	#[inline(always)]
-	pub fn widening_mul_i16x16(self, a: i16x16, b: i16x16) -> (i16x16, i16x16) {
+	pub fn widening_mul_i16x16(self, a: i16x16, b: i16x16) -> (u16x16, i16x16) {
 		(
 			cast!(self.avx2._mm256_mullo_epi16(cast!(a), cast!(b))),
 			cast!(self.avx2._mm256_mulhi_epi16(cast!(a), cast!(b))),
@@ -4240,7 +4238,7 @@ impl V3 {
 	/// Multiplies the elements of each lane of `a` and `b`, and returns separately the low and
 	/// high bits of the result.
 	#[inline(always)]
-	pub fn widening_mul_i32x8(self, a: i32x8, b: i32x8) -> (i32x8, i32x8) {
+	pub fn widening_mul_i32x8(self, a: i32x8, b: i32x8) -> (u32x8, i32x8) {
 		let a = cast!(a);
 		let b = cast!(b);
 		let avx2 = self.avx2;

@@ -72,11 +72,6 @@
 	clippy::not_unsafe_ptr_arg_deref
 )]
 #![cfg_attr(
-	all(feature = "nightly", any(target_arch = "x86", target_arch = "x86_64")),
-	feature(stdarch_x86_avx512),
-	feature(avx512_target_feature)
-)]
-#![cfg_attr(
 	all(feature = "nightly", any(target_arch = "aarch64")),
 	feature(stdarch_neon_i8mm),
 	feature(stdarch_neon_sm4),
@@ -86,20 +81,6 @@
 )]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
-
-#[cfg(libpulp_const)]
-#[macro_export]
-macro_rules! try_const {
-	($e: expr) => {
-		const { $e }
-	};
-}
-
-#[cfg(not(libpulp_const))]
-#[macro_export]
-macro_rules! try_const {
-	($e: expr) => {{ $e }};
-}
 
 macro_rules! match_cfg {
     (item, match cfg!() {
@@ -198,6 +179,8 @@ macro_rules! match_cfg {
     };
 }
 
+const MAX_REGISTER_BYTES: usize = 256;
+
 use match_cfg;
 
 /// Safe transmute macro.
@@ -207,11 +190,15 @@ use match_cfg;
 macro_rules! cast {
 	($val: expr $(,)?) => {{
 		let __val = $val;
-		if $crate::try_const! { false } {
+		if const { false } {
 			// checks type constraints
 			$crate::cast(__val)
 		} else {
-			#[allow(unused_unsafe, clippy::missing_transmute_annotations)]
+			#[allow(
+				unused_unsafe,
+				unnecessary_transmutes,
+				clippy::missing_transmute_annotations
+			)]
 			unsafe {
 				::core::mem::transmute(__val)
 			}
@@ -223,11 +210,11 @@ use bytemuck::{AnyBitPattern, CheckedBitPattern, NoUninit, Pod, Zeroable, checke
 use core::fmt::Debug;
 use core::marker::PhantomData;
 use core::mem::MaybeUninit;
+use core::ops::*;
 use core::slice::{from_raw_parts, from_raw_parts_mut};
 use num_complex::Complex;
 use paste::paste;
 use seal::Seal;
-use std::ops::*;
 
 /// Requires the first non-lifetime generic parameter, as well as the function's
 /// first input parameter to be the SIMD type.
@@ -240,6 +227,47 @@ pub use {bytemuck, num_complex};
 
 pub type c32 = Complex<f32>;
 pub type c64 = Complex<f64>;
+
+#[derive(Copy, Clone)]
+#[repr(transparent)]
+struct DebugCplx<T>(T);
+
+unsafe impl<T: Zeroable> Zeroable for DebugCplx<T> {}
+unsafe impl<T: Pod> Pod for DebugCplx<T> {}
+
+impl Debug for DebugCplx<c32> {
+	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+		let c32 { re, im } = self.0;
+		re.fmt(f)?;
+
+		let sign = if im.is_sign_positive() { " + " } else { " - " };
+		f.write_str(sign)?;
+
+		let im = f32::from_bits(im.to_bits() & (u32::MAX >> 1));
+		im.abs().fmt(f)?;
+
+		f.write_str("i")?;
+
+		Ok(())
+	}
+}
+
+impl Debug for DebugCplx<c64> {
+	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+		let c64 { re, im } = self.0;
+		re.fmt(f)?;
+
+		let sign = if im.is_sign_positive() { " + " } else { " - " };
+		f.write_str(sign)?;
+
+		let im = f64::from_bits(im.to_bits() & (u64::MAX >> 1));
+		im.abs().fmt(f)?;
+
+		f.write_str("i")?;
+
+		Ok(())
+	}
+}
 
 match_cfg!(
 	item,
@@ -365,13 +393,13 @@ unsafe fn interleave_fallback<Unit: Pod, Reg: Pod, AosReg>(x: AosReg) -> AosReg 
 	assert!(core::mem::size_of::<Reg>() % core::mem::size_of::<Unit>() == 0);
 	assert!(!core::mem::needs_drop::<AosReg>());
 
-	if try_const! { core::mem::size_of::<AosReg>() == core::mem::size_of::<Reg>() } {
+	if const { core::mem::size_of::<AosReg>() == core::mem::size_of::<Reg>() } {
 		x
 	} else {
 		let mut y = core::ptr::read(&x);
 
-		let n = try_const! { core::mem::size_of::<AosReg>() / core::mem::size_of::<Reg>() };
-		let m = try_const! { core::mem::size_of::<Reg>() / core::mem::size_of::<Unit>() };
+		let n = const { core::mem::size_of::<AosReg>() / core::mem::size_of::<Reg>() };
+		let m = const { core::mem::size_of::<Reg>() / core::mem::size_of::<Unit>() };
 
 		unsafe {
 			let y = (&mut y) as *mut _ as *mut Unit;
@@ -393,13 +421,13 @@ unsafe fn deinterleave_fallback<Unit: Pod, Reg: Pod, SoaReg>(y: SoaReg) -> SoaRe
 	assert!(core::mem::size_of::<Reg>() % core::mem::size_of::<Unit>() == 0);
 	assert!(!core::mem::needs_drop::<SoaReg>());
 
-	if try_const! { core::mem::size_of::<SoaReg>() == core::mem::size_of::<Reg>() } {
+	if const { core::mem::size_of::<SoaReg>() == core::mem::size_of::<Reg>() } {
 		y
 	} else {
 		let mut x = core::ptr::read(&y);
 
-		let n = try_const! { core::mem::size_of::<SoaReg>() / core::mem::size_of::<Reg>() };
-		let m = try_const! { core::mem::size_of::<Reg>() / core::mem::size_of::<Unit>() };
+		let n = const { core::mem::size_of::<SoaReg>() / core::mem::size_of::<Reg>() };
+		let m = const { core::mem::size_of::<Reg>() / core::mem::size_of::<Unit>() };
 
 		unsafe {
 			let y = (&y) as *const _ as *const Unit;
@@ -685,7 +713,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 
 	#[inline(always)]
 	fn first_true_m8s(self, mask: Self::m8s) -> usize {
-		if try_const! { core::mem::size_of::<Self::m8s>() == core::mem::size_of::<Self::u8s>() } {
+		if const { core::mem::size_of::<Self::m8s>() == core::mem::size_of::<Self::u8s>() } {
 			let mask: Self::u8s = bytemuck::cast(mask);
 			let slice = bytemuck::cast_slice::<Self::u8s, u8>(core::slice::from_ref(&mask));
 			let mut i = 0;
@@ -696,10 +724,10 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 				i += 1;
 			}
 			i
-		} else if try_const! { core::mem::size_of::<Self::m8s>() == core::mem::size_of::<u8>() } {
+		} else if const { core::mem::size_of::<Self::m8s>() == core::mem::size_of::<u8>() } {
 			let mask: u8 = bytemuck::cast(mask);
 			mask.leading_zeros() as usize
-		} else if try_const! { core::mem::size_of::<Self::m8s>() == core::mem::size_of::<u16>() } {
+		} else if const { core::mem::size_of::<Self::m8s>() == core::mem::size_of::<u16>() } {
 			let mask: u16 = bytemuck::cast(mask);
 			mask.leading_zeros() as usize
 		} else {
@@ -709,7 +737,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 
 	#[inline(always)]
 	fn first_true_m16s(self, mask: Self::m16s) -> usize {
-		if try_const! { core::mem::size_of::<Self::m16s>() == core::mem::size_of::<Self::u16s>() } {
+		if const { core::mem::size_of::<Self::m16s>() == core::mem::size_of::<Self::u16s>() } {
 			let mask: Self::u16s = bytemuck::cast(mask);
 			let slice = bytemuck::cast_slice::<Self::u16s, u16>(core::slice::from_ref(&mask));
 			let mut i = 0;
@@ -720,10 +748,10 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 				i += 1;
 			}
 			i
-		} else if try_const! { core::mem::size_of::<Self::m16s>() == core::mem::size_of::<u8>() } {
+		} else if const { core::mem::size_of::<Self::m16s>() == core::mem::size_of::<u8>() } {
 			let mask: u8 = bytemuck::cast(mask);
 			mask.leading_zeros() as usize
-		} else if try_const! { core::mem::size_of::<Self::m16s>() == core::mem::size_of::<u16>() } {
+		} else if const { core::mem::size_of::<Self::m16s>() == core::mem::size_of::<u16>() } {
 			let mask: u16 = bytemuck::cast(mask);
 			mask.leading_zeros() as usize
 		} else {
@@ -733,7 +761,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 
 	#[inline(always)]
 	fn first_true_m32s(self, mask: Self::m32s) -> usize {
-		if try_const! { core::mem::size_of::<Self::m32s>() == core::mem::size_of::<Self::u32s>() } {
+		if const { core::mem::size_of::<Self::m32s>() == core::mem::size_of::<Self::u32s>() } {
 			let mask: Self::u32s = bytemuck::cast(mask);
 			let slice = bytemuck::cast_slice::<Self::u32s, u32>(core::slice::from_ref(&mask));
 			let mut i = 0;
@@ -744,10 +772,10 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 				i += 1;
 			}
 			i
-		} else if try_const! { core::mem::size_of::<Self::m32s>() == core::mem::size_of::<u8>() } {
+		} else if const { core::mem::size_of::<Self::m32s>() == core::mem::size_of::<u8>() } {
 			let mask: u8 = bytemuck::cast(mask);
 			mask.leading_zeros() as usize
-		} else if try_const! { core::mem::size_of::<Self::m32s>() == core::mem::size_of::<u16>() } {
+		} else if const { core::mem::size_of::<Self::m32s>() == core::mem::size_of::<u16>() } {
 			let mask: u16 = bytemuck::cast(mask);
 			mask.leading_zeros() as usize
 		} else {
@@ -757,7 +785,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 
 	#[inline(always)]
 	fn first_true_m64s(self, mask: Self::m64s) -> usize {
-		if try_const! { core::mem::size_of::<Self::m64s>() == core::mem::size_of::<Self::u64s>() } {
+		if const { core::mem::size_of::<Self::m64s>() == core::mem::size_of::<Self::u64s>() } {
 			let mask: Self::u64s = bytemuck::cast(mask);
 			let slice = bytemuck::cast_slice::<Self::u64s, u64>(core::slice::from_ref(&mask));
 			let mut i = 0;
@@ -768,10 +796,10 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 				i += 1;
 			}
 			i
-		} else if try_const! { core::mem::size_of::<Self::m64s>() == core::mem::size_of::<u8>() } {
+		} else if const { core::mem::size_of::<Self::m64s>() == core::mem::size_of::<u8>() } {
 			let mask: u8 = bytemuck::cast(mask);
 			mask.leading_zeros() as usize
-		} else if try_const! { core::mem::size_of::<Self::m64s>() == core::mem::size_of::<u16>() } {
+		} else if const { core::mem::size_of::<Self::m64s>() == core::mem::size_of::<u16>() } {
 			let mask: u16 = bytemuck::cast(mask);
 			mask.leading_zeros() as usize
 		} else {
@@ -791,7 +819,9 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 
 	#[inline(always)]
 	fn mask_between_m8s(self, start: u8, end: u8) -> MemMask<Self::m8s> {
-		let iota: Self::u8s = try_const! { unsafe { core::mem::transmute_copy(&iota_8::<u8>()) } };
+		let iota: Self::u8s = const {
+			unsafe { core::mem::transmute_copy(&iota_8::<u8, { MAX_REGISTER_BYTES / 1 }>()) }
+		};
 		self.and_m8s(
 			self.greater_than_or_equal_u8s(iota, self.splat_u8s(start)),
 			self.less_than_u8s(iota, self.splat_u8s(end)),
@@ -801,8 +831,9 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 
 	#[inline(always)]
 	fn mask_between_m16s(self, start: u16, end: u16) -> MemMask<Self::m16s> {
-		let iota: Self::u16s =
-			try_const! { unsafe { core::mem::transmute_copy(&iota_16::<u16>()) } };
+		let iota: Self::u16s = const {
+			unsafe { core::mem::transmute_copy(&iota_16::<u16, { MAX_REGISTER_BYTES / 2 }>()) }
+		};
 		self.and_m16s(
 			self.greater_than_or_equal_u16s(iota, self.splat_u16s(start)),
 			self.less_than_u16s(iota, self.splat_u16s(end)),
@@ -812,8 +843,9 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 
 	#[inline(always)]
 	fn mask_between_m32s(self, start: u32, end: u32) -> MemMask<Self::m32s> {
-		let iota: Self::u32s =
-			try_const! { unsafe { core::mem::transmute_copy(&iota_32::<u32>()) } };
+		let iota: Self::u32s = const {
+			unsafe { core::mem::transmute_copy(&iota_32::<u32, { MAX_REGISTER_BYTES / 4 }>()) }
+		};
 		self.and_m32s(
 			self.greater_than_or_equal_u32s(iota, self.splat_u32s(start)),
 			self.less_than_u32s(iota, self.splat_u32s(end)),
@@ -823,8 +855,9 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 
 	#[inline(always)]
 	fn mask_between_m64s(self, start: u64, end: u64) -> MemMask<Self::m64s> {
-		let iota: Self::u64s =
-			try_const! { unsafe { core::mem::transmute_copy(&iota_64::<u64>()) } };
+		let iota: Self::u64s = const {
+			unsafe { core::mem::transmute_copy(&iota_64::<u64, { MAX_REGISTER_BYTES / 8 }>()) }
+		};
 		self.and_m64s(
 			self.greater_than_or_equal_u64s(iota, self.splat_u64s(start)),
 			self.less_than_u64s(iota, self.splat_u64s(end)),
@@ -1295,69 +1328,61 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	fn rotate_right_u64s(self, a: Self::u64s, amount: usize) -> Self::u64s;
 
 	#[inline]
-	fn select_f32s_m32s(
+	fn select_f32s(
 		self,
 		mask: Self::m32s,
 		if_true: Self::f32s,
 		if_false: Self::f32s,
 	) -> Self::f32s {
-		self.transmute_f32s_u32s(self.select_u32s_m32s(
+		self.transmute_f32s_u32s(self.select_u32s(
 			mask,
 			self.transmute_u32s_f32s(if_true),
 			self.transmute_u32s_f32s(if_false),
 		))
 	}
 	#[inline]
-	fn select_f64s_m64s(
+	fn select_f64s(
 		self,
 		mask: Self::m64s,
 		if_true: Self::f64s,
 		if_false: Self::f64s,
 	) -> Self::f64s {
-		self.transmute_f64s_u64s(self.select_u64s_m64s(
+		self.transmute_f64s_u64s(self.select_u64s(
 			mask,
 			self.transmute_u64s_f64s(if_true),
 			self.transmute_u64s_f64s(if_false),
 		))
 	}
 	#[inline]
-	fn select_i32s_m32s(
+	fn select_i32s(
 		self,
 		mask: Self::m32s,
 		if_true: Self::i32s,
 		if_false: Self::i32s,
 	) -> Self::i32s {
-		self.transmute_i32s_u32s(self.select_u32s_m32s(
+		self.transmute_i32s_u32s(self.select_u32s(
 			mask,
 			self.transmute_u32s_i32s(if_true),
 			self.transmute_u32s_i32s(if_false),
 		))
 	}
 	#[inline]
-	fn select_i64s_m64s(
+	fn select_i64s(
 		self,
 		mask: Self::m64s,
 		if_true: Self::i64s,
 		if_false: Self::i64s,
 	) -> Self::i64s {
-		self.transmute_i64s_u64s(self.select_u64s_m64s(
+		self.transmute_i64s_u64s(self.select_u64s(
 			mask,
 			self.transmute_u64s_i64s(if_true),
 			self.transmute_u64s_i64s(if_false),
 		))
 	}
-	fn select_u32s_m32s(
-		self,
-		mask: Self::m32s,
-		if_true: Self::u32s,
-		if_false: Self::u32s,
-	) -> Self::u32s;
-	fn select_u64s_m64s(
-		self,
-		mask: Self::m64s,
-		if_true: Self::u64s,
-		if_false: Self::u64s,
-	) -> Self::u64s;
+	fn select_u32s(self, mask: Self::m32s, if_true: Self::u32s, if_false: Self::u32s)
+	-> Self::u32s;
+	fn select_u64s(self, mask: Self::m64s, if_true: Self::u64s, if_false: Self::u64s)
+	-> Self::u64s;
 
 	fn swap_re_im_c32s(self, a: Self::c32s) -> Self::c32s;
 	fn swap_re_im_c64s(self, a: Self::c64s) -> Self::c64s;
@@ -1818,7 +1843,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
-			fn select_u32s_m32s(
+			fn select_u32s(
 				self,
 				mask: Self::m32s,
 				if_true: Self::u32s,
@@ -1841,7 +1866,7 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
-			fn select_u64s_m64s(
+			fn select_u64s(
 				self,
 				mask: Self::m64s,
 				if_true: Self::u64s,
@@ -2956,7 +2981,7 @@ impl Simd for Scalar {
 	}
 
 	#[inline]
-	fn select_u32s_m32s(
+	fn select_u32s(
 		self,
 		mask: Self::m32s,
 		if_true: Self::u32s,
@@ -2966,7 +2991,7 @@ impl Simd for Scalar {
 	}
 
 	#[inline]
-	fn select_u64s_m64s(
+	fn select_u64s(
 		self,
 		mask: Self::m64s,
 		if_true: Self::u64s,
@@ -3158,10 +3183,9 @@ macro_rules! static_assert_size_less_than_or_equal {
 ///
 /// This function asserts at compile time that the two types have the same size.
 #[inline(always)]
-pub fn cast<T: NoUninit, U: AnyBitPattern>(value: T) -> U {
+pub const fn cast<T: NoUninit, U: AnyBitPattern>(value: T) -> U {
 	static_assert_same_size!(T, U);
-	let value = core::mem::ManuallyDrop::new(value);
-	let ptr = &value as *const core::mem::ManuallyDrop<T> as *const U;
+	let ptr = &raw const value as *const U;
 	unsafe { ptr.read_unaligned() }
 }
 
@@ -3169,10 +3193,10 @@ pub fn cast<T: NoUninit, U: AnyBitPattern>(value: T) -> U {
 ///
 /// This property is checked at compile time.
 #[inline(always)]
-pub fn cast_lossy<T: NoUninit, U: AnyBitPattern>(value: T) -> U {
+pub const fn cast_lossy<T: NoUninit, U: AnyBitPattern>(value: T) -> U {
 	static_assert_size_less_than_or_equal!(U, T);
 	let value = core::mem::ManuallyDrop::new(value);
-	let ptr = &value as *const core::mem::ManuallyDrop<T> as *const U;
+	let ptr = &raw const value as *const U;
 	unsafe { ptr.read_unaligned() }
 }
 
@@ -4561,6 +4585,7 @@ pub struct m16x32(
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[repr(C)]
 pub struct f32x4(pub f32, pub f32, pub f32, pub f32);
+
 /// A 256-bit SIMD vector with 8 elements of type [`f32`].
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[repr(C)]
@@ -4596,6 +4621,82 @@ pub struct f32x16(
 	pub f32,
 );
 
+/// A 128-bit SIMD vector with 2 elements of type [`c32`].
+#[derive(Copy, Clone, PartialEq)]
+#[repr(C)]
+pub struct c32x2(pub c32, pub c32);
+
+impl Debug for c32x2 {
+	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+		#[derive(Copy, Clone, Debug)]
+		#[repr(C)]
+		pub struct c32x2(pub DebugCplx<c32>, pub DebugCplx<c32>);
+		unsafe impl Zeroable for c32x2 {}
+		unsafe impl Pod for c32x2 {}
+
+		let this: c32x2 = cast!(*self);
+		this.fmt(f)
+	}
+}
+
+/// A 256-bit SIMD vector with 4 elements of type [`c32`].
+#[derive(Copy, Clone, PartialEq)]
+#[repr(C)]
+pub struct c32x4(pub c32, pub c32, pub c32, pub c32);
+
+impl Debug for c32x4 {
+	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+		#[derive(Copy, Clone, Debug)]
+		#[repr(C)]
+		pub struct c32x4(
+			pub DebugCplx<c32>,
+			pub DebugCplx<c32>,
+			pub DebugCplx<c32>,
+			pub DebugCplx<c32>,
+		);
+		unsafe impl Zeroable for c32x4 {}
+		unsafe impl Pod for c32x4 {}
+
+		let this: c32x4 = cast!(*self);
+		this.fmt(f)
+	}
+}
+
+/// A 512-bit SIMD vector with 8 elements of type [`c32`].
+#[derive(Copy, Clone, PartialEq)]
+#[repr(C)]
+pub struct c32x8(
+	pub c32,
+	pub c32,
+	pub c32,
+	pub c32,
+	pub c32,
+	pub c32,
+	pub c32,
+	pub c32,
+);
+
+impl Debug for c32x8 {
+	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+		#[derive(Copy, Clone, Debug)]
+		#[repr(C)]
+		pub struct c32x8(
+			pub DebugCplx<c32>,
+			pub DebugCplx<c32>,
+			pub DebugCplx<c32>,
+			pub DebugCplx<c32>,
+			pub DebugCplx<c32>,
+			pub DebugCplx<c32>,
+			pub DebugCplx<c32>,
+			pub DebugCplx<c32>,
+		);
+		unsafe impl Zeroable for c32x8 {}
+		unsafe impl Pod for c32x8 {}
+
+		let this: c32x8 = cast!(*self);
+		this.fmt(f)
+	}
+}
 /// A 128-bit SIMD vector with 4 elements of type [`i32`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
@@ -4735,6 +4836,65 @@ pub struct f64x8(
 	pub f64,
 );
 
+/// A 128-bit SIMD vector with 1 elements of type [`c64`].
+#[derive(Copy, Clone, PartialEq)]
+#[repr(C)]
+pub struct c64x1(pub c64);
+
+impl Debug for c64x1 {
+	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+		#[derive(Copy, Clone, Debug)]
+		#[repr(C)]
+		pub struct c64x1(pub DebugCplx<c64>);
+		unsafe impl Zeroable for c64x1 {}
+		unsafe impl Pod for c64x1 {}
+
+		let this: c64x1 = cast!(*self);
+		this.fmt(f)
+	}
+}
+
+/// A 256-bit SIMD vector with 2 elements of type [`c64`].
+#[derive(Copy, Clone, PartialEq)]
+#[repr(C)]
+pub struct c64x2(pub c64, pub c64);
+
+impl Debug for c64x2 {
+	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+		#[derive(Copy, Clone, Debug)]
+		#[repr(C)]
+		pub struct c64x2(pub DebugCplx<c64>, pub DebugCplx<c64>);
+		unsafe impl Zeroable for c64x2 {}
+		unsafe impl Pod for c64x2 {}
+
+		let this: c64x2 = cast!(*self);
+		this.fmt(f)
+	}
+}
+
+/// A 512-bit SIMD vector with 4 elements of type [`c64`].
+#[derive(Copy, Clone, PartialEq)]
+#[repr(C)]
+pub struct c64x4(pub c64, pub c64, pub c64, pub c64);
+
+impl Debug for c64x4 {
+	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+		#[derive(Copy, Clone, Debug)]
+		#[repr(C)]
+		pub struct c64x4(
+			pub DebugCplx<c64>,
+			pub DebugCplx<c64>,
+			pub DebugCplx<c64>,
+			pub DebugCplx<c64>,
+		);
+		unsafe impl Zeroable for c64x4 {}
+		unsafe impl Pod for c64x4 {}
+
+		let this: c64x4 = cast!(*self);
+		this.fmt(f)
+	}
+}
+
 /// A 128-bit SIMD vector with 2 elements of type [`i64`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
@@ -4863,6 +5023,12 @@ unsafe impl Zeroable for f32x16 {}
 unsafe impl Pod for f32x4 {}
 unsafe impl Pod for f32x8 {}
 unsafe impl Pod for f32x16 {}
+unsafe impl Zeroable for c32x2 {}
+unsafe impl Zeroable for c32x4 {}
+unsafe impl Zeroable for c32x8 {}
+unsafe impl Pod for c32x2 {}
+unsafe impl Pod for c32x4 {}
+unsafe impl Pod for c32x8 {}
 unsafe impl Zeroable for i32x4 {}
 unsafe impl Zeroable for i32x8 {}
 unsafe impl Zeroable for i32x16 {}
@@ -4888,6 +5054,12 @@ unsafe impl Zeroable for f64x8 {}
 unsafe impl Pod for f64x2 {}
 unsafe impl Pod for f64x4 {}
 unsafe impl Pod for f64x8 {}
+unsafe impl Zeroable for c64x1 {}
+unsafe impl Zeroable for c64x2 {}
+unsafe impl Zeroable for c64x4 {}
+unsafe impl Pod for c64x1 {}
+unsafe impl Pod for c64x2 {}
+unsafe impl Pod for c64x4 {}
 unsafe impl Zeroable for i64x2 {}
 unsafe impl Zeroable for i64x4 {}
 unsafe impl Zeroable for i64x8 {}
@@ -4908,62 +5080,66 @@ unsafe impl Pod for m64x4 {}
 unsafe impl Pod for m64x8 {}
 
 macro_rules! iota {
-	($T: ty, $int: ty) => {{
-		let mut iota = core::mem::MaybeUninit::uninit();
-		unsafe {
+	($T: ty, $N: expr, $int: ty) => {
+		const {
 			{
-				let iota =
-					&mut *((&mut iota) as *mut MaybeUninit<[$T; 32]> as *mut [MaybeUninit<$T>; 32]);
-				let mut i = 0;
-				while i < 32 {
-					let v = (&mut iota[i]) as *mut _ as *mut $int;
+				let mut iota = core::mem::MaybeUninit::uninit();
+				unsafe {
+					{
+						let iota = &mut *((&mut iota) as *mut MaybeUninit<[$T; $N]>
+							as *mut [MaybeUninit<$T>; $N]);
+						let mut i = 0;
+						while i < $N {
+							let v = (&mut iota[i]) as *mut _ as *mut $int;
 
-					let mut j = 0;
-					while j < core::mem::size_of::<$T>() / core::mem::size_of::<$int>() {
-						v.add(j).write_unaligned(i as $int);
-						j += 1;
+							let mut j = 0;
+							while j < core::mem::size_of::<$T>() / core::mem::size_of::<$int>() {
+								v.add(j).write_unaligned(i as $int);
+								j += 1;
+							}
+
+							i += 1;
+						}
 					}
-
-					i += 1;
+					iota.assume_init()
 				}
 			}
-			iota.assume_init()
 		}
-	}};
+	};
 }
 
 #[cfg(libpulp_const)]
-pub const fn iota_8<T: Interleave>() -> [T; 32] {
-	iota!(T, u8)
+pub const fn iota_8<T: Interleave, const N: usize>() -> [T; N] {
+	iota!(T, N, u8)
 }
 #[cfg(libpulp_const)]
-pub const fn iota_16<T: Interleave>() -> [T; 32] {
-	iota!(T, u16)
+pub const fn iota_16<T: Interleave, const N: usize>() -> [T; N] {
+	iota!(T, N, u16)
 }
 #[cfg(libpulp_const)]
-pub const fn iota_32<T: Interleave>() -> [T; 32] {
-	iota!(T, u32)
+pub const fn iota_32<T: Interleave, const N: usize>() -> [T; N] {
+	iota!(T, N, u32)
 }
 #[cfg(libpulp_const)]
-pub const fn iota_64<T: Interleave>() -> [T; 32] {
-	iota!(T, u64)
+pub const fn iota_64<T: Interleave, const N: usize>() -> [T; N] {
+	iota!(T, N, u64)
 }
 
 #[cfg(not(libpulp_const))]
-pub fn iota_8<T: Interleave>() -> [T; 32] {
-	iota!(T, u8)
+pub fn iota_8<T: Interleave, const N: usize>() -> [T; N] {
+	iota!(T, N, u8)
 }
 #[cfg(not(libpulp_const))]
-pub fn iota_16<T: Interleave>() -> [T; 32] {
-	iota!(T, u16)
+pub fn iota_16<T: Interleave, const N: usize>() -> [T; N] {
+	iota!(T, N, u16)
 }
 #[cfg(not(libpulp_const))]
-pub fn iota_32<T: Interleave>() -> [T; 32] {
-	iota!(T, u32)
+pub fn iota_32<T: Interleave, const N: usize>() -> [T; N] {
+	iota!(T, N, u32)
 }
 #[cfg(not(libpulp_const))]
-pub fn iota_64<T: Interleave>() -> [T; 32] {
-	iota!(T, u64)
+pub fn iota_64<T: Interleave, const N: usize>() -> [T; N] {
+	iota!(T, N, u64)
 }
 
 #[cfg(target_arch = "x86_64")]
