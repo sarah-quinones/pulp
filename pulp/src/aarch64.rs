@@ -3224,6 +3224,7 @@ mod tests {
 	}
 
 	#[test]
+	#[cfg(not(miri))]
 	fn test_cplx64_mul() {
 		for _ in 0..100 {
 			let a = f64x2(random(), random());
@@ -3279,6 +3280,7 @@ mod tests {
 	}
 
 	#[test]
+	#[cfg(not(miri))]
 	fn test_cplx32_mul() {
 		for _ in 0..100 {
 			let a = f32x4(random(), random(), random(), random());
@@ -3374,6 +3376,7 @@ mod tests {
 	}
 
 	#[test]
+	#[cfg(not(miri))]
 	fn test_rotate() {
 		if let Some(simd) = Neon::try_new() {
 			for amount in 0..128 {
@@ -3402,6 +3405,7 @@ mod tests {
 	}
 
 	#[test]
+	#[cfg(not(miri))]
 	fn test_interleave() {
 		if let Some(simd) = Neon::try_new() {
 			{
