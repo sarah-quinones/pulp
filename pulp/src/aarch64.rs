@@ -2255,8 +2255,8 @@ unsafe fn vfmaq_f64(c: float64x2_t, a: float64x2_t, b: float64x2_t) -> float64x2
 	let b: f64x2 = cast!(b);
 
 	cast!(f64x2(
-		crate::fma_f32(a.0, b.0, c.0),
-		crate::fma_f32(a.1, b.1, c.1),
+		crate::fma_f64(a.0, b.0, c.0),
+		crate::fma_f64(a.1, b.1, c.1),
 	))
 }
 
@@ -2267,10 +2267,10 @@ unsafe fn vfmaq_f32(c: float32x4_t, a: float32x4_t, b: float32x4_t) -> float32x4
 	let b: f32x4 = cast!(b);
 
 	cast!(f32x4(
-		crate::fma_f64(a.0, b.0, c.0),
-		crate::fma_f64(a.1, b.1, c.1),
-		crate::fma_f64(a.2, b.2, c.2),
-		crate::fma_f64(a.3, b.3, c.3),
+		crate::fma_f32(a.0, b.0, c.0),
+		crate::fma_f32(a.1, b.1, c.1),
+		crate::fma_f32(a.2, b.2, c.2),
+		crate::fma_f32(a.3, b.3, c.3),
 	))
 }
 
@@ -2751,153 +2751,153 @@ impl Neon {
 		unsafe { cast!(vbslq_u8(cast!(mask), cast!(if_true), cast!(if_false),)) }
 	}
 
-	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.  
+	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.
 	#[inline(always)]
 	pub fn shl_const_i16x8<const AMOUNT: i32>(self, a: i16x8) -> i16x8 {
 		unsafe { cast!(vshlq_n_s16::<AMOUNT>(cast!(a))) }
 	}
 
-	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.  
+	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.
 	#[inline(always)]
 	pub fn shl_const_i32x4<const AMOUNT: i32>(self, a: i32x4) -> i32x4 {
 		unsafe { cast!(vshlq_n_s32::<AMOUNT>(cast!(a))) }
 	}
 
-	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.  
+	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.
 	#[inline(always)]
 	pub fn shl_const_i64x2<const AMOUNT: i32>(self, a: i64x2) -> i64x2 {
 		unsafe { cast!(vshlq_n_s64::<AMOUNT>(cast!(a))) }
 	}
 
-	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.  
+	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.
 	#[inline(always)]
 	pub fn shl_const_i8x16<const AMOUNT: i32>(self, a: i8x16) -> i8x16 {
 		unsafe { cast!(vshlq_n_s8::<AMOUNT>(cast!(a))) }
 	}
 
-	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.  
+	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.
 	#[inline(always)]
 	pub fn shl_const_u16x8<const AMOUNT: i32>(self, a: u16x8) -> u16x8 {
 		unsafe { cast!(vshlq_n_u16::<AMOUNT>(cast!(a))) }
 	}
 
-	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.  
+	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.
 	#[inline(always)]
 	pub fn shl_const_u32x4<const AMOUNT: i32>(self, a: u32x4) -> u32x4 {
 		unsafe { cast!(vshlq_n_u32::<AMOUNT>(cast!(a))) }
 	}
 
-	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.  
+	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.
 	#[inline(always)]
 	pub fn shl_const_u64x2<const AMOUNT: i32>(self, a: u64x2) -> u64x2 {
 		unsafe { cast!(vshlq_n_u64::<AMOUNT>(cast!(a))) }
 	}
 
-	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.  
+	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.
 	#[inline(always)]
 	pub fn shl_const_u8x16<const AMOUNT: i32>(self, a: u8x16) -> u8x16 {
 		unsafe { cast!(vshlq_n_u8::<AMOUNT>(cast!(a))) }
 	}
 
 	/// Shift the bits of each lane of `a` to the left by the element in the corresponding lane in
-	/// `amount`, while shifting in zeros.  
+	/// `amount`, while shifting in zeros.
 	#[inline(always)]
 	pub fn shl_dyn_i16x8(self, a: i16x8, amount: i16x8) -> i16x8 {
 		unsafe { cast!(vshlq_u16(cast!(a), cast!(amount))) }
 	}
 
 	/// Shift the bits of each lane of `a` to the left by the element in the corresponding lane in
-	/// `amount`, while shifting in zeros.  
+	/// `amount`, while shifting in zeros.
 	#[inline(always)]
 	pub fn shl_dyn_i32x4(self, a: i32x4, amount: i32x4) -> i32x4 {
 		unsafe { cast!(vshlq_u32(cast!(a), cast!(amount))) }
 	}
 
 	/// Shift the bits of each lane of `a` to the left by the element in the corresponding lane in
-	/// `amount`, while shifting in zeros.  
+	/// `amount`, while shifting in zeros.
 	#[inline(always)]
 	pub fn shl_dyn_i64x2(self, a: i64x2, amount: i64x2) -> i64x2 {
 		unsafe { cast!(vshlq_u64(cast!(a), cast!(amount))) }
 	}
 
 	/// Shift the bits of each lane of `a` to the left by the element in the corresponding lane in
-	/// `amount`, while shifting in zeros.  
+	/// `amount`, while shifting in zeros.
 	#[inline(always)]
 	pub fn shl_dyn_i8x16(self, a: i8x16, amount: i8x16) -> i8x16 {
 		unsafe { cast!(vshlq_u8(cast!(a), cast!(amount))) }
 	}
 
 	/// Shift the bits of each lane of `a` to the left by the element in the corresponding lane in
-	/// `amount`, while shifting in zeros.  
+	/// `amount`, while shifting in zeros.
 	#[inline(always)]
 	pub fn shl_dyn_u16x8(self, a: u16x8, amount: i16x8) -> u16x8 {
 		unsafe { cast!(vshlq_u16(cast!(a), cast!(amount))) }
 	}
 
 	/// Shift the bits of each lane of `a` to the left by the element in the corresponding lane in
-	/// `amount`, while shifting in zeros.  
+	/// `amount`, while shifting in zeros.
 	#[inline(always)]
 	pub fn shl_dyn_u32x4(self, a: u32x4, amount: i32x4) -> u32x4 {
 		unsafe { cast!(vshlq_u32(cast!(a), cast!(amount))) }
 	}
 
 	/// Shift the bits of each lane of `a` to the left by the element in the corresponding lane in
-	/// `amount`, while shifting in zeros.  
+	/// `amount`, while shifting in zeros.
 	#[inline(always)]
 	pub fn shl_dyn_u64x2(self, a: u64x2, amount: i64x2) -> u64x2 {
 		unsafe { cast!(vshlq_u64(cast!(a), cast!(amount))) }
 	}
 
 	/// Shift the bits of each lane of `a` to the left by the element in the corresponding lane in
-	/// `amount`, while shifting in zeros.  
+	/// `amount`, while shifting in zeros.
 	#[inline(always)]
 	pub fn shl_dyn_u8x16(self, a: u8x16, amount: i8x16) -> u8x16 {
 		unsafe { cast!(vshlq_u8(cast!(a), cast!(amount))) }
 	}
 
-	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in sign bits.  
+	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in sign bits.
 	#[inline(always)]
 	pub fn shr_const_i16x8<const AMOUNT: i32>(self, a: i16x8) -> i16x8 {
 		unsafe { cast!(vshrq_n_s16::<AMOUNT>(cast!(a))) }
 	}
 
-	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in sign bits.  
+	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in sign bits.
 	#[inline(always)]
 	pub fn shr_const_i32x4<const AMOUNT: i32>(self, a: i32x4) -> i32x4 {
 		unsafe { cast!(vshrq_n_s32::<AMOUNT>(cast!(a))) }
 	}
 
-	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in sign bits.  
+	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in sign bits.
 	#[inline(always)]
 	pub fn shr_const_i64x2<const AMOUNT: i32>(self, a: i64x2) -> i64x2 {
 		unsafe { cast!(vshrq_n_s64::<AMOUNT>(cast!(a))) }
 	}
 
-	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in sign bits.  
+	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in sign bits.
 	#[inline(always)]
 	pub fn shr_const_i8x16<const AMOUNT: i32>(self, a: i8x16) -> i8x16 {
 		unsafe { cast!(vshrq_n_s8::<AMOUNT>(cast!(a))) }
 	}
 
-	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.  
+	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.
 	#[inline(always)]
 	pub fn shr_const_u16x8<const AMOUNT: i32>(self, a: u16x8) -> u16x8 {
 		unsafe { cast!(vshrq_n_u16::<AMOUNT>(cast!(a))) }
 	}
 
-	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.  
+	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.
 	#[inline(always)]
 	pub fn shr_const_u32x4<const AMOUNT: i32>(self, a: u32x4) -> u32x4 {
 		unsafe { cast!(vshrq_n_u32::<AMOUNT>(cast!(a))) }
 	}
 
-	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.  
+	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.
 	#[inline(always)]
 	pub fn shr_const_u64x2<const AMOUNT: i32>(self, a: u64x2) -> u64x2 {
 		unsafe { cast!(vshrq_n_u64::<AMOUNT>(cast!(a))) }
 	}
 
-	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.  
+	/// Shift the bits of each lane of `a` to the left by `AMOUNT`, while shifting in zeros.
 	#[inline(always)]
 	pub fn shr_const_u8x16<const AMOUNT: i32>(self, a: u8x16) -> u8x16 {
 		unsafe { cast!(vshrq_n_u8::<AMOUNT>(cast!(a))) }
