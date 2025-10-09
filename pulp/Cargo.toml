@@ -30,8 +30,8 @@ nightly = [
 std = []
 
 x86-v3 = []
-nightly-x86-v4 = [
-  "nightly",
+x86-v4 = [
+  "bytemuck/avx512_simd",
 ]
 
 macro = ["dep:pulp-macro"]

@@ -1,9 +1,4 @@
-#![cfg_attr(
-	all(feature = "nightly", target_arch = "x86_64"),
-	feature(stdarch_x86_avx512, avx512_target_feature)
-)]
-
-#[cfg(all(feature = "nightly", target_arch = "x86_64"))]
+#[cfg(all(feature = "x86-v4", target_arch = "x86_64"))]
 mod x86 {
 	use aligned_vec::avec;
 	use diol::prelude::*;
@@ -194,7 +189,7 @@ mod x86 {
 }
 
 fn main() -> std::io::Result<()> {
-	#[cfg(all(feature = "nightly", target_arch = "x86_64"))]
+	#[cfg(all(feature = "x86-v4", target_arch = "x86_64"))]
 	x86::main()?;
 	Ok(())
 }

@@ -39,6 +39,12 @@ jobs:
       - name: Test debug no-std
         run: cargo test --no-default-features
 
+      - name: Test debug x86-v4
+        run: cargo test --features=x86-v4
+
+      - name: Test debug no-std x86-v4
+        run: cargo test --no-default-features --features=x86-v4
+
   cargo-msrv:
     runs-on: ${{ matrix.os }}
 

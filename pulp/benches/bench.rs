@@ -1,13 +1,11 @@
-#![cfg_attr(feature = "nightly", feature(avx512_target_feature))]
-
 use std::iter::zip;
 
 use criterion::{Criterion, criterion_group, criterion_main};
 use pulp::*;
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-#[cfg(feature = "nightly")]
-mod nightly {
+#[cfg(feature = "x86-v4")]
+mod x86_v4 {
 	#![allow(
 		clippy::identity_op,
 		clippy::too_many_arguments,
@@ -860,7 +858,7 @@ mod nightly {
 fn criterion_bench(criterion: &mut Criterion) {
 	let _ = &mut *criterion;
 	#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-	#[cfg(feature = "nightly")]
+	#[cfg(feature = "x86-v4")]
 	if let Some(simd) = pulp::x86::V4::try_new() {
 		for n in [10000, 100000, 1000000] {
 			let mut orig = vec![0; n];
@@ -871,7 +869,7 @@ fn criterion_bench(criterion: &mut Criterion) {
 			criterion.bench_function(&format!("avx512-sort-{n}"), |bencher| {
 				bencher.iter(|| {
 					buf.copy_from_slice(&orig);
-					nightly::sort_u64(simd, &mut buf);
+					x86_v4::sort_u64(simd, &mut buf);
 				});
 			});
 			criterion.bench_function(&format!("std-sort-{n}"), |bencher| {

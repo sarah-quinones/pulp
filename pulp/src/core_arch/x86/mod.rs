@@ -244,26 +244,17 @@ pub struct Rtm {
 }
 __impl!(Rtm, "rtm");
 
-// nightly features
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct Avx512f {
 	__private: (),
 }
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 __impl512!(Avx512f, "avx512f");
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct Avx512cd {
 	__private: (),
 }
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 __impl512!(Avx512cd, "avx512cd");
 #[cfg(feature = "nightly")]
 #[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
@@ -285,128 +276,80 @@ pub struct Avx512pf {
 #[cfg(feature = "nightly")]
 #[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 __impl512!(Avx512pf, "avx512pf");
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct Avx512bw {
 	__private: (),
 }
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 __impl512!(Avx512bw, "avx512bw");
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct Avx512dq {
 	__private: (),
 }
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 __impl512!(Avx512dq, "avx512dq");
 
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct Avx512ifma {
 	__private: (),
 }
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 __impl512!(Avx512ifma, "avx512ifma");
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct Avx512vbmi {
 	__private: (),
 }
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 __impl512!(Avx512vbmi, "avx512vbmi");
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct Avx512vpopcntdq {
 	__private: (),
 }
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 __impl512!(Avx512vpopcntdq, "avx512vpopcntdq");
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct Avx512vbmi2 {
 	__private: (),
 }
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 __impl512!(Avx512vbmi2, "avx512vbmi2");
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct Gfni {
 	__private: (),
 }
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 __impl!(Gfni, "gfni");
 
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct Vaes {
 	__private: (),
 }
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 __impl!(Vaes, "vaes");
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct Vpclmulqdq {
 	__private: (),
 }
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 __impl!(Vpclmulqdq, "vpclmulqdq");
 
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct Avx512vnni {
 	__private: (),
 }
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 __impl512!(Avx512vnni, "avx512vnni");
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct Avx512bitalg {
 	__private: (),
 }
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 __impl512!(Avx512bitalg, "avx512bitalg");
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct Avx512bf16 {
 	__private: (),
 }
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 __impl512!(Avx512bf16, "avx512bf16");
 #[cfg(feature = "nightly")]
 #[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
@@ -419,37 +362,21 @@ pub struct Avx512vp2intersect {
 #[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 __impl512!(Avx512vp2intersect, "avx512vp2intersect");
 
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 #[deprecated]
 pub type Avx512gfni = Gfni;
 
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 #[deprecated]
 pub type Avx512vpclmulqdq = Vpclmulqdq;
 
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 #[deprecated]
 pub type Avx512vaes = Vaes;
 
 mod avx;
 mod avx2;
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 mod avx512bw;
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 mod avx512cd;
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 mod avx512dq;
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 mod avx512f;
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
 mod avx512ifma;
 mod fma;
 mod sse;
