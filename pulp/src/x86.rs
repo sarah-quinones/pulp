@@ -17,7 +17,6 @@ macro_rules! x86_call_128 {
 		paste!($ext.[<_mm_ $func _ep $ty>]($($arg),*))
 	}
 }
-pub(crate) use x86_call_128;
 
 macro_rules! x86_call_256 {
 	($ext: expr, $func: ident, f32, $($arg: expr),*) => {
@@ -30,7 +29,6 @@ macro_rules! x86_call_256 {
 		paste!($ext.[<_mm256_ $func _ep $ty>]($($arg),*))
 	}
 }
-pub(crate) use x86_call_256;
 
 macro_rules! x86_call_128_nosign {
 	($ext: expr, $func: ident, u8, $($arg: expr),*) => {
@@ -61,7 +59,6 @@ macro_rules! x86_call_128_nosign {
 		x86_call_128!($ext, $func, $ty, $($arg),*)
 	};
 }
-pub(crate) use x86_call_128_nosign;
 
 macro_rules! x86_call_256_nosign {
 	($ext: expr, $func: ident, u8, $($arg: expr),*) => {
@@ -92,7 +89,6 @@ macro_rules! x86_call_256_nosign {
 		x86_call_256!($ext, $func, $ty, $($arg),*)
 	};
 }
-pub(crate) use x86_call_256_nosign;
 
 macro_rules! binop_128 {
 	($func: ident, $op: ident, $doc: literal, $ty: ident, $out: ident, $factor: literal, $ext: ident) => {
@@ -114,7 +110,6 @@ macro_rules! binop_128 {
 		$(binop_128!($func, $op, $doc, $ty, $ty, $factor, $ext);)*
 	};
 }
-pub(crate) use binop_128;
 
 macro_rules! binop_256 {
 	($func: ident, $op: ident, $doc: literal, $ty: ident, $out: ident, $factor: literal, $ext: ident) => {
@@ -136,7 +131,6 @@ macro_rules! binop_256 {
 		$(binop_256!($func, $op, $doc, $ty, $ty, $factor, $ext);)*
 	};
 }
-pub(crate) use binop_256;
 
 macro_rules! unop_128 {
 	($func: ident, $op: ident, $doc: literal, $ty: ident, $factor: literal, $ext: ident) => {
@@ -155,7 +149,6 @@ macro_rules! unop_128 {
 		$(unop_128!($func, $op, $doc, $ty, $factor, $ext);)*
 	};
 }
-pub(crate) use unop_128;
 
 macro_rules! unop_256 {
 	($func: ident, $op: ident, $doc: literal, $ty: ident, $factor: literal, $ext: ident) => {
@@ -174,7 +167,6 @@ macro_rules! unop_256 {
 		$(unop_256!($func, $op, $doc, $ty, $factor, $ext);)*
 	};
 }
-pub(crate) use unop_256;
 
 macro_rules! binop_128_nosign {
 	($func: ident, $op: ident, $doc: literal, $ty: ident, $out: ident, $factor: literal, $ext: ident) => {
@@ -196,7 +188,6 @@ macro_rules! binop_128_nosign {
 		$(binop_128_nosign!($func, $func, $doc, $ty, $ty, $factor, $ext);)*
 	};
 }
-pub(crate) use binop_128_nosign;
 
 macro_rules! binop_256_nosign {
 	($func: ident, $op: ident, $doc: literal, $ty: ident, $out: ident, $factor: literal, $ext: ident) => {
@@ -218,7 +209,6 @@ macro_rules! binop_256_nosign {
 		$(binop_256_nosign!($func, $func, $doc, $ty, $ty, $factor, $ext);)*
 	};
 }
-pub(crate) use binop_256_nosign;
 
 macro_rules! binop_128_full {
 	($func: ident, $doc: literal, $ty: ident, $factor: literal, $ext: ident) => {
@@ -234,7 +224,6 @@ macro_rules! binop_128_full {
 		$(binop_128_full!($func, $doc, $ty, $factor, $ext);)*
 	};
 }
-pub(crate) use binop_128_full;
 
 macro_rules! binop_256_full {
 	($func: ident, $doc: literal, $ty: ident, $factor: literal, $ext: ident) => {
@@ -250,7 +239,6 @@ macro_rules! binop_256_full {
 		$(binop_256_full!($func, $doc, $ty, $factor, $ext);)*
 	};
 }
-pub(crate) use binop_256_full;
 
 mod v1;
 mod v2;
