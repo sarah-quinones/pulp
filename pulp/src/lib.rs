@@ -384,6 +384,22 @@ fn fma_f64(a: f64, b: f64, c: f64) -> f64 {
 	})
 }
 
+#[inline(always)]
+fn sqrt_f32(a: f32) -> f32 {
+	match_cfg!(match cfg!() {
+		const { feature = "std" } => f32::sqrt(a),
+		_ => libm::sqrtf(a),
+	})
+}
+
+#[inline(always)]
+fn sqrt_f64(a: f64) -> f64 {
+	match_cfg!(match cfg!() {
+		const { feature = "std" } => f64::sqrt(a, ),
+		_ => libm::sqrt(a),
+	})
+}
+
 // a0,0 ... a0,m-1
 // ...
 // an-1,0 ... an-1,m-1
@@ -672,6 +688,9 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 
 	split_slice!(u8, i8, u16, i16, u32, i32, u64, i64, c32, f32, c64, f64);
 	define_splat!(u8, i8, u16, i16, u32, i32, u64, i64, c32, f32, c64, f64);
+
+	fn sqrt_f32s(self, a: Self::f32s) -> Self::f32s;
+	fn sqrt_f64s(self, a: Self::f64s) -> Self::f64s;
 
 	fn conj_c32s(self, a: Self::c32s) -> Self::c32s;
 	fn conj_c64s(self, a: Self::c64s) -> Self::c64s;
@@ -2435,6 +2454,29 @@ macro_rules! scalar_simd {
 			fn mul_add_e_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
 				self.mul_add_f64s(a, b, c)
 			}
+
+			#[inline(always)]
+			fn sqrt_f32s(self, a: Self::f32s) -> Self::f32s {
+				let mut out = [0.0_f32; Self::F32_LANES];
+				let a: [f32; Self::F32_LANES] = cast(a);
+
+				for i in 0..Self::F32_LANES {
+					out[i] = sqrt_f32(a[i]);
+				}
+
+				cast(out)
+			}
+			#[inline(always)]
+			fn sqrt_f64s(self, a: Self::f64s) -> Self::f64s {
+				let mut out = [0.0_f64; Self::F64_LANES];
+				let a: [f64; Self::F64_LANES] = cast(a);
+
+				for i in 0..Self::F64_LANES {
+					out[i] = sqrt_f64(a[i]);
+				}
+
+				cast(out)
+			}
 		}
 	};
 }
@@ -3038,6 +3080,16 @@ impl Simd for Scalar {
 
 	unsafe fn mask_load_ptr_u16s(self, mask: MemMask<Self::m16s>, ptr: *const u16) -> Self::u16s {
 		if mask.mask { *ptr } else { 0 }
+	}
+
+	#[inline(always)]
+	fn sqrt_f32s(self, a: Self::f32s) -> Self::f32s {
+		sqrt_f32(a)
+	}
+
+	#[inline(always)]
+	fn sqrt_f64s(self, a: Self::f64s) -> Self::f64s {
+		sqrt_f64(a)
 	}
 }
 

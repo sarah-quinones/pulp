@@ -1,5 +1,6 @@
 use super::*;
 use core::arch::aarch64::*;
+#[allow(unused_imports)]
 use core::arch::asm;
 
 #[inline]
@@ -1419,6 +1420,16 @@ impl Simd for Neon {
 			a.3 >> amount.3,
 		)
 	}
+
+	#[inline(always)]
+	fn sqrt_f32s(self, a: Self::f32s) -> Self::f32s {
+		cast!(self.neon.vsqrtq_f32(cast!(a)))
+	}
+
+	#[inline(always)]
+	fn sqrt_f64s(self, a: Self::f64s) -> Self::f64s {
+		cast!(self.neon.vsqrtq_f64(cast!(a)))
+	}
 }
 
 impl Simd for NeonFcma {
@@ -2360,6 +2371,16 @@ impl Simd for NeonFcma {
 			a.2 >> amount.2,
 			a.3 >> amount.3,
 		)
+	}
+
+	#[inline(always)]
+	fn sqrt_f32s(self, a: Self::f32s) -> Self::f32s {
+		cast!(self.neon.vsqrtq_f32(cast!(a)))
+	}
+
+	#[inline(always)]
+	fn sqrt_f64s(self, a: Self::f64s) -> Self::f64s {
+		cast!(self.neon.vsqrtq_f64(cast!(a)))
 	}
 }
 
@@ -3513,6 +3534,15 @@ mod tests {
 					assert_eq!(rot[(i + amount) % 2], array[i]);
 				}
 			}
+		}
+	}
+
+	#[test]
+	#[cfg(miri)]
+	fn test_sqrt() {
+		if let Some(simd) = Neon::try_new() {
+			simd.sqrt_f32s(simd.splat_f32s(1.0));
+			simd.sqrt_f64s(simd.splat_f64s(1.0));
 		}
 	}
 

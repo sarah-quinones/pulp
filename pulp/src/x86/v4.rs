@@ -1357,6 +1357,16 @@ impl Simd for V4 {
 	fn xor_m64s(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
 		b8(a.0 ^ b.0)
 	}
+
+	#[inline(always)]
+	fn sqrt_f32s(self, a: Self::f32s) -> Self::f32s {
+		self.sqrt_f32x16(a)
+	}
+
+	#[inline(always)]
+	fn sqrt_f64s(self, a: Self::f64s) -> Self::f64s {
+		self.sqrt_f64x8(a)
+	}
 }
 
 impl V4 {

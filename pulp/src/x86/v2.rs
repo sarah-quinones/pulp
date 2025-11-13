@@ -1108,4 +1108,14 @@ impl Simd for V2 {
 	fn wrapping_dyn_shr_u32s(self, a: Self::u32s, amount: Self::u32s) -> Self::u32s {
 		Scalar128b.wrapping_dyn_shr_u32s(a, amount)
 	}
+
+	#[inline(always)]
+	fn sqrt_f32s(self, a: Self::f32s) -> Self::f32s {
+		self.sqrt_f32x4(a)
+	}
+
+	#[inline(always)]
+	fn sqrt_f64s(self, a: Self::f64s) -> Self::f64s {
+		self.sqrt_f64x2(a)
+	}
 }

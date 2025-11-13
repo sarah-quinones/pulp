@@ -1207,6 +1207,16 @@ impl Simd for V3 {
 	fn wrapping_dyn_shr_u32s(self, a: Self::u32s, amount: Self::u32s) -> Self::u32s {
 		self.shr_dyn_u32x8(a, self.and_u32x8(amount, self.splat_u32x8(32 - 1)))
 	}
+
+	#[inline(always)]
+	fn sqrt_f32s(self, a: Self::f32s) -> Self::f32s {
+		self.sqrt_f32x8(a)
+	}
+
+	#[inline(always)]
+	fn sqrt_f64s(self, a: Self::f64s) -> Self::f64s {
+		self.sqrt_f64x4(a)
+	}
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -1856,6 +1866,16 @@ impl Simd for V3_128b {
 	fn wrapping_dyn_shr_u32s(self, a: Self::u32s, amount: Self::u32s) -> Self::u32s {
 		self.shr_dyn_u32x4(a, self.and_u32x4(amount, self.splat_u32x4(32 - 1)))
 	}
+
+	#[inline(always)]
+	fn sqrt_f32s(self, a: Self::f32s) -> Self::f32s {
+		self.sqrt_f32x4(a)
+	}
+
+	#[inline(always)]
+	fn sqrt_f64s(self, a: Self::f64s) -> Self::f64s {
+		self.sqrt_f64x2(a)
+	}
 }
 
 impl Simd for V3_256b {
@@ -2095,6 +2115,16 @@ impl Simd for V3_256b {
 	#[inline(always)]
 	fn vectorize<Op: WithSimd>(self, op: Op) -> Op::Output {
 		Simd::vectorize(self.0, op)
+	}
+
+	#[inline(always)]
+	fn sqrt_f32s(self, a: Self::f32s) -> Self::f32s {
+		self.sqrt_f32x8(a)
+	}
+
+	#[inline(always)]
+	fn sqrt_f64s(self, a: Self::f64s) -> Self::f64s {
+		self.sqrt_f64x4(a)
 	}
 }
 
@@ -2720,6 +2750,18 @@ impl Simd for V3_512b {
 	#[inline(always)]
 	fn min_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::i64s {
 		Scalar512b.max_i64s(a, b)
+	}
+
+	#[inline(always)]
+	fn sqrt_f32s(self, a: Self::f32s) -> Self::f32s {
+		let a: [_; 2] = cast!(a);
+		cast!([self.sqrt_f32x8(a[0]), self.sqrt_f32x8(a[1]),])
+	}
+
+	#[inline(always)]
+	fn sqrt_f64s(self, a: Self::f64s) -> Self::f64s {
+		let a: [_; 2] = cast!(a);
+		cast!([self.sqrt_f64x4(a[0]), self.sqrt_f64x4(a[1]),])
 	}
 }
 
