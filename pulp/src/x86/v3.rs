@@ -236,12 +236,14 @@ impl Seal for V3_Scalar {}
 #[repr(transparent)]
 pub struct V3_Scalar(pub V3);
 
+#[cfg(target_arch = "x86_64")]
 #[inline(always)]
 pub(super) fn avx_load_u32s(simd: Avx2, slice: &[u32]) -> u32x8 {
 	_ = simd;
 	unsafe { avx_ld_u32s(slice.as_ptr(), LD_ST[2 * (16 * slice.len().min(8))]) }
 }
 
+#[cfg(target_arch = "x86_64")]
 #[inline(always)]
 pub(super) fn avx_store_u32s(simd: Avx2, slice: &mut [u32], value: u32x8) {
 	_ = simd;
@@ -675,7 +677,9 @@ impl Simd for V3 {
 				cast!(V3_U32_LAST_MASKS[8 - start]),
 				cast!(V3_U32_MASKS[end]),
 			),
+			#[cfg(target_arch = "x86_64")]
 			load: Some(LD_ST[2 * (16 * end + start) + 0]),
+			#[cfg(target_arch = "x86_64")]
 			store: Some(LD_ST[2 * (16 * end + start) + 1]),
 		}
 	}
@@ -689,7 +693,9 @@ impl Simd for V3 {
 				cast!(V3_U32_LAST_MASKS[8 - start]),
 				cast!(V3_U32_MASKS[end]),
 			),
+			#[cfg(target_arch = "x86_64")]
 			load: Some(LD_ST[2 * (16 * end + start) + 0]),
+			#[cfg(target_arch = "x86_64")]
 			store: Some(LD_ST[2 * (16 * end + start) + 1]),
 		}
 	}
@@ -731,10 +737,11 @@ impl Simd for V3 {
 	/// See the trait-level safety documentation.
 	#[inline(always)]
 	unsafe fn mask_load_ptr_u32s(self, mask: MemMask<Self::m32s>, ptr: *const u32) -> Self::u32s {
-		match mask.load {
-			Some(load) => avx_ld_u32s(ptr, load),
-			None => cast!(self.avx2._mm256_maskload_epi32(ptr as _, cast!(mask.mask))),
+		#[cfg(target_arch = "x86_64")]
+		if let Some(load) = mask.load {
+			return avx_ld_u32s(ptr, load);
 		}
+		cast!(self.avx2._mm256_maskload_epi32(ptr as _, cast!(mask.mask)))
 	}
 
 	/// # Safety
@@ -742,10 +749,11 @@ impl Simd for V3 {
 	/// See the trait-level safety documentation.
 	#[inline(always)]
 	unsafe fn mask_load_ptr_u64s(self, mask: MemMask<Self::m64s>, ptr: *const u64) -> Self::u64s {
-		match mask.load {
-			Some(load) => cast!(avx_ld_u32s(ptr as _, load)),
-			None => cast!(self.avx2._mm256_maskload_epi64(ptr as _, cast!(mask.mask))),
+		#[cfg(target_arch = "x86_64")]
+		if let Some(load) = mask.load {
+			return cast!(avx_ld_u32s(ptr as _, load));
 		}
+		cast!(self.avx2._mm256_maskload_epi64(ptr as _, cast!(mask.mask)))
 	}
 
 	/// # Safety
@@ -805,10 +813,11 @@ impl Simd for V3 {
 		ptr: *mut u32,
 		values: Self::u32s,
 	) {
-		match mask.store {
-			Some(store) => avx_st_u32s(ptr, values, store),
-			None => _mm256_maskstore_epi32(ptr as *mut i32, cast!(mask.mask), cast!(values)),
+		#[cfg(target_arch = "x86_64")]
+		if let Some(store) = mask.store {
+			return avx_st_u32s(ptr, values, store);
 		}
+		_mm256_maskstore_epi32(ptr as *mut i32, cast!(mask.mask), cast!(values))
 	}
 
 	/// # Safety
@@ -824,7 +833,9 @@ impl Simd for V3 {
 		self.mask_store_ptr_u32s(
 			MemMask {
 				mask: cast!(mask.mask),
+				#[cfg(target_arch = "x86_64")]
 				load: mask.load,
+				#[cfg(target_arch = "x86_64")]
 				store: mask.store,
 			},
 			ptr as _,
@@ -922,21 +933,25 @@ impl Simd for V3 {
 		self.xor_f64s(a, self.splat_f64s(-0.0))
 	}
 
+	#[cfg(target_arch = "x86_64")]
 	#[inline(always)]
 	fn partial_load_u32s(self, slice: &[u32]) -> Self::u32s {
 		avx_load_u32s(self.avx2, slice)
 	}
 
+	#[cfg(target_arch = "x86_64")]
 	#[inline(always)]
 	fn partial_load_u64s(self, slice: &[u64]) -> Self::u64s {
 		cast!(self.partial_load_u32s(bytemuck::cast_slice(slice)))
 	}
 
+	#[cfg(target_arch = "x86_64")]
 	#[inline(always)]
 	fn partial_store_u32s(self, slice: &mut [u32], values: Self::u32s) {
 		avx_store_u32s(self.avx2, slice, values)
 	}
 
+	#[cfg(target_arch = "x86_64")]
 	#[inline(always)]
 	fn partial_store_u64s(self, slice: &mut [u64], values: Self::u64s) {
 		self.partial_store_u32s(bytemuck::cast_slice_mut(slice), cast!(values))
@@ -1459,18 +1474,20 @@ impl Simd for V3_128b {
 
 	#[inline(always)]
 	unsafe fn mask_load_ptr_u32s(self, mask: MemMask<Self::m32s>, ptr: *const u32) -> Self::u32s {
-		match mask.load {
-			Some(load) => cast_lossy(avx_ld_u32s(ptr, load)),
-			None => cast!(self.avx2._mm_maskload_epi32(ptr as _, cast!(mask.mask))),
+		#[cfg(target_arch = "x86_64")]
+		if let Some(load) = mask.load {
+			return cast_lossy(avx_ld_u32s(ptr, load));
 		}
+		cast!(self.avx2._mm_maskload_epi32(ptr as _, cast!(mask.mask)))
 	}
 
 	#[inline(always)]
 	unsafe fn mask_load_ptr_u64s(self, mask: MemMask<Self::m64s>, ptr: *const u64) -> Self::u64s {
-		match mask.load {
-			Some(load) => cast_lossy(avx_ld_u32s(ptr as _, load)),
-			None => cast!(self.avx2._mm_maskload_epi64(ptr as _, cast!(mask.mask))),
+		#[cfg(target_arch = "x86_64")]
+		if let Some(load) = mask.load {
+			return cast_lossy(avx_ld_u32s(ptr as _, load));
 		}
+		cast!(self.avx2._mm_maskload_epi64(ptr as _, cast!(mask.mask)))
 	}
 
 	#[inline(always)]
@@ -1515,12 +1532,12 @@ impl Simd for V3_128b {
 		ptr: *mut u32,
 		values: Self::u32s,
 	) {
-		match mask.store {
-			Some(store) => avx_st_u32s(ptr, cast!([values, self.splat_u32s(0)]), store),
-			None => self
-				.avx2
-				._mm_maskstore_epi32(ptr as _, cast!(mask.mask), cast!(values)),
+		#[cfg(target_arch = "x86_64")]
+		if let Some(store) = mask.store {
+			return avx_st_u32s(ptr, cast!([values, self.splat_u32s(0)]), store);
 		}
+		self.avx2
+			._mm_maskstore_epi32(ptr as _, cast!(mask.mask), cast!(values));
 	}
 
 	#[inline(always)]
@@ -1533,7 +1550,9 @@ impl Simd for V3_128b {
 		self.mask_store_ptr_u32s(
 			MemMask {
 				mask: cast!(mask.mask),
+				#[cfg(target_arch = "x86_64")]
 				load: mask.load,
+				#[cfg(target_arch = "x86_64")]
 				store: mask.store,
 			},
 			ptr as _,
@@ -1631,21 +1650,25 @@ impl Simd for V3_128b {
 		self.xor_f64s(a, self.splat_f64s(-0.0))
 	}
 
+	#[cfg(target_arch = "x86_64")]
 	#[inline(always)]
 	fn partial_load_u32s(self, slice: &[u32]) -> Self::u32s {
 		cast_lossy(avx_load_u32s(self.avx2, slice))
 	}
 
+	#[cfg(target_arch = "x86_64")]
 	#[inline(always)]
 	fn partial_load_u64s(self, slice: &[u64]) -> Self::u64s {
 		cast!(self.partial_load_u32s(bytemuck::cast_slice(slice)))
 	}
 
+	#[cfg(target_arch = "x86_64")]
 	#[inline(always)]
 	fn partial_store_u32s(self, slice: &mut [u32], values: Self::u32s) {
 		avx_store_u32s(self.avx2, slice, cast!([values, self.splat_u32s(0)]))
 	}
 
+	#[cfg(target_arch = "x86_64")]
 	#[inline(always)]
 	fn partial_store_u64s(self, slice: &mut [u64], values: Self::u64s) {
 		self.partial_store_u32s(bytemuck::cast_slice_mut(slice), cast!(values))

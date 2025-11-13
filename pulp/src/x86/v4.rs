@@ -56,12 +56,14 @@ impl core::ops::Deref for V4 {
 	}
 }
 
+#[cfg(target_arch = "x86_64")]
 #[inline(always)]
 fn avx512_load_u32s(simd: V4, slice: &[u32]) -> u32x16 {
 	_ = simd;
 	unsafe { avx512_ld_u32s(slice.as_ptr(), LD_ST[2 * (16 * slice.len().min(16))]) }
 }
 
+#[cfg(target_arch = "x86_64")]
 #[inline(always)]
 fn avx512_store_u32s(simd: V4, slice: &mut [u32], value: u32x16) {
 	_ = simd;
@@ -768,7 +770,9 @@ impl Simd for V4 {
 		let end = end.min(16) as usize;
 		MemMask {
 			mask: b16(V4_U32_LAST_MASKS[16 - start] & V4_U32_MASKS[end]),
+			#[cfg(target_arch = "x86_64")]
 			load: Some(LD_ST[2 * (16 * end + start) + 0]),
+			#[cfg(target_arch = "x86_64")]
 			store: Some(LD_ST[2 * (16 * end + start) + 1]),
 		}
 	}
@@ -779,7 +783,9 @@ impl Simd for V4 {
 		let end = (2 * end.min(8)) as usize;
 		MemMask {
 			mask: b8(V4_U64_LAST_MASKS[8 - start / 2] & V4_U64_MASKS[end / 2]),
+			#[cfg(target_arch = "x86_64")]
 			load: Some(LD_ST[2 * (16 * end + start) + 0]),
+			#[cfg(target_arch = "x86_64")]
 			store: Some(LD_ST[2 * (16 * end + start) + 1]),
 		}
 	}
@@ -805,10 +811,11 @@ impl Simd for V4 {
 	/// See the trait-level safety documentation.
 	#[inline(always)]
 	unsafe fn mask_load_ptr_u8s(self, mask: MemMask<Self::m8s>, ptr: *const u8) -> Self::u8s {
-		match mask.load {
-			Some(load) => cast!(avx512_ld_u32s(ptr as _, load)),
-			None => cast!(self.avx512bw._mm512_maskz_loadu_epi8(mask.mask.0, ptr as _)),
+		#[cfg(target_arch = "x86_64")]
+		if let Some(load) = mask.load {
+			return cast!(avx512_ld_u32s(ptr as _, load));
 		}
+		cast!(self.avx512bw._mm512_maskz_loadu_epi8(mask.mask.0, ptr as _))
 	}
 
 	/// # Safety
@@ -816,13 +823,14 @@ impl Simd for V4 {
 	/// See the trait-level safety documentation.
 	#[inline(always)]
 	unsafe fn mask_load_ptr_u16s(self, mask: MemMask<Self::m16s>, ptr: *const u16) -> Self::u16s {
-		match mask.load {
-			Some(load) => cast!(avx512_ld_u32s(ptr as _, load)),
-			None => cast!(
-				self.avx512bw
-					._mm512_maskz_loadu_epi16(mask.mask.0, ptr as _)
-			),
+		#[cfg(target_arch = "x86_64")]
+		if let Some(load) = mask.load {
+			return cast!(avx512_ld_u32s(ptr as _, load));
 		}
+		cast!(
+			self.avx512bw
+				._mm512_maskz_loadu_epi16(mask.mask.0, ptr as _)
+		)
 	}
 
 	/// # Safety
@@ -830,10 +838,11 @@ impl Simd for V4 {
 	/// See the trait-level safety documentation.
 	#[inline(always)]
 	unsafe fn mask_load_ptr_u32s(self, mask: MemMask<Self::m32s>, ptr: *const u32) -> Self::u32s {
-		match mask.load {
-			Some(load) => avx512_ld_u32s(ptr, load),
-			None => cast!(self.avx512f._mm512_maskz_loadu_epi32(mask.mask.0, ptr as _)),
+		#[cfg(target_arch = "x86_64")]
+		if let Some(load) = mask.load {
+			return avx512_ld_u32s(ptr, load);
 		}
+		cast!(self.avx512f._mm512_maskz_loadu_epi32(mask.mask.0, ptr as _))
 	}
 
 	/// # Safety
@@ -841,10 +850,11 @@ impl Simd for V4 {
 	/// See the trait-level safety documentation.
 	#[inline(always)]
 	unsafe fn mask_load_ptr_u64s(self, mask: MemMask<Self::m64s>, ptr: *const u64) -> Self::u64s {
-		match mask.load {
-			Some(load) => cast!(avx512_ld_u32s(ptr as _, load)),
-			None => cast!(self.avx512f._mm512_maskz_loadu_epi64(mask.mask.0, ptr as _)),
+		#[cfg(target_arch = "x86_64")]
+		if let Some(load) = mask.load {
+			return cast!(avx512_ld_u32s(ptr as _, load));
 		}
+		cast!(self.avx512f._mm512_maskz_loadu_epi64(mask.mask.0, ptr as _))
 	}
 
 	/// # Safety
@@ -878,13 +888,13 @@ impl Simd for V4 {
 	/// See the trait-level safety documentation.
 	#[inline(always)]
 	unsafe fn mask_store_ptr_u8s(self, mask: MemMask<Self::m8s>, ptr: *mut u8, values: Self::u8s) {
-		match mask.store {
-			Some(store) => avx512_st_u32s(ptr as _, cast!(values), store),
-			None => {
-				self.avx512bw
-					._mm512_mask_storeu_epi8(ptr as *mut _, mask.mask.0, cast!(values))
-			},
+		#[cfg(target_arch = "x86_64")]
+		if let Some(store) = mask.store {
+			return avx512_st_u32s(ptr as _, cast!(values), store);
 		}
+
+		self.avx512bw
+			._mm512_mask_storeu_epi8(ptr as *mut _, mask.mask.0, cast!(values))
 	}
 
 	/// # Safety
@@ -897,13 +907,13 @@ impl Simd for V4 {
 		ptr: *mut u16,
 		values: Self::u16s,
 	) {
-		match mask.store {
-			Some(store) => avx512_st_u32s(ptr as _, cast!(values), store),
-			None => {
-				self.avx512bw
-					._mm512_mask_storeu_epi16(ptr as *mut _, mask.mask.0, cast!(values))
-			},
+		#[cfg(target_arch = "x86_64")]
+		if let Some(store) = mask.store {
+			return avx512_st_u32s(ptr as _, cast!(values), store);
 		}
+
+		self.avx512bw
+			._mm512_mask_storeu_epi16(ptr as *mut _, mask.mask.0, cast!(values))
 	}
 
 	/// # Safety
@@ -916,13 +926,13 @@ impl Simd for V4 {
 		ptr: *mut u32,
 		values: Self::u32s,
 	) {
-		match mask.store {
-			Some(store) => avx512_st_u32s(ptr, values, store),
-			None => {
-				self.avx512f
-					._mm512_mask_storeu_epi32(ptr as *mut i32, mask.mask.0, cast!(values))
-			},
+		#[cfg(target_arch = "x86_64")]
+		if let Some(store) = mask.store {
+			return avx512_st_u32s(ptr, values, store);
 		}
+
+		self.avx512f
+			._mm512_mask_storeu_epi32(ptr as *mut i32, mask.mask.0, cast!(values))
 	}
 
 	/// # Safety
@@ -935,13 +945,13 @@ impl Simd for V4 {
 		ptr: *mut u64,
 		values: Self::u64s,
 	) {
-		match mask.store {
-			Some(store) => avx512_st_u32s(ptr as _, cast!(values), store),
-			None => {
-				self.avx512f
-					._mm512_mask_storeu_epi64(ptr as *mut _, mask.mask.0, cast!(values))
-			},
+		#[cfg(target_arch = "x86_64")]
+		if let Some(store) = mask.store {
+			return avx512_st_u32s(ptr as _, cast!(values), store);
 		}
+
+		self.avx512f
+			._mm512_mask_storeu_epi64(ptr as *mut _, mask.mask.0, cast!(values))
 	}
 
 	#[inline(always)]
@@ -1066,21 +1076,25 @@ impl Simd for V4 {
 		b8(a.0 | b.0)
 	}
 
+	#[cfg(target_arch = "x86_64")]
 	#[inline(always)]
 	fn partial_load_u32s(self, slice: &[u32]) -> Self::u32s {
 		avx512_load_u32s(self, slice)
 	}
 
+	#[cfg(target_arch = "x86_64")]
 	#[inline(always)]
 	fn partial_load_u64s(self, slice: &[u64]) -> Self::u64s {
 		cast!(avx512_load_u32s(self, bytemuck::cast_slice(slice)))
 	}
 
+	#[cfg(target_arch = "x86_64")]
 	#[inline(always)]
 	fn partial_store_u32s(self, slice: &mut [u32], values: Self::u32s) {
 		avx512_store_u32s(self, slice, values)
 	}
 
+	#[cfg(target_arch = "x86_64")]
 	#[inline(always)]
 	fn partial_store_u64s(self, slice: &mut [u64], values: Self::u64s) {
 		avx512_store_u32s(self, bytemuck::cast_slice_mut(slice), cast!(values))
@@ -4111,12 +4125,12 @@ impl V4 {
 	}
 }
 
+#[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx512f")]
 #[target_feature(enable = "avx512vl")]
 #[inline]
 unsafe fn avx512_ld_u32s(ptr: *const u32, f: unsafe extern "C" fn()) -> u32x16 {
 	let ret: __m512;
-	#[cfg(target_arch = "x86_64")]
 	core::arch::asm! {
 		"lea rcx, [rip + 2f]",
 		"jmp {f}",
@@ -4124,17 +4138,6 @@ unsafe fn avx512_ld_u32s(ptr: *const u32, f: unsafe extern "C" fn()) -> u32x16 {
 		f = in(reg) f,
 		in("rax") ptr,
 		out("rcx") _,
-		out("zmm0") ret,
-		out("zmm1") _,
-	};
-	#[cfg(target_arch = "x86")]
-	core::arch::asm! {
-		"lea ecx, [eip + 2f]",
-		"jmp {f}",
-		"2:",
-		f = in(reg) f,
-		in("eax") ptr,
-		out("ecx") _,
 		out("zmm0") ret,
 		out("zmm1") _,
 	};
@@ -4142,11 +4145,11 @@ unsafe fn avx512_ld_u32s(ptr: *const u32, f: unsafe extern "C" fn()) -> u32x16 {
 	cast!(ret)
 }
 
+#[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx512f")]
 #[target_feature(enable = "avx512vl")]
 #[inline]
 unsafe fn avx512_st_u32s(ptr: *mut u32, value: u32x16, f: unsafe extern "C" fn()) {
-	#[cfg(target_arch = "x86_64")]
 	core::arch::asm! {
 		"lea rcx, [rip + 2f]",
 		"jmp {f}",
@@ -4155,18 +4158,6 @@ unsafe fn avx512_st_u32s(ptr: *mut u32, value: u32x16, f: unsafe extern "C" fn()
 
 		in("rax") ptr,
 		out("rcx") _,
-		inout("zmm0") cast::<_, __m512>(value) => _,
-		out("zmm1") _,
-	};
-	#[cfg(target_arch = "x86")]
-	core::arch::asm! {
-		"lea ecx, [eip + 2f]",
-		"jmp {f}",
-		"2:",
-		f = in(reg) f,
-
-		in("eax") ptr,
-		out("ecx") _,
 		inout("zmm0") cast::<_, __m512>(value) => _,
 		out("zmm1") _,
 	};

@@ -272,7 +272,7 @@ impl Debug for DebugCplx<c64> {
 match_cfg!(
 	item,
 	match cfg!() {
-		const { any(target_arch = "x86_64", target_arch = "x86") } => {
+		const { any(target_arch = "x86_64") } => {
 			#[derive(Debug, Copy, Clone)]
 			pub struct MemMask<T> {
 				mask: T,

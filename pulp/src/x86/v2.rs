@@ -801,7 +801,9 @@ impl Simd for V2 {
 		cast!(self.mask_load_ptr_u32s(
 			MemMask {
 				mask: cast!(mask.mask),
+				#[cfg(target_arch = "x86_64")]
 				load: mask.load,
+				#[cfg(target_arch = "x86_64")]
 				store: mask.store
 			},
 			ptr as _
@@ -881,7 +883,9 @@ impl Simd for V2 {
 		self.mask_store_ptr_u32s(
 			MemMask {
 				mask: cast!(mask.mask),
+				#[cfg(target_arch = "x86_64")]
 				load: mask.load,
+				#[cfg(target_arch = "x86_64")]
 				store: mask.store,
 			},
 			ptr as _,

@@ -199,7 +199,7 @@ fn main() {
 	let arch = if &*env::var("CARGO_CFG_TARGET_ARCH").unwrap() == "x86_64" {
 		ArchX86::_64
 	} else {
-		ArchX86::_32
+		return;
 	};
 	let p = arch.reg_prefix();
 
