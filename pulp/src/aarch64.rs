@@ -5,72 +5,156 @@ use core::arch::asm;
 #[inline]
 #[target_feature(enable = "neon,fcma")]
 unsafe fn vcmlaq_0_f64(mut acc: float64x2_t, lhs: float64x2_t, rhs: float64x2_t) -> float64x2_t {
-	asm!(
+	#[cfg(miri)]
+	{
+		let lhs: f64x2 = cast!(lhs);
+		let rhs: f64x2 = cast!(rhs);
+		let a: f64x2 = cast!(acc);
+		acc = cast!(f64x2(
+			crate::fma_f64(lhs.0, rhs.0, a.0),
+			crate::fma_f64(lhs.0, rhs.1, a.1),
+		));
+	}
+	#[cfg(not(miri))]
+	{
+		asm!(
         "fcmla {0:v}.2d, {1:v}.2d, {2:v}.2d, 0",
         inout(vreg) acc,
         in(vreg) lhs,
         in(vreg) rhs,
         options(pure, nomem, nostack));
+	}
 	acc
 }
 
 #[inline]
 #[target_feature(enable = "neon,fcma")]
 unsafe fn vcmlaq_90_f64(mut acc: float64x2_t, lhs: float64x2_t, rhs: float64x2_t) -> float64x2_t {
-	asm!(
+	#[cfg(miri)]
+	{
+		let lhs: f64x2 = cast!(lhs);
+		let rhs: f64x2 = cast!(rhs);
+		let a: f64x2 = cast!(acc);
+		acc = cast!(f64x2(
+			crate::fma_f64(lhs.1, -rhs.1, a.0),
+			crate::fma_f64(lhs.1, rhs.0, a.1),
+		));
+	}
+	#[cfg(not(miri))]
+	{
+		asm!(
         "fcmla {0:v}.2d, {1:v}.2d, {2:v}.2d, 90",
         inout(vreg) acc,
         in(vreg) lhs,
         in(vreg) rhs,
         options(pure, nomem, nostack));
+	}
 	acc
 }
 
 #[inline]
 #[target_feature(enable = "neon,fcma")]
 unsafe fn vcmlaq_270_f64(mut acc: float64x2_t, lhs: float64x2_t, rhs: float64x2_t) -> float64x2_t {
-	asm!(
+	#[cfg(miri)]
+	{
+		let lhs: f64x2 = cast!(lhs);
+		let rhs: f64x2 = cast!(rhs);
+		let a: f64x2 = cast!(acc);
+		acc = cast!(f64x2(
+			crate::fma_f64(lhs.1, rhs.1, a.0),
+			crate::fma_f64(lhs.1, -rhs.0, a.1),
+		));
+	}
+	#[cfg(not(miri))]
+	{
+		asm!(
         "fcmla {0:v}.2d, {1:v}.2d, {2:v}.2d, 270",
         inout(vreg) acc,
         in(vreg) lhs,
         in(vreg) rhs,
         options(pure, nomem, nostack));
+	}
 	acc
 }
 
 #[inline]
 #[target_feature(enable = "neon,fcma")]
 unsafe fn vcmlaq_0_f32(mut acc: float32x4_t, lhs: float32x4_t, rhs: float32x4_t) -> float32x4_t {
-	asm!(
+	#[cfg(miri)]
+	{
+		let lhs: f32x4 = cast!(lhs);
+		let rhs: f32x4 = cast!(rhs);
+		let a: f32x4 = cast!(acc);
+		acc = cast!(f32x4(
+			crate::fma_f32(lhs.0, rhs.0, a.0),
+			crate::fma_f32(lhs.0, rhs.1, a.1),
+			crate::fma_f32(lhs.2, rhs.2, a.2),
+			crate::fma_f32(lhs.2, rhs.3, a.3),
+		));
+	}
+	#[cfg(not(miri))]
+	{
+		asm!(
         "fcmla {0:v}.4s, {1:v}.4s, {2:v}.4s, 0",
         inout(vreg) acc,
         in(vreg) lhs,
         in(vreg) rhs,
         options(pure, nomem, nostack));
+	}
 	acc
 }
 
 #[inline]
 #[target_feature(enable = "neon,fcma")]
 unsafe fn vcmlaq_90_f32(mut acc: float32x4_t, lhs: float32x4_t, rhs: float32x4_t) -> float32x4_t {
-	asm!(
+	#[cfg(miri)]
+	{
+		let lhs: f32x4 = cast!(lhs);
+		let rhs: f32x4 = cast!(rhs);
+		let a: f32x4 = cast!(acc);
+		acc = cast!(f32x4(
+			crate::fma_f32(lhs.1, -rhs.1, a.0),
+			crate::fma_f32(lhs.1, rhs.0, a.1),
+			crate::fma_f32(lhs.3, -rhs.3, a.2),
+			crate::fma_f32(lhs.3, rhs.2, a.3),
+		));
+	}
+	#[cfg(not(miri))]
+	{
+		asm!(
         "fcmla {0:v}.4s, {1:v}.4s, {2:v}.4s, 90",
         inout(vreg) acc,
         in(vreg) lhs,
         in(vreg) rhs,
         options(pure, nomem, nostack));
+	}
 	acc
 }
 
 #[inline]
 #[target_feature(enable = "neon,fcma")]
 unsafe fn vcmlaq_270_f32(mut acc: float32x4_t, lhs: float32x4_t, rhs: float32x4_t) -> float32x4_t {
-	asm!(
+	#[cfg(miri)]
+	{
+		let lhs: f32x4 = cast!(lhs);
+		let rhs: f32x4 = cast!(rhs);
+		let a: f32x4 = cast!(acc);
+		acc = cast!(f32x4(
+			crate::fma_f32(lhs.1, rhs.1, a.0),
+			crate::fma_f32(lhs.1, -rhs.0, a.1),
+			crate::fma_f32(lhs.3, rhs.3, a.2),
+			crate::fma_f32(lhs.3, -rhs.2, a.3),
+		));
+	}
+	#[cfg(not(miri))]
+	{
+		asm!(
         "fcmla {0:v}.4s, {1:v}.4s, {2:v}.4s, 270",
         inout(vreg) acc,
         in(vreg) lhs,
         in(vreg) rhs,
         options(pure, nomem, nostack));
+	}
 	acc
 }
 
@@ -392,11 +476,16 @@ impl Simd for Neon {
 
 	#[inline(always)]
 	fn deinterleave_shfl_f32s<T: Interleave>(self, values: T) -> T {
-		if const { core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f32s>() } {
+		if const { !cfg!(miri) && core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f32s>() }
+		{
 			unsafe { core::mem::transmute_copy(&vld2q_f32((&values) as *const _ as *const f32)) }
-		} else if const { core::mem::size_of::<T>() == 3 * core::mem::size_of::<Self::f32s>() } {
+		} else if const {
+			!cfg!(miri) && core::mem::size_of::<T>() == 3 * core::mem::size_of::<Self::f32s>()
+		} {
 			unsafe { core::mem::transmute_copy(&vld3q_f32((&values) as *const _ as *const f32)) }
-		} else if const { core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f32s>() } {
+		} else if const {
+			!cfg!(miri) && core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f32s>()
+		} {
 			unsafe { core::mem::transmute_copy(&vld4q_f32((&values) as *const _ as *const f32)) }
 		} else {
 			unsafe { deinterleave_fallback::<f32, Self::f32s, T>(values) }
@@ -405,11 +494,16 @@ impl Simd for Neon {
 
 	#[inline(always)]
 	fn deinterleave_shfl_f64s<T: Interleave>(self, values: T) -> T {
-		if const { core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f32s>() } {
+		if const { !cfg!(miri) && core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f32s>() }
+		{
 			unsafe { core::mem::transmute_copy(&vld2q_f64((&values) as *const _ as *const f64)) }
-		} else if const { core::mem::size_of::<T>() == 3 * core::mem::size_of::<Self::f32s>() } {
+		} else if const {
+			!cfg!(miri) && core::mem::size_of::<T>() == 3 * core::mem::size_of::<Self::f32s>()
+		} {
 			unsafe { core::mem::transmute_copy(&vld3q_f64((&values) as *const _ as *const f64)) }
-		} else if const { core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f32s>() } {
+		} else if const {
+			!cfg!(miri) && core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f32s>()
+		} {
 			unsafe { core::mem::transmute_copy(&vld4q_f64((&values) as *const _ as *const f64)) }
 		} else {
 			unsafe { deinterleave_fallback::<f64, Self::f64s, T>(values) }
@@ -421,19 +515,23 @@ impl Simd for Neon {
 		unsafe {
 			let mut out: T = core::mem::zeroed();
 
-			if const { core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f32s>() } {
+			if const {
+				!cfg!(miri) && core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f32s>()
+			} {
 				vst2q_f32(
 					(&mut out) as *mut _ as *mut f32,
 					core::mem::transmute_copy(&values),
 				);
-			} else if const { core::mem::size_of::<T>() == 3 * core::mem::size_of::<Self::f32s>() }
-			{
+			} else if const {
+				!cfg!(miri) && core::mem::size_of::<T>() == 3 * core::mem::size_of::<Self::f32s>()
+			} {
 				vst3q_f32(
 					(&mut out) as *mut _ as *mut f32,
 					core::mem::transmute_copy(&values),
 				);
-			} else if const { core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f32s>() }
-			{
+			} else if const {
+				!cfg!(miri) && core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f32s>()
+			} {
 				vst4q_f32(
 					(&mut out) as *mut _ as *mut f32,
 					core::mem::transmute_copy(&values),
@@ -451,19 +549,23 @@ impl Simd for Neon {
 		unsafe {
 			let mut out: T = core::mem::zeroed();
 
-			if const { core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f32s>() } {
+			if const {
+				!cfg!(miri) && core::mem::size_of::<T>() == 2 * core::mem::size_of::<Self::f32s>()
+			} {
 				vst2q_f64(
 					(&mut out) as *mut _ as *mut f64,
 					core::mem::transmute_copy(&values),
 				);
-			} else if const { core::mem::size_of::<T>() == 3 * core::mem::size_of::<Self::f32s>() }
-			{
+			} else if const {
+				!cfg!(miri) && core::mem::size_of::<T>() == 3 * core::mem::size_of::<Self::f32s>()
+			} {
 				vst3q_f64(
 					(&mut out) as *mut _ as *mut f64,
 					core::mem::transmute_copy(&values),
 				);
-			} else if const { core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f32s>() }
-			{
+			} else if const {
+				!cfg!(miri) && core::mem::size_of::<T>() == 4 * core::mem::size_of::<Self::f32s>()
+			} {
 				vst4q_f64(
 					(&mut out) as *mut _ as *mut f64,
 					core::mem::transmute_copy(&values),
@@ -1166,12 +1268,7 @@ impl Simd for Neon {
 
 	#[inline(always)]
 	fn rotate_right_c32s(self, a: Self::c32s, amount: usize) -> Self::c32s {
-		unsafe {
-			cast!(vqtbl1q_u8(
-				cast!(a),
-				cast!(NEON_ROTATE_IDX[8 * (amount % 2)]),
-			))
-		}
+		cast!(self.rotate_right_u64s(cast!(a), amount))
 	}
 
 	#[inline(always)]
@@ -1181,21 +1278,39 @@ impl Simd for Neon {
 
 	#[inline(always)]
 	fn rotate_right_u32s(self, a: Self::u32s, amount: usize) -> Self::u32s {
-		unsafe {
-			cast!(vqtbl1q_u8(
-				cast!(a),
-				cast!(NEON_ROTATE_IDX[4 * (amount % 4)]),
-			))
+		#[cfg(miri)]
+		{
+			let mut a: [u32; 4] = cast!(a);
+			a.rotate_right(amount % 4);
+			cast!(a)
+		}
+		#[cfg(not(miri))]
+		{
+			unsafe {
+				cast!(vqtbl1q_u8(
+					cast!(a),
+					cast!(NEON_ROTATE_IDX[4 * (amount % 4)]),
+				))
+			}
 		}
 	}
 
 	#[inline(always)]
 	fn rotate_right_u64s(self, a: Self::u64s, amount: usize) -> Self::u64s {
-		unsafe {
-			cast!(vqtbl1q_u8(
-				cast!(a),
-				cast!(NEON_ROTATE_IDX[8 * (amount % 2)]),
-			))
+		#[cfg(miri)]
+		{
+			let mut a: [u64; 2] = cast!(a);
+			a.rotate_right(amount % 2);
+			cast!(a)
+		}
+		#[cfg(not(miri))]
+		{
+			unsafe {
+				cast!(vqtbl1q_u8(
+					cast!(a),
+					cast!(NEON_ROTATE_IDX[8 * (amount % 2)]),
+				))
+			}
 		}
 	}
 
