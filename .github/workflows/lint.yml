@@ -37,6 +37,12 @@ jobs:
       - name: Run cargo clippy no_std
         run: cargo clippy --no-default-features --all-targets -- --no-deps -D warnings
 
+      - name: Run cargo clippy x86-v4
+        run: cargo clippy --features x86-v4 --all-targets -- --no-deps -D warnings
+
+      - name: Run cargo clippy no_std x86-v4
+        run: cargo clippy --no-default-features --features x86-v4 --all-targets -- --no-deps -D warnings
+
   clippy-nightly:
     name: clippy
     runs-on: ubuntu-latest

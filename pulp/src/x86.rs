@@ -17,7 +17,6 @@ macro_rules! x86_call_128 {
 		paste!($ext.[<_mm_ $func _ep $ty>]($($arg),*))
 	}
 }
-pub(crate) use x86_call_128;
 
 macro_rules! x86_call_256 {
 	($ext: expr, $func: ident, f32, $($arg: expr),*) => {
@@ -30,7 +29,6 @@ macro_rules! x86_call_256 {
 		paste!($ext.[<_mm256_ $func _ep $ty>]($($arg),*))
 	}
 }
-pub(crate) use x86_call_256;
 
 macro_rules! x86_call_128_nosign {
 	($ext: expr, $func: ident, u8, $($arg: expr),*) => {
@@ -61,7 +59,6 @@ macro_rules! x86_call_128_nosign {
 		x86_call_128!($ext, $func, $ty, $($arg),*)
 	};
 }
-pub(crate) use x86_call_128_nosign;
 
 macro_rules! x86_call_256_nosign {
 	($ext: expr, $func: ident, u8, $($arg: expr),*) => {
@@ -92,7 +89,6 @@ macro_rules! x86_call_256_nosign {
 		x86_call_256!($ext, $func, $ty, $($arg),*)
 	};
 }
-pub(crate) use x86_call_256_nosign;
 
 macro_rules! binop_128 {
 	($func: ident, $op: ident, $doc: literal, $ty: ident, $out: ident, $factor: literal, $ext: ident) => {
@@ -114,7 +110,6 @@ macro_rules! binop_128 {
 		$(binop_128!($func, $op, $doc, $ty, $ty, $factor, $ext);)*
 	};
 }
-pub(crate) use binop_128;
 
 macro_rules! binop_256 {
 	($func: ident, $op: ident, $doc: literal, $ty: ident, $out: ident, $factor: literal, $ext: ident) => {
@@ -136,7 +131,6 @@ macro_rules! binop_256 {
 		$(binop_256!($func, $op, $doc, $ty, $ty, $factor, $ext);)*
 	};
 }
-pub(crate) use binop_256;
 
 macro_rules! unop_128 {
 	($func: ident, $op: ident, $doc: literal, $ty: ident, $factor: literal, $ext: ident) => {
@@ -155,7 +149,6 @@ macro_rules! unop_128 {
 		$(unop_128!($func, $op, $doc, $ty, $factor, $ext);)*
 	};
 }
-pub(crate) use unop_128;
 
 macro_rules! unop_256 {
 	($func: ident, $op: ident, $doc: literal, $ty: ident, $factor: literal, $ext: ident) => {
@@ -174,7 +167,6 @@ macro_rules! unop_256 {
 		$(unop_256!($func, $op, $doc, $ty, $factor, $ext);)*
 	};
 }
-pub(crate) use unop_256;
 
 macro_rules! binop_128_nosign {
 	($func: ident, $op: ident, $doc: literal, $ty: ident, $out: ident, $factor: literal, $ext: ident) => {
@@ -196,7 +188,6 @@ macro_rules! binop_128_nosign {
 		$(binop_128_nosign!($func, $func, $doc, $ty, $ty, $factor, $ext);)*
 	};
 }
-pub(crate) use binop_128_nosign;
 
 macro_rules! binop_256_nosign {
 	($func: ident, $op: ident, $doc: literal, $ty: ident, $out: ident, $factor: literal, $ext: ident) => {
@@ -218,7 +209,6 @@ macro_rules! binop_256_nosign {
 		$(binop_256_nosign!($func, $func, $doc, $ty, $ty, $factor, $ext);)*
 	};
 }
-pub(crate) use binop_256_nosign;
 
 macro_rules! binop_128_full {
 	($func: ident, $doc: literal, $ty: ident, $factor: literal, $ext: ident) => {
@@ -234,7 +224,6 @@ macro_rules! binop_128_full {
 		$(binop_128_full!($func, $doc, $ty, $factor, $ext);)*
 	};
 }
-pub(crate) use binop_128_full;
 
 macro_rules! binop_256_full {
 	($func: ident, $doc: literal, $ty: ident, $factor: literal, $ext: ident) => {
@@ -250,22 +239,19 @@ macro_rules! binop_256_full {
 		$(binop_256_full!($func, $doc, $ty, $factor, $ext);)*
 	};
 }
-pub(crate) use binop_256_full;
 
 mod v1;
 mod v2;
 mod v3;
-
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
+#[cfg(feature = "x86-v4")]
+#[cfg_attr(docsrs, doc(cfg(feature = "x86-v4")))]
 mod v4;
 
 pub use v1::*;
 pub use v2::*;
 pub use v3::*;
-
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
+#[cfg(feature = "x86-v4")]
+#[cfg_attr(docsrs, doc(cfg(feature = "x86-v4")))]
 pub use v4::*;
 
 #[target_feature(enable = "avx,avx2")]
@@ -340,8 +326,8 @@ pub enum Arch {
 	#[cfg_attr(docsrs, doc(cfg(feature = "x86-v3")))]
 	V3(V3) = 1,
 
-	#[cfg(feature = "nightly-x86-v4")]
-	#[cfg_attr(docsrs, doc(cfg(feature = "nightly-x86-v4")))]
+	#[cfg(feature = "x86-v4")]
+	#[cfg_attr(docsrs, doc(cfg(feature = "x86-v4")))]
 	V4(V4) = 2,
 }
 
@@ -349,7 +335,7 @@ impl Arch {
 	/// Detects the best available instruction set.
 	#[inline]
 	pub fn new() -> Self {
-		#[cfg(feature = "nightly-x86-v4")]
+		#[cfg(feature = "x86-v4")]
 		if let Some(simd) = V4::try_new() {
 			return Self::V4(simd);
 		}
@@ -364,7 +350,7 @@ impl Arch {
 	#[inline(always)]
 	pub fn dispatch<Op: WithSimd>(self, op: Op) -> Op::Output {
 		match self {
-			#[cfg(feature = "nightly-x86-v4")]
+			#[cfg(feature = "x86-v4")]
 			Arch::V4(simd) => Simd::vectorize(simd, op),
 			#[cfg(feature = "x86-v3")]
 			Arch::V3(simd) => Simd::vectorize(simd, op),
@@ -530,7 +516,7 @@ mod tests {
 			}
 		}
 
-		#[cfg(feature = "nightly")]
+		#[cfg(feature = "x86-v4")]
 		if let Some(simd) = V4::try_new() {
 			let mut axb = vec![c32::new(0.0, 0.0); n];
 			let mut conjaxb = vec![c32::new(0.0, 0.0); n];
@@ -850,7 +836,7 @@ mod tests {
 			}
 		}
 
-		#[cfg(feature = "nightly")]
+		#[cfg(feature = "x86-v4")]
 		if let Some(simd) = V4::try_new() {
 			for amount in 0..128 {
 				let mut array = [0u32; 16];
@@ -900,7 +886,7 @@ mod tests {
 			}
 		}
 
-		#[cfg(feature = "nightly")]
+		#[cfg(feature = "x86-v4")]
 		if let Some(simd) = V4::try_new() {
 			for n in 0..=16 {
 				let src = core::array::from_fn::<f32, 16, _>(|i| i as _);
@@ -969,7 +955,7 @@ mod tests {
 				assert_eq!(src, simd.interleave_shfl_f32s(dst));
 			}
 		}
-		#[cfg(feature = "nightly")]
+		#[cfg(feature = "x86-v4")]
 		if let Some(simd) = V4::try_new() {
 			{
 				let src = [

@@ -1,8 +1,4 @@
-#![cfg_attr(
-	all(target_arch = "x86_64", feature = "nightly"),
-	feature(avx512_target_feature)
-)]
-#[cfg(all(target_arch = "x86_64", feature = "nightly"))]
+#[cfg(all(feature = "x86-v4", target_arch = "x86_64"))]
 mod x86 {
 	use diol::prelude::*;
 	use pulp::Simd;
@@ -68,7 +64,7 @@ mod x86 {
 }
 
 fn main() -> std::io::Result<()> {
-	#[cfg(all(target_arch = "x86_64", feature = "nightly"))]
+	#[cfg(all(feature = "x86-v4", target_arch = "x86_64"))]
 	x86::main()?;
 	Ok(())
 }
