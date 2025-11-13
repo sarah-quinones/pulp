@@ -3174,6 +3174,9 @@ match_cfg!(
 		const { target_arch = "aarch64" } => {
 			pub use aarch64::Arch;
 		},
+		const { target_arch = "wasm32" } => {
+			pub use wasm::Arch;
+		},
 		_ => {
 			#[derive(Debug, Clone, Copy)]
 			#[non_exhaustive]
