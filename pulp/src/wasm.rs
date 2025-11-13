@@ -1891,13 +1891,50 @@ impl Simd for RelaxedSimd {
 	}
 
 	#[inline(always)]
+	fn mul_add_e_c32s(self, a: Self::c32s, b: Self::c32s, c: Self::c32s) -> Self::c32s {
+		let ab = cast!(a);
+		let xy = cast!(b);
+
+		let yx = vrev64q_f32(xy);
+		let aa = vtrn1q_f32(ab);
+		let bb = vtrn2q_f32(ab);
+
+		let bb_sign = cast!(
+			self.simd128
+				.v128_xor(cast!(f32x4(-0.0, 0.0, -0.0, 0.0)), cast!(bb),)
+		);
+
+		cast!(self.mul_add_e_f32s(self.mul_add_e_f32s(cast!(c), bb_sign, yx), aa, xy))
+	}
+
+	#[inline(always)]
+	fn mul_add_e_c64s(self, a: Self::c64s, b: Self::c64s, c: Self::c64s) -> Self::c64s {
+		let ab = cast!(a);
+		let xy = cast!(b);
+
+		let yx = vrev128q_f64(xy);
+		let aa = vtrn1q_f64(ab);
+		let bb = vtrn2q_f64(ab);
+
+		let bb_sign = cast!(self.simd128.v128_xor(cast!(f64x2(-0.0, 0.0)), cast!(bb)));
+
+		cast!(self.mul_add_e_f64s(self.mul_add_e_f64s(cast!(c), bb_sign, yx), aa, xy))
+	}
+
+	#[inline(always)]
 	fn mul_add_e_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
-		vfmaq_f32(c, a, b)
+		cast!(
+			self.relaxed_simd
+				.f32x4_relaxed_madd(cast!(a), cast!(b), cast!(c))
+		)
 	}
 
 	#[inline(always)]
 	fn mul_add_e_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
-		vfmaq_f64(c, a, b)
+		cast!(
+			self.relaxed_simd
+				.f64x2_relaxed_madd(cast!(a), cast!(b), cast!(c))
+		)
 	}
 
 	#[inline(always)]
@@ -1929,7 +1966,24 @@ impl Simd for RelaxedSimd {
 				.v128_xor(cast!(f32x4(-0.0, 0.0, -0.0, 0.0)), cast!(bb),)
 		);
 
-		cast!(vfmaq_f32(self.mul_f32s(bb_sign, yx), aa, xy))
+		cast!(self.mul_add_f32s(self.mul_f32s(bb_sign, yx), aa, xy))
+	}
+
+	#[inline(always)]
+	fn mul_e_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
+		let ab = cast!(a);
+		let xy = cast!(b);
+
+		let yx = vrev64q_f32(xy);
+		let aa = vtrn1q_f32(ab);
+		let bb = vtrn2q_f32(ab);
+
+		let bb_sign = cast!(
+			self.simd128
+				.v128_xor(cast!(f32x4(-0.0, 0.0, -0.0, 0.0)), cast!(bb),)
+		);
+
+		cast!(self.mul_add_e_f32s(self.mul_f32s(bb_sign, yx), aa, xy))
 	}
 
 	#[inline(always)]
@@ -1943,7 +1997,21 @@ impl Simd for RelaxedSimd {
 
 		let bb_sign = cast!(self.simd128.v128_xor(cast!(f64x2(-0.0, 0.0)), cast!(bb)));
 
-		cast!(vfmaq_f64(self.mul_f64s(bb_sign, yx), aa, xy))
+		cast!(self.mul_add_f64s(self.mul_f64s(bb_sign, yx), aa, xy))
+	}
+
+	#[inline(always)]
+	fn mul_e_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s {
+		let ab = cast!(a);
+		let xy = cast!(b);
+
+		let yx = cast!(vrev128q_f64(cast!(xy)));
+		let aa = vtrn1q_f64(ab);
+		let bb = vtrn2q_f64(ab);
+
+		let bb_sign = cast!(self.simd128.v128_xor(cast!(f64x2(-0.0, 0.0)), cast!(bb)));
+
+		cast!(self.mul_add_e_f64s(self.mul_f64s(bb_sign, yx), aa, xy))
 	}
 
 	#[inline(always)]
