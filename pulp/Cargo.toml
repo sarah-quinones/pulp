@@ -5,19 +5,22 @@ edition = "2021"
 authors = ["sarah quiñones <sarah@veganb.tw>"]
 description = "safe generic simd"
 readme = "../README.md"
-repository = "https://github.com/sarah-ek/pulp/"
+repository = "https://github.com/sarah-quinones/pulp/"
 license = "MIT"
 keywords = ["simd"]
 
 [dependencies]
 pulp-macro = { version = "0.1.1", path = "../pulp-macro", optional = true }
-bytemuck = { version = "1.15", features = ["aarch64_simd"] }
+pulp-wasm-simd-flag = { version = "0.1", path = "../pulp-wasm-simd-flag" }
+bytemuck = { version = "1.15", features = ["aarch64_simd", "wasm_simd"] }
 num-complex = { version = "0.4.4", default-features = false, features = ["bytemuck"] }
 libm = { version = "0.2", default-features = false }
 reborrow = "0.5"
 cfg-if = "1.0.0"
-raw-cpuid = { version = "11.5.0", default-features = false, optional = true }
 paste = "1"
+
+[target.'cfg(any(target_arch = "x86", target_arch = "x86_64"))'.dependencies]
+raw-cpuid = { version = "11.5.0", default-features = false }
 
 [features]
 default = [
@@ -35,7 +38,6 @@ x86-v4 = [
 ]
 
 macro = ["dep:pulp-macro"]
-raw-cpuid = ["dep:raw-cpuid"]
 
 [dev-dependencies]
 aligned-vec = "0.6.0"

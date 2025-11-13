@@ -3367,6 +3367,11 @@ macro_rules! inherit_x2 {
 /// Low level x86 API.
 pub mod x86;
 
+#[cfg(target_arch = "wasm32")]
+#[cfg_attr(docsrs, doc(cfg(target_arch = "wasm32")))]
+/// Low level wasm API.
+pub mod wasm;
+
 #[cfg(target_arch = "aarch64")]
 #[cfg_attr(docsrs, doc(cfg(target_arch = "aarch64")))]
 /// Low level aarch64 API.

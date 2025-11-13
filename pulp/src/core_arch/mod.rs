@@ -30,7 +30,8 @@ mod arch {
 macro_rules! delegate {
     ({$(
         $(#[$attr: meta])*
-        $(unsafe $($placeholder: lifetime)?)?
+        $(const $($const: lifetime)?)?
+        $(unsafe $($unsafe: lifetime)?)?
         fn $func: ident $(<$(const $generic: ident: $generic_ty: ty),* $(,)?>)?(
             $($arg: ident: $ty: ty),* $(,)?
         ) $(-> $ret: ty)?;
@@ -39,7 +40,7 @@ macro_rules! delegate {
             $(#[$attr])*
             #[allow(clippy::missing_safety_doc)]
             #[inline(always)]
-            pub $(unsafe $($placeholder)?)? fn $func $(<$(const $generic: $generic_ty,)*>)?(self, $($arg: $ty,)*) $(-> $ret)? {
+            pub $(const $($const)?)? $(unsafe $($unsafe)?)? fn $func $(<$(const $generic: $generic_ty,)*>)?(self, $($arg: $ty,)*) $(-> $ret)? {
                 #[allow(unused_unsafe)]
                 unsafe { arch::$func $(::<$($generic,)*>)?($($arg,)*) }
             }
@@ -65,27 +66,38 @@ macro_rules! feature_detected {
 
 #[cfg(all(
 	not(feature = "std"),
-	feature = "raw-cpuid",
 	any(
 		all(target_arch = "x86", not(target_env = "sgx"), target_feature = "sse"),
 		all(target_arch = "x86_64", not(target_env = "sgx"))
 	)
 ))]
-#[macro_use]
-mod raw_cpuid_detect;
+#[doc(hidden)]
+pub mod raw_cpuid_detect;
+
+#[cfg(all(
+	not(feature = "std"),
+	any(
+		all(target_arch = "x86", not(target_env = "sgx"), target_feature = "sse"),
+		all(target_arch = "x86_64", not(target_env = "sgx")),
+	)
+))]
+#[macro_export]
+macro_rules! feature_detected {
+	($feature: tt) => {
+		cfg!(target_feature = $feature)
+			|| $crate::core_arch::raw_cpuid_detect::feature($crate::feature_idx!($feature))
+	};
+}
 
 #[cfg(not(any(
 	all(
 		feature = "std",
 		any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")
 	),
-	all(
-		feature = "raw-cpuid",
-		any(
-			all(target_arch = "x86", not(target_env = "sgx"), target_feature = "sse"),
-			all(target_arch = "x86_64", not(target_env = "sgx"))
-		)
-	),
+	all(any(
+		all(target_arch = "x86", not(target_env = "sgx"), target_feature = "sse"),
+		all(target_arch = "x86_64", not(target_env = "sgx"))
+	)),
 )))]
 #[macro_export]
 macro_rules! feature_detected {
@@ -203,12 +215,24 @@ macro_rules! __impl_type {
     ("asimd") => { $crate::core_arch::aarch64::Asimd };
 }
 
-#[cfg(not(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64",)))]
+#[doc(hidden)]
+pub struct Unavailable<const N: usize>;
+
+#[cfg(target_arch = "wasm32")]
 #[doc(hidden)]
 #[rustfmt::skip]
 #[macro_export]
 macro_rules! __impl_type {
-    ($tt: tt) => { compile_error!("unsupported arch") }
+    ("simd128") => { $crate::core_arch::wasm::Simd128 };
+    ("relaxed-simd") => { $crate::core_arch::wasm::RelaxedSimd };
+}
+
+#[cfg(not(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64", target_arch = "wasm32")))]
+#[doc(hidden)]
+#[rustfmt::skip]
+#[macro_export]
+macro_rules! __impl_type {
+    ($tt: tt) => { $crate::core_arch::Unavailable::<{compile_error!("unsupported arch")}> }
 }
 
 #[macro_export]
@@ -255,15 +279,19 @@ macro_rules! simd_type {
                 /// - the required CPU features must be available.
                 #[inline]
                 pub const unsafe fn new_unchecked() -> Self {
-                    unsafe{Self{
-                        $($ident: <$crate::core_arch::__impl_type!($feature)>::new_unchecked(),)*
-                    }}
+                    #[allow(unused_unsafe)]
+                    unsafe {
+                        Self{
+                            $($ident: <$crate::core_arch::__impl_type!($feature)>::new_unchecked(),)*
+                        }
+                    }
                 }
 
                 /// Returns a SIMD token type if the required CPU features for this type are
                 /// available, otherwise returns `None`.
                 #[inline]
                 pub fn try_new() -> Option<Self> {
+                    #[allow(unused_unsafe)]
                     if Self::is_available() {
                         Some(unsafe{Self{
                             $($ident: <$crate::core_arch::__impl_type!($feature)>::new_unchecked(),)*
@@ -382,3 +410,7 @@ pub mod x86;
 #[cfg(target_arch = "aarch64")]
 #[cfg_attr(docsrs, doc(cfg(target_arch = "aarch64")))]
 pub mod aarch64;
+
+#[cfg(target_arch = "wasm32")]
+#[cfg_attr(docsrs, doc(cfg(target_arch = "wasm32")))]
+pub mod wasm;

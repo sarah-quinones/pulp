@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "pulp",
-    "pulp-macro",
+    "pulp-macro", "pulp-wasm-simd-flag",
 ]
 
 resolver = "2"
