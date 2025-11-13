@@ -244,140 +244,121 @@ pub struct Rtm {
 }
 __impl!(Rtm, "rtm");
 
-#[derive(Clone, Copy)]
-#[repr(transparent)]
-pub struct Avx512f {
-	__private: (),
-}
-__impl512!(Avx512f, "avx512f");
-#[derive(Clone, Copy)]
-#[repr(transparent)]
-pub struct Avx512cd {
-	__private: (),
-}
-__impl512!(Avx512cd, "avx512cd");
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
-#[derive(Clone, Copy)]
-#[repr(transparent)]
-pub struct Avx512er {
-	__private: (),
-}
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
-__impl512!(Avx512er, "avx512er");
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
-#[derive(Clone, Copy)]
-#[repr(transparent)]
-pub struct Avx512pf {
-	__private: (),
-}
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
-__impl512!(Avx512pf, "avx512pf");
-#[derive(Clone, Copy)]
-#[repr(transparent)]
-pub struct Avx512bw {
-	__private: (),
-}
-__impl512!(Avx512bw, "avx512bw");
-#[derive(Clone, Copy)]
-#[repr(transparent)]
-pub struct Avx512dq {
-	__private: (),
-}
-__impl512!(Avx512dq, "avx512dq");
+#[cfg(feature = "x86-v4")]
+#[cfg_attr(docsrs, doc(cfg(feature = "x86-v4")))]
+mod gate_v4 {
+	#[derive(Clone, Copy)]
+	#[repr(transparent)]
+	pub struct Avx512f {
+		__private: (),
+	}
+	__impl512!(Avx512f, "avx512f");
+	#[derive(Clone, Copy)]
+	#[repr(transparent)]
+	pub struct Avx512cd {
+		__private: (),
+	}
+	__impl512!(Avx512cd, "avx512cd");
+	#[derive(Clone, Copy)]
+	#[repr(transparent)]
+	pub struct Avx512er {
+		__private: (),
+	}
+	__impl512!(Avx512er, "avx512er");
+	#[derive(Clone, Copy)]
+	#[repr(transparent)]
+	pub struct Avx512pf {
+		__private: (),
+	}
+	__impl512!(Avx512pf, "avx512pf");
+	#[derive(Clone, Copy)]
+	#[repr(transparent)]
+	pub struct Avx512bw {
+		__private: (),
+	}
+	__impl512!(Avx512bw, "avx512bw");
+	#[derive(Clone, Copy)]
+	#[repr(transparent)]
+	pub struct Avx512dq {
+		__private: (),
+	}
+	__impl512!(Avx512dq, "avx512dq");
 
-#[derive(Clone, Copy)]
-#[repr(transparent)]
-pub struct Avx512ifma {
-	__private: (),
-}
-__impl512!(Avx512ifma, "avx512ifma");
-#[derive(Clone, Copy)]
-#[repr(transparent)]
-pub struct Avx512vbmi {
-	__private: (),
-}
-__impl512!(Avx512vbmi, "avx512vbmi");
-#[derive(Clone, Copy)]
-#[repr(transparent)]
-pub struct Avx512vpopcntdq {
-	__private: (),
-}
-__impl512!(Avx512vpopcntdq, "avx512vpopcntdq");
-#[derive(Clone, Copy)]
-#[repr(transparent)]
-pub struct Avx512vbmi2 {
-	__private: (),
-}
-__impl512!(Avx512vbmi2, "avx512vbmi2");
-#[derive(Clone, Copy)]
-#[repr(transparent)]
-pub struct Gfni {
-	__private: (),
-}
-__impl!(Gfni, "gfni");
+	#[derive(Clone, Copy)]
+	#[repr(transparent)]
+	pub struct Avx512ifma {
+		__private: (),
+	}
+	__impl512!(Avx512ifma, "avx512ifma");
+	#[derive(Clone, Copy)]
+	#[repr(transparent)]
+	pub struct Avx512vbmi {
+		__private: (),
+	}
+	__impl512!(Avx512vbmi, "avx512vbmi");
+	#[derive(Clone, Copy)]
+	#[repr(transparent)]
+	pub struct Avx512vpopcntdq {
+		__private: (),
+	}
+	__impl512!(Avx512vpopcntdq, "avx512vpopcntdq");
+	#[derive(Clone, Copy)]
+	#[repr(transparent)]
+	pub struct Avx512vbmi2 {
+		__private: (),
+	}
+	__impl512!(Avx512vbmi2, "avx512vbmi2");
+	#[derive(Clone, Copy)]
+	#[repr(transparent)]
+	pub struct Gfni {
+		__private: (),
+	}
+	__impl!(Gfni, "gfni");
 
-#[derive(Clone, Copy)]
-#[repr(transparent)]
-pub struct Vaes {
-	__private: (),
-}
-__impl!(Vaes, "vaes");
-#[derive(Clone, Copy)]
-#[repr(transparent)]
-pub struct Vpclmulqdq {
-	__private: (),
-}
-__impl!(Vpclmulqdq, "vpclmulqdq");
+	#[derive(Clone, Copy)]
+	#[repr(transparent)]
+	pub struct Vaes {
+		__private: (),
+	}
+	__impl!(Vaes, "vaes");
+	#[derive(Clone, Copy)]
+	#[repr(transparent)]
+	pub struct Vpclmulqdq {
+		__private: (),
+	}
+	__impl!(Vpclmulqdq, "vpclmulqdq");
 
-#[derive(Clone, Copy)]
-#[repr(transparent)]
-pub struct Avx512vnni {
-	__private: (),
+	#[derive(Clone, Copy)]
+	#[repr(transparent)]
+	pub struct Avx512vnni {
+		__private: (),
+	}
+	__impl512!(Avx512vnni, "avx512vnni");
+	#[derive(Clone, Copy)]
+	#[repr(transparent)]
+	pub struct Avx512bitalg {
+		__private: (),
+	}
+	__impl512!(Avx512bitalg, "avx512bitalg");
+	#[derive(Clone, Copy)]
+	#[repr(transparent)]
+	pub struct Avx512bf16 {
+		__private: (),
+	}
+	__impl512!(Avx512bf16, "avx512bf16");
+	#[derive(Clone, Copy)]
+	#[repr(transparent)]
+	pub struct Avx512vp2intersect {
+		__private: (),
+	}
+	__impl512!(Avx512vp2intersect, "avx512vp2intersect");
 }
-__impl512!(Avx512vnni, "avx512vnni");
-#[derive(Clone, Copy)]
-#[repr(transparent)]
-pub struct Avx512bitalg {
-	__private: (),
-}
-__impl512!(Avx512bitalg, "avx512bitalg");
-#[derive(Clone, Copy)]
-#[repr(transparent)]
-pub struct Avx512bf16 {
-	__private: (),
-}
-__impl512!(Avx512bf16, "avx512bf16");
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
-#[derive(Clone, Copy)]
-#[repr(transparent)]
-pub struct Avx512vp2intersect {
-	__private: (),
-}
-#[cfg(feature = "nightly")]
-#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
-__impl512!(Avx512vp2intersect, "avx512vp2intersect");
-
-#[deprecated]
-pub type Avx512gfni = Gfni;
-
-#[deprecated]
-pub type Avx512vpclmulqdq = Vpclmulqdq;
-
-#[deprecated]
-pub type Avx512vaes = Vaes;
+#[cfg(feature = "x86-v4")]
+#[cfg_attr(docsrs, doc(cfg(feature = "x86-v4")))]
+pub use gate_v4::*;
 
 mod avx;
 mod avx2;
-mod avx512bw;
-mod avx512cd;
-mod avx512dq;
-mod avx512f;
-mod avx512ifma;
 mod fma;
 mod sse;
 mod sse2;
@@ -385,3 +366,19 @@ mod sse3;
 mod sse41;
 mod sse42;
 mod ssse3;
+
+#[cfg(feature = "x86-v4")]
+#[cfg_attr(docsrs, doc(cfg(feature = "x86-v4")))]
+mod avx512bw;
+#[cfg(feature = "x86-v4")]
+#[cfg_attr(docsrs, doc(cfg(feature = "x86-v4")))]
+mod avx512cd;
+#[cfg(feature = "x86-v4")]
+#[cfg_attr(docsrs, doc(cfg(feature = "x86-v4")))]
+mod avx512dq;
+#[cfg(feature = "x86-v4")]
+#[cfg_attr(docsrs, doc(cfg(feature = "x86-v4")))]
+mod avx512f;
+#[cfg(feature = "x86-v4")]
+#[cfg_attr(docsrs, doc(cfg(feature = "x86-v4")))]
+mod avx512ifma;

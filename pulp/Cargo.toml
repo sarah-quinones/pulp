@@ -2,8 +2,8 @@
 name = "pulp"
 version = "0.21.5"
 edition = "2021"
-authors = ["sarah <>"]
-description = "Safe generic simd"
+authors = ["sarah quiñones <sarah@veganb.tw>"]
+description = "safe generic simd"
 readme = "../README.md"
 repository = "https://github.com/sarah-ek/pulp/"
 license = "MIT"
