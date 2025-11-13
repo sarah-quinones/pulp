@@ -247,6 +247,26 @@ __impl!(Rtm, "rtm");
 #[cfg(feature = "x86-v4")]
 #[cfg_attr(docsrs, doc(cfg(feature = "x86-v4")))]
 mod gate_v4 {
+	#[cfg(feature = "nightly")]
+	#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
+	mod gate_nightly {
+		#[derive(Clone, Copy)]
+		#[repr(transparent)]
+		pub struct Avx512er {
+			__private: (),
+		}
+		__impl512!(Avx512er, "avx512er");
+		#[derive(Clone, Copy)]
+		#[repr(transparent)]
+		pub struct Avx512pf {
+			__private: (),
+		}
+		__impl512!(Avx512pf, "avx512pf");
+	}
+	#[cfg(feature = "nightly")]
+	#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
+	pub use gate_nightly::*;
+
 	#[derive(Clone, Copy)]
 	#[repr(transparent)]
 	pub struct Avx512f {
@@ -258,19 +278,9 @@ mod gate_v4 {
 	pub struct Avx512cd {
 		__private: (),
 	}
+
 	__impl512!(Avx512cd, "avx512cd");
-	#[derive(Clone, Copy)]
-	#[repr(transparent)]
-	pub struct Avx512er {
-		__private: (),
-	}
-	__impl512!(Avx512er, "avx512er");
-	#[derive(Clone, Copy)]
-	#[repr(transparent)]
-	pub struct Avx512pf {
-		__private: (),
-	}
-	__impl512!(Avx512pf, "avx512pf");
+
 	#[derive(Clone, Copy)]
 	#[repr(transparent)]
 	pub struct Avx512bw {
