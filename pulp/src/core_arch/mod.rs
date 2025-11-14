@@ -64,7 +64,7 @@ macro_rules! feature_detected {
 	};
 }
 
-#[cfg(all(target_arch = "wasm32"))]
+#[cfg(target_arch = "wasm32")]
 #[macro_export]
 macro_rules! feature_detected {
 	("simd128") => {
