@@ -5142,63 +5142,38 @@ unsafe impl Pod for m64x8 {}
 macro_rules! iota {
 	($T: ty, $N: expr, $int: ty) => {
 		const {
-			{
-				let mut iota = core::mem::MaybeUninit::uninit();
-				unsafe {
-					{
-						let iota = &mut *((&mut iota) as *mut MaybeUninit<[$T; $N]>
-							as *mut [MaybeUninit<$T>; $N]);
-						let mut i = 0;
-						while i < $N {
-							let v = (&mut iota[i]) as *mut _ as *mut $int;
+			unsafe {
+				let mut iota = [const { core::mem::MaybeUninit::uninit() }; $N];
+				{
+					let mut i = 0;
+					while i < $N {
+						let v = (&raw mut iota[i]) as *mut $int;
 
-							let mut j = 0;
-							while j < core::mem::size_of::<$T>() / core::mem::size_of::<$int>() {
-								v.add(j).write_unaligned(i as $int);
-								j += 1;
-							}
-
-							i += 1;
+						let mut j = 0;
+						while j < core::mem::size_of::<$T>() / core::mem::size_of::<$int>() {
+							v.add(j).write_unaligned(i as $int);
+							j += 1;
 						}
+
+						i += 1;
 					}
-					iota.assume_init()
 				}
+				iota
 			}
 		}
 	};
 }
 
-#[cfg(libpulp_const)]
-pub const fn iota_8<T: Interleave, const N: usize>() -> [T; N] {
+pub const fn iota_8<T: Interleave, const N: usize>() -> [MaybeUninit<T>; N] {
 	iota!(T, N, u8)
 }
-#[cfg(libpulp_const)]
-pub const fn iota_16<T: Interleave, const N: usize>() -> [T; N] {
+pub const fn iota_16<T: Interleave, const N: usize>() -> [MaybeUninit<T>; N] {
 	iota!(T, N, u16)
 }
-#[cfg(libpulp_const)]
-pub const fn iota_32<T: Interleave, const N: usize>() -> [T; N] {
+pub const fn iota_32<T: Interleave, const N: usize>() -> [MaybeUninit<T>; N] {
 	iota!(T, N, u32)
 }
-#[cfg(libpulp_const)]
-pub const fn iota_64<T: Interleave, const N: usize>() -> [T; N] {
-	iota!(T, N, u64)
-}
-
-#[cfg(not(libpulp_const))]
-pub fn iota_8<T: Interleave, const N: usize>() -> [T; N] {
-	iota!(T, N, u8)
-}
-#[cfg(not(libpulp_const))]
-pub fn iota_16<T: Interleave, const N: usize>() -> [T; N] {
-	iota!(T, N, u16)
-}
-#[cfg(not(libpulp_const))]
-pub fn iota_32<T: Interleave, const N: usize>() -> [T; N] {
-	iota!(T, N, u32)
-}
-#[cfg(not(libpulp_const))]
-pub fn iota_64<T: Interleave, const N: usize>() -> [T; N] {
+pub const fn iota_64<T: Interleave, const N: usize>() -> [MaybeUninit<T>; N] {
 	iota!(T, N, u64)
 }
 
