@@ -64,6 +64,17 @@ macro_rules! feature_detected {
 	};
 }
 
+#[cfg(all(target_arch = "wasm32"))]
+#[macro_export]
+macro_rules! feature_detected {
+	("simd128") => {
+		$crate::wasm::is_simd128_enabled()
+	};
+	("relaxed-simd") => {
+		$crate::wasm::is_relaxed_simd_enabled()
+	};
+}
+
 #[cfg(all(
 	not(feature = "std"),
 	any(
@@ -90,6 +101,7 @@ macro_rules! feature_detected {
 }
 
 #[cfg(not(any(
+	target_arch = "wasm32",
 	all(
 		feature = "std",
 		any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")

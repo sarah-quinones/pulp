@@ -3,9 +3,8 @@
 #[cfg(any(target_arch = "wasm32", target_arch = "wasm64"))]
 mod wasm {
 	use core::sync::atomic;
-	pub static SIMD128: atomic::AtomicBool =
-		atomic::AtomicBool::new(cfg!(target_feature = "simd128"));
-	pub static RELAXED_SIMD: atomic::AtomicBool =
+	static SIMD128: atomic::AtomicBool = atomic::AtomicBool::new(cfg!(target_feature = "simd128"));
+	static RELAXED_SIMD: atomic::AtomicBool =
 		atomic::AtomicBool::new(cfg!(target_feature = "relaxed-simd"));
 
 	#[inline]
@@ -21,7 +20,7 @@ mod wasm {
 
 	#[inline]
 	pub fn is_simd128_enabled() -> bool {
-		SIMD128.load(atomic::Ordering::Relaxed)
+		cfg!(target_feature = "simd128") || SIMD128.load(atomic::Ordering::Relaxed)
 	}
 
 	#[inline]
@@ -37,7 +36,7 @@ mod wasm {
 
 	#[inline]
 	pub fn is_relaxed_simd_enabled() -> bool {
-		RELAXED_SIMD.load(atomic::Ordering::Relaxed)
+		cfg!(target_feature = "relaxed-simd") || RELAXED_SIMD.load(atomic::Ordering::Relaxed)
 	}
 }
 #[cfg(any(target_arch = "wasm32", target_arch = "wasm64"))]
