@@ -1011,4 +1011,134 @@ mod tests {
 			}
 		}
 	}
+
+	#[test]
+	fn test_mul_add() {
+		if let Some(simd) = V2::try_new() {
+			let a = f32x4(-1.0, 1.0, -2.0, 2.0);
+			let b = f32x4(-5.0, 5.0, -6.0, 6.0);
+			let c = f32x4(2.0, -2.0, -3.0, 3.0);
+
+			let d = simd.add_f32s(c, simd.mul_f32s(a, b));
+
+			assert_eq!(simd.mul_add_f32s(a, b, c), d);
+
+			let a = f64x2(-1.0, 1.0);
+			let b = f64x2(-5.0, 5.0);
+			let c = f64x2(2.0, -2.0);
+
+			let d = simd.add_f64s(c, simd.mul_f64s(a, b));
+
+			assert_eq!(simd.mul_add_f64s(a, b, c), d);
+		}
+		if let Some(simd) = V3::try_new() {
+			let a = f32x8(-1.0, 1.0, -2.0, 2.0, -3.0, 3.0, -4.0, 4.0);
+			let b = f32x8(-5.0, 5.0, -6.0, 6.0, -7.0, 7.0, -8.0, 8.0);
+			let c = f32x8(2.0, -2.0, -3.0, 3.0, -4.0, 4.0, -5.0, 5.0);
+
+			let d = simd.add_f32s(c, simd.mul_f32s(a, b));
+
+			assert_eq!(simd.mul_add_f32s(a, b, c), d);
+
+			let a = f64x4(-1.0, 1.0, -2.0, 2.0);
+			let b = f64x4(-5.0, 5.0, -6.0, 6.0);
+			let c = f64x4(2.0, -2.0, -3.0, 3.0);
+
+			let d = simd.add_f64s(c, simd.mul_f64s(a, b));
+
+			assert_eq!(simd.mul_add_f64s(a, b, c), d);
+		}
+		#[cfg(feature = "x86-v4")]
+		if let Some(simd) = V4::try_new() {
+			let a = f32x16(
+				-1.0, 1.0, -2.0, 2.0, -3.0, 3.0, -4.0, 4.0, 1.0, -1.0, 2.0, -2.0, 3.0, -3.0, 4.0,
+				-4.0,
+			);
+			let b = f32x16(
+				-5.0, 5.0, -6.0, 6.0, -7.0, 7.0, -8.0, 8.0, -5.0, 5.0, -6.0, 6.0, -7.0, 7.0, -8.0,
+				8.0,
+			);
+			let c = f32x16(
+				2.0, -2.0, -3.0, 3.0, -4.0, 4.0, -5.0, 5.0, 2.0, -2.0, -3.0, 3.0, -4.0, 4.0, -5.0,
+				5.0,
+			);
+
+			let d = simd.add_f32s(c, simd.mul_f32s(a, b));
+
+			assert_eq!(simd.mul_add_f32s(a, b, c), d);
+
+			let a = f64x8(-1.0, 1.0, -2.0, 2.0, -3.0, 3.0, -4.0, 4.0);
+			let b = f64x8(-5.0, 5.0, -6.0, 6.0, -7.0, 7.0, -8.0, 8.0);
+			let c = f64x8(2.0, -2.0, -3.0, 3.0, -4.0, 4.0, -5.0, 5.0);
+
+			let d = simd.add_f64s(c, simd.mul_f64s(a, b));
+
+			assert_eq!(simd.mul_add_f64s(a, b, c), d);
+		}
+	}
+
+	#[test]
+	fn test_negate_mul_add() {
+		if let Some(simd) = V2::try_new() {
+			let a = f32x4(-1.0, 1.0, -2.0, 2.0);
+			let b = f32x4(-5.0, 5.0, -6.0, 6.0);
+			let c = f32x4(2.0, -2.0, -3.0, 3.0);
+
+			let d = simd.sub_f32s(c, simd.mul_f32s(a, b));
+
+			assert_eq!(simd.negate_mul_add_f32s(a, b, c), d);
+
+			let a = f64x2(-1.0, 1.0);
+			let b = f64x2(-5.0, 5.0);
+			let c = f64x2(2.0, -2.0);
+
+			let d = simd.sub_f64s(c, simd.mul_f64s(a, b));
+
+			assert_eq!(simd.negate_mul_add_f64s(a, b, c), d);
+		}
+		if let Some(simd) = V3::try_new() {
+			let a = f32x8(-1.0, 1.0, -2.0, 2.0, -3.0, 3.0, -4.0, 4.0);
+			let b = f32x8(-5.0, 5.0, -6.0, 6.0, -7.0, 7.0, -8.0, 8.0);
+			let c = f32x8(2.0, -2.0, -3.0, 3.0, -4.0, 4.0, -5.0, 5.0);
+
+			let d = simd.sub_f32s(c, simd.mul_f32s(a, b));
+
+			assert_eq!(simd.negate_mul_add_f32s(a, b, c), d);
+
+			let a = f64x4(-1.0, 1.0, -2.0, 2.0);
+			let b = f64x4(-5.0, 5.0, -6.0, 6.0);
+			let c = f64x4(2.0, -2.0, -3.0, 3.0);
+
+			let d = simd.sub_f64s(c, simd.mul_f64s(a, b));
+
+			assert_eq!(simd.negate_mul_add_f64s(a, b, c), d);
+		}
+		#[cfg(feature = "x86-v4")]
+		if let Some(simd) = V4::try_new() {
+			let a = f32x16(
+				-1.0, 1.0, -2.0, 2.0, -3.0, 3.0, -4.0, 4.0, 1.0, -1.0, 2.0, -2.0, 3.0, -3.0, 4.0,
+				-4.0,
+			);
+			let b = f32x16(
+				-5.0, 5.0, -6.0, 6.0, -7.0, 7.0, -8.0, 8.0, -5.0, 5.0, -6.0, 6.0, -7.0, 7.0, -8.0,
+				8.0,
+			);
+			let c = f32x16(
+				2.0, -2.0, -3.0, 3.0, -4.0, 4.0, -5.0, 5.0, 2.0, -2.0, -3.0, 3.0, -4.0, 4.0, -5.0,
+				5.0,
+			);
+
+			let d = simd.sub_f32s(c, simd.mul_f32s(a, b));
+
+			assert_eq!(simd.negate_mul_add_f32s(a, b, c), d);
+
+			let a = f64x8(-1.0, 1.0, -2.0, 2.0, -3.0, 3.0, -4.0, 4.0);
+			let b = f64x8(-5.0, 5.0, -6.0, 6.0, -7.0, 7.0, -8.0, 8.0);
+			let c = f64x8(2.0, -2.0, -3.0, 3.0, -4.0, 4.0, -5.0, 5.0);
+
+			let d = simd.sub_f64s(c, simd.mul_f64s(a, b));
+
+			assert_eq!(simd.negate_mul_add_f64s(a, b, c), d);
+		}
+	}
 }

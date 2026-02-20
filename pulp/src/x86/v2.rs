@@ -924,6 +924,26 @@ impl Simd for V2 {
 	}
 
 	#[inline(always)]
+	fn negate_mul_add_e_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+		self.negate_mul_add_f32s(a, b, c)
+	}
+
+	#[inline(always)]
+	fn negate_mul_add_e_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+		self.negate_mul_add_f64s(a, b, c)
+	}
+
+	#[inline(always)]
+	fn negate_mul_add_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+		Scalar128b.negate_mul_add_f32s(a, b, c)
+	}
+
+	#[inline(always)]
+	fn negate_mul_add_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+		Scalar128b.negate_mul_add_f64s(a, b, c)
+	}
+
+	#[inline(always)]
 	fn neg_c32s(self, a: Self::c32s) -> Self::c32s {
 		self.xor_f32s(a, self.splat_f32s(-0.0))
 	}
