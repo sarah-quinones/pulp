@@ -3302,6 +3302,26 @@ impl Neon {
 	pub fn xor_u8x16(self, a: u8x16, b: u8x16) -> u8x16 {
 		unsafe { cast!(veorq_u8(cast!(a), cast!(b))) }
 	}
+
+	/// Shuffles the bytes of `table` according to the byte indices in `idx`.
+	///
+	/// This is a 16-byte in-register lookup table (LUT) using the NEON `tbl`
+	/// instruction (`vqtbl1q_u8`). For each byte of `idx`, if the value is
+	/// `>= 16` the corresponding output byte is zero; otherwise it selects the
+	/// byte at that position from `table`.
+	#[inline(always)]
+	pub fn shuffle_u8x16(self, table: u8x16, idx: u8x16) -> u8x16 {
+		unsafe { cast!(vqtbl1q_u8(cast!(table), cast!(idx))) }
+	}
+
+	/// Signed-byte variant of [`Neon::shuffle_u8x16`].
+	///
+	/// Note: the index is still `u8x16` because NEON's `vqtbl1q_s8` requires an
+	/// unsigned index vector.
+	#[inline(always)]
+	pub fn shuffle_i8x16(self, table: i8x16, idx: u8x16) -> i8x16 {
+		unsafe { cast!(vqtbl1q_s8(cast!(table), cast!(idx))) }
+	}
 }
 
 /// aarch64 arch

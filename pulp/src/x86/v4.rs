@@ -4123,6 +4123,29 @@ impl V4 {
 
 		(cast!(ab_lo), cast!(ab_hi))
 	}
+
+	/// Shuffles the bytes of each 128-bit quarter of `table` independently using
+	/// the byte indices in the corresponding quarter of `idx`. This is the
+	/// AVX-512BW `_mm512_shuffle_epi8` instruction: four parallel 16-byte
+	/// lookups.
+	///
+	/// If the high bit of an index byte is set, the corresponding output byte is
+	/// zero; otherwise only the low 4 bits are used within that quarter.
+	///
+	/// A full cross-lane 64-byte byte lookup would require AVX-512 VBMI
+	/// (`_mm512_permutexvar_epi8`), which is not part of the [`V4`] feature
+	/// level. For cross-lane 32-byte lookups, use [`V3::shuffle_u8x32`] (the
+	/// method is inherited by `V4` through `Deref`).
+	#[inline(always)]
+	pub fn shuffle_u8x64_in_lane(self, table: u8x64, idx: u8x64) -> u8x64 {
+		cast!(self.avx512bw._mm512_shuffle_epi8(cast!(table), cast!(idx)))
+	}
+
+	/// Signed-byte variant of [`V4::shuffle_u8x64_in_lane`].
+	#[inline(always)]
+	pub fn shuffle_i8x64_in_lane(self, table: i8x64, idx: i8x64) -> i8x64 {
+		cast!(self.avx512bw._mm512_shuffle_epi8(cast!(table), cast!(idx)))
+	}
 }
 
 #[cfg(target_arch = "x86_64")]

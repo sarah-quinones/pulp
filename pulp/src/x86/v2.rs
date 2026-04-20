@@ -551,6 +551,24 @@ impl V2 {
 
 		(cast!(ab_lo), cast!(ab_hi))
 	}
+
+	/// Shuffles the bytes of `table` according to the byte indices in `idx`.
+	///
+	/// Semantics match the underlying `pshufb` (`_mm_shuffle_epi8`): if the high
+	/// bit of an index byte is set, the corresponding output byte is zero;
+	/// otherwise only the low 4 bits of the index are used to select a byte from
+	/// `table`. This is the fundamental 16-byte in-register lookup table (LUT)
+	/// primitive.
+	#[inline(always)]
+	pub fn shuffle_u8x16(self, table: u8x16, idx: u8x16) -> u8x16 {
+		cast!(self.ssse3._mm_shuffle_epi8(cast!(table), cast!(idx)))
+	}
+
+	/// Signed-byte variant of [`V2::shuffle_u8x16`].
+	#[inline(always)]
+	pub fn shuffle_i8x16(self, table: i8x16, idx: i8x16) -> i8x16 {
+		cast!(self.ssse3._mm_shuffle_epi8(cast!(table), cast!(idx)))
+	}
 }
 
 macro_rules! impl_simd_binop {

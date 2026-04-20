@@ -4373,4 +4373,40 @@ impl V3 {
 
 		(cast!(ab_lo), cast!(ab_hi))
 	}
+
+	/// Shuffles the bytes of each 128-bit half of `table` independently using the
+	/// byte indices in the corresponding half of `idx`. This is the AVX2
+	/// `_mm256_shuffle_epi8` instruction: two parallel 16-byte lookups.
+	///
+	/// If the high bit of an index byte is set, the corresponding output byte is
+	/// zero; otherwise only the low 4 bits are used within that half.
+	///
+	/// For a full cross-lane 32-byte lookup, use [`V3::shuffle_u8x32`].
+	#[inline(always)]
+	pub fn shuffle_u8x32_in_lane(self, table: u8x32, idx: u8x32) -> u8x32 {
+		cast!(self.avx2._mm256_shuffle_epi8(cast!(table), cast!(idx)))
+	}
+
+	/// Signed-byte variant of [`V3::shuffle_u8x32_in_lane`].
+	#[inline(always)]
+	pub fn shuffle_i8x32_in_lane(self, table: i8x32, idx: i8x32) -> i8x32 {
+		cast!(self.avx2._mm256_shuffle_epi8(cast!(table), cast!(idx)))
+	}
+
+	/// Cross-lane 32-byte table lookup.
+	///
+	/// Each byte of `idx` selects a byte from the full 32-byte `table`. Indices
+	/// whose high bit is set or whose value is `>= 32` produce a zero output
+	/// byte. Emulated on AVX2 via two `vpshufb` lookups against duplicated
+	/// halves, blended by index range.
+	#[inline(always)]
+	pub fn shuffle_u8x32(self, table: u8x32, idx: u8x32) -> u8x32 {
+		cast!(avx2_pshufb(self, cast!(table), cast!(idx)))
+	}
+
+	/// Signed-byte variant of [`V3::shuffle_u8x32`].
+	#[inline(always)]
+	pub fn shuffle_i8x32(self, table: i8x32, idx: i8x32) -> i8x32 {
+		cast!(avx2_pshufb(self, cast!(table), cast!(idx)))
+	}
 }

@@ -1201,6 +1201,39 @@ impl Simd for Simd128 {
 	}
 }
 
+impl Simd128 {
+	/// Shuffles the bytes of `table` according to the byte indices in `idx`.
+	///
+	/// This is a 16-byte in-register lookup table (LUT) backed by WebAssembly's
+	/// `i8x16.swizzle`. For each byte of `idx`, if the value is `>= 16` the
+	/// corresponding output byte is zero; otherwise it selects the byte at that
+	/// position from `table`.
+	#[inline(always)]
+	pub fn shuffle_u8x16(self, table: u8x16, idx: u8x16) -> u8x16 {
+		cast!(self.simd128.i8x16_swizzle(cast!(table), cast!(idx)))
+	}
+
+	/// Signed-byte variant of [`Simd128::shuffle_u8x16`].
+	#[inline(always)]
+	pub fn shuffle_i8x16(self, table: i8x16, idx: u8x16) -> i8x16 {
+		cast!(self.simd128.i8x16_swizzle(cast!(table), cast!(idx)))
+	}
+}
+
+impl RelaxedSimd {
+	/// See [`Simd128::shuffle_u8x16`].
+	#[inline(always)]
+	pub fn shuffle_u8x16(self, table: u8x16, idx: u8x16) -> u8x16 {
+		cast!(self.simd128.i8x16_swizzle(cast!(table), cast!(idx)))
+	}
+
+	/// See [`Simd128::shuffle_i8x16`].
+	#[inline(always)]
+	pub fn shuffle_i8x16(self, table: i8x16, idx: u8x16) -> i8x16 {
+		cast!(self.simd128.i8x16_swizzle(cast!(table), cast!(idx)))
+	}
+}
+
 impl crate::seal::Seal for RelaxedSimd {}
 impl Simd for RelaxedSimd {
 	type c32s = f32x4;
