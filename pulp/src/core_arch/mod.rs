@@ -70,9 +70,16 @@ macro_rules! feature_detected {
 	("simd128") => {
 		$crate::wasm::is_simd128_enabled()
 	};
-	("relaxed-simd") => {
-		$crate::wasm::is_relaxed_simd_enabled()
-	};
+	("relaxed-simd") => {{
+		#[cfg(feature = "relaxed-simd")]
+		{
+			$crate::wasm::is_relaxed_simd_enabled()
+		}
+		#[cfg(not(feature = "relaxed-simd"))]
+		{
+			false
+		}
+	}};
 }
 
 #[cfg(all(
@@ -230,13 +237,22 @@ macro_rules! __impl_type {
 #[doc(hidden)]
 pub struct Unavailable<const N: usize>;
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "relaxed-simd"))]
 #[doc(hidden)]
 #[rustfmt::skip]
 #[macro_export]
 macro_rules! __impl_type {
     ("simd128") => { $crate::core_arch::wasm::Simd128 };
     ("relaxed-simd") => { $crate::core_arch::wasm::RelaxedSimd };
+}
+
+#[cfg(all(target_arch = "wasm32", not(feature = "relaxed-simd")))]
+#[doc(hidden)]
+#[rustfmt::skip]
+#[macro_export]
+macro_rules! __impl_type {
+    ("simd128") => { $crate::core_arch::wasm::Simd128 };
+    ("relaxed-simd") => { $crate::core_arch::Unavailable::<{compile_error!("enable the `relaxed-simd` feature to use wasm relaxed-simd")}> };
 }
 
 #[cfg(not(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64", target_arch = "wasm32")))]

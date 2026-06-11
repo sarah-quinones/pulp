@@ -7,6 +7,7 @@ simd_type!({
 		pub simd128: f!("simd128"),
 	}
 
+	#[cfg(feature = "relaxed-simd")]
 	#[allow(missing_docs)]
 	pub struct RelaxedSimd {
 		pub simd128: f!("simd128"),
@@ -1201,7 +1202,9 @@ impl Simd for Simd128 {
 	}
 }
 
+#[cfg(feature = "relaxed-simd")]
 impl crate::seal::Seal for RelaxedSimd {}
+#[cfg(feature = "relaxed-simd")]
 impl Simd for RelaxedSimd {
 	type c32s = f32x4;
 	type c64s = f64x2;
@@ -2430,6 +2433,7 @@ fn max_f64(a: f64, b: f64) -> f64 {
 pub enum Arch {
 	Scalar = 0,
 
+	#[cfg(feature = "relaxed-simd")]
 	RelaxedSimd(RelaxedSimd),
 	Simd128(Simd128),
 }
@@ -2438,6 +2442,7 @@ impl Arch {
 	/// Detects the best available instruction set.
 	#[inline]
 	pub fn new() -> Self {
+		#[cfg(feature = "relaxed-simd")]
 		if let Some(simd) = RelaxedSimd::try_new() {
 			return Self::RelaxedSimd(simd);
 		}
@@ -2451,6 +2456,7 @@ impl Arch {
 	#[inline(always)]
 	pub fn dispatch<Op: WithSimd>(self, op: Op) -> Op::Output {
 		match self {
+			#[cfg(feature = "relaxed-simd")]
 			Arch::RelaxedSimd(simd) => Simd::vectorize(simd, op),
 			Arch::Simd128(simd) => Simd::vectorize(simd, op),
 

@@ -7,6 +7,7 @@ pub struct Simd128 {
 	__private: (),
 }
 
+#[cfg(feature = "relaxed-simd")]
 #[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct RelaxedSimd {
@@ -20,6 +21,7 @@ impl core::fmt::Debug for Simd128 {
 	}
 }
 
+#[cfg(feature = "relaxed-simd")]
 impl core::fmt::Debug for RelaxedSimd {
 	#[inline]
 	fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> core::fmt::Result {
@@ -49,6 +51,7 @@ impl Simd128 {
 	}
 }
 
+#[cfg(feature = "relaxed-simd")]
 impl RelaxedSimd {
 	#[inline(always)]
 	/// requires the corresponding feature
@@ -444,6 +447,7 @@ impl Simd128 {
 	});
 }
 
+#[cfg(feature = "relaxed-simd")]
 impl RelaxedSimd {
 	delegate!({
 		fn i8x16_relaxed_swizzle(a: v128, s: v128) -> v128;
