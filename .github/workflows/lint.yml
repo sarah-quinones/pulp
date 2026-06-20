@@ -30,6 +30,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
+          targets: wasm32-unknown-unknown
 
       - name: Run cargo clippy
         run: cargo clippy --all-targets -- --no-deps -D warnings
@@ -42,6 +43,9 @@ jobs:
 
       - name: Run cargo clippy no_std x86-v4
         run: cargo clippy --no-default-features --features x86-v4 --all-targets -- --no-deps -D warnings
+
+      - name: Run cargo clippy wasm no relaxed-simd
+        run: cargo clippy -p pulp --lib --target wasm32-unknown-unknown --no-default-features --features std,x86-v3 -- --no-deps -D warnings
 
   clippy-nightly:
     name: clippy

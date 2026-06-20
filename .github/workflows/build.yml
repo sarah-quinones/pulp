@@ -20,6 +20,20 @@ jobs:
       - name: Compile benches
         run: cargo bench --no-run
 
+  cargo-wasm-no-relaxed:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Check wasm build without relaxed-simd
+        run: cargo check -p pulp --target wasm32-unknown-unknown --no-default-features --features std,x86-v3
+
   cargo-tests:
     runs-on: ${{ matrix.os }}
 

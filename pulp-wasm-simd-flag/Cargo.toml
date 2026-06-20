@@ -10,3 +10,7 @@ license = "MIT"
 keywords = ["simd"]
 
 [dependencies]
+
+[features]
+default = ["relaxed-simd"]
+relaxed-simd = []

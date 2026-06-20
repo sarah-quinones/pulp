@@ -223,7 +223,8 @@ use seal::Seal;
 #[cfg_attr(docsrs, doc(cfg(feature = "macro")))]
 pub use pulp_macro::with_simd;
 
-pub use {bytemuck, num_complex};
+pub use bytemuck;
+pub use num_complex;
 
 pub type c32 = Complex<f32>;
 pub type c64 = Complex<f64>;
