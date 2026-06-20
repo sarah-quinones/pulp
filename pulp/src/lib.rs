@@ -1117,6 +1117,13 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	fn mul_add_e_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s;
 	fn mul_add_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s;
 	fn mul_add_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s;
+
+	/// Computes `-a * b + c`
+	fn negate_mul_add_e_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s;
+	fn negate_mul_add_e_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s;
+	fn negate_mul_add_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s;
+	fn negate_mul_add_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s;
+
 	/// Computes `a * b`
 	#[inline]
 	fn mul_e_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
@@ -1959,6 +1966,21 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			fn negate_mul_add_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+				let mut out = [0.0f32; Self::F32_LANES];
+
+				let a: [f32; Self::F32_LANES] = cast(a);
+				let b: [f32; Self::F32_LANES] = cast(b);
+				let c: [f32; Self::F32_LANES] = cast(c);
+
+				for i in 0..Self::F32_LANES {
+					out[i] = fma_f32(-a[i], b[i], c[i]);
+				}
+
+				cast(out)
+			}
+
+			#[inline]
 			fn reduce_sum_f32s(self, a: Self::f32s) -> f32 {
 				let mut a: [f32; Self::F32_LANES] = cast(a);
 
@@ -2210,6 +2232,20 @@ macro_rules! scalar_simd {
 			}
 
 			#[inline]
+			fn negate_mul_add_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+				let mut out = [0.0f64; Self::F64_LANES];
+				let a: [f64; Self::F64_LANES] = cast(a);
+				let b: [f64; Self::F64_LANES] = cast(b);
+				let c: [f64; Self::F64_LANES] = cast(c);
+
+				for i in 0..Self::F64_LANES {
+					out[i] = fma_f64(-a[i], b[i], c[i]);
+				}
+
+				cast(out)
+			}
+
+			#[inline]
 			fn reduce_sum_f64s(self, a: Self::f64s) -> f64 {
 				let mut a: [f64; Self::F64_LANES] = cast(a);
 
@@ -2454,6 +2490,16 @@ macro_rules! scalar_simd {
 			#[inline]
 			fn mul_add_e_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
 				self.mul_add_f64s(a, b, c)
+			}
+
+			#[inline]
+			fn negate_mul_add_e_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+				self.negate_mul_add_f32s(a, b, c)
+			}
+
+			#[inline]
+			fn negate_mul_add_e_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+				self.negate_mul_add_f64s(a, b, c)
 			}
 
 			#[inline(always)]
@@ -2859,6 +2905,26 @@ impl Simd for Scalar {
 	#[inline]
 	fn mul_add_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
 		fma_f64(a, b, c)
+	}
+
+	#[inline]
+	fn negate_mul_add_e_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+		c - a * b
+	}
+
+	#[inline]
+	fn negate_mul_add_e_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+		c - a * b
+	}
+
+	#[inline]
+	fn negate_mul_add_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+		fma_f32(-a, b, c)
+	}
+
+	#[inline]
+	fn negate_mul_add_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+		fma_f64(-a, b, c)
 	}
 
 	#[inline]

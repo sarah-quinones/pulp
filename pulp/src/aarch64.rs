@@ -1060,6 +1060,26 @@ impl Simd for Neon {
 	}
 
 	#[inline(always)]
+	fn negate_mul_add_e_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+		self.negate_mul_add_f32s(a, b, c)
+	}
+
+	#[inline(always)]
+	fn negate_mul_add_e_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+		self.negate_mul_add_f64s(a, b, c)
+	}
+
+	#[inline(always)]
+	fn negate_mul_add_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+		self.negate_mul_add_f32x4(a, b, c)
+	}
+
+	#[inline(always)]
+	fn negate_mul_add_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+		self.negate_mul_add_f64x2(a, b, c)
+	}
+
+	#[inline(always)]
 	fn mul_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		unsafe {
 			let ab = cast!(a);
@@ -2680,6 +2700,18 @@ impl Neon {
 		unsafe { cast!(vfmaq_f64(cast!(c), cast!(a), cast!(b))) }
 	}
 
+	/// Multiplies the elements of each lane of `a` and `b` and adds the result to `c`.
+	#[inline(always)]
+	pub fn negate_mul_add_f32x4(self, a: f32x4, b: f32x4, c: f32x4) -> f32x4 {
+		unsafe { cast!(vfmsq_f32(cast!(c), cast!(a), cast!(b))) }
+	}
+
+	/// Multiplies the elements of each lane of `a` and `b` and adds the result to `c`.
+	#[inline(always)]
+	pub fn negate_mul_add_f64x2(self, a: f64x2, b: f64x2, c: f64x2) -> f64x2 {
+		unsafe { cast!(vfmsq_f64(cast!(c), cast!(a), cast!(b))) }
+	}
+
 	/// Returns the bitwise NOT of `a`.
 	#[inline(always)]
 	pub fn not_i16x8(self, a: i16x8) -> i16x8 {
@@ -3587,6 +3619,48 @@ mod tests {
 				assert_eq!(dst[3], simd.add_f32x4(dst[0], simd.splat_f32x4(0.3)));
 				assert_eq!(src, simd.interleave_shfl_f32s(dst));
 			}
+		}
+	}
+
+	#[test]
+	fn test_mul_add() {
+		if let Some(simd) = Neon::try_new() {
+			let a = f32x4(-1.0, 1.0, -2.0, 2.0);
+			let b = f32x4(-5.0, 5.0, -6.0, 6.0);
+			let c = f32x4(2.0, -2.0, -3.0, 3.0);
+
+			let d = simd.add_f32s(c, simd.mul_f32s(a, b));
+
+			assert_eq!(simd.mul_add_f32s(a, b, c), d);
+
+			let a = f64x2(-1.0, 1.0);
+			let b = f64x2(-5.0, 5.0);
+			let c = f64x2(2.0, -2.0);
+
+			let d = simd.add_f64s(c, simd.mul_f64s(a, b));
+
+			assert_eq!(simd.mul_add_f64s(a, b, c), d);
+		}
+	}
+
+	#[test]
+	fn test_negate_mul_add() {
+		if let Some(simd) = Neon::try_new() {
+			let a = f32x4(-1.0, 1.0, -2.0, 2.0);
+			let b = f32x4(-5.0, 5.0, -6.0, 6.0);
+			let c = f32x4(2.0, -2.0, -3.0, 3.0);
+
+			let d = simd.sub_f32s(c, simd.mul_f32s(a, b));
+
+			assert_eq!(simd.negate_mul_add_f32s(a, b, c), d);
+
+			let a = f64x2(-1.0, 1.0);
+			let b = f64x2(-5.0, 5.0);
+			let c = f64x2(2.0, -2.0);
+
+			let d = simd.sub_f64s(c, simd.mul_f64s(a, b));
+
+			assert_eq!(simd.negate_mul_add_f64s(a, b, c), d);
 		}
 	}
 }

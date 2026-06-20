@@ -837,6 +837,31 @@ impl Simd for Simd128 {
 	}
 
 	#[inline(always)]
+	fn negate_mul_add_e_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+		vfmsq_f32(c, a, b)
+	}
+
+	#[inline(always)]
+	fn negate_mul_add_e_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+		vfmsq_f64(c, a, b)
+	}
+
+	#[inline(always)]
+	fn negate_mul_add_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+		f32x4(
+			fma_f32(-a.0, b.0, c.0),
+			fma_f32(-a.1, b.1, c.1),
+			fma_f32(-a.2, b.2, c.2),
+			fma_f32(-a.3, b.3, c.3),
+		)
+	}
+
+	#[inline(always)]
+	fn negate_mul_add_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+		f64x2(fma_f64(-a.0, b.0, c.0), fma_f64(-a.1, b.1, c.1))
+	}
+
+	#[inline(always)]
 	fn mul_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		let ab = cast!(a);
 		let xy = cast!(b);
@@ -2367,6 +2392,24 @@ fn vfmaq_f32(c: f32x4, a: f32x4, b: f32x4) -> f32x4 {
 	cast!(
 		simd.simd128
 			.f32x4_add(cast!(c), simd.simd128.f32x4_mul(cast!(a), cast!(b)))
+	)
+}
+
+#[inline(always)]
+fn vfmsq_f64(c: f64x2, a: f64x2, b: f64x2) -> f64x2 {
+	let simd = unsafe { Simd128::new_unchecked() };
+	cast!(
+		simd.simd128
+			.f64x2_sub(cast!(c), simd.simd128.f64x2_mul(cast!(a), cast!(b)))
+	)
+}
+
+#[inline(always)]
+fn vfmsq_f32(c: f32x4, a: f32x4, b: f32x4) -> f32x4 {
+	let simd = unsafe { Simd128::new_unchecked() };
+	cast!(
+		simd.simd128
+			.f32x4_sub(cast!(c), simd.simd128.f32x4_mul(cast!(a), cast!(b)))
 	)
 }
 

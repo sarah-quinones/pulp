@@ -894,6 +894,26 @@ impl Simd for V3 {
 	}
 
 	#[inline(always)]
+	fn negate_mul_add_e_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+		self.negate_mul_add_f32s(a, b, c)
+	}
+
+	#[inline(always)]
+	fn negate_mul_add_e_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+		self.negate_mul_add_f64s(a, b, c)
+	}
+
+	#[inline(always)]
+	fn negate_mul_add_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+		cast!(self.fma._mm256_fnmadd_ps(cast!(a), cast!(b), cast!(c)))
+	}
+
+	#[inline(always)]
+	fn negate_mul_add_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+		cast!(self.fma._mm256_fnmadd_pd(cast!(a), cast!(b), cast!(c)))
+	}
+
+	#[inline(always)]
 	fn mul_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		let ab = cast!(a);
 		let xy = cast!(b);
@@ -1611,6 +1631,26 @@ impl Simd for V3_128b {
 	}
 
 	#[inline(always)]
+	fn negate_mul_add_e_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+		self.negate_mul_add_f32s(a, b, c)
+	}
+
+	#[inline(always)]
+	fn negate_mul_add_e_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+		self.negate_mul_add_f64s(a, b, c)
+	}
+
+	#[inline(always)]
+	fn negate_mul_add_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+		self.negate_mul_add_f32x4(a, b, c)
+	}
+
+	#[inline(always)]
+	fn negate_mul_add_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+		self.negate_mul_add_f64x2(a, b, c)
+	}
+
+	#[inline(always)]
 	fn mul_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s {
 		let ab = cast!(a);
 		let xy = cast!(b);
@@ -2080,6 +2120,10 @@ impl Simd for V3_256b {
 		fn mul_add_e_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s;
 		fn mul_add_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s;
 		fn mul_add_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s;
+		fn negate_mul_add_e_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s;
+		fn negate_mul_add_e_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s;
+		fn negate_mul_add_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s;
+		fn negate_mul_add_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s;
 		fn mul_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s;
 		fn mul_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s;
 		fn neg_c32s(self, a: Self::c32s) -> Self::c32s;
@@ -2274,6 +2318,10 @@ impl Simd for V3_512b {
 		fn mul_add_e_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s;
 		fn mul_add_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s;
 		fn mul_add_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s;
+		fn negate_mul_add_e_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s;
+		fn negate_mul_add_e_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s;
+		fn negate_mul_add_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s;
+		fn negate_mul_add_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s;
 		fn mul_c32s(self, a: Self::c32s, b: Self::c32s) -> Self::c32s;
 		fn mul_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::c64s;
 		fn mul_f32s(self, a: Self::f32s, b: Self::f32s) -> Self::f32s;
