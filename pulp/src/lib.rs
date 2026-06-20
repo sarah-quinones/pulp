@@ -1119,10 +1119,22 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	fn mul_add_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s;
 
 	/// Computes `-a * b + c`
-	fn negate_mul_add_e_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s;
-	fn negate_mul_add_e_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s;
-	fn negate_mul_add_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s;
-	fn negate_mul_add_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s;
+	#[inline(always)]
+	fn negate_mul_add_e_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+		self.mul_add_e_f32s(self.neg_f32s(a), b, c)
+	}
+	#[inline(always)]
+	fn negate_mul_add_e_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+		self.mul_add_e_f64s(self.neg_f64s(a), b, c)
+	}
+	#[inline(always)]
+	fn negate_mul_add_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+		self.mul_add_f32s(self.neg_f32s(a), b, c)
+	}
+	#[inline(always)]
+	fn negate_mul_add_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+		self.mul_add_f64s(self.neg_f64s(a), b, c)
+	}
 
 	/// Computes `a * b`
 	#[inline]

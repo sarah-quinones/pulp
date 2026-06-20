@@ -2402,6 +2402,26 @@ impl Simd for NeonFcma {
 	fn sqrt_f64s(self, a: Self::f64s) -> Self::f64s {
 		cast!(self.neon.vsqrtq_f64(cast!(a)))
 	}
+
+	#[inline(always)]
+	fn negate_mul_add_e_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+		self.negate_mul_add_f32s(a, b, c)
+	}
+
+	#[inline(always)]
+	fn negate_mul_add_e_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+		self.negate_mul_add_f64s(a, b, c)
+	}
+
+	#[inline(always)]
+	fn negate_mul_add_f32s(self, a: Self::f32s, b: Self::f32s, c: Self::f32s) -> Self::f32s {
+		self.negate_mul_add_f32x4(a, b, c)
+	}
+
+	#[inline(always)]
+	fn negate_mul_add_f64s(self, a: Self::f64s, b: Self::f64s, c: Self::f64s) -> Self::f64s {
+		self.negate_mul_add_f64x2(a, b, c)
+	}
 }
 
 #[cfg(miri)]
