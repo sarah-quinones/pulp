@@ -1979,6 +1979,8 @@ impl Neon {
 		unsafe fn vld1q_dup_p16(ptr: *const p16) -> poly16x8_t;
 		unsafe fn vld1_dup_f32(ptr: *const f32) -> float32x2_t;
 		unsafe fn vld1q_dup_f32(ptr: *const f32) -> float32x4_t;
+		unsafe fn vldrq_p128(a: *const p128) -> p128;
+		unsafe fn vstrq_p128(a: *mut p128, b: p128);
 		fn vaba_s8(a: int8x8_t, b: int8x8_t, c: int8x8_t) -> int8x8_t;
 		fn vaba_s16(a: int16x4_t, b: int16x4_t, c: int16x4_t) -> int16x4_t;
 		fn vaba_s32(a: int32x2_t, b: int32x2_t, c: int32x2_t) -> int32x2_t;
@@ -2241,8 +2243,6 @@ impl Neon {
 		fn vdup_n_p8(value: p8) -> poly8x8_t;
 		fn vdup_n_p16(value: p16) -> poly16x4_t;
 		fn vdup_n_f32(value: f32) -> float32x2_t;
-		fn vldrq_p128(a: *const p128) -> p128;
-		fn vstrq_p128(a: *mut p128, b: p128);
 		fn vmov_n_s8(value: i8) -> int8x8_t;
 		fn vmov_n_s16(value: i16) -> int16x4_t;
 		fn vmov_n_s32(value: i32) -> int32x2_t;
