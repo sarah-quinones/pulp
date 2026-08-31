@@ -2498,7 +2498,7 @@ impl Simd for V3_512b {
 		let mask: [_; 2] = cast!(mask.mask());
 		cast!([
 			simd.mask_load_ptr_c32s(MemMask::new(mask[0]), ptr.wrapping_add(0)),
-			simd.mask_load_ptr_c32s(MemMask::new(mask[1]), ptr.wrapping_add(Self::C32_LANES)),
+			simd.mask_load_ptr_c32s(MemMask::new(mask[1]), ptr.wrapping_add(V3_256b::C32_LANES)),
 		])
 	}
 
@@ -2511,7 +2511,7 @@ impl Simd for V3_512b {
 		let mask: [_; 2] = cast!(mask.mask());
 		cast!([
 			simd.mask_load_ptr_c64s(MemMask::new(mask[0]), ptr.wrapping_add(0)),
-			simd.mask_load_ptr_c64s(MemMask::new(mask[1]), ptr.wrapping_add(Self::C64_LANES)),
+			simd.mask_load_ptr_c64s(MemMask::new(mask[1]), ptr.wrapping_add(V3_256b::C64_LANES)),
 		])
 	}
 
@@ -2550,7 +2550,7 @@ impl Simd for V3_512b {
 		let mask: [_; 2] = cast!(mask.mask());
 		cast!([
 			simd.mask_load_ptr_u32s(MemMask::new(mask[0]), ptr.wrapping_add(0)),
-			simd.mask_load_ptr_u32s(MemMask::new(mask[1]), ptr.wrapping_add(Self::U32_LANES)),
+			simd.mask_load_ptr_u32s(MemMask::new(mask[1]), ptr.wrapping_add(V3_256b::U32_LANES)),
 		])
 	}
 
@@ -2563,7 +2563,7 @@ impl Simd for V3_512b {
 		let mask: [_; 2] = cast!(mask.mask());
 		cast!([
 			simd.mask_load_ptr_u64s(MemMask::new(mask[0]), ptr.wrapping_add(0)),
-			simd.mask_load_ptr_u64s(MemMask::new(mask[1]), ptr.wrapping_add(Self::U64_LANES)),
+			simd.mask_load_ptr_u64s(MemMask::new(mask[1]), ptr.wrapping_add(V3_256b::U64_LANES)),
 		])
 	}
 
