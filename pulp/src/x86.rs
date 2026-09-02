@@ -353,7 +353,7 @@ mod tests {
 	use super::*;
 	use alloc::vec;
 	use alloc::vec::Vec;
-	use assert_approx_eq::assert_approx_eq;
+	use assertables::assert_approx_eq;
 	use core::iter::zip;
 	use rand::random;
 
