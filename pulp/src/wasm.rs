@@ -362,28 +362,30 @@ impl Simd for Simd128 {
 	unsafe fn mask_load_ptr_c32s(self, mask: MemMask<Self::m32s>, ptr: *const c32) -> Self::c32s {
 		let mask = mask.mask;
 		let ptr = ptr as *const f32;
-		f32x4(
-			if mask.0.is_set() {
-				*ptr.wrapping_add(0)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.1.is_set() {
-				*ptr.wrapping_add(1)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.2.is_set() {
-				*ptr.wrapping_add(2)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.3.is_set() {
-				*ptr.wrapping_add(3)
-			} else {
-				core::mem::zeroed()
-			},
-		)
+		unsafe {
+			f32x4(
+				if mask.0.is_set() {
+					*ptr.wrapping_add(0)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.1.is_set() {
+					*ptr.wrapping_add(1)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.2.is_set() {
+					*ptr.wrapping_add(2)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.3.is_set() {
+					*ptr.wrapping_add(3)
+				} else {
+					core::mem::zeroed()
+				},
+			)
+		}
 	}
 
 	/// # Safety
@@ -393,18 +395,20 @@ impl Simd for Simd128 {
 	unsafe fn mask_load_ptr_c64s(self, mask: MemMask<Self::m64s>, ptr: *const c64) -> Self::c64s {
 		let mask = mask.mask;
 		let ptr = ptr as *const f64;
-		f64x2(
-			if mask.0.is_set() {
-				*ptr.wrapping_add(0)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.1.is_set() {
-				*ptr.wrapping_add(1)
-			} else {
-				core::mem::zeroed()
-			},
-		)
+		unsafe {
+			f64x2(
+				if mask.0.is_set() {
+					*ptr.wrapping_add(0)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.1.is_set() {
+					*ptr.wrapping_add(1)
+				} else {
+					core::mem::zeroed()
+				},
+			)
+		}
 	}
 
 	/// # Safety
@@ -413,88 +417,90 @@ impl Simd for Simd128 {
 	#[inline(always)]
 	unsafe fn mask_load_ptr_u8s(self, mask: MemMask<Self::m8s>, ptr: *const u8) -> Self::u8s {
 		let mask = mask.mask;
-		u8x16(
-			if mask.0.is_set() {
-				*ptr.wrapping_add(0)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.1.is_set() {
-				*ptr.wrapping_add(1)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.2.is_set() {
-				*ptr.wrapping_add(2)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.3.is_set() {
-				*ptr.wrapping_add(3)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.4.is_set() {
-				*ptr.wrapping_add(4)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.5.is_set() {
-				*ptr.wrapping_add(5)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.6.is_set() {
-				*ptr.wrapping_add(6)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.7.is_set() {
-				*ptr.wrapping_add(7)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.8.is_set() {
-				*ptr.wrapping_add(8)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.9.is_set() {
-				*ptr.wrapping_add(9)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.10.is_set() {
-				*ptr.wrapping_add(10)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.11.is_set() {
-				*ptr.wrapping_add(11)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.12.is_set() {
-				*ptr.wrapping_add(12)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.13.is_set() {
-				*ptr.wrapping_add(13)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.14.is_set() {
-				*ptr.wrapping_add(14)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.15.is_set() {
-				*ptr.wrapping_add(15)
-			} else {
-				core::mem::zeroed()
-			},
-		)
+		unsafe {
+			u8x16(
+				if mask.0.is_set() {
+					*ptr.wrapping_add(0)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.1.is_set() {
+					*ptr.wrapping_add(1)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.2.is_set() {
+					*ptr.wrapping_add(2)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.3.is_set() {
+					*ptr.wrapping_add(3)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.4.is_set() {
+					*ptr.wrapping_add(4)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.5.is_set() {
+					*ptr.wrapping_add(5)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.6.is_set() {
+					*ptr.wrapping_add(6)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.7.is_set() {
+					*ptr.wrapping_add(7)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.8.is_set() {
+					*ptr.wrapping_add(8)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.9.is_set() {
+					*ptr.wrapping_add(9)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.10.is_set() {
+					*ptr.wrapping_add(10)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.11.is_set() {
+					*ptr.wrapping_add(11)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.12.is_set() {
+					*ptr.wrapping_add(12)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.13.is_set() {
+					*ptr.wrapping_add(13)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.14.is_set() {
+					*ptr.wrapping_add(14)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.15.is_set() {
+					*ptr.wrapping_add(15)
+				} else {
+					core::mem::zeroed()
+				},
+			)
+		}
 	}
 
 	/// # Safety
@@ -503,48 +509,50 @@ impl Simd for Simd128 {
 	#[inline(always)]
 	unsafe fn mask_load_ptr_u16s(self, mask: MemMask<Self::m16s>, ptr: *const u16) -> Self::u16s {
 		let mask = mask.mask;
-		u16x8(
-			if mask.0.is_set() {
-				*ptr.wrapping_add(0)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.1.is_set() {
-				*ptr.wrapping_add(1)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.2.is_set() {
-				*ptr.wrapping_add(2)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.3.is_set() {
-				*ptr.wrapping_add(3)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.4.is_set() {
-				*ptr.wrapping_add(4)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.5.is_set() {
-				*ptr.wrapping_add(5)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.6.is_set() {
-				*ptr.wrapping_add(6)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.7.is_set() {
-				*ptr.wrapping_add(7)
-			} else {
-				core::mem::zeroed()
-			},
-		)
+		unsafe {
+			u16x8(
+				if mask.0.is_set() {
+					*ptr.wrapping_add(0)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.1.is_set() {
+					*ptr.wrapping_add(1)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.2.is_set() {
+					*ptr.wrapping_add(2)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.3.is_set() {
+					*ptr.wrapping_add(3)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.4.is_set() {
+					*ptr.wrapping_add(4)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.5.is_set() {
+					*ptr.wrapping_add(5)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.6.is_set() {
+					*ptr.wrapping_add(6)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.7.is_set() {
+					*ptr.wrapping_add(7)
+				} else {
+					core::mem::zeroed()
+				},
+			)
+		}
 	}
 
 	/// # Safety
@@ -553,28 +561,30 @@ impl Simd for Simd128 {
 	#[inline(always)]
 	unsafe fn mask_load_ptr_u32s(self, mask: MemMask<Self::m32s>, ptr: *const u32) -> Self::u32s {
 		let mask = mask.mask;
-		u32x4(
-			if mask.0.is_set() {
-				*ptr.wrapping_add(0)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.1.is_set() {
-				*ptr.wrapping_add(1)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.2.is_set() {
-				*ptr.wrapping_add(2)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.3.is_set() {
-				*ptr.wrapping_add(3)
-			} else {
-				core::mem::zeroed()
-			},
-		)
+		unsafe {
+			u32x4(
+				if mask.0.is_set() {
+					*ptr.wrapping_add(0)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.1.is_set() {
+					*ptr.wrapping_add(1)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.2.is_set() {
+					*ptr.wrapping_add(2)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.3.is_set() {
+					*ptr.wrapping_add(3)
+				} else {
+					core::mem::zeroed()
+				},
+			)
+		}
 	}
 
 	/// # Safety
@@ -583,18 +593,20 @@ impl Simd for Simd128 {
 	#[inline(always)]
 	unsafe fn mask_load_ptr_u64s(self, mask: MemMask<Self::m64s>, ptr: *const u64) -> Self::u64s {
 		let mask = mask.mask;
-		u64x2(
-			if mask.0.is_set() {
-				*ptr.wrapping_add(0)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.1.is_set() {
-				*ptr.wrapping_add(1)
-			} else {
-				core::mem::zeroed()
-			},
-		)
+		unsafe {
+			u64x2(
+				if mask.0.is_set() {
+					*ptr.wrapping_add(0)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.1.is_set() {
+					*ptr.wrapping_add(1)
+				} else {
+					core::mem::zeroed()
+				},
+			)
+		}
 	}
 
 	/// # Safety
@@ -609,17 +621,19 @@ impl Simd for Simd128 {
 	) {
 		let mask = mask.mask;
 		let ptr = ptr as *mut f32;
-		if mask.0.is_set() {
-			*ptr.wrapping_add(0) = values.0
-		}
-		if mask.1.is_set() {
-			*ptr.wrapping_add(1) = values.1
-		}
-		if mask.2.is_set() {
-			*ptr.wrapping_add(2) = values.2
-		}
-		if mask.3.is_set() {
-			*ptr.wrapping_add(3) = values.3
+		unsafe {
+			if mask.0.is_set() {
+				*ptr.wrapping_add(0) = values.0
+			}
+			if mask.1.is_set() {
+				*ptr.wrapping_add(1) = values.1
+			}
+			if mask.2.is_set() {
+				*ptr.wrapping_add(2) = values.2
+			}
+			if mask.3.is_set() {
+				*ptr.wrapping_add(3) = values.3
+			}
 		}
 	}
 
@@ -635,11 +649,13 @@ impl Simd for Simd128 {
 	) {
 		let mask = mask.mask;
 		let ptr = ptr as *mut f64;
-		if mask.0.is_set() {
-			*ptr.wrapping_add(0) = values.0
-		}
-		if mask.1.is_set() {
-			*ptr.wrapping_add(1) = values.1
+		unsafe {
+			if mask.0.is_set() {
+				*ptr.wrapping_add(0) = values.0
+			}
+			if mask.1.is_set() {
+				*ptr.wrapping_add(1) = values.1
+			}
 		}
 	}
 
@@ -649,53 +665,55 @@ impl Simd for Simd128 {
 	#[inline(always)]
 	unsafe fn mask_store_ptr_u8s(self, mask: MemMask<Self::m8s>, ptr: *mut u8, values: Self::u8s) {
 		let mask = mask.mask;
-		if mask.0.is_set() {
-			*ptr.wrapping_add(0) = values.0
-		}
-		if mask.1.is_set() {
-			*ptr.wrapping_add(1) = values.1
-		}
-		if mask.2.is_set() {
-			*ptr.wrapping_add(2) = values.2
-		}
-		if mask.3.is_set() {
-			*ptr.wrapping_add(3) = values.3
-		}
-		if mask.4.is_set() {
-			*ptr.wrapping_add(4) = values.4
-		}
-		if mask.5.is_set() {
-			*ptr.wrapping_add(5) = values.5
-		}
-		if mask.6.is_set() {
-			*ptr.wrapping_add(6) = values.6
-		}
-		if mask.7.is_set() {
-			*ptr.wrapping_add(7) = values.7
-		}
-		if mask.8.is_set() {
-			*ptr.wrapping_add(8) = values.8
-		}
-		if mask.9.is_set() {
-			*ptr.wrapping_add(9) = values.9
-		}
-		if mask.10.is_set() {
-			*ptr.wrapping_add(10) = values.10
-		}
-		if mask.11.is_set() {
-			*ptr.wrapping_add(11) = values.11
-		}
-		if mask.12.is_set() {
-			*ptr.wrapping_add(12) = values.12
-		}
-		if mask.13.is_set() {
-			*ptr.wrapping_add(13) = values.13
-		}
-		if mask.14.is_set() {
-			*ptr.wrapping_add(14) = values.14
-		}
-		if mask.15.is_set() {
-			*ptr.wrapping_add(15) = values.15
+		unsafe {
+			if mask.0.is_set() {
+				*ptr.wrapping_add(0) = values.0
+			}
+			if mask.1.is_set() {
+				*ptr.wrapping_add(1) = values.1
+			}
+			if mask.2.is_set() {
+				*ptr.wrapping_add(2) = values.2
+			}
+			if mask.3.is_set() {
+				*ptr.wrapping_add(3) = values.3
+			}
+			if mask.4.is_set() {
+				*ptr.wrapping_add(4) = values.4
+			}
+			if mask.5.is_set() {
+				*ptr.wrapping_add(5) = values.5
+			}
+			if mask.6.is_set() {
+				*ptr.wrapping_add(6) = values.6
+			}
+			if mask.7.is_set() {
+				*ptr.wrapping_add(7) = values.7
+			}
+			if mask.8.is_set() {
+				*ptr.wrapping_add(8) = values.8
+			}
+			if mask.9.is_set() {
+				*ptr.wrapping_add(9) = values.9
+			}
+			if mask.10.is_set() {
+				*ptr.wrapping_add(10) = values.10
+			}
+			if mask.11.is_set() {
+				*ptr.wrapping_add(11) = values.11
+			}
+			if mask.12.is_set() {
+				*ptr.wrapping_add(12) = values.12
+			}
+			if mask.13.is_set() {
+				*ptr.wrapping_add(13) = values.13
+			}
+			if mask.14.is_set() {
+				*ptr.wrapping_add(14) = values.14
+			}
+			if mask.15.is_set() {
+				*ptr.wrapping_add(15) = values.15
+			}
 		}
 	}
 
@@ -710,29 +728,31 @@ impl Simd for Simd128 {
 		values: Self::u16s,
 	) {
 		let mask = mask.mask;
-		if mask.0.is_set() {
-			*ptr.wrapping_add(0) = values.0
-		}
-		if mask.1.is_set() {
-			*ptr.wrapping_add(1) = values.1
-		}
-		if mask.2.is_set() {
-			*ptr.wrapping_add(2) = values.2
-		}
-		if mask.3.is_set() {
-			*ptr.wrapping_add(3) = values.3
-		}
-		if mask.4.is_set() {
-			*ptr.wrapping_add(4) = values.4
-		}
-		if mask.5.is_set() {
-			*ptr.wrapping_add(5) = values.5
-		}
-		if mask.6.is_set() {
-			*ptr.wrapping_add(6) = values.6
-		}
-		if mask.7.is_set() {
-			*ptr.wrapping_add(7) = values.7
+		unsafe {
+			if mask.0.is_set() {
+				*ptr.wrapping_add(0) = values.0
+			}
+			if mask.1.is_set() {
+				*ptr.wrapping_add(1) = values.1
+			}
+			if mask.2.is_set() {
+				*ptr.wrapping_add(2) = values.2
+			}
+			if mask.3.is_set() {
+				*ptr.wrapping_add(3) = values.3
+			}
+			if mask.4.is_set() {
+				*ptr.wrapping_add(4) = values.4
+			}
+			if mask.5.is_set() {
+				*ptr.wrapping_add(5) = values.5
+			}
+			if mask.6.is_set() {
+				*ptr.wrapping_add(6) = values.6
+			}
+			if mask.7.is_set() {
+				*ptr.wrapping_add(7) = values.7
+			}
 		}
 	}
 
@@ -747,17 +767,19 @@ impl Simd for Simd128 {
 		values: Self::u32s,
 	) {
 		let mask = mask.mask;
-		if mask.0.is_set() {
-			*ptr.wrapping_add(0) = values.0
-		}
-		if mask.1.is_set() {
-			*ptr.wrapping_add(1) = values.1
-		}
-		if mask.2.is_set() {
-			*ptr.wrapping_add(2) = values.2
-		}
-		if mask.3.is_set() {
-			*ptr.wrapping_add(3) = values.3
+		unsafe {
+			if mask.0.is_set() {
+				*ptr.wrapping_add(0) = values.0
+			}
+			if mask.1.is_set() {
+				*ptr.wrapping_add(1) = values.1
+			}
+			if mask.2.is_set() {
+				*ptr.wrapping_add(2) = values.2
+			}
+			if mask.3.is_set() {
+				*ptr.wrapping_add(3) = values.3
+			}
 		}
 	}
 
@@ -772,11 +794,13 @@ impl Simd for Simd128 {
 		values: Self::u64s,
 	) {
 		let mask = mask.mask;
-		if mask.0.is_set() {
-			*ptr.wrapping_add(0) = values.0
-		}
-		if mask.1.is_set() {
-			*ptr.wrapping_add(1) = values.1
+		unsafe {
+			if mask.0.is_set() {
+				*ptr.wrapping_add(0) = values.0
+			}
+			if mask.1.is_set() {
+				*ptr.wrapping_add(1) = values.1
+			}
 		}
 	}
 
@@ -1469,28 +1493,30 @@ impl Simd for RelaxedSimd {
 	unsafe fn mask_load_ptr_c32s(self, mask: MemMask<Self::m32s>, ptr: *const c32) -> Self::c32s {
 		let mask = mask.mask;
 		let ptr = ptr as *const f32;
-		f32x4(
-			if mask.0.is_set() {
-				*ptr.wrapping_add(0)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.1.is_set() {
-				*ptr.wrapping_add(1)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.2.is_set() {
-				*ptr.wrapping_add(2)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.3.is_set() {
-				*ptr.wrapping_add(3)
-			} else {
-				core::mem::zeroed()
-			},
-		)
+		unsafe {
+			f32x4(
+				if mask.0.is_set() {
+					*ptr.wrapping_add(0)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.1.is_set() {
+					*ptr.wrapping_add(1)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.2.is_set() {
+					*ptr.wrapping_add(2)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.3.is_set() {
+					*ptr.wrapping_add(3)
+				} else {
+					core::mem::zeroed()
+				},
+			)
+		}
 	}
 
 	/// # Safety
@@ -1500,18 +1526,20 @@ impl Simd for RelaxedSimd {
 	unsafe fn mask_load_ptr_c64s(self, mask: MemMask<Self::m64s>, ptr: *const c64) -> Self::c64s {
 		let mask = mask.mask;
 		let ptr = ptr as *const f64;
-		f64x2(
-			if mask.0.is_set() {
-				*ptr.wrapping_add(0)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.1.is_set() {
-				*ptr.wrapping_add(1)
-			} else {
-				core::mem::zeroed()
-			},
-		)
+		unsafe {
+			f64x2(
+				if mask.0.is_set() {
+					*ptr.wrapping_add(0)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.1.is_set() {
+					*ptr.wrapping_add(1)
+				} else {
+					core::mem::zeroed()
+				},
+			)
+		}
 	}
 
 	/// # Safety
@@ -1520,88 +1548,90 @@ impl Simd for RelaxedSimd {
 	#[inline(always)]
 	unsafe fn mask_load_ptr_u8s(self, mask: MemMask<Self::m8s>, ptr: *const u8) -> Self::u8s {
 		let mask = mask.mask;
-		u8x16(
-			if mask.0.is_set() {
-				*ptr.wrapping_add(0)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.1.is_set() {
-				*ptr.wrapping_add(1)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.2.is_set() {
-				*ptr.wrapping_add(2)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.3.is_set() {
-				*ptr.wrapping_add(3)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.4.is_set() {
-				*ptr.wrapping_add(4)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.5.is_set() {
-				*ptr.wrapping_add(5)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.6.is_set() {
-				*ptr.wrapping_add(6)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.7.is_set() {
-				*ptr.wrapping_add(7)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.8.is_set() {
-				*ptr.wrapping_add(8)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.9.is_set() {
-				*ptr.wrapping_add(9)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.10.is_set() {
-				*ptr.wrapping_add(10)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.11.is_set() {
-				*ptr.wrapping_add(11)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.12.is_set() {
-				*ptr.wrapping_add(12)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.13.is_set() {
-				*ptr.wrapping_add(13)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.14.is_set() {
-				*ptr.wrapping_add(14)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.15.is_set() {
-				*ptr.wrapping_add(15)
-			} else {
-				core::mem::zeroed()
-			},
-		)
+		unsafe {
+			u8x16(
+				if mask.0.is_set() {
+					*ptr.wrapping_add(0)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.1.is_set() {
+					*ptr.wrapping_add(1)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.2.is_set() {
+					*ptr.wrapping_add(2)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.3.is_set() {
+					*ptr.wrapping_add(3)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.4.is_set() {
+					*ptr.wrapping_add(4)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.5.is_set() {
+					*ptr.wrapping_add(5)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.6.is_set() {
+					*ptr.wrapping_add(6)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.7.is_set() {
+					*ptr.wrapping_add(7)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.8.is_set() {
+					*ptr.wrapping_add(8)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.9.is_set() {
+					*ptr.wrapping_add(9)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.10.is_set() {
+					*ptr.wrapping_add(10)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.11.is_set() {
+					*ptr.wrapping_add(11)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.12.is_set() {
+					*ptr.wrapping_add(12)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.13.is_set() {
+					*ptr.wrapping_add(13)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.14.is_set() {
+					*ptr.wrapping_add(14)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.15.is_set() {
+					*ptr.wrapping_add(15)
+				} else {
+					core::mem::zeroed()
+				},
+			)
+		}
 	}
 
 	/// # Safety
@@ -1610,48 +1640,50 @@ impl Simd for RelaxedSimd {
 	#[inline(always)]
 	unsafe fn mask_load_ptr_u16s(self, mask: MemMask<Self::m16s>, ptr: *const u16) -> Self::u16s {
 		let mask = mask.mask;
-		u16x8(
-			if mask.0.is_set() {
-				*ptr.wrapping_add(0)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.1.is_set() {
-				*ptr.wrapping_add(1)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.2.is_set() {
-				*ptr.wrapping_add(2)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.3.is_set() {
-				*ptr.wrapping_add(3)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.4.is_set() {
-				*ptr.wrapping_add(4)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.5.is_set() {
-				*ptr.wrapping_add(5)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.6.is_set() {
-				*ptr.wrapping_add(6)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.7.is_set() {
-				*ptr.wrapping_add(7)
-			} else {
-				core::mem::zeroed()
-			},
-		)
+		unsafe {
+			u16x8(
+				if mask.0.is_set() {
+					*ptr.wrapping_add(0)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.1.is_set() {
+					*ptr.wrapping_add(1)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.2.is_set() {
+					*ptr.wrapping_add(2)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.3.is_set() {
+					*ptr.wrapping_add(3)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.4.is_set() {
+					*ptr.wrapping_add(4)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.5.is_set() {
+					*ptr.wrapping_add(5)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.6.is_set() {
+					*ptr.wrapping_add(6)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.7.is_set() {
+					*ptr.wrapping_add(7)
+				} else {
+					core::mem::zeroed()
+				},
+			)
+		}
 	}
 
 	/// # Safety
@@ -1660,28 +1692,30 @@ impl Simd for RelaxedSimd {
 	#[inline(always)]
 	unsafe fn mask_load_ptr_u32s(self, mask: MemMask<Self::m32s>, ptr: *const u32) -> Self::u32s {
 		let mask = mask.mask;
-		u32x4(
-			if mask.0.is_set() {
-				*ptr.wrapping_add(0)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.1.is_set() {
-				*ptr.wrapping_add(1)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.2.is_set() {
-				*ptr.wrapping_add(2)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.3.is_set() {
-				*ptr.wrapping_add(3)
-			} else {
-				core::mem::zeroed()
-			},
-		)
+		unsafe {
+			u32x4(
+				if mask.0.is_set() {
+					*ptr.wrapping_add(0)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.1.is_set() {
+					*ptr.wrapping_add(1)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.2.is_set() {
+					*ptr.wrapping_add(2)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.3.is_set() {
+					*ptr.wrapping_add(3)
+				} else {
+					core::mem::zeroed()
+				},
+			)
+		}
 	}
 
 	/// # Safety
@@ -1690,18 +1724,20 @@ impl Simd for RelaxedSimd {
 	#[inline(always)]
 	unsafe fn mask_load_ptr_u64s(self, mask: MemMask<Self::m64s>, ptr: *const u64) -> Self::u64s {
 		let mask = mask.mask;
-		u64x2(
-			if mask.0.is_set() {
-				*ptr.wrapping_add(0)
-			} else {
-				core::mem::zeroed()
-			},
-			if mask.1.is_set() {
-				*ptr.wrapping_add(1)
-			} else {
-				core::mem::zeroed()
-			},
-		)
+		unsafe {
+			u64x2(
+				if mask.0.is_set() {
+					*ptr.wrapping_add(0)
+				} else {
+					core::mem::zeroed()
+				},
+				if mask.1.is_set() {
+					*ptr.wrapping_add(1)
+				} else {
+					core::mem::zeroed()
+				},
+			)
+		}
 	}
 
 	/// # Safety
@@ -1716,17 +1752,19 @@ impl Simd for RelaxedSimd {
 	) {
 		let mask = mask.mask;
 		let ptr = ptr as *mut f32;
-		if mask.0.is_set() {
-			*ptr.wrapping_add(0) = values.0
-		}
-		if mask.1.is_set() {
-			*ptr.wrapping_add(1) = values.1
-		}
-		if mask.2.is_set() {
-			*ptr.wrapping_add(2) = values.2
-		}
-		if mask.3.is_set() {
-			*ptr.wrapping_add(3) = values.3
+		unsafe {
+			if mask.0.is_set() {
+				*ptr.wrapping_add(0) = values.0
+			}
+			if mask.1.is_set() {
+				*ptr.wrapping_add(1) = values.1
+			}
+			if mask.2.is_set() {
+				*ptr.wrapping_add(2) = values.2
+			}
+			if mask.3.is_set() {
+				*ptr.wrapping_add(3) = values.3
+			}
 		}
 	}
 
@@ -1756,53 +1794,55 @@ impl Simd for RelaxedSimd {
 	#[inline(always)]
 	unsafe fn mask_store_ptr_u8s(self, mask: MemMask<Self::m8s>, ptr: *mut u8, values: Self::u8s) {
 		let mask = mask.mask;
-		if mask.0.is_set() {
-			*ptr.wrapping_add(0) = values.0
-		}
-		if mask.1.is_set() {
-			*ptr.wrapping_add(1) = values.1
-		}
-		if mask.2.is_set() {
-			*ptr.wrapping_add(2) = values.2
-		}
-		if mask.3.is_set() {
-			*ptr.wrapping_add(3) = values.3
-		}
-		if mask.4.is_set() {
-			*ptr.wrapping_add(4) = values.4
-		}
-		if mask.5.is_set() {
-			*ptr.wrapping_add(5) = values.5
-		}
-		if mask.6.is_set() {
-			*ptr.wrapping_add(6) = values.6
-		}
-		if mask.7.is_set() {
-			*ptr.wrapping_add(7) = values.7
-		}
-		if mask.8.is_set() {
-			*ptr.wrapping_add(8) = values.8
-		}
-		if mask.9.is_set() {
-			*ptr.wrapping_add(9) = values.9
-		}
-		if mask.10.is_set() {
-			*ptr.wrapping_add(10) = values.10
-		}
-		if mask.11.is_set() {
-			*ptr.wrapping_add(11) = values.11
-		}
-		if mask.12.is_set() {
-			*ptr.wrapping_add(12) = values.12
-		}
-		if mask.13.is_set() {
-			*ptr.wrapping_add(13) = values.13
-		}
-		if mask.14.is_set() {
-			*ptr.wrapping_add(14) = values.14
-		}
-		if mask.15.is_set() {
-			*ptr.wrapping_add(15) = values.15
+		unsafe {
+			if mask.0.is_set() {
+				*ptr.wrapping_add(0) = values.0
+			}
+			if mask.1.is_set() {
+				*ptr.wrapping_add(1) = values.1
+			}
+			if mask.2.is_set() {
+				*ptr.wrapping_add(2) = values.2
+			}
+			if mask.3.is_set() {
+				*ptr.wrapping_add(3) = values.3
+			}
+			if mask.4.is_set() {
+				*ptr.wrapping_add(4) = values.4
+			}
+			if mask.5.is_set() {
+				*ptr.wrapping_add(5) = values.5
+			}
+			if mask.6.is_set() {
+				*ptr.wrapping_add(6) = values.6
+			}
+			if mask.7.is_set() {
+				*ptr.wrapping_add(7) = values.7
+			}
+			if mask.8.is_set() {
+				*ptr.wrapping_add(8) = values.8
+			}
+			if mask.9.is_set() {
+				*ptr.wrapping_add(9) = values.9
+			}
+			if mask.10.is_set() {
+				*ptr.wrapping_add(10) = values.10
+			}
+			if mask.11.is_set() {
+				*ptr.wrapping_add(11) = values.11
+			}
+			if mask.12.is_set() {
+				*ptr.wrapping_add(12) = values.12
+			}
+			if mask.13.is_set() {
+				*ptr.wrapping_add(13) = values.13
+			}
+			if mask.14.is_set() {
+				*ptr.wrapping_add(14) = values.14
+			}
+			if mask.15.is_set() {
+				*ptr.wrapping_add(15) = values.15
+			}
 		}
 	}
 
@@ -1817,29 +1857,31 @@ impl Simd for RelaxedSimd {
 		values: Self::u16s,
 	) {
 		let mask = mask.mask;
-		if mask.0.is_set() {
-			*ptr.wrapping_add(0) = values.0
-		}
-		if mask.1.is_set() {
-			*ptr.wrapping_add(1) = values.1
-		}
-		if mask.2.is_set() {
-			*ptr.wrapping_add(2) = values.2
-		}
-		if mask.3.is_set() {
-			*ptr.wrapping_add(3) = values.3
-		}
-		if mask.4.is_set() {
-			*ptr.wrapping_add(4) = values.4
-		}
-		if mask.5.is_set() {
-			*ptr.wrapping_add(5) = values.5
-		}
-		if mask.6.is_set() {
-			*ptr.wrapping_add(6) = values.6
-		}
-		if mask.7.is_set() {
-			*ptr.wrapping_add(7) = values.7
+		unsafe {
+			if mask.0.is_set() {
+				*ptr.wrapping_add(0) = values.0
+			}
+			if mask.1.is_set() {
+				*ptr.wrapping_add(1) = values.1
+			}
+			if mask.2.is_set() {
+				*ptr.wrapping_add(2) = values.2
+			}
+			if mask.3.is_set() {
+				*ptr.wrapping_add(3) = values.3
+			}
+			if mask.4.is_set() {
+				*ptr.wrapping_add(4) = values.4
+			}
+			if mask.5.is_set() {
+				*ptr.wrapping_add(5) = values.5
+			}
+			if mask.6.is_set() {
+				*ptr.wrapping_add(6) = values.6
+			}
+			if mask.7.is_set() {
+				*ptr.wrapping_add(7) = values.7
+			}
 		}
 	}
 
@@ -1854,17 +1896,19 @@ impl Simd for RelaxedSimd {
 		values: Self::u32s,
 	) {
 		let mask = mask.mask;
-		if mask.0.is_set() {
-			*ptr.wrapping_add(0) = values.0
-		}
-		if mask.1.is_set() {
-			*ptr.wrapping_add(1) = values.1
-		}
-		if mask.2.is_set() {
-			*ptr.wrapping_add(2) = values.2
-		}
-		if mask.3.is_set() {
-			*ptr.wrapping_add(3) = values.3
+		unsafe {
+			if mask.0.is_set() {
+				*ptr.wrapping_add(0) = values.0
+			}
+			if mask.1.is_set() {
+				*ptr.wrapping_add(1) = values.1
+			}
+			if mask.2.is_set() {
+				*ptr.wrapping_add(2) = values.2
+			}
+			if mask.3.is_set() {
+				*ptr.wrapping_add(3) = values.3
+			}
 		}
 	}
 
@@ -1879,11 +1923,13 @@ impl Simd for RelaxedSimd {
 		values: Self::u64s,
 	) {
 		let mask = mask.mask;
-		if mask.0.is_set() {
-			*ptr.wrapping_add(0) = values.0
-		}
-		if mask.1.is_set() {
-			*ptr.wrapping_add(1) = values.1
+		unsafe {
+			if mask.0.is_set() {
+				*ptr.wrapping_add(0) = values.0
+			}
+			if mask.1.is_set() {
+				*ptr.wrapping_add(1) = values.1
+			}
 		}
 	}
 

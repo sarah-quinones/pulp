@@ -143,6 +143,15 @@ pub struct Neon_I8mm {
 	pub i8mm: I8mm,
 }
 
+#[cfg(feature = "nightly")]
+#[cfg_attr(docsrs, doc(cfg(feature = "nightly")))]
+#[derive(Debug, Clone, Copy)]
+#[repr(transparent)]
+pub struct Neon_Frintts {
+	pub neon: Neon,
+	pub frintts: Frintts,
+}
+
 type p8 = u8;
 type p16 = u16;
 type p64 = u64;
@@ -4826,15 +4835,10 @@ impl Neon_Dotprod {
 }
 
 #[cfg(feature = "nightly")]
-impl Neon_Sm4 {
+impl Neon_Frintts {
 	delegate!(
 		#[target_feature(enable = "neon,frintts")]
 		{
-			fn vsm3partw1q_u32(a: uint32x4_t, b: uint32x4_t, c: uint32x4_t) -> uint32x4_t;
-			fn vsm3partw2q_u32(a: uint32x4_t, b: uint32x4_t, c: uint32x4_t) -> uint32x4_t;
-			fn vsm3ss1q_u32(a: uint32x4_t, b: uint32x4_t, c: uint32x4_t) -> uint32x4_t;
-			fn vsm4ekeyq_u32(a: uint32x4_t, b: uint32x4_t) -> uint32x4_t;
-			fn vsm4eq_u32(a: uint32x4_t, b: uint32x4_t) -> uint32x4_t;
 			fn vrnd32x_f32(a: float32x2_t) -> float32x2_t;
 			fn vrnd32xq_f32(a: float32x4_t) -> float32x4_t;
 			fn vrnd32xq_f64(a: float64x2_t) -> float64x2_t;
@@ -4851,6 +4855,20 @@ impl Neon_Sm4 {
 			fn vrnd64zq_f32(a: float32x4_t) -> float32x4_t;
 			fn vrnd64zq_f64(a: float64x2_t) -> float64x2_t;
 			fn vrnd64z_f64(a: float64x1_t) -> float64x1_t;
+		}
+	);
+}
+
+#[cfg(feature = "nightly")]
+impl Neon_Sm4 {
+	delegate!(
+		#[target_feature(enable = "neon,sm4")]
+		{
+			fn vsm3partw1q_u32(a: uint32x4_t, b: uint32x4_t, c: uint32x4_t) -> uint32x4_t;
+			fn vsm3partw2q_u32(a: uint32x4_t, b: uint32x4_t, c: uint32x4_t) -> uint32x4_t;
+			fn vsm3ss1q_u32(a: uint32x4_t, b: uint32x4_t, c: uint32x4_t) -> uint32x4_t;
+			fn vsm4ekeyq_u32(a: uint32x4_t, b: uint32x4_t) -> uint32x4_t;
+			fn vsm4eq_u32(a: uint32x4_t, b: uint32x4_t) -> uint32x4_t;
 			fn vsm3tt1aq_u32<const IMM2: i32>(
 				a: uint32x4_t,
 				b: uint32x4_t,
