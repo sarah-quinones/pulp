@@ -318,6 +318,14 @@ mod gate_v4 {
 		__private: (),
 	}
 	__impl512!(Avx512vbmi2, "avx512vbmi2");
+	/// AVX-512 FP16 (native half-precision arithmetic: `vaddph`/`vmulph`/`vfmaddph`,
+	/// plus its own `vcvtps2phx`/`vcvtph2psx` f32<->f16 conversion).
+	#[derive(Clone, Copy)]
+	#[repr(transparent)]
+	pub struct Avx512fp16 {
+		__private: (),
+	}
+	__impl512!(Avx512fp16, "avx512fp16");
 	#[derive(Clone, Copy)]
 	#[repr(transparent)]
 	pub struct Gfni {
@@ -369,6 +377,7 @@ pub use gate_v4::*;
 
 mod avx;
 mod avx2;
+mod f16c;
 mod fma;
 mod sse;
 mod sse2;
@@ -392,3 +401,9 @@ mod avx512f;
 #[cfg(feature = "x86-v4")]
 #[cfg_attr(docsrs, doc(cfg(feature = "x86-v4")))]
 mod avx512ifma;
+#[cfg(feature = "x86-v4")]
+#[cfg_attr(docsrs, doc(cfg(feature = "x86-v4")))]
+mod avx512vbmi2;
+#[cfg(feature = "x86-v4")]
+#[cfg_attr(docsrs, doc(cfg(feature = "x86-v4")))]
+mod avx512fp16;

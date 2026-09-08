@@ -64,6 +64,14 @@ macro_rules! feature_detected {
 	};
 }
 
+#[cfg(all(feature = "std", feature = "nightly", target_arch = "arm"))]
+#[macro_export]
+macro_rules! feature_detected {
+	($feature: tt) => {
+		::std::arch::is_arm_feature_detected!($feature)
+	};
+}
+
 #[cfg(target_arch = "wasm32")]
 #[macro_export]
 macro_rules! feature_detected {
@@ -111,7 +119,12 @@ macro_rules! feature_detected {
 	target_arch = "wasm32",
 	all(
 		feature = "std",
-		any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")
+		any(
+			target_arch = "x86",
+			target_arch = "x86_64",
+			target_arch = "aarch64",
+			all(feature = "nightly", target_arch = "arm")
+		)
 	),
 	all(any(
 		all(target_arch = "x86", not(target_env = "sgx"), target_feature = "sse"),
@@ -160,6 +173,7 @@ macro_rules! __impl_type {
     ("avx512vbmi") => { $crate::core_arch::x86::Avx512vbmi };
     ("avx512vpopcntdq") => { $crate::core_arch::x86::Avx512vpopcntdq };
     ("avx512vbmi2") => { $crate::core_arch::x86::Avx512vbmi2 };
+    ("avx512fp16") => { $crate::core_arch::x86::Avx512fp16 };
     ("avx512gfni") => { $crate::core_arch::x86::Avx512gfni };
     ("avx512vaes") => { $crate::core_arch::x86::Avx512vaes };
     ("avx512vpclmulqdq") => { $crate::core_arch::x86::Avx512vpclmulqdq };
@@ -183,6 +197,14 @@ macro_rules! __impl_type {
     ("adx") => { $crate::core_arch::x86::Adx };
     ("rtm") => { $crate::core_arch::x86::Rtm };
     ("abm") => { $crate::core_arch::x86::Abm };
+}
+
+#[cfg(all(feature = "nightly", target_arch = "arm"))]
+#[doc(hidden)]
+#[rustfmt::skip]
+#[macro_export]
+macro_rules! __impl_type {
+    ("neon") => { $crate::core_arch::aarch32::Neon };
 }
 
 #[cfg(target_arch = "aarch64")]
@@ -255,7 +277,13 @@ macro_rules! __impl_type {
     ("relaxed-simd") => { $crate::core_arch::Unavailable::<{compile_error!("enable the `relaxed-simd` feature to use wasm relaxed-simd")}> };
 }
 
-#[cfg(not(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64", target_arch = "wasm32")))]
+#[cfg(not(any(
+	target_arch = "x86_64",
+	target_arch = "x86",
+	target_arch = "aarch64",
+	target_arch = "wasm32",
+	all(feature = "nightly", target_arch = "arm")
+)))]
 #[doc(hidden)]
 #[rustfmt::skip]
 #[macro_export]
@@ -438,6 +466,10 @@ pub mod x86;
 #[cfg(target_arch = "aarch64")]
 #[cfg_attr(docsrs, doc(cfg(target_arch = "aarch64")))]
 pub mod aarch64;
+
+#[cfg(all(feature = "nightly", target_arch = "arm"))]
+#[cfg_attr(docsrs, doc(cfg(all(feature = "nightly", target_arch = "arm"))))]
+pub mod aarch32;
 
 #[cfg(target_arch = "wasm32")]
 #[cfg_attr(docsrs, doc(cfg(target_arch = "wasm32")))]

@@ -1297,7 +1297,7 @@ impl Seal for V3_128b {}
 impl Seal for V3_256b {}
 impl Seal for V3_512b {}
 
-macro_rules! impl_scalar_binop {
+macro_rules! impl_scalar_binop_128b {
 	($func: ident, $ty: ident, $out: ty, impl) => {
 		paste! {
 			#[inline(always)]
@@ -1307,10 +1307,10 @@ macro_rules! impl_scalar_binop {
 		}
 	};
 	($func: ident, $($ty: ident => $out: ty),*) => {
-		$(impl_scalar_binop!($func, $ty, $out, impl);)*
+		$(impl_scalar_binop_128b!($func, $ty, $out, impl);)*
 	};
 	($func: ident, $($ty: ident),*) => {
-		$(impl_scalar_binop!($func, $ty, $ty, impl);)*
+		$(impl_scalar_binop_128b!($func, $ty, $ty, impl);)*
 	};
 }
 
@@ -1346,7 +1346,7 @@ impl Simd for V3_128b {
 
 	impl_simd_binop!(mul, wrapping_mul, u16 x 8, i16 x 8, u32 x 4, i32 x 4);
 
-	impl_scalar_binop!(mul, u64, i64);
+	impl_scalar_binop_128b!(mul, u64, i64);
 
 	impl_simd_binop!(and, m8 x 16, u8 x 16, i8 x 16, m16 x 8, u16 x 8, i16 x 8, m32 x 4, u32 x 4, i32 x 4, m64 x 2, u64 x 2, i64 x 2, f32 x 4, f64 x 2);
 
@@ -1366,17 +1366,17 @@ impl Simd for V3_128b {
 
 	impl_simd_binop!(less_than_or_equal, cmp_le, u8 x 16 => m8, i8 x 16 => m8, u16 x 8 => m16, i16 x 8 => m16, u32 x 4 => m32, i32 x 4 => m32, u64 x 2 => m64, i64 x 2 => m64, f32 x 4 => m32, f64 x 2 => m64);
 
-	impl_scalar_binop!(conj_mul, c32, c64);
+	impl_scalar_binop_128b!(conj_mul, c32, c64);
 
 	splat!(u8 x 16, i8 x 16, u16 x 8, i16 x 8, u32 x 4, i32 x 4, u64 x 2, i64 x 2, f32 x 4, f64 x 2);
 
 	impl_simd_binop!(max, u8 x 16, i8 x 16, u16 x 8, i16 x 8, u32 x 4, i32 x 4, f32 x 4, f64 x 2);
 
-	impl_scalar_binop!(max, u64, i64);
+	impl_scalar_binop_128b!(max, u64, i64);
 
 	impl_simd_binop!(min, u8 x 16, i8 x 16, u16 x 8, i16 x 8, u32 x 4, i32 x 4, f32 x 4, f64 x 2);
 
-	impl_scalar_binop!(min, u64, i64);
+	impl_scalar_binop_128b!(min, u64, i64);
 
 	impl_simd_unop!(not, m8 x 16, u8 x 16, m16 x 8, u16 x 8, m32 x 4, u32 x 4, m64 x 2, u64 x 2);
 
@@ -4420,5 +4420,54 @@ impl V3 {
 		);
 
 		(cast!(ab_lo), cast!(ab_hi))
+	}
+
+	/// Gathers 8 `u16` values out of `table`, at the given element `indices`,
+	/// using AVX2's 32-bit gather (there is no native 16-bit gather
+	/// instruction): each lane reads the `u32` starting at `indices[i]` and
+	/// keeps only its low half. Because of this, `table` must have one extra
+	/// trailing element past its logical length
+	///
+	/// This is the safe counterpart to the raw
+	/// [`_mm256_i32gather_epi32`](Avx2::_mm256_i32gather_epi32): the caller
+	/// only has to prove a slice bound instead of a raw pointer's
+	/// dereferenceability
+	///
+	/// # Panics
+	/// Panics if any index is `>= table.len() - 1` (or if `table` is empty)
+	#[inline(always)]
+	pub fn gather_u16x8(self, table: &[u16], indices: [u16; 8]) -> [u16; 8] {
+		let bound = table.len().saturating_sub(1);
+		for &i in &indices {
+			assert!((i as usize) < bound, "gather_u16x8: index out of bounds");
+		}
+
+		let idx = u32x8(
+			indices[0] as u32,
+			indices[1] as u32,
+			indices[2] as u32,
+			indices[3] as u32,
+			indices[4] as u32,
+			indices[5] as u32,
+			indices[6] as u32,
+			indices[7] as u32,
+		);
+		let table_i32 = table.as_ptr() as *const i32;
+		// SAFETY: every index was bounds-checked above against
+		// `table.len() - 1`, so each 32-bit gathered lane's 4 bytes fall
+		// fully inside `table`'s allocation.
+		let gathered: __m256i =
+			unsafe { self.avx2._mm256_i32gather_epi32::<2>(table_i32, cast!(idx)) };
+		let masked = self.and_u32x8(cast!(gathered), self.splat_u32x8(0xFFFF));
+		[
+			masked.0 as u16,
+			masked.1 as u16,
+			masked.2 as u16,
+			masked.3 as u16,
+			masked.4 as u16,
+			masked.5 as u16,
+			masked.6 as u16,
+			masked.7 as u16,
+		]
 	}
 }

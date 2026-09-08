@@ -56,6 +56,74 @@ impl core::ops::Deref for V4 {
 	}
 }
 
+simd_type!({
+	/// [`V4`] plus AVX-512VBMI2 (`vpexpand*`/`vpcompress*` at byte/word
+	/// granularity, among others).
+	///
+	/// Kept as its own capability type rather than a field on [`V4`]: VBMI2
+	/// is not part of the baseline five extensions (`f/bw/cd/dq/vl`) that
+	/// `V4::try_new` checks for. Skylake-X/Cascade Lake/Cooper Lake Xeons
+	/// have that baseline but *not* VBMI2 (only Ice Lake+/Zen4+ do) -- so
+	/// folding it into `V4` would make `V4::try_new` regress to `None` on
+	/// that hardware, silently losing every existing AVX-512 kernel there,
+	/// not just gaining VBMI2 for the new ones. Mirrors how `f16c` is
+	/// already checked separately from `V3` at call sites instead of being
+	/// a `V3` field.
+	#[allow(missing_docs)]
+	pub struct V4Vbmi2 {
+		pub sse: f!("sse"),
+		pub sse2: f!("sse2"),
+		pub fxsr: f!("fxsr"),
+		pub sse3: f!("sse3"),
+		pub ssse3: f!("ssse3"),
+		pub sse4_1: f!("sse4.1"),
+		pub sse4_2: f!("sse4.2"),
+		pub popcnt: f!("popcnt"),
+		pub avx: f!("avx"),
+		pub avx2: f!("avx2"),
+		pub bmi1: f!("bmi1"),
+		pub bmi2: f!("bmi2"),
+		pub fma: f!("fma"),
+		pub lzcnt: f!("lzcnt"),
+		pub avx512f: f!("avx512f"),
+		pub avx512bw: f!("avx512bw"),
+		pub avx512cd: f!("avx512cd"),
+		pub avx512dq: f!("avx512dq"),
+		pub avx512vl: f!("avx512vl"),
+		pub avx512vbmi2: f!("avx512vbmi2"),
+	}
+});
+
+impl core::ops::Deref for V4Vbmi2 {
+	type Target = V4;
+
+	#[inline(always)]
+	fn deref(&self) -> &Self::Target {
+		V4 {
+			sse: self.sse,
+			sse2: self.sse2,
+			fxsr: self.fxsr,
+			sse3: self.sse3,
+			ssse3: self.ssse3,
+			sse4_1: self.sse4_1,
+			sse4_2: self.sse4_2,
+			popcnt: self.popcnt,
+			avx: self.avx,
+			avx2: self.avx2,
+			bmi1: self.bmi1,
+			bmi2: self.bmi2,
+			fma: self.fma,
+			lzcnt: self.lzcnt,
+			avx512f: self.avx512f,
+			avx512bw: self.avx512bw,
+			avx512cd: self.avx512cd,
+			avx512dq: self.avx512dq,
+			avx512vl: self.avx512vl,
+		}
+		.to_ref()
+	}
+}
+
 #[cfg(target_arch = "x86_64")]
 #[inline(always)]
 fn avx512_load_u32s(simd: V4, slice: &[u32]) -> u32x16 {
@@ -513,6 +581,76 @@ impl Simd for V4 {
 	#[inline(always)]
 	fn equal_c64s(self, a: Self::c64s, b: Self::c64s) -> Self::m64s {
 		self.equal_f64s(a, b)
+	}
+
+	#[inline(always)]
+	fn equal_m8s(self, a: Self::m8s, b: Self::m8s) -> Self::m8s {
+		b64(!(a.0 ^ b.0))
+	}
+
+	#[inline(always)]
+	fn equal_m16s(self, a: Self::m16s, b: Self::m16s) -> Self::m16s {
+		b32(!(a.0 ^ b.0))
+	}
+
+	#[inline(always)]
+	fn equal_m32s(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
+		b16(!(a.0 ^ b.0))
+	}
+
+	#[inline(always)]
+	fn equal_m64s(self, a: Self::m64s, b: Self::m64s) -> Self::m64s {
+		b8(!(a.0 ^ b.0))
+	}
+
+	#[inline(always)]
+	fn transmute_u8s_m8s(self, a: Self::m8s) -> Self::u8s {
+		self.convert_mask_b64_to_u8x64(a)
+	}
+
+	#[inline(always)]
+	fn transmute_m8s_u8s(self, a: Self::u8s) -> Self::m8s {
+		b64(self.avx512bw._mm512_movepi8_mask(cast!(a)))
+	}
+
+	#[inline(always)]
+	fn transmute_u16s_m16s(self, a: Self::m16s) -> Self::u16s {
+		self.convert_mask_b32_to_u16x32(a)
+	}
+
+	#[inline(always)]
+	fn transmute_m16s_u16s(self, a: Self::u16s) -> Self::m16s {
+		b32(self.avx512bw._mm512_movepi16_mask(cast!(a)))
+	}
+
+	#[inline(always)]
+	fn transmute_u32s_m32s(self, a: Self::m32s) -> Self::u32s {
+		self.convert_mask_b16_to_u32x16(a)
+	}
+
+	#[inline(always)]
+	fn transmute_m32s_u32s(self, a: Self::u32s) -> Self::m32s {
+		b16(self.avx512dq._mm512_movepi32_mask(cast!(a)))
+	}
+
+	#[inline(always)]
+	fn transmute_u64s_m64s(self, a: Self::m64s) -> Self::u64s {
+		self.convert_mask_b8_to_u64x8(a)
+	}
+
+	#[inline(always)]
+	fn transmute_m64s_u64s(self, a: Self::u64s) -> Self::m64s {
+		b8(self.avx512dq._mm512_movepi64_mask(cast!(a)))
+	}
+
+	#[inline(always)]
+	fn and_m8s(self, a: Self::m8s, b: Self::m8s) -> Self::m8s {
+		b64(a.0 & b.0)
+	}
+
+	#[inline(always)]
+	fn and_m16s(self, a: Self::m16s, b: Self::m16s) -> Self::m16s {
+		b32(a.0 & b.0)
 	}
 
 	#[inline(always)]
@@ -1087,6 +1225,16 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
+	fn or_m8s(self, a: Self::m8s, b: Self::m8s) -> Self::m8s {
+		b64(a.0 | b.0)
+	}
+
+	#[inline(always)]
+	fn or_m16s(self, a: Self::m16s, b: Self::m16s) -> Self::m16s {
+		b32(a.0 | b.0)
+	}
+
+	#[inline(always)]
 	fn or_m32s(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
 		b16(a.0 | b.0)
 	}
@@ -1383,6 +1531,16 @@ impl Simd for V4 {
 	}
 
 	#[inline(always)]
+	fn xor_m8s(self, a: Self::m8s, b: Self::m8s) -> Self::m8s {
+		b64(a.0 ^ b.0)
+	}
+
+	#[inline(always)]
+	fn xor_m16s(self, a: Self::m16s, b: Self::m16s) -> Self::m16s {
+		b32(a.0 ^ b.0)
+	}
+
+	#[inline(always)]
 	fn xor_m32s(self, a: Self::m32s, b: Self::m32s) -> Self::m32s {
 		b16(a.0 ^ b.0)
 	}
@@ -1401,6 +1559,186 @@ impl Simd for V4 {
 	fn sqrt_f64s(self, a: Self::f64s) -> Self::f64s {
 		self.sqrt_f64x8(a)
 	}
+}
+
+/// Defines a function whose body is pasted directly inside a
+/// `#[target_feature]`-tagged inner function covering [`V4`]'s full feature
+/// set, instead of being passed as a closure value through
+/// [`V4::vectorize`]'s `imp`/`imp_fastcall` trampoline.
+#[macro_export]
+macro_rules! v4_fn {
+	($(#[$attr:meta])* $vis:vis fn $name:ident $(<$($gen:tt),* $(,)?>)? ($($arg:ident : $ty:ty),* $(,)?) $(-> $ret:ty)? $body:block) => {
+		$(#[$attr])*
+		$vis fn $name $(<$($gen),*>)? ($($arg : $ty),*) $(-> $ret)? {
+			#[target_feature(enable = "sse,sse2,fxsr,sse3,ssse3,sse4.1,sse4.2,popcnt,avx,avx2,bmi1,bmi2,fma,lzcnt,avx512f,avx512bw,avx512cd,avx512dq,avx512vl")]
+			unsafe fn __v4_fn_impl $(<$($gen),*>)? ($($arg : $ty),*) $(-> $ret)? {
+				$body
+			}
+			#[allow(unused_unsafe)]
+			unsafe { __v4_fn_impl($($arg),*) }
+		}
+	};
+}
+
+impl V4Vbmi2 {
+	/// Compresses the lanes of `a` selected by `mask` into a contiguous
+	/// prefix (in ascending lane order), zero-filling the remaining lanes.
+	/// Safe counterpart to
+	/// [`_mm512_maskz_compress_epi16`](Avx512vbmi2::_mm512_maskz_compress_epi16).
+	#[inline(always)]
+	pub fn mask_compress_u16x32(self, mask: b32, a: u16x32) -> u16x32 {
+		let mask: __mmask32 = mask.0;
+		cast!(self.avx512vbmi2._mm512_maskz_compress_epi16(mask, cast!(a)))
+	}
+
+	/// Expands the contiguous prefix of `a` out to the lanes selected by
+	/// `mask` (in ascending lane order), zero-filling the unselected lanes.
+	/// Safe counterpart to
+	/// [`_mm512_maskz_expand_epi16`](Avx512vbmi2::_mm512_maskz_expand_epi16).
+	#[inline(always)]
+	pub fn mask_expand_u16x32(self, mask: b32, a: u16x32) -> u16x32 {
+		let mask: __mmask32 = mask.0;
+		cast!(self.avx512vbmi2._mm512_maskz_expand_epi16(mask, cast!(a)))
+	}
+}
+
+/// Same as [`v4_fn!`], but for [`V4Vbmi2`]: also enables `avx512vbmi2` in
+/// the pasted-in body's target-feature set. By convention,
+/// a function defined this way should take
+/// a `V4Vbmi2` token as one of its arguments, proving the caller already
+/// checked for VBMI2 specifically and not just the plain `V4` baseline.
+#[macro_export]
+macro_rules! v4_vbmi2_fn {
+	($(#[$attr:meta])* $vis:vis fn $name:ident $(<$($gen:tt),* $(,)?>)? ($($arg:ident : $ty:ty),* $(,)?) $(-> $ret:ty)? $body:block) => {
+		$(#[$attr])*
+		$vis fn $name $(<$($gen),*>)? ($($arg : $ty),*) $(-> $ret)? {
+			#[target_feature(enable = "sse,sse2,fxsr,sse3,ssse3,sse4.1,sse4.2,popcnt,avx,avx2,bmi1,bmi2,fma,lzcnt,avx512f,avx512bw,avx512cd,avx512dq,avx512vl,avx512vbmi2")]
+			unsafe fn __v4_vbmi2_fn_impl $(<$($gen),*>)? ($($arg : $ty),*) $(-> $ret)? {
+				$body
+			}
+			#[allow(unused_unsafe)]
+			unsafe { __v4_vbmi2_fn_impl($($arg),*) }
+		}
+	};
+}
+
+// Prototype only AVX-512 FP16 
+simd_type!({
+	/// [`V4`] plus AVX-512 FP16 (native half-precision arithmetic: `add`/`sub`/`mul`/
+	/// `fmadd_ph`, plus the extension's own `cvtxps_ph`/`cvtxph_ps` f32<->f16
+	/// conversion, distinct from the AVX512F conversion `V4` already exposes).
+	#[allow(missing_docs)]
+	pub struct V4Fp16 {
+		pub sse: f!("sse"),
+		pub sse2: f!("sse2"),
+		pub fxsr: f!("fxsr"),
+		pub sse3: f!("sse3"),
+		pub ssse3: f!("ssse3"),
+		pub sse4_1: f!("sse4.1"),
+		pub sse4_2: f!("sse4.2"),
+		pub popcnt: f!("popcnt"),
+		pub avx: f!("avx"),
+		pub avx2: f!("avx2"),
+		pub bmi1: f!("bmi1"),
+		pub bmi2: f!("bmi2"),
+		pub fma: f!("fma"),
+		pub lzcnt: f!("lzcnt"),
+		pub avx512f: f!("avx512f"),
+		pub avx512bw: f!("avx512bw"),
+		pub avx512cd: f!("avx512cd"),
+		pub avx512dq: f!("avx512dq"),
+		pub avx512vl: f!("avx512vl"),
+		pub avx512fp16: f!("avx512fp16"),
+	}
+});
+
+impl core::ops::Deref for V4Fp16 {
+	type Target = V4;
+
+	#[inline(always)]
+	fn deref(&self) -> &Self::Target {
+		V4 {
+			sse: self.sse,
+			sse2: self.sse2,
+			fxsr: self.fxsr,
+			sse3: self.sse3,
+			ssse3: self.ssse3,
+			sse4_1: self.sse4_1,
+			sse4_2: self.sse4_2,
+			popcnt: self.popcnt,
+			avx: self.avx,
+			avx2: self.avx2,
+			bmi1: self.bmi1,
+			bmi2: self.bmi2,
+			fma: self.fma,
+			lzcnt: self.lzcnt,
+			avx512f: self.avx512f,
+			avx512bw: self.avx512bw,
+			avx512cd: self.avx512cd,
+			avx512dq: self.avx512dq,
+			avx512vl: self.avx512vl,
+		}
+		.to_ref()
+	}
+}
+
+impl V4Fp16 {
+	#[inline(always)]
+	fn fp16_cast<T, U>(value: T) -> U {
+		#[allow(clippy::missing_transmute_annotations)]
+		unsafe {
+			core::mem::transmute_copy(&value)
+		}
+	}
+
+	#[inline(always)]
+	pub fn add_f16x32(self, a: u16x32, b: u16x32) -> u16x32 {
+		Self::fp16_cast(self.avx512fp16._mm512_add_ph(Self::fp16_cast(a), Self::fp16_cast(b)))
+	}
+
+	#[inline(always)]
+	pub fn sub_f16x32(self, a: u16x32, b: u16x32) -> u16x32 {
+		Self::fp16_cast(self.avx512fp16._mm512_sub_ph(Self::fp16_cast(a), Self::fp16_cast(b)))
+	}
+
+	#[inline(always)]
+	pub fn mul_f16x32(self, a: u16x32, b: u16x32) -> u16x32 {
+		Self::fp16_cast(self.avx512fp16._mm512_mul_ph(Self::fp16_cast(a), Self::fp16_cast(b)))
+	}
+	#[inline(always)]
+	pub fn fmadd_f16x32(self, a: u16x32, b: u16x32, c: u16x32) -> u16x32 {
+		Self::fp16_cast(self.avx512fp16._mm512_fmadd_ph(
+			Self::fp16_cast(a),
+			Self::fp16_cast(b),
+			Self::fp16_cast(c),
+		))
+	}
+
+	#[inline(always)]
+	pub fn cvtx_f32x16_to_f16x16_bits(self, a: f32x16) -> u16x16 {
+		Self::fp16_cast(self.avx512fp16._mm512_cvtxps_ph(cast!(a)))
+	}
+
+	#[inline(always)]
+	pub fn cvtx_f16x16_bits_to_f32x16(self, a: u16x16) -> f32x16 {
+		cast!(self.avx512fp16._mm512_cvtxph_ps(Self::fp16_cast(a)))
+	}
+}
+
+// Prototype-only, see [`V4Fp16`].
+#[macro_export]
+macro_rules! v4_fp16_fn {
+	($(#[$attr:meta])* $vis:vis fn $name:ident $(<$($gen:tt),* $(,)?>)? ($($arg:ident : $ty:ty),* $(,)?) $(-> $ret:ty)? $body:block) => {
+		$(#[$attr])*
+		$vis fn $name $(<$($gen),*>)? ($($arg : $ty),*) $(-> $ret)? {
+			#[target_feature(enable = "sse,sse2,fxsr,sse3,ssse3,sse4.1,sse4.2,popcnt,avx,avx2,bmi1,bmi2,fma,lzcnt,avx512f,avx512bw,avx512cd,avx512dq,avx512vl,avx512fp16")]
+			unsafe fn __v4_fp16_fn_impl $(<$($gen),*>)? ($($arg : $ty),*) $(-> $ret)? {
+				$body
+			}
+			#[allow(unused_unsafe)]
+			unsafe { __v4_fp16_fn_impl($($arg),*) }
+		}
+	};
 }
 
 impl V4 {
@@ -4142,6 +4480,94 @@ impl V4 {
 		);
 
 		(cast!(ab_lo), cast!(ab_hi))
+	}
+
+	/// Scatters 16 `u32` values from `src` into `slice`, at the given
+	/// element `indices`, using AVX-512F's native 32-bit scatter. Lanes
+	/// where `mask`'s bit is unset are skipped entirely
+	///
+	/// This is the safe counterpart to the raw
+	/// [`_mm512_mask_i32scatter_epi32`](Avx512f::_mm512_mask_i32scatter_epi32):
+	/// the caller only has to prove a slice bound instead of a raw
+	/// pointer's dereferenceability.
+	#[inline(always)]
+	pub fn scatter_u32x16(self, slice: &mut [u32], mask: b16, indices: u32x16, src: u32x16) {
+		let raw_mask: __mmask16 = mask.0;
+		let idx = [
+			indices.0, indices.1, indices.2, indices.3, indices.4, indices.5, indices.6, indices.7,
+			indices.8, indices.9, indices.10, indices.11, indices.12, indices.13, indices.14,
+			indices.15,
+		];
+		for (lane, &i) in idx.iter().enumerate() {
+			if (raw_mask >> lane) & 1 != 0 {
+				assert!(
+					(i as usize) < slice.len(),
+					"scatter_u32x16: index out of bounds"
+				);
+			}
+		}
+
+		let offsets: __m512i = cast!(indices);
+		let values: __m512i = cast!(src);
+		// SAFETY: every masked-in index was bounds-checked above against
+		// `slice.len()`. Masked-off lanes are guaranteed by the hardware to
+		// never access memory, so their (possibly out-of-bounds) indices
+		// are never dereferenced.
+		unsafe {
+			self.avx512f._mm512_mask_i32scatter_epi32::<4>(
+				slice.as_mut_ptr() as *mut i32,
+				raw_mask,
+				offsets,
+				values,
+			);
+		}
+	}
+
+	/// Gathers 16 `u16` values from `slice`, at the given element `indices`,
+	/// using AVX-512F's native 32-bit gather (byte scale 2, i.e. one `u16`
+	/// element per index unit) and keeping only the low 16 bits of each
+	/// gathered 32-bit lane. Lanes where `mask`'s bit is unset take their
+	/// value from `merge` instead of gathering.
+	#[inline(always)]
+	pub fn gather_u16x16_low(
+		self,
+		slice: &[u16],
+		mask: b16,
+		indices: u32x16,
+		merge: u16x16,
+	) -> u16x16 {
+		let raw_mask: __mmask16 = mask.0;
+		let idx = [
+			indices.0, indices.1, indices.2, indices.3, indices.4, indices.5, indices.6, indices.7,
+			indices.8, indices.9, indices.10, indices.11, indices.12, indices.13, indices.14,
+			indices.15,
+		];
+		for (lane, &i) in idx.iter().enumerate() {
+			if (raw_mask >> lane) & 1 != 0 {
+				assert!(
+					(i as usize) + 1 < slice.len(),
+					"gather_u16x16_low: index out of bounds (needs 1-element headroom)"
+				);
+			}
+		}
+
+		let offsets: __m512i = cast!(indices);
+		// Widen `merge` into 32-bit lanes for the gather's merge source; the
+		// high 16 bits of each widened lane are discarded when the result is
+		// narrowed back down below, so their value doesn't matter.
+		let merge_wide = self.avx512f._mm512_cvtepu16_epi32(cast!(merge));
+		// SAFETY: every masked-in index was bounds-checked above against
+		// `slice.len() - 1` (one extra element of headroom for the native
+		// 4-byte read).
+		let gathered: __m512i = unsafe {
+			self.avx512f._mm512_mask_i32gather_epi32::<2>(
+				merge_wide,
+				raw_mask,
+				offsets,
+				slice.as_ptr() as *const i32,
+			)
+		};
+		cast!(self.avx512f._mm512_cvtepi32_epi16(gathered))
 	}
 }
 

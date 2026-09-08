@@ -79,6 +79,14 @@
 	feature(stdarch_neon_fcma),
 	feature(stdarch_neon_dotprod)
 )]
+// 32-bit ARM NEON is still unstable in stdarch (rust-lang/rust#111800, #150246).
+// Gated on pulp `nightly` + arm so stable x86/aarch64 builds are unaffected.
+#![cfg_attr(
+	all(feature = "nightly", target_arch = "arm"),
+	feature(stdarch_arm_neon_intrinsics),
+	feature(arm_target_feature),
+	feature(stdarch_arm_feature_detection)
+)]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
@@ -1605,11 +1613,15 @@ macro_rules! scalar_simd_cmp {
 		paste! {
 			#[inline]
 			fn [<$func _ $ty s>](self, a: Self::[<$ty s>], b: Self::[<$ty s>]) -> Self::[<$mask s>] {
-				let mut out = [$mask::new(false); Self::[<$ty:upper _LANES>]];
+				let mut out = [$mask::new(false); Self::[<$mask:upper _LANES>]];
 				let a: [$ty; Self::[<$ty:upper _LANES>]] = cast(a);
 				let b: [$ty; Self::[<$ty:upper _LANES>]] = cast(b);
+				let ratio = Self::[<$mask:upper _LANES>] / Self::[<$ty:upper _LANES>];
 				for i in 0..Self::[<$ty:upper _LANES>] {
-					out[i] = $mask::new(a[i].$op(&b[i]));
+					let m = $mask::new(a[i].$op(&b[i]));
+					for j in 0..ratio {
+						out[i * ratio + j] = m;
+					}
 				}
 				cast(out)
 			}
@@ -2684,6 +2696,64 @@ impl Simd for Scalar {
 
 	primitive_binop!(ref less_than_or_equal, op le, u8 => m8, i8 => m8, u16 => m16, i16 => m16, u32 => m32, i32 => m32, u64 => m64, i64 => m64, f32 => m32, f64 => m64);
 
+	#[inline]
+	fn transmute_m8s_u8s(self, a: Self::u8s) -> Self::m8s {
+		a != 0
+	}
+	#[inline]
+	fn transmute_u8s_m8s(self, a: Self::m8s) -> Self::u8s {
+		if a { u8::MAX } else { 0 }
+	}
+	#[inline]
+	fn transmute_m16s_u16s(self, a: Self::u16s) -> Self::m16s {
+		a != 0
+	}
+	#[inline]
+	fn transmute_u16s_m16s(self, a: Self::m16s) -> Self::u16s {
+		if a { u16::MAX } else { 0 }
+	}
+	#[inline]
+	fn transmute_m32s_u32s(self, a: Self::u32s) -> Self::m32s {
+		a != 0
+	}
+	#[inline]
+	fn transmute_u32s_m32s(self, a: Self::m32s) -> Self::u32s {
+		if a { u32::MAX } else { 0 }
+	}
+	#[inline]
+	fn transmute_m64s_u64s(self, a: Self::u64s) -> Self::m64s {
+		a != 0
+	}
+	#[inline]
+	fn transmute_u64s_m64s(self, a: Self::m64s) -> Self::u64s {
+		if a { u64::MAX } else { 0 }
+	}
+
+	#[inline(always)]
+	fn partial_store_i8s(self, slice: &mut [i8], values: Self::i8s) {
+		if let Some((head, _)) = slice.split_first_mut() {
+			*head = values;
+		}
+	}
+	#[inline(always)]
+	fn partial_store_i16s(self, slice: &mut [i16], values: Self::i16s) {
+		if let Some((head, _)) = slice.split_first_mut() {
+			*head = values;
+		}
+	}
+	#[inline(always)]
+	fn partial_store_i32s(self, slice: &mut [i32], values: Self::i32s) {
+		if let Some((head, _)) = slice.split_first_mut() {
+			*head = values;
+		}
+	}
+	#[inline(always)]
+	fn partial_store_i64s(self, slice: &mut [i64], values: Self::i64s) {
+		if let Some((head, _)) = slice.split_first_mut() {
+			*head = values;
+		}
+	}
+
 	primitive_binop!(min, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64);
 
 	primitive_binop!(max, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64);
@@ -3458,6 +3528,11 @@ pub mod wasm;
 #[cfg_attr(docsrs, doc(cfg(target_arch = "aarch64")))]
 /// Low level aarch64 API.
 pub mod aarch64;
+
+/// Low level 32-bit ARM NEON API.
+#[cfg(all(feature = "nightly", target_arch = "arm"))]
+#[cfg_attr(docsrs, doc(cfg(all(feature = "nightly", target_arch = "arm"))))]
+pub mod aarch32;
 
 /// Mask type with 8 bits. Its bit pattern is either all ones or all zeros. Unsafe code must not
 /// depend on this, however.

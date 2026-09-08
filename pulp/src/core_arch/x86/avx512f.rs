@@ -1388,6 +1388,48 @@ impl Avx512f {
 			offsets: __m512i,
 			src: __m256i,
 		);
+		unsafe fn _mm512_i32logather_epi64<const SCALE: i32>(
+			vindex: __m512i,
+			base_addr: *const i64,
+		) -> __m512i;
+		unsafe fn _mm512_mask_i32logather_epi64<const SCALE: i32>(
+			src: __m512i,
+			k: __mmask8,
+			vindex: __m512i,
+			base_addr: *const i64,
+		) -> __m512i;
+		unsafe fn _mm512_i32logather_pd<const SCALE: i32>(
+			vindex: __m512i,
+			base_addr: *const f64,
+		) -> __m512d;
+		unsafe fn _mm512_mask_i32logather_pd<const SCALE: i32>(
+			src: __m512d,
+			k: __mmask8,
+			vindex: __m512i,
+			base_addr: *const f64,
+		) -> __m512d;
+		unsafe fn _mm512_i32loscatter_epi64<const SCALE: i32>(
+			base_addr: *mut i64,
+			vindex: __m512i,
+			a: __m512i,
+		);
+		unsafe fn _mm512_mask_i32loscatter_epi64<const SCALE: i32>(
+			base_addr: *mut i64,
+			k: __mmask8,
+			vindex: __m512i,
+			a: __m512i,
+		);
+		unsafe fn _mm512_i32loscatter_pd<const SCALE: i32>(
+			base_addr: *mut f64,
+			vindex: __m512i,
+			a: __m512d,
+		);
+		unsafe fn _mm512_mask_i32loscatter_pd<const SCALE: i32>(
+			base_addr: *mut f64,
+			k: __mmask8,
+			vindex: __m512i,
+			a: __m512d,
+		);
 		fn _mm512_mask_compress_epi32(src: __m512i, k: __mmask16, a: __m512i) -> __m512i;
 		fn _mm512_maskz_compress_epi32(k: __mmask16, a: __m512i) -> __m512i;
 		fn _mm512_mask_compress_epi64(src: __m512i, k: __mmask8, a: __m512i) -> __m512i;
@@ -1920,6 +1962,8 @@ impl Avx512f {
 		fn _mm512_castsi512_ps(a: __m512i) -> __m512;
 		fn _mm512_castsi512_pd(a: __m512i) -> __m512d;
 		fn _mm512_cvtsi512_si32(a: __m512i) -> i32;
+		fn _mm512_cvtss_f32(a: __m512) -> f32;
+		fn _mm512_cvtsd_f64(a: __m512d) -> f64;
 		fn _mm512_broadcastd_epi32(a: __m128i) -> __m512i;
 		fn _mm512_mask_broadcastd_epi32(src: __m512i, k: __mmask16, a: __m128i) -> __m512i;
 		fn _mm512_maskz_broadcastd_epi32(k: __mmask16, a: __m128i) -> __m512i;
@@ -2028,6 +2072,7 @@ impl Avx512f {
 		unsafe fn _mm512_stream_ps(mem_addr: *mut f32, a: __m512);
 		unsafe fn _mm512_stream_pd(mem_addr: *mut f64, a: __m512d);
 		unsafe fn _mm512_stream_si512(mem_addr: *mut __m512i, a: __m512i);
+		unsafe fn _mm512_stream_load_si512(mem_addr: *const __m512i) -> __m512i;
 		fn _mm512_set_ps(
 			e0: f32,
 			e1: f32,
@@ -2395,6 +2440,10 @@ impl Avx512f {
 		unsafe fn _mm512_maskz_load_ps(k: __mmask16, mem_addr: *const f32) -> __m512;
 		unsafe fn _mm512_mask_load_pd(src: __m512d, k: __mmask8, mem_addr: *const f64) -> __m512d;
 		unsafe fn _mm512_maskz_load_pd(k: __mmask8, mem_addr: *const f64) -> __m512d;
+		unsafe fn _mm_mask_load_ss(src: __m128, k: __mmask8, mem_addr: *const f32) -> __m128;
+		unsafe fn _mm_maskz_load_ss(k: __mmask8, mem_addr: *const f32) -> __m128;
+		unsafe fn _mm_mask_load_sd(src: __m128d, k: __mmask8, mem_addr: *const f64) -> __m128d;
+		unsafe fn _mm_maskz_load_sd(k: __mmask8, mem_addr: *const f64) -> __m128d;
 		unsafe fn _mm256_mask_load_epi32(
 			src: __m256i,
 			k: __mmask8,
@@ -2435,6 +2484,8 @@ impl Avx512f {
 		unsafe fn _mm512_mask_store_epi64(mem_addr: *mut i64, mask: __mmask8, a: __m512i);
 		unsafe fn _mm512_mask_store_ps(mem_addr: *mut f32, mask: __mmask16, a: __m512);
 		unsafe fn _mm512_mask_store_pd(mem_addr: *mut f64, mask: __mmask8, a: __m512d);
+		unsafe fn _mm_mask_store_ss(mem_addr: *mut f32, k: __mmask8, a: __m128);
+		unsafe fn _mm_mask_store_sd(mem_addr: *mut f64, k: __mmask8, a: __m128d);
 		unsafe fn _mm256_mask_store_epi32(mem_addr: *mut i32, mask: __mmask8, a: __m256i);
 		unsafe fn _mm256_mask_store_epi64(mem_addr: *mut i64, mask: __mmask8, a: __m256i);
 		unsafe fn _mm256_mask_store_ps(mem_addr: *mut f32, mask: __mmask8, a: __m256);
@@ -3200,6 +3251,36 @@ impl Avx512f {
 		fn _mm_cvttsd_u32(a: __m128d) -> u32;
 		fn _mm_cvtu32_ss(a: __m128, b: u32) -> __m128;
 		fn _mm_cvtu32_sd(a: __m128d, b: u32) -> __m128d;
+		fn _mm_cvtsd_i64(a: __m128d) -> i64;
+		fn _mm_cvtss_i64(a: __m128) -> i64;
+		fn _mm_cvtss_u64(a: __m128) -> u64;
+		fn _mm_cvtsd_u64(a: __m128d) -> u64;
+		fn _mm_cvti64_ss(a: __m128, b: i64) -> __m128;
+		fn _mm_cvti64_sd(a: __m128d, b: i64) -> __m128d;
+		fn _mm_cvtu64_ss(a: __m128, b: u64) -> __m128;
+		fn _mm_cvtu64_sd(a: __m128d, b: u64) -> __m128d;
+		fn _mm_cvttsd_i64(a: __m128d) -> i64;
+		fn _mm_cvttsd_u64(a: __m128d) -> u64;
+		fn _mm_cvttss_i64(a: __m128) -> i64;
+		fn _mm_cvttss_u64(a: __m128) -> u64;
+		fn _mm_cvt_roundi64_sd<const ROUNDING: i32>(a: __m128d, b: i64) -> __m128d;
+		fn _mm_cvt_roundsi64_sd<const ROUNDING: i32>(a: __m128d, b: i64) -> __m128d;
+		fn _mm_cvt_roundi64_ss<const ROUNDING: i32>(a: __m128, b: i64) -> __m128;
+		fn _mm_cvt_roundu64_sd<const ROUNDING: i32>(a: __m128d, b: u64) -> __m128d;
+		fn _mm_cvt_roundsi64_ss<const ROUNDING: i32>(a: __m128, b: i64) -> __m128;
+		fn _mm_cvt_roundu64_ss<const ROUNDING: i32>(a: __m128, b: u64) -> __m128;
+		fn _mm_cvt_roundsd_si64<const ROUNDING: i32>(a: __m128d) -> i64;
+		fn _mm_cvt_roundsd_i64<const ROUNDING: i32>(a: __m128d) -> i64;
+		fn _mm_cvt_roundsd_u64<const ROUNDING: i32>(a: __m128d) -> u64;
+		fn _mm_cvt_roundss_si64<const ROUNDING: i32>(a: __m128) -> i64;
+		fn _mm_cvt_roundss_i64<const ROUNDING: i32>(a: __m128) -> i64;
+		fn _mm_cvt_roundss_u64<const ROUNDING: i32>(a: __m128) -> u64;
+		fn _mm_cvtt_roundsd_si64<const SAE: i32>(a: __m128d) -> i64;
+		fn _mm_cvtt_roundsd_i64<const SAE: i32>(a: __m128d) -> i64;
+		fn _mm_cvtt_roundsd_u64<const SAE: i32>(a: __m128d) -> u64;
+		fn _mm_cvtt_roundss_i64<const SAE: i32>(a: __m128) -> i64;
+		fn _mm_cvtt_roundss_si64<const SAE: i32>(a: __m128) -> i64;
+		fn _mm_cvtt_roundss_u64<const SAE: i32>(a: __m128) -> u64;
 		fn _mm_comi_round_ss<const IMM5: i32, const SAE: i32>(a: __m128, b: __m128) -> i32;
 		fn _mm_comi_round_sd<const IMM5: i32, const SAE: i32>(a: __m128d, b: __m128d) -> i32;
 
@@ -3210,6 +3291,9 @@ impl Avx512f {
 		fn _mm256_abs_epi64(a: __m256i) -> __m256i;
 		fn _mm256_mask_abs_epi64(src: __m256i, k: __mmask8, a: __m256i) -> __m256i;
 		fn _mm256_maskz_abs_epi64(k: __mmask8, a: __m256i) -> __m256i;
+		fn _mm_abs_epi64(a: __m128i) -> __m128i;
+		fn _mm_mask_abs_epi64(src: __m128i, k: __mmask8, a: __m128i) -> __m128i;
+		fn _mm_maskz_abs_epi64(k: __mmask8, a: __m128i) -> __m128i;
 		fn _mm256_mask_mov_epi32(src: __m256i, k: __mmask8, a: __m256i) -> __m256i;
 		fn _mm256_maskz_mov_epi32(k: __mmask8, a: __m256i) -> __m256i;
 		fn _mm_mask_mov_epi32(src: __m128i, k: __mmask8, a: __m128i) -> __m128i;
@@ -3321,6 +3405,9 @@ impl Avx512f {
 		fn _mm256_min_epi64(a: __m256i, b: __m256i) -> __m256i;
 		fn _mm256_mask_min_epi64(src: __m256i, k: __mmask8, a: __m256i, b: __m256i) -> __m256i;
 		fn _mm256_maskz_min_epi64(k: __mmask8, a: __m256i, b: __m256i) -> __m256i;
+		fn _mm_min_epi64(a: __m128i, b: __m128i) -> __m128i;
+		fn _mm_mask_min_epi64(src: __m128i, k: __mmask8, a: __m128i, b: __m128i) -> __m128i;
+		fn _mm_maskz_min_epi64(k: __mmask8, a: __m128i, b: __m128i) -> __m128i;
 		fn _mm256_mask_min_ps(src: __m256, k: __mmask8, a: __m256, b: __m256) -> __m256;
 		fn _mm256_maskz_min_ps(k: __mmask8, a: __m256, b: __m256) -> __m256;
 		fn _mm_mask_min_ps(src: __m128, k: __mmask8, a: __m128, b: __m128) -> __m128;
@@ -3431,12 +3518,16 @@ impl Avx512f {
 		fn _mm_rcp14_pd(a: __m128d) -> __m128d;
 		fn _mm_mask_rcp14_pd(src: __m128d, k: __mmask8, a: __m128d) -> __m128d;
 		fn _mm_maskz_rcp14_pd(k: __mmask8, a: __m128d) -> __m128d;
+		fn _mm256_rsqrt14_ps(a: __m256) -> __m256;
 		fn _mm256_mask_rsqrt14_ps(src: __m256, k: __mmask8, a: __m256) -> __m256;
 		fn _mm256_maskz_rsqrt14_ps(k: __mmask8, a: __m256) -> __m256;
+		fn _mm_rsqrt14_ps(a: __m128) -> __m128;
 		fn _mm_mask_rsqrt14_ps(src: __m128, k: __mmask8, a: __m128) -> __m128;
 		fn _mm_maskz_rsqrt14_ps(k: __mmask8, a: __m128) -> __m128;
+		fn _mm256_rsqrt14_pd(a: __m256d) -> __m256d;
 		fn _mm256_mask_rsqrt14_pd(src: __m256d, k: __mmask8, a: __m256d) -> __m256d;
 		fn _mm256_maskz_rsqrt14_pd(k: __mmask8, a: __m256d) -> __m256d;
+		fn _mm_rsqrt14_pd(a: __m128d) -> __m128d;
 		fn _mm_mask_rsqrt14_pd(src: __m128d, k: __mmask8, a: __m128d) -> __m128d;
 		fn _mm_maskz_rsqrt14_pd(k: __mmask8, a: __m128d) -> __m128d;
 		fn _mm256_getexp_ps(a: __m256) -> __m256;
@@ -3885,6 +3976,278 @@ impl Avx512f {
 		fn _mm_cvttpd_epu32(a: __m128d) -> __m128i;
 		fn _mm_mask_cvttpd_epu32(src: __m128i, k: __mmask8, a: __m128d) -> __m128i;
 		fn _mm_maskz_cvttpd_epu32(k: __mmask8, a: __m128d) -> __m128i;
+		unsafe fn _mm256_i32scatter_epi32<const SCALE: i32>(
+			base_addr: *mut i32,
+			vindex: __m256i,
+			a: __m256i,
+		);
+		unsafe fn _mm256_mask_i32scatter_epi32<const SCALE: i32>(
+			base_addr: *mut i32,
+			k: __mmask8,
+			vindex: __m256i,
+			a: __m256i,
+		);
+		unsafe fn _mm256_i32scatter_epi64<const SCALE: i32>(
+			slice: *mut i64,
+			offsets: __m128i,
+			src: __m256i,
+		);
+		unsafe fn _mm256_mask_i32scatter_epi64<const SCALE: i32>(
+			base_addr: *mut i64,
+			k: __mmask8,
+			vindex: __m128i,
+			a: __m256i,
+		);
+		unsafe fn _mm256_i32scatter_pd<const SCALE: i32>(
+			base_addr: *mut f64,
+			vindex: __m128i,
+			a: __m256d,
+		);
+		unsafe fn _mm256_mask_i32scatter_pd<const SCALE: i32>(
+			base_addr: *mut f64,
+			k: __mmask8,
+			vindex: __m128i,
+			a: __m256d,
+		);
+		unsafe fn _mm256_i32scatter_ps<const SCALE: i32>(
+			base_addr: *mut f32,
+			vindex: __m256i,
+			a: __m256,
+		);
+		unsafe fn _mm256_mask_i32scatter_ps<const SCALE: i32>(
+			base_addr: *mut f32,
+			k: __mmask8,
+			vindex: __m256i,
+			a: __m256,
+		);
+		unsafe fn _mm256_i64scatter_epi32<const SCALE: i32>(
+			base_addr: *mut i32,
+			vindex: __m256i,
+			a: __m128i,
+		);
+		unsafe fn _mm256_mask_i64scatter_epi32<const SCALE: i32>(
+			base_addr: *mut i32,
+			k: __mmask8,
+			vindex: __m256i,
+			a: __m128i,
+		);
+		unsafe fn _mm256_i64scatter_epi64<const SCALE: i32>(
+			base_addr: *mut i64,
+			vindex: __m256i,
+			a: __m256i,
+		);
+		unsafe fn _mm256_mask_i64scatter_epi64<const SCALE: i32>(
+			base_addr: *mut i64,
+			k: __mmask8,
+			vindex: __m256i,
+			a: __m256i,
+		);
+		unsafe fn _mm256_i64scatter_pd<const SCALE: i32>(
+			base_addr: *mut f64,
+			vindex: __m256i,
+			a: __m256d,
+		);
+		unsafe fn _mm256_mask_i64scatter_pd<const SCALE: i32>(
+			base_addr: *mut f64,
+			k: __mmask8,
+			vindex: __m256i,
+			a: __m256d,
+		);
+		unsafe fn _mm256_i64scatter_ps<const SCALE: i32>(
+			base_addr: *mut f32,
+			vindex: __m256i,
+			a: __m128,
+		);
+		unsafe fn _mm256_mask_i64scatter_ps<const SCALE: i32>(
+			base_addr: *mut f32,
+			k: __mmask8,
+			vindex: __m256i,
+			a: __m128,
+		);
+		unsafe fn _mm256_mmask_i32gather_epi32<const SCALE: i32>(
+			src: __m256i,
+			k: __mmask8,
+			vindex: __m256i,
+			base_addr: *const i32,
+		) -> __m256i;
+		unsafe fn _mm256_mmask_i32gather_epi64<const SCALE: i32>(
+			src: __m256i,
+			k: __mmask8,
+			vindex: __m128i,
+			base_addr: *const i64,
+		) -> __m256i;
+		unsafe fn _mm256_mmask_i32gather_pd<const SCALE: i32>(
+			src: __m256d,
+			k: __mmask8,
+			vindex: __m128i,
+			base_addr: *const f64,
+		) -> __m256d;
+		unsafe fn _mm256_mmask_i32gather_ps<const SCALE: i32>(
+			src: __m256,
+			k: __mmask8,
+			vindex: __m256i,
+			base_addr: *const f32,
+		) -> __m256;
+		unsafe fn _mm256_mmask_i64gather_epi32<const SCALE: i32>(
+			src: __m128i,
+			k: __mmask8,
+			vindex: __m256i,
+			base_addr: *const i32,
+		) -> __m128i;
+		unsafe fn _mm256_mmask_i64gather_epi64<const SCALE: i32>(
+			src: __m256i,
+			k: __mmask8,
+			vindex: __m256i,
+			base_addr: *const i64,
+		) -> __m256i;
+		unsafe fn _mm256_mmask_i64gather_pd<const SCALE: i32>(
+			src: __m256d,
+			k: __mmask8,
+			vindex: __m256i,
+			base_addr: *const f64,
+		) -> __m256d;
+		unsafe fn _mm256_mmask_i64gather_ps<const SCALE: i32>(
+			src: __m128,
+			k: __mmask8,
+			vindex: __m256i,
+			base_addr: *const f32,
+		) -> __m128;
+		unsafe fn _mm_i32scatter_epi32<const SCALE: i32>(
+			base_addr: *mut i32,
+			vindex: __m128i,
+			a: __m128i,
+		);
+		unsafe fn _mm_mask_i32scatter_epi32<const SCALE: i32>(
+			base_addr: *mut i32,
+			k: __mmask8,
+			vindex: __m128i,
+			a: __m128i,
+		);
+		unsafe fn _mm_i32scatter_epi64<const SCALE: i32>(
+			base_addr: *mut i64,
+			vindex: __m128i,
+			a: __m128i,
+		);
+		unsafe fn _mm_mask_i32scatter_epi64<const SCALE: i32>(
+			base_addr: *mut i64,
+			k: __mmask8,
+			vindex: __m128i,
+			a: __m128i,
+		);
+		unsafe fn _mm_i32scatter_pd<const SCALE: i32>(
+			base_addr: *mut f64,
+			vindex: __m128i,
+			a: __m128d,
+		);
+		unsafe fn _mm_mask_i32scatter_pd<const SCALE: i32>(
+			base_addr: *mut f64,
+			k: __mmask8,
+			vindex: __m128i,
+			a: __m128d,
+		);
+		unsafe fn _mm_i32scatter_ps<const SCALE: i32>(
+			base_addr: *mut f32,
+			vindex: __m128i,
+			a: __m128,
+		);
+		unsafe fn _mm_mask_i32scatter_ps<const SCALE: i32>(
+			base_addr: *mut f32,
+			k: __mmask8,
+			vindex: __m128i,
+			a: __m128,
+		);
+		unsafe fn _mm_i64scatter_epi32<const SCALE: i32>(
+			base_addr: *mut i32,
+			vindex: __m128i,
+			a: __m128i,
+		);
+		unsafe fn _mm_mask_i64scatter_epi32<const SCALE: i32>(
+			base_addr: *mut i32,
+			k: __mmask8,
+			vindex: __m128i,
+			a: __m128i,
+		);
+		unsafe fn _mm_i64scatter_epi64<const SCALE: i32>(
+			base_addr: *mut i64,
+			vindex: __m128i,
+			a: __m128i,
+		);
+		unsafe fn _mm_mask_i64scatter_epi64<const SCALE: i32>(
+			base_addr: *mut i64,
+			k: __mmask8,
+			vindex: __m128i,
+			a: __m128i,
+		);
+		unsafe fn _mm_i64scatter_pd<const SCALE: i32>(
+			base_addr: *mut f64,
+			vindex: __m128i,
+			a: __m128d,
+		);
+		unsafe fn _mm_mask_i64scatter_pd<const SCALE: i32>(
+			base_addr: *mut f64,
+			k: __mmask8,
+			vindex: __m128i,
+			a: __m128d,
+		);
+		unsafe fn _mm_i64scatter_ps<const SCALE: i32>(
+			base_addr: *mut f32,
+			vindex: __m128i,
+			a: __m128,
+		);
+		unsafe fn _mm_mask_i64scatter_ps<const SCALE: i32>(
+			base_addr: *mut f32,
+			k: __mmask8,
+			vindex: __m128i,
+			a: __m128,
+		);
+		unsafe fn _mm_mmask_i32gather_epi32<const SCALE: i32>(
+			src: __m128i,
+			k: __mmask8,
+			vindex: __m128i,
+			base_addr: *const i32,
+		) -> __m128i;
+		unsafe fn _mm_mmask_i32gather_epi64<const SCALE: i32>(
+			src: __m128i,
+			k: __mmask8,
+			vindex: __m128i,
+			base_addr: *const i64,
+		) -> __m128i;
+		unsafe fn _mm_mmask_i32gather_pd<const SCALE: i32>(
+			src: __m128d,
+			k: __mmask8,
+			vindex: __m128i,
+			base_addr: *const f64,
+		) -> __m128d;
+		unsafe fn _mm_mmask_i32gather_ps<const SCALE: i32>(
+			src: __m128,
+			k: __mmask8,
+			vindex: __m128i,
+			base_addr: *const f32,
+		) -> __m128;
+		unsafe fn _mm_mmask_i64gather_epi32<const SCALE: i32>(
+			src: __m128i,
+			k: __mmask8,
+			vindex: __m128i,
+			base_addr: *const i32,
+		) -> __m128i;
+		unsafe fn _mm_mmask_i64gather_epi64<const SCALE: i32>(
+			src: __m128i,
+			k: __mmask8,
+			vindex: __m128i,
+			base_addr: *const i64,
+		) -> __m128i;
+		unsafe fn _mm_mmask_i64gather_pd<const SCALE: i32>(
+			src: __m128d,
+			k: __mmask8,
+			vindex: __m128i,
+			base_addr: *const f64,
+		) -> __m128d;
+		unsafe fn _mm_mmask_i64gather_ps<const SCALE: i32>(
+			src: __m128,
+			k: __mmask8,
+			vindex: __m128i,
+			base_addr: *const f32,
+		) -> __m128;
 		fn _mm256_mask_compress_epi32(src: __m256i, k: __mmask8, a: __m256i) -> __m256i;
 		fn _mm256_maskz_compress_epi32(k: __mmask8, a: __m256i) -> __m256i;
 		fn _mm_mask_compress_epi32(src: __m128i, k: __mmask8, a: __m128i) -> __m128i;
