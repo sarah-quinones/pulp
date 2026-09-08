@@ -758,7 +758,7 @@ impl Simd for V2 {
 	/// See the trait-level safety documentation.
 	#[inline(always)]
 	unsafe fn mask_load_ptr_c32s(self, mask: MemMask<Self::m32s>, ptr: *const c32) -> Self::c32s {
-		cast!(self.mask_load_ptr_u32s(mask, ptr as _))
+		unsafe { cast!(self.mask_load_ptr_u32s(mask, ptr as _)) }
 	}
 
 	/// # Safety
@@ -766,7 +766,7 @@ impl Simd for V2 {
 	/// See the trait-level safety documentation.
 	#[inline(always)]
 	unsafe fn mask_load_ptr_c64s(self, mask: MemMask<Self::m64s>, ptr: *const c64) -> Self::c64s {
-		cast!(self.mask_load_ptr_u64s(mask, ptr as _))
+		unsafe { cast!(self.mask_load_ptr_u64s(mask, ptr as _)) }
 	}
 
 	/// # Safety
@@ -774,7 +774,7 @@ impl Simd for V2 {
 	/// See the trait-level safety documentation.
 	#[inline(always)]
 	unsafe fn mask_load_ptr_u8s(self, mask: MemMask<Self::m8s>, ptr: *const u8) -> Self::u8s {
-		Scalar128b.mask_load_ptr_u8s(mask, ptr)
+		unsafe { Scalar128b.mask_load_ptr_u8s(mask, ptr) }
 	}
 
 	/// # Safety
@@ -782,7 +782,7 @@ impl Simd for V2 {
 	/// See the trait-level safety documentation.
 	#[inline(always)]
 	unsafe fn mask_load_ptr_u16s(self, mask: MemMask<Self::m16s>, ptr: *const u16) -> Self::u16s {
-		Scalar128b.mask_load_ptr_u16s(mask, ptr)
+		unsafe { Scalar128b.mask_load_ptr_u16s(mask, ptr) }
 	}
 
 	/// # Safety
@@ -790,7 +790,7 @@ impl Simd for V2 {
 	/// See the trait-level safety documentation.
 	#[inline(always)]
 	unsafe fn mask_load_ptr_u32s(self, mask: MemMask<Self::m32s>, ptr: *const u32) -> Self::u32s {
-		Scalar128b.mask_load_ptr_u32s(mask, ptr)
+		unsafe { Scalar128b.mask_load_ptr_u32s(mask, ptr) }
 	}
 
 	/// # Safety
@@ -798,16 +798,18 @@ impl Simd for V2 {
 	/// See the trait-level safety documentation.
 	#[inline(always)]
 	unsafe fn mask_load_ptr_u64s(self, mask: MemMask<Self::m64s>, ptr: *const u64) -> Self::u64s {
-		cast!(self.mask_load_ptr_u32s(
-			MemMask {
-				mask: cast!(mask.mask),
-				#[cfg(target_arch = "x86_64")]
-				load: mask.load,
-				#[cfg(target_arch = "x86_64")]
-				store: mask.store
-			},
-			ptr as _
-		))
+		unsafe {
+			cast!(self.mask_load_ptr_u32s(
+				MemMask {
+					mask: cast!(mask.mask),
+					#[cfg(target_arch = "x86_64")]
+					load: mask.load,
+					#[cfg(target_arch = "x86_64")]
+					store: mask.store
+				},
+				ptr as _
+			))
+		}
 	}
 
 	/// # Safety
@@ -820,7 +822,7 @@ impl Simd for V2 {
 		ptr: *mut c32,
 		values: Self::c32s,
 	) {
-		self.mask_store_ptr_u32s(mask, ptr as _, cast!(values))
+		unsafe { self.mask_store_ptr_u32s(mask, ptr as _, cast!(values)) }
 	}
 
 	/// # Safety
@@ -833,7 +835,7 @@ impl Simd for V2 {
 		ptr: *mut c64,
 		values: Self::c64s,
 	) {
-		self.mask_store_ptr_u64s(mask, ptr as _, cast!(values))
+		unsafe { self.mask_store_ptr_u64s(mask, ptr as _, cast!(values)) }
 	}
 
 	/// # Safety
@@ -841,7 +843,9 @@ impl Simd for V2 {
 	/// See the trait-level safety documentation.
 	#[inline(always)]
 	unsafe fn mask_store_ptr_u8s(self, mask: MemMask<Self::m8s>, ptr: *mut u8, values: Self::u8s) {
-		Scalar128b.mask_store_ptr_u8s(mask, ptr, values);
+		unsafe {
+			Scalar128b.mask_store_ptr_u8s(mask, ptr, values);
+		}
 	}
 
 	/// # Safety
@@ -854,7 +858,9 @@ impl Simd for V2 {
 		ptr: *mut u16,
 		values: Self::u16s,
 	) {
-		Scalar128b.mask_store_ptr_u16s(mask, ptr, values);
+		unsafe {
+			Scalar128b.mask_store_ptr_u16s(mask, ptr, values);
+		}
 	}
 
 	/// # Safety
@@ -867,7 +873,9 @@ impl Simd for V2 {
 		ptr: *mut u32,
 		values: Self::u32s,
 	) {
-		Scalar128b.mask_store_ptr_u32s(mask, ptr, values);
+		unsafe {
+			Scalar128b.mask_store_ptr_u32s(mask, ptr, values);
+		}
 	}
 
 	/// # Safety
@@ -880,17 +888,19 @@ impl Simd for V2 {
 		ptr: *mut u64,
 		values: Self::u64s,
 	) {
-		self.mask_store_ptr_u32s(
-			MemMask {
-				mask: cast!(mask.mask),
-				#[cfg(target_arch = "x86_64")]
-				load: mask.load,
-				#[cfg(target_arch = "x86_64")]
-				store: mask.store,
-			},
-			ptr as _,
-			cast!(values),
-		)
+		unsafe {
+			self.mask_store_ptr_u32s(
+				MemMask {
+					mask: cast!(mask.mask),
+					#[cfg(target_arch = "x86_64")]
+					load: mask.load,
+					#[cfg(target_arch = "x86_64")]
+					store: mask.store,
+				},
+				ptr as _,
+				cast!(values),
+			)
+		}
 	}
 
 	#[inline(always)]

@@ -411,7 +411,7 @@ macro_rules! simd_type {
                         f6: ::core::mem::MaybeUninit<::core::primitive::usize>,
                         f7: ::core::mem::MaybeUninit<::core::primitive::usize>,
                     ) -> F::Output {
-                        let f: F = core::mem::transmute_copy(&[f0, f1, f2, f3, f4, f5, f6, f7]);
+                        let f: F = unsafe { core::mem::transmute_copy(&[f0, f1, f2, f3, f4, f5, f6, f7]) };
                         f.call()
                     }
 

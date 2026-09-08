@@ -147,6 +147,9 @@ macro_rules! feature_idx {
 	("avx512vp2intersect") => {
 		46
 	};
+	("avx512fp16") => {
+		47
+	};
 }
 
 #[cold]
@@ -180,6 +183,7 @@ fn detect_features() {
 
 		local |= (cpuid.has_avx512vl() as u128) << feature_idx!("avx512vl");
 		local |= (cpuid.has_avx512f() as u128) << feature_idx!("avx512f");
+		local |= (cpuid.has_avx512_fp16() as u128) << feature_idx!("avx512f");
 		local |= (cpuid.has_avx512cd() as u128) << feature_idx!("avx512cd");
 		local |= (cpuid.has_avx512er() as u128) << feature_idx!("avx512er");
 		local |= (cpuid.has_avx512pf() as u128) << feature_idx!("avx512pf");

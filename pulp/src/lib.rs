@@ -414,57 +414,61 @@ fn sqrt_f64(a: f64) -> f64 {
 // an-1,0 ... an-1,m-1
 #[inline(always)]
 unsafe fn interleave_fallback<Unit: Pod, Reg: Pod, AosReg>(x: AosReg) -> AosReg {
-	assert!(core::mem::size_of::<AosReg>() % core::mem::size_of::<Reg>() == 0);
-	assert!(core::mem::size_of::<Reg>() % core::mem::size_of::<Unit>() == 0);
-	assert!(!core::mem::needs_drop::<AosReg>());
+	unsafe {
+		assert!(core::mem::size_of::<AosReg>() % core::mem::size_of::<Reg>() == 0);
+		assert!(core::mem::size_of::<Reg>() % core::mem::size_of::<Unit>() == 0);
+		assert!(!core::mem::needs_drop::<AosReg>());
 
-	if const { core::mem::size_of::<AosReg>() == core::mem::size_of::<Reg>() } {
-		x
-	} else {
-		let mut y = core::ptr::read(&x);
+		if const { core::mem::size_of::<AosReg>() == core::mem::size_of::<Reg>() } {
+			x
+		} else {
+			let mut y = core::ptr::read(&x);
 
-		let n = const { core::mem::size_of::<AosReg>() / core::mem::size_of::<Reg>() };
-		let m = const { core::mem::size_of::<Reg>() / core::mem::size_of::<Unit>() };
+			let n = const { core::mem::size_of::<AosReg>() / core::mem::size_of::<Reg>() };
+			let m = const { core::mem::size_of::<Reg>() / core::mem::size_of::<Unit>() };
 
-		unsafe {
-			let y = (&mut y) as *mut _ as *mut Unit;
-			let x = (&x) as *const _ as *const Unit;
-			for j in 0..m {
-				for i in 0..n {
-					*y.add(i + n * j) = *x.add(j + i * m);
+			{
+				let y = (&mut y) as *mut _ as *mut Unit;
+				let x = (&x) as *const _ as *const Unit;
+				for j in 0..m {
+					for i in 0..n {
+						*y.add(i + n * j) = *x.add(j + i * m);
+					}
 				}
 			}
-		}
 
-		y
+			y
+		}
 	}
 }
 
 #[inline(always)]
 unsafe fn deinterleave_fallback<Unit: Pod, Reg: Pod, SoaReg>(y: SoaReg) -> SoaReg {
-	assert!(core::mem::size_of::<SoaReg>() % core::mem::size_of::<Reg>() == 0);
-	assert!(core::mem::size_of::<Reg>() % core::mem::size_of::<Unit>() == 0);
-	assert!(!core::mem::needs_drop::<SoaReg>());
+	unsafe {
+		assert!(core::mem::size_of::<SoaReg>() % core::mem::size_of::<Reg>() == 0);
+		assert!(core::mem::size_of::<Reg>() % core::mem::size_of::<Unit>() == 0);
+		assert!(!core::mem::needs_drop::<SoaReg>());
 
-	if const { core::mem::size_of::<SoaReg>() == core::mem::size_of::<Reg>() } {
-		y
-	} else {
-		let mut x = core::ptr::read(&y);
+		if const { core::mem::size_of::<SoaReg>() == core::mem::size_of::<Reg>() } {
+			y
+		} else {
+			let mut x = core::ptr::read(&y);
 
-		let n = const { core::mem::size_of::<SoaReg>() / core::mem::size_of::<Reg>() };
-		let m = const { core::mem::size_of::<Reg>() / core::mem::size_of::<Unit>() };
+			let n = const { core::mem::size_of::<SoaReg>() / core::mem::size_of::<Reg>() };
+			let m = const { core::mem::size_of::<Reg>() / core::mem::size_of::<Unit>() };
 
-		unsafe {
-			let y = (&y) as *const _ as *const Unit;
-			let x = (&mut x) as *mut _ as *mut Unit;
-			for j in 0..m {
-				for i in 0..n {
-					*x.add(j + i * m) = *y.add(i + n * j);
+			{
+				let y = (&y) as *const _ as *const Unit;
+				let x = (&mut x) as *mut _ as *mut Unit;
+				for j in 0..m {
+					for i in 0..n {
+						*x.add(j + i * m) = *y.add(i + n * j);
+					}
 				}
 			}
-		}
 
-		x
+			x
+		}
 	}
 }
 
@@ -908,7 +912,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	/// [`core::ptr::read`].
 	#[inline(always)]
 	unsafe fn mask_load_ptr_f32s(self, mask: MemMask<Self::m32s>, ptr: *const f32) -> Self::f32s {
-		self.transmute_f32s_u32s(self.mask_load_ptr_u32s(mask, ptr as *const u32))
+		unsafe { self.transmute_f32s_u32s(self.mask_load_ptr_u32s(mask, ptr as *const u32)) }
 	}
 
 	/// # Safety
@@ -917,7 +921,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	/// [`core::ptr::read`].
 	#[inline(always)]
 	unsafe fn mask_load_ptr_f64s(self, mask: MemMask<Self::m64s>, ptr: *const f64) -> Self::f64s {
-		self.transmute_f64s_u64s(self.mask_load_ptr_u64s(mask, ptr as *const u64))
+		unsafe { self.transmute_f64s_u64s(self.mask_load_ptr_u64s(mask, ptr as *const u64)) }
 	}
 	/// # Safety
 	///
@@ -925,7 +929,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	/// [`core::ptr::read`].
 	#[inline(always)]
 	unsafe fn mask_load_ptr_i8s(self, mask: MemMask<Self::m8s>, ptr: *const i8) -> Self::i8s {
-		self.transmute_i8s_u8s(self.mask_load_ptr_u8s(mask, ptr as *const u8))
+		unsafe { self.transmute_i8s_u8s(self.mask_load_ptr_u8s(mask, ptr as *const u8)) }
 	}
 	/// # Safety
 	///
@@ -933,7 +937,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	/// [`core::ptr::read`].
 	#[inline(always)]
 	unsafe fn mask_load_ptr_i16s(self, mask: MemMask<Self::m16s>, ptr: *const i16) -> Self::i16s {
-		self.transmute_i16s_u16s(self.mask_load_ptr_u16s(mask, ptr as *const u16))
+		unsafe { self.transmute_i16s_u16s(self.mask_load_ptr_u16s(mask, ptr as *const u16)) }
 	}
 	/// # Safety
 	///
@@ -941,7 +945,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	/// [`core::ptr::read`].
 	#[inline(always)]
 	unsafe fn mask_load_ptr_i32s(self, mask: MemMask<Self::m32s>, ptr: *const i32) -> Self::i32s {
-		self.transmute_i32s_u32s(self.mask_load_ptr_u32s(mask, ptr as *const u32))
+		unsafe { self.transmute_i32s_u32s(self.mask_load_ptr_u32s(mask, ptr as *const u32)) }
 	}
 	/// # Safety
 	///
@@ -949,7 +953,7 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	/// [`core::ptr::read`].
 	#[inline(always)]
 	unsafe fn mask_load_ptr_i64s(self, mask: MemMask<Self::m64s>, ptr: *const i64) -> Self::i64s {
-		self.transmute_i64s_u64s(self.mask_load_ptr_u64s(mask, ptr as *const u64))
+		unsafe { self.transmute_i64s_u64s(self.mask_load_ptr_u64s(mask, ptr as *const u64)) }
 	}
 
 	/// # Safety
@@ -1006,7 +1010,9 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 		ptr: *mut f32,
 		values: Self::f32s,
 	) {
-		self.mask_store_ptr_u32s(mask, ptr as *mut u32, self.transmute_u32s_f32s(values));
+		unsafe {
+			self.mask_store_ptr_u32s(mask, ptr as *mut u32, self.transmute_u32s_f32s(values));
+		}
 	}
 
 	/// # Safety
@@ -1020,7 +1026,9 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 		ptr: *mut f64,
 		values: Self::f64s,
 	) {
-		self.mask_store_ptr_u64s(mask, ptr as *mut u64, self.transmute_u64s_f64s(values));
+		unsafe {
+			self.mask_store_ptr_u64s(mask, ptr as *mut u64, self.transmute_u64s_f64s(values));
+		}
 	}
 	/// # Safety
 	///
@@ -1028,7 +1036,9 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 	/// [`core::ptr::write`].
 	#[inline(always)]
 	unsafe fn mask_store_ptr_i8s(self, mask: MemMask<Self::m8s>, ptr: *mut i8, values: Self::i8s) {
-		self.mask_store_ptr_u8s(mask, ptr as *mut u8, self.transmute_u8s_i8s(values));
+		unsafe {
+			self.mask_store_ptr_u8s(mask, ptr as *mut u8, self.transmute_u8s_i8s(values));
+		}
 	}
 	/// # Safety
 	///
@@ -1041,7 +1051,9 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 		ptr: *mut i16,
 		values: Self::i16s,
 	) {
-		self.mask_store_ptr_u16s(mask, ptr as *mut u16, self.transmute_u16s_i16s(values));
+		unsafe {
+			self.mask_store_ptr_u16s(mask, ptr as *mut u16, self.transmute_u16s_i16s(values));
+		}
 	}
 	/// # Safety
 	///
@@ -1054,7 +1066,9 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 		ptr: *mut i32,
 		values: Self::i32s,
 	) {
-		self.mask_store_ptr_u32s(mask, ptr as *mut u32, self.transmute_u32s_i32s(values));
+		unsafe {
+			self.mask_store_ptr_u32s(mask, ptr as *mut u32, self.transmute_u32s_i32s(values));
+		}
 	}
 	/// # Safety
 	///
@@ -1067,7 +1081,9 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 		ptr: *mut i64,
 		values: Self::i64s,
 	) {
-		self.mask_store_ptr_u64s(mask, ptr as *mut u64, self.transmute_u64s_i64s(values));
+		unsafe {
+			self.mask_store_ptr_u64s(mask, ptr as *mut u64, self.transmute_u64s_i64s(values));
+		}
 	}
 
 	/// # Safety
@@ -1692,7 +1708,7 @@ macro_rules! mask_load_ptr {
 				self,
 				mask: MemMask<Self::[<$mask s>]>,
 				ptr: *const $ty,
-			) -> Self::[<$ty s>] {
+			) -> Self::[<$ty s>] { unsafe {
 				let mut values = [<$ty as Default>::default(); Self::[<$ty:upper _LANES>]];
 				let mask: [$mask; Self::[<$ty:upper _LANES>]] = cast(mask.mask());
 				for i in 0..Self::[<$ty:upper _LANES>] {
@@ -1701,7 +1717,7 @@ macro_rules! mask_load_ptr {
 					}
 				}
 				cast(values)
-			}
+			}}
 		}
 	};
 	(cast $ty: ident, $to: ident, $mask: ident) => {
@@ -1711,9 +1727,9 @@ macro_rules! mask_load_ptr {
 				self,
 				mask: MemMask<Self::[<$mask s>]>,
 				ptr: *const $ty,
-			) -> Self::[<$ty s>] {
+			) -> Self::[<$ty s>] { unsafe {
 				cast(self.[<mask_load_ptr_ $to s>](mask, ptr as *const $to))
-			}
+			}}
 		}
 	};
 	($($ty: ident: $mask: ident),*) => {
@@ -1733,7 +1749,7 @@ macro_rules! mask_store_ptr {
 				mask: MemMask<Self::[<$mask s>]>,
 				ptr: *mut $ty,
 				values: Self::[<$ty s>],
-			) {
+			) { unsafe {
 				let mask: [$mask; Self::[<$ty:upper _LANES>]] = cast(mask.mask());
 				let values: [$ty; Self::[<$ty:upper _LANES>]] = cast(values);
 				for i in 0..Self::[<$ty:upper _LANES>] {
@@ -1741,7 +1757,7 @@ macro_rules! mask_store_ptr {
 						*ptr.add(i) = values[i];
 					}
 				}
-			}
+			}}
 		}
 	};
 	(cast $ty: ident, $to: ident, $mask: ident) => {
@@ -1752,9 +1768,9 @@ macro_rules! mask_store_ptr {
 				mask: MemMask<Self::[<$mask s>]>,
 				ptr: *mut $ty,
 				values: Self::[<$ty s>],
-			) {
+			) { unsafe {
 				self.[<mask_store_ptr_ $to s>](mask, ptr as *mut $to, cast(values));
-			}
+			}}
 		}
 	};
 	($($ty: ident: $mask: ident),*) => {
@@ -2870,22 +2886,22 @@ impl Simd for Scalar {
 
 	#[inline(always)]
 	unsafe fn mask_load_ptr_c32s(self, mask: MemMask<Self::m32s>, ptr: *const c32) -> Self::c32s {
-		if mask.mask { *ptr } else { core::mem::zeroed() }
+		unsafe { if mask.mask { *ptr } else { core::mem::zeroed() } }
 	}
 
 	#[inline(always)]
 	unsafe fn mask_load_ptr_c64s(self, mask: MemMask<Self::m64s>, ptr: *const c64) -> Self::c64s {
-		if mask.mask { *ptr } else { core::mem::zeroed() }
+		unsafe { if mask.mask { *ptr } else { core::mem::zeroed() } }
 	}
 
 	#[inline(always)]
 	unsafe fn mask_load_ptr_u32s(self, mask: MemMask<Self::m32s>, ptr: *const u32) -> Self::u32s {
-		if mask.mask { *ptr } else { 0 }
+		unsafe { if mask.mask { *ptr } else { 0 } }
 	}
 
 	#[inline(always)]
 	unsafe fn mask_load_ptr_u64s(self, mask: MemMask<Self::m64s>, ptr: *const u64) -> Self::u64s {
-		if mask.mask { *ptr } else { 0 }
+		unsafe { if mask.mask { *ptr } else { 0 } }
 	}
 
 	#[inline(always)]
@@ -2895,8 +2911,10 @@ impl Simd for Scalar {
 		ptr: *mut c32,
 		values: Self::c32s,
 	) {
-		if mask.mask {
-			*ptr = values
+		unsafe {
+			if mask.mask {
+				*ptr = values
+			}
 		}
 	}
 
@@ -2907,15 +2925,19 @@ impl Simd for Scalar {
 		ptr: *mut c64,
 		values: Self::c64s,
 	) {
-		if mask.mask {
-			*ptr = values
+		unsafe {
+			if mask.mask {
+				*ptr = values
+			}
 		}
 	}
 
 	#[inline(always)]
 	unsafe fn mask_store_ptr_u8s(self, mask: MemMask<Self::m8s>, ptr: *mut u8, values: Self::u8s) {
-		if mask.mask {
-			*ptr = values
+		unsafe {
+			if mask.mask {
+				*ptr = values
+			}
 		}
 	}
 
@@ -2926,8 +2948,10 @@ impl Simd for Scalar {
 		ptr: *mut u16,
 		values: Self::u16s,
 	) {
-		if mask.mask {
-			*ptr = values
+		unsafe {
+			if mask.mask {
+				*ptr = values
+			}
 		}
 	}
 
@@ -2938,8 +2962,10 @@ impl Simd for Scalar {
 		ptr: *mut u32,
 		values: Self::u32s,
 	) {
-		if mask.mask {
-			*ptr = values
+		unsafe {
+			if mask.mask {
+				*ptr = values
+			}
 		}
 	}
 
@@ -2950,8 +2976,10 @@ impl Simd for Scalar {
 		ptr: *mut u64,
 		values: Self::u64s,
 	) {
-		if mask.mask {
-			*ptr = values
+		unsafe {
+			if mask.mask {
+				*ptr = values
+			}
 		}
 	}
 
@@ -3234,11 +3262,11 @@ impl Simd for Scalar {
 	}
 
 	unsafe fn mask_load_ptr_u8s(self, mask: MemMask<Self::m8s>, ptr: *const u8) -> Self::u8s {
-		if mask.mask { *ptr } else { 0 }
+		unsafe { if mask.mask { *ptr } else { 0 } }
 	}
 
 	unsafe fn mask_load_ptr_u16s(self, mask: MemMask<Self::m16s>, ptr: *const u16) -> Self::u16s {
-		if mask.mask { *ptr } else { 0 }
+		unsafe { if mask.mask { *ptr } else { 0 } }
 	}
 
 	#[inline(always)]
@@ -3254,74 +3282,82 @@ impl Simd for Scalar {
 
 #[inline(always)]
 unsafe fn split_slice<T, U>(slice: &[T]) -> (&[U], &[T]) {
-	assert_eq!(core::mem::size_of::<U>() % core::mem::size_of::<T>(), 0);
-	assert_eq!(core::mem::align_of::<U>(), core::mem::align_of::<T>());
+	unsafe {
+		assert_eq!(core::mem::size_of::<U>() % core::mem::size_of::<T>(), 0);
+		assert_eq!(core::mem::align_of::<U>(), core::mem::align_of::<T>());
 
-	let chunk_size = core::mem::size_of::<U>() / core::mem::size_of::<T>();
+		let chunk_size = core::mem::size_of::<U>() / core::mem::size_of::<T>();
 
-	let len = slice.len();
-	let data = slice.as_ptr();
+		let len = slice.len();
+		let data = slice.as_ptr();
 
-	let div = len / chunk_size;
-	let rem = len % chunk_size;
-	(
-		from_raw_parts(data as *const U, div),
-		from_raw_parts(data.add(len - rem), rem),
-	)
+		let div = len / chunk_size;
+		let rem = len % chunk_size;
+		(
+			from_raw_parts(data as *const U, div),
+			from_raw_parts(data.add(len - rem), rem),
+		)
+	}
 }
 
 #[inline(always)]
 unsafe fn split_mut_slice<T, U>(slice: &mut [T]) -> (&mut [U], &mut [T]) {
-	assert_eq!(core::mem::size_of::<U>() % core::mem::size_of::<T>(), 0);
-	assert_eq!(core::mem::align_of::<U>(), core::mem::align_of::<T>());
+	unsafe {
+		assert_eq!(core::mem::size_of::<U>() % core::mem::size_of::<T>(), 0);
+		assert_eq!(core::mem::align_of::<U>(), core::mem::align_of::<T>());
 
-	let chunk_size = core::mem::size_of::<U>() / core::mem::size_of::<T>();
+		let chunk_size = core::mem::size_of::<U>() / core::mem::size_of::<T>();
 
-	let len = slice.len();
-	let data = slice.as_mut_ptr();
+		let len = slice.len();
+		let data = slice.as_mut_ptr();
 
-	let div = len / chunk_size;
-	let rem = len % chunk_size;
-	(
-		from_raw_parts_mut(data as *mut U, div),
-		from_raw_parts_mut(data.add(len - rem), rem),
-	)
+		let div = len / chunk_size;
+		let rem = len % chunk_size;
+		(
+			from_raw_parts_mut(data as *mut U, div),
+			from_raw_parts_mut(data.add(len - rem), rem),
+		)
+	}
 }
 
 #[inline(always)]
 unsafe fn rsplit_slice<T, U>(slice: &[T]) -> (&[T], &[U]) {
-	assert_eq!(core::mem::size_of::<U>() % core::mem::size_of::<T>(), 0);
-	assert_eq!(core::mem::align_of::<U>(), core::mem::align_of::<T>());
+	unsafe {
+		assert_eq!(core::mem::size_of::<U>() % core::mem::size_of::<T>(), 0);
+		assert_eq!(core::mem::align_of::<U>(), core::mem::align_of::<T>());
 
-	let chunk_size = core::mem::size_of::<U>() / core::mem::size_of::<T>();
+		let chunk_size = core::mem::size_of::<U>() / core::mem::size_of::<T>();
 
-	let len = slice.len();
-	let data = slice.as_ptr();
+		let len = slice.len();
+		let data = slice.as_ptr();
 
-	let div = len / chunk_size;
-	let rem = len % chunk_size;
-	(
-		from_raw_parts(data, rem),
-		from_raw_parts(data.add(rem) as *const U, div),
-	)
+		let div = len / chunk_size;
+		let rem = len % chunk_size;
+		(
+			from_raw_parts(data, rem),
+			from_raw_parts(data.add(rem) as *const U, div),
+		)
+	}
 }
 
 #[inline(always)]
 unsafe fn rsplit_mut_slice<T, U>(slice: &mut [T]) -> (&mut [T], &mut [U]) {
-	assert_eq!(core::mem::size_of::<U>() % core::mem::size_of::<T>(), 0);
-	assert_eq!(core::mem::align_of::<U>(), core::mem::align_of::<T>());
+	unsafe {
+		assert_eq!(core::mem::size_of::<U>() % core::mem::size_of::<T>(), 0);
+		assert_eq!(core::mem::align_of::<U>(), core::mem::align_of::<T>());
 
-	let chunk_size = core::mem::size_of::<U>() / core::mem::size_of::<T>();
+		let chunk_size = core::mem::size_of::<U>() / core::mem::size_of::<T>();
 
-	let len = slice.len();
-	let data = slice.as_mut_ptr();
+		let len = slice.len();
+		let data = slice.as_mut_ptr();
 
-	let div = len / chunk_size;
-	let rem = len % chunk_size;
-	(
-		from_raw_parts_mut(data, rem),
-		from_raw_parts_mut(data.add(rem) as *mut U, div),
-	)
+		let div = len / chunk_size;
+		let rem = len % chunk_size;
+		(
+			from_raw_parts_mut(data, rem),
+			from_raw_parts_mut(data.add(rem) as *mut U, div),
+		)
+	}
 }
 
 match_cfg!(
@@ -3463,9 +3499,9 @@ macro_rules! inherit {
         $(
             $(#[$attr])*
             #[inline(always)]
-            $(unsafe $($placeholder)?)? fn $func (self, $($arg: $ty,)*) $(-> $ret)? {
+            $(unsafe $($placeholder)?)? fn $func (self, $($arg: $ty,)*) $(-> $ret)? { $(unsafe $($placeholder)?)? {
                 (*self).$func ($($arg,)*)
-            }
+            }}
         )*
     };
 }
