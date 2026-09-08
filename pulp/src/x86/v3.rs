@@ -2820,7 +2820,7 @@ impl Simd for V3_512b {
 
 	#[inline(always)]
 	fn min_i64s(self, a: Self::i64s, b: Self::i64s) -> Self::i64s {
-		Scalar512b.max_i64s(a, b)
+		Scalar512b.min_i64s(a, b)
 	}
 
 	#[inline(always)]
