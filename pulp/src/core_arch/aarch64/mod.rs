@@ -1734,7 +1734,6 @@ impl Neon {
 			fn vreinterpretq_p8_u16(a: uint16x8_t) -> poly8x16_t;
 			fn vreinterpretq_p16_s32(a: int32x4_t) -> poly16x8_t;
 			fn vreinterpretq_p16_u32(a: uint32x4_t) -> poly16x8_t;
-			fn vreinterpret_u32_p64(a: poly64x1_t) -> uint32x2_t;
 			fn vreinterpret_s16_p8(a: poly8x8_t) -> int16x4_t;
 			fn vreinterpret_s16_s8(a: int8x8_t) -> int16x4_t;
 			fn vreinterpret_s16_u8(a: uint8x8_t) -> int16x4_t;
