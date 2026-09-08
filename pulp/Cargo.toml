@@ -1,7 +1,7 @@
 [package]
 name = "pulp"
-version = "0.22.3"
-edition = "2021"
+version = "0.23.0"
+edition = "2024"
 authors = ["sarah quiñones <sarah@veganb.tw>"]
 description = "safe generic simd"
 readme = "../README.md"
@@ -34,9 +34,7 @@ nightly = [
 std = []
 
 x86-v3 = []
-x86-v4 = [
-  "bytemuck/avx512_simd",
-]
+x86-v4 = [ "bytemuck/avx512_simd" ]
 
 relaxed-simd = ["pulp-wasm-simd-flag/relaxed-simd"]
 

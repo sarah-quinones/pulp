@@ -28,7 +28,7 @@ mod arch {
 
 #[allow(unused_macros)]
 macro_rules! delegate {
-    ({$(
+    (#[$feat: meta]{$(
         $(#[$attr: meta])*
         $(const $($const: lifetime)?)?
         $(unsafe $($unsafe: lifetime)?)?
@@ -41,7 +41,15 @@ macro_rules! delegate {
             #[allow(clippy::missing_safety_doc)]
             #[inline(always)]
             pub $(const $($const)?)? $(unsafe $($unsafe)?)? fn $func $(<$(const $generic: $generic_ty,)*>)?(self, $($arg: $ty,)*) $(-> $ret)? {
-                #[allow(unused_unsafe)]
+
+								$(#[$attr])*
+								#[$feat]
+								#[allow(clippy::missing_safety_doc)]
+								$(const $($const)?)? $(unsafe $($unsafe)?)? fn __safety_check__ $(<$(const $generic: $generic_ty,)*>)?($($arg: $ty,)*) $(-> $ret)? {
+										$(unsafe $($unsafe)?)? { arch::$func $(::<$($generic,)*>)?($($arg,)*) }
+								}
+
+								#[allow(unused_unsafe)]
                 unsafe { arch::$func $(::<$($generic,)*>)?($($arg,)*) }
             }
         )*
