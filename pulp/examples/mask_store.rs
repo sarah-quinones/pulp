@@ -27,10 +27,12 @@ mod x86 {
 	#[inline]
 	#[target_feature(enable = "avx512f")]
 	unsafe fn mask_mem(simd: V4, mask: pulp::MemMask<pulp::b16>, x: *mut f32) {
-		for _ in 0..16 {
-			let y = simd.mask_load_ptr_f32s(mask, x);
-			core::arch::asm!("/* */", in("zmm0") x);
-			simd.mask_store_ptr_f32s(mask, x, y);
+		unsafe {
+			for _ in 0..16 {
+				let y = simd.mask_load_ptr_f32s(mask, x);
+				core::arch::asm!("/* */", in("zmm0") x);
+				simd.mask_store_ptr_f32s(mask, x, y);
+			}
 		}
 	}
 

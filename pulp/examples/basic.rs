@@ -17,49 +17,51 @@ mod x86 {
 	#[target_feature(enable = "avx512f")]
 	#[allow(clippy::missing_transmute_annotations)]
 	unsafe fn sum_stdarch_imp(v: &[f64]) -> f64 {
-		let mut acc0 = _mm512_set1_pd(0.0);
-		let mut acc1 = _mm512_set1_pd(0.0);
-		let mut acc2 = _mm512_set1_pd(0.0);
-		let mut acc3 = _mm512_set1_pd(0.0);
+		unsafe {
+			let mut acc0 = _mm512_set1_pd(0.0);
+			let mut acc1 = _mm512_set1_pd(0.0);
+			let mut acc2 = _mm512_set1_pd(0.0);
+			let mut acc3 = _mm512_set1_pd(0.0);
 
-		// 512 = 64 * 8
-		let (head, tail) = pulp::as_arrays::<8, _>(v);
-		let (head4, head1) = pulp::as_arrays::<4, _>(head);
+			// 512 = 64 * 8
+			let (head, tail) = pulp::as_arrays::<8, _>(v);
+			let (head4, head1) = pulp::as_arrays::<4, _>(head);
 
-		for [x0, x1, x2, x3] in head4 {
-			let x0 = transmute(*x0);
-			let x1 = transmute(*x1);
-			let x2 = transmute(*x2);
-			let x3 = transmute(*x3);
+			for [x0, x1, x2, x3] in head4 {
+				let x0 = transmute(*x0);
+				let x1 = transmute(*x1);
+				let x2 = transmute(*x2);
+				let x3 = transmute(*x3);
 
-			acc0 = _mm512_add_pd(acc0, x0);
-			acc1 = _mm512_add_pd(acc1, x1);
-			acc2 = _mm512_add_pd(acc2, x2);
-			acc3 = _mm512_add_pd(acc3, x3);
+				acc0 = _mm512_add_pd(acc0, x0);
+				acc1 = _mm512_add_pd(acc1, x1);
+				acc2 = _mm512_add_pd(acc2, x2);
+				acc3 = _mm512_add_pd(acc3, x3);
+			}
+
+			for x0 in head1 {
+				let x0 = pulp::cast(*x0);
+				acc0 = _mm512_add_pd(acc0, x0);
+			}
+
+			acc0 = _mm512_add_pd(acc0, acc1);
+			acc2 = _mm512_add_pd(acc2, acc3);
+			acc0 = _mm512_add_pd(acc0, acc2);
+
+			let acc: [__m256d; 2] = pulp::cast(acc0);
+			let acc = _mm256_add_pd(acc[0], acc[1]);
+
+			let acc: [__m128d; 2] = pulp::cast(acc);
+			let acc = _mm_add_pd(acc[0], acc[1]);
+
+			let acc: [f64; 2] = pulp::cast(acc);
+			let mut acc = acc[0] + acc[1];
+
+			for x0 in tail {
+				acc += *x0;
+			}
+			acc
 		}
-
-		for x0 in head1 {
-			let x0 = pulp::cast(*x0);
-			acc0 = _mm512_add_pd(acc0, x0);
-		}
-
-		acc0 = _mm512_add_pd(acc0, acc1);
-		acc2 = _mm512_add_pd(acc2, acc3);
-		acc0 = _mm512_add_pd(acc0, acc2);
-
-		let acc: [__m256d; 2] = pulp::cast(acc0);
-		let acc = _mm256_add_pd(acc[0], acc[1]);
-
-		let acc: [__m128d; 2] = pulp::cast(acc);
-		let acc = _mm_add_pd(acc[0], acc[1]);
-
-		let acc: [f64; 2] = pulp::cast(acc);
-		let mut acc = acc[0] + acc[1];
-
-		for x0 in tail {
-			acc += *x0;
-		}
-		acc
 	}
 
 	fn sum_stdarch(bencher: Bencher, len: usize) {
