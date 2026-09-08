@@ -4878,7 +4878,7 @@ impl Neon_Sm4 {
 #[cfg(feature = "nightly")]
 impl Neon_I8mm {
 	delegate!(
-		#[target_feature(enable = "neon,imm8")]
+		#[target_feature(enable = "neon,i8mm")]
 		{
 			fn vusdot_s32(a: int32x2_t, b: uint8x8_t, c: int8x8_t) -> int32x2_t;
 			fn vusdotq_s32(a: int32x4_t, b: uint8x16_t, c: int8x16_t) -> int32x4_t;
