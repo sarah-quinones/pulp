@@ -251,7 +251,7 @@ fn main() {
 	}
 	f += "\"}\n";
 
-	f += "extern \"C\" {\n";
+	f += "unsafe extern \"C\" {\n";
 	for name in &names {
 		f += &format!("#[link_name = \"\\x01{name}\"] fn {name}();\n");
 	}
