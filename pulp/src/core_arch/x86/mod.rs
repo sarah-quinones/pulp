@@ -400,10 +400,10 @@ mod avx512dq;
 mod avx512f;
 #[cfg(feature = "x86-v4")]
 #[cfg_attr(docsrs, doc(cfg(feature = "x86-v4")))]
+mod avx512fp16;
+#[cfg(feature = "x86-v4")]
+#[cfg_attr(docsrs, doc(cfg(feature = "x86-v4")))]
 mod avx512ifma;
 #[cfg(feature = "x86-v4")]
 #[cfg_attr(docsrs, doc(cfg(feature = "x86-v4")))]
 mod avx512vbmi2;
-#[cfg(feature = "x86-v4")]
-#[cfg_attr(docsrs, doc(cfg(feature = "x86-v4")))]
-mod avx512fp16;

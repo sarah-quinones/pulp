@@ -1622,7 +1622,7 @@ macro_rules! v4_vbmi2_fn {
 	};
 }
 
-// Prototype only AVX-512 FP16 
+// Prototype only AVX-512 FP16
 simd_type!({
 	/// [`V4`] plus AVX-512 FP16 (native half-precision arithmetic: `add`/`sub`/`mul`/
 	/// `fmadd_ph`, plus the extension's own `cvtxps_ph`/`cvtxph_ps` f32<->f16
@@ -1693,18 +1693,28 @@ impl V4Fp16 {
 
 	#[inline(always)]
 	pub fn add_f16x32(self, a: u16x32, b: u16x32) -> u16x32 {
-		Self::fp16_cast(self.avx512fp16._mm512_add_ph(Self::fp16_cast(a), Self::fp16_cast(b)))
+		Self::fp16_cast(
+			self.avx512fp16
+				._mm512_add_ph(Self::fp16_cast(a), Self::fp16_cast(b)),
+		)
 	}
 
 	#[inline(always)]
 	pub fn sub_f16x32(self, a: u16x32, b: u16x32) -> u16x32 {
-		Self::fp16_cast(self.avx512fp16._mm512_sub_ph(Self::fp16_cast(a), Self::fp16_cast(b)))
+		Self::fp16_cast(
+			self.avx512fp16
+				._mm512_sub_ph(Self::fp16_cast(a), Self::fp16_cast(b)),
+		)
 	}
 
 	#[inline(always)]
 	pub fn mul_f16x32(self, a: u16x32, b: u16x32) -> u16x32 {
-		Self::fp16_cast(self.avx512fp16._mm512_mul_ph(Self::fp16_cast(a), Self::fp16_cast(b)))
+		Self::fp16_cast(
+			self.avx512fp16
+				._mm512_mul_ph(Self::fp16_cast(a), Self::fp16_cast(b)),
+		)
 	}
+
 	#[inline(always)]
 	pub fn fmadd_f16x32(self, a: u16x32, b: u16x32, c: u16x32) -> u16x32 {
 		Self::fp16_cast(self.avx512fp16._mm512_fmadd_ph(

@@ -894,7 +894,7 @@ fn aligned_sum_vertical_bench(criterion: &mut Criterion) {
 
 	let nan = f64::NAN;
 	const N: usize = 32190;
-	let data = core::array::from_fn::<f64, N, _>(|_| rng.gen());
+	let data = core::array::from_fn::<f64, N, _>(|_| rng.r#gen());
 	let unaligned_data = Aligned(core::array::from_fn::<f64, { N + 3 }, _>(|i| {
 		if i < 3 { nan } else { data[i - 3] }
 	}));
@@ -952,7 +952,7 @@ fn aligned_sum_reduce_bench(criterion: &mut Criterion) {
 
 	let nan = f64::NAN;
 	const N: usize = 32190;
-	let data = core::array::from_fn::<f64, N, _>(|_| rng.gen());
+	let data = core::array::from_fn::<f64, N, _>(|_| rng.r#gen());
 	let unaligned_data = Aligned(core::array::from_fn::<f64, { N + 3 }, _>(|i| {
 		if i < 3 { nan } else { data[i - 3] }
 	}));

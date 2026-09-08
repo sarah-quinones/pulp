@@ -2696,34 +2696,51 @@ impl Simd for Scalar {
 
 	primitive_binop!(ref less_than_or_equal, op le, u8 => m8, i8 => m8, u16 => m16, i16 => m16, u32 => m32, i32 => m32, u64 => m64, i64 => m64, f32 => m32, f64 => m64);
 
+	primitive_binop!(min, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64);
+
+	primitive_binop!(max, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64);
+
+	primitive_unop!(neg, c32, c64, f32, f64);
+
+	primitive_unop!(not, m8, u8, m16, u16, m32, u32, m64, u64);
+
+	splat_primitive!(u8, i8, u16, i16, u32, i32, u64, i64, c32, f32, c64, f64);
+
 	#[inline]
 	fn transmute_m8s_u8s(self, a: Self::u8s) -> Self::m8s {
 		a != 0
 	}
+
 	#[inline]
 	fn transmute_u8s_m8s(self, a: Self::m8s) -> Self::u8s {
 		if a { u8::MAX } else { 0 }
 	}
+
 	#[inline]
 	fn transmute_m16s_u16s(self, a: Self::u16s) -> Self::m16s {
 		a != 0
 	}
+
 	#[inline]
 	fn transmute_u16s_m16s(self, a: Self::m16s) -> Self::u16s {
 		if a { u16::MAX } else { 0 }
 	}
+
 	#[inline]
 	fn transmute_m32s_u32s(self, a: Self::u32s) -> Self::m32s {
 		a != 0
 	}
+
 	#[inline]
 	fn transmute_u32s_m32s(self, a: Self::m32s) -> Self::u32s {
 		if a { u32::MAX } else { 0 }
 	}
+
 	#[inline]
 	fn transmute_m64s_u64s(self, a: Self::u64s) -> Self::m64s {
 		a != 0
 	}
+
 	#[inline]
 	fn transmute_u64s_m64s(self, a: Self::m64s) -> Self::u64s {
 		if a { u64::MAX } else { 0 }
@@ -2735,34 +2752,27 @@ impl Simd for Scalar {
 			*head = values;
 		}
 	}
+
 	#[inline(always)]
 	fn partial_store_i16s(self, slice: &mut [i16], values: Self::i16s) {
 		if let Some((head, _)) = slice.split_first_mut() {
 			*head = values;
 		}
 	}
+
 	#[inline(always)]
 	fn partial_store_i32s(self, slice: &mut [i32], values: Self::i32s) {
 		if let Some((head, _)) = slice.split_first_mut() {
 			*head = values;
 		}
 	}
+
 	#[inline(always)]
 	fn partial_store_i64s(self, slice: &mut [i64], values: Self::i64s) {
 		if let Some((head, _)) = slice.split_first_mut() {
 			*head = values;
 		}
 	}
-
-	primitive_binop!(min, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64);
-
-	primitive_binop!(max, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64);
-
-	primitive_unop!(neg, c32, c64, f32, f64);
-
-	primitive_unop!(not, m8, u8, m16, u16, m32, u32, m64, u64);
-
-	splat_primitive!(u8, i8, u16, i16, u32, i32, u64, i64, c32, f32, c64, f64);
 
 	#[inline]
 	fn abs2_c32s(self, a: Self::c32s) -> Self::c32s {
