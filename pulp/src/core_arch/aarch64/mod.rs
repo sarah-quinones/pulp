@@ -4828,7 +4828,7 @@ impl Neon_Dotprod {
 #[cfg(feature = "nightly")]
 impl Neon_Sm4 {
 	delegate!(
-		#[target_feature(enable = "neon,sm4")]
+		#[target_feature(enable = "neon,frintts")]
 		{
 			fn vsm3partw1q_u32(a: uint32x4_t, b: uint32x4_t, c: uint32x4_t) -> uint32x4_t;
 			fn vsm3partw2q_u32(a: uint32x4_t, b: uint32x4_t, c: uint32x4_t) -> uint32x4_t;
