@@ -221,7 +221,7 @@ use core::mem::MaybeUninit;
 use core::ops::*;
 use core::slice::{from_raw_parts, from_raw_parts_mut};
 use num_complex::Complex;
-use paste::paste;
+use pastey::paste;
 use seal::Seal;
 
 /// Requires the first non-lifetime generic parameter, as well as the function's
