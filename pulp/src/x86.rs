@@ -841,6 +841,67 @@ mod tests {
 	}
 
 	#[test]
+	fn test_v3_512b_masked_loads() {
+		if let Some(v3) = V3::try_new() {
+			v3.vectorize(|| {
+				let simd = V3_512b(v3);
+
+				let src_c32 = core::array::from_fn::<c32, 12, _>(|i| {
+					c32::new(100.0 + i as f32, -100.0 - i as f32)
+				});
+				let actual_c32: [c32; 8] = cast!(unsafe {
+					simd.mask_load_ptr_c32s(
+						simd.mask_between_m32s(0, V3_512b::M32_LANES as u32),
+						src_c32.as_ptr(),
+					)
+				});
+				assert_eq!(actual_c32, core::array::from_fn(|i| src_c32[i]));
+
+				let src_c64 = core::array::from_fn::<c64, 6, _>(|i| {
+					c64::new(100.0 + i as f64, -100.0 - i as f64)
+				});
+				let actual_c64: [c64; 4] = cast!(unsafe {
+					simd.mask_load_ptr_c64s(
+						simd.mask_between_m64s(0, V3_512b::M64_LANES as u64),
+						src_c64.as_ptr(),
+					)
+				});
+				assert_eq!(actual_c64, core::array::from_fn(|i| src_c64[i]));
+
+				let src_u32 = core::array::from_fn::<u32, 24, _>(|i| 100 + i as u32);
+				let mut expected_u32 = [0u32; 16];
+				expected_u32[7..10].copy_from_slice(&src_u32[7..10]);
+				let actual_u32: [u32; 16] = cast!(unsafe {
+					simd.mask_load_ptr_u32s(simd.mask_between_m32s(7, 10), src_u32.as_ptr())
+				});
+				assert_eq!(actual_u32, expected_u32);
+
+				for n in 0..=16 {
+					let mut expected = [0u32; 16];
+					expected[..n].copy_from_slice(&src_u32[..n]);
+					let actual: [u32; 16] = cast!(simd.partial_load_u32s(&src_u32[..n]));
+					assert_eq!(actual, expected);
+				}
+
+				let src_u64 = core::array::from_fn::<u64, 12, _>(|i| 100 + i as u64);
+				let mut expected_u64 = [0u64; 8];
+				expected_u64[3..6].copy_from_slice(&src_u64[3..6]);
+				let actual_u64: [u64; 8] = cast!(unsafe {
+					simd.mask_load_ptr_u64s(simd.mask_between_m64s(3, 6), src_u64.as_ptr())
+				});
+				assert_eq!(actual_u64, expected_u64);
+
+				for n in 0..=8 {
+					let mut expected = [0u64; 8];
+					expected[..n].copy_from_slice(&src_u64[..n]);
+					let actual: [u64; 8] = cast!(simd.partial_load_u64s(&src_u64[..n]));
+					assert_eq!(actual, expected);
+				}
+			});
+		}
+	}
+
+	#[test]
 	fn test_partial() {
 		if let Some(simd) = V3::try_new() {
 			for n in 0..=8 {
