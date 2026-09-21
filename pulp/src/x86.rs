@@ -845,6 +845,50 @@ mod tests {
 	}
 
 	#[test]
+	#[cfg(feature = "x86-v4")]
+	fn test_v4_first_true() {
+		if let Some(simd) = V4::try_new() {
+			simd.vectorize(|| {
+				for lane in 0..V4::U8_LANES {
+					let mask = simd.mask_between_m8s(lane as u8, lane as u8 + 1).mask();
+					assert_eq!(simd.first_true_m8s(mask), lane);
+				}
+				assert_eq!(
+					simd.first_true_m8s(simd.mask_between_m8s(0, 0).mask()),
+					V4::U8_LANES,
+				);
+
+				for lane in 0..V4::U16_LANES {
+					let mask = simd.mask_between_m16s(lane as u16, lane as u16 + 1).mask();
+					assert_eq!(simd.first_true_m16s(mask), lane);
+				}
+				assert_eq!(
+					simd.first_true_m16s(simd.mask_between_m16s(0, 0).mask()),
+					V4::U16_LANES,
+				);
+
+				for lane in 0..V4::U32_LANES {
+					let mask = simd.mask_between_m32s(lane as u32, lane as u32 + 1).mask();
+					assert_eq!(simd.first_true_m32s(mask), lane);
+				}
+				assert_eq!(
+					simd.first_true_m32s(simd.mask_between_m32s(0, 0).mask()),
+					V4::U32_LANES,
+				);
+
+				for lane in 0..V4::U64_LANES {
+					let mask = simd.mask_between_m64s(lane as u64, lane as u64 + 1).mask();
+					assert_eq!(simd.first_true_m64s(mask), lane);
+				}
+				assert_eq!(
+					simd.first_true_m64s(simd.mask_between_m64s(0, 0).mask()),
+					V4::U64_LANES,
+				);
+			});
+		}
+	}
+
+	#[test]
 	fn test_v3_512b_masked_loads() {
 		if let Some(v3) = V3::try_new() {
 			v3.vectorize(|| {

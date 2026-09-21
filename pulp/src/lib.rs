@@ -758,10 +758,16 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 			i
 		} else if const { core::mem::size_of::<Self::m8s>() == core::mem::size_of::<u8>() } {
 			let mask: u8 = bytemuck::cast(mask);
-			mask.leading_zeros() as usize
+			mask.trailing_zeros() as usize
 		} else if const { core::mem::size_of::<Self::m8s>() == core::mem::size_of::<u16>() } {
 			let mask: u16 = bytemuck::cast(mask);
-			mask.leading_zeros() as usize
+			mask.trailing_zeros() as usize
+		} else if const { core::mem::size_of::<Self::m8s>() == core::mem::size_of::<u32>() } {
+			let mask: u32 = bytemuck::cast(mask);
+			mask.trailing_zeros() as usize
+		} else if const { core::mem::size_of::<Self::m8s>() == core::mem::size_of::<u64>() } {
+			let mask: u64 = bytemuck::cast(mask);
+			mask.trailing_zeros() as usize
 		} else {
 			panic!()
 		}
@@ -782,10 +788,16 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 			i
 		} else if const { core::mem::size_of::<Self::m16s>() == core::mem::size_of::<u8>() } {
 			let mask: u8 = bytemuck::cast(mask);
-			mask.leading_zeros() as usize
+			mask.trailing_zeros() as usize
 		} else if const { core::mem::size_of::<Self::m16s>() == core::mem::size_of::<u16>() } {
 			let mask: u16 = bytemuck::cast(mask);
-			mask.leading_zeros() as usize
+			mask.trailing_zeros() as usize
+		} else if const { core::mem::size_of::<Self::m16s>() == core::mem::size_of::<u32>() } {
+			let mask: u32 = bytemuck::cast(mask);
+			mask.trailing_zeros() as usize
+		} else if const { core::mem::size_of::<Self::m16s>() == core::mem::size_of::<u64>() } {
+			let mask: u64 = bytemuck::cast(mask);
+			mask.trailing_zeros() as usize
 		} else {
 			panic!()
 		}
@@ -806,10 +818,16 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 			i
 		} else if const { core::mem::size_of::<Self::m32s>() == core::mem::size_of::<u8>() } {
 			let mask: u8 = bytemuck::cast(mask);
-			mask.leading_zeros() as usize
+			mask.trailing_zeros() as usize
 		} else if const { core::mem::size_of::<Self::m32s>() == core::mem::size_of::<u16>() } {
 			let mask: u16 = bytemuck::cast(mask);
-			mask.leading_zeros() as usize
+			mask.trailing_zeros() as usize
+		} else if const { core::mem::size_of::<Self::m32s>() == core::mem::size_of::<u32>() } {
+			let mask: u32 = bytemuck::cast(mask);
+			mask.trailing_zeros() as usize
+		} else if const { core::mem::size_of::<Self::m32s>() == core::mem::size_of::<u64>() } {
+			let mask: u64 = bytemuck::cast(mask);
+			mask.trailing_zeros() as usize
 		} else {
 			panic!()
 		}
@@ -830,10 +848,16 @@ pub trait Simd: Seal + Debug + Copy + Send + Sync + 'static {
 			i
 		} else if const { core::mem::size_of::<Self::m64s>() == core::mem::size_of::<u8>() } {
 			let mask: u8 = bytemuck::cast(mask);
-			mask.leading_zeros() as usize
+			mask.trailing_zeros() as usize
 		} else if const { core::mem::size_of::<Self::m64s>() == core::mem::size_of::<u16>() } {
 			let mask: u16 = bytemuck::cast(mask);
-			mask.leading_zeros() as usize
+			mask.trailing_zeros() as usize
+		} else if const { core::mem::size_of::<Self::m64s>() == core::mem::size_of::<u32>() } {
+			let mask: u32 = bytemuck::cast(mask);
+			mask.trailing_zeros() as usize
+		} else if const { core::mem::size_of::<Self::m64s>() == core::mem::size_of::<u64>() } {
+			let mask: u64 = bytemuck::cast(mask);
+			mask.trailing_zeros() as usize
 		} else {
 			panic!()
 		}
