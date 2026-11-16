@@ -884,27 +884,28 @@ fn criterion_bench(criterion: &mut Criterion) {
 }
 
 fn aligned_sum_vertical_bench(criterion: &mut Criterion) {
-	#[repr(align(128))]
-	#[derive(Copy, Clone, Debug)]
-	struct Aligned<T>(T);
-
 	use rand::{Rng, SeedableRng};
 
 	let mut rng = rand::rngs::StdRng::seed_from_u64(0);
 
 	let nan = f64::NAN;
 	const N: usize = 32190;
-	let data = core::array::from_fn::<f64, N, _>(|_| rng.r#gen());
-	let unaligned_data = Aligned(core::array::from_fn::<f64, { N + 3 }, _>(|i| {
-		if i < 3 { nan } else { data[i - 3] }
-	}));
+	let data = aligned_vec::AVec::<f64, aligned_vec::ConstAlign<128>>::from_iter(
+		128,
+		(0..N).map(|_| rng.r#gen()),
+	);
+	let unaligned_data = aligned_vec::AVec::<f64, aligned_vec::ConstAlign<128>>::from_iter(
+		128,
+		(0..N + 3).map(|i| if i < 3 { nan } else { data[i - 3] }),
+	);
 
-	let mut unaligned_dst = Aligned(core::array::from_fn::<f64, { N + 3 }, _>(|i| {
-		if i < 3 { nan } else { data[i - 3] }
-	}));
-	let lhs = &unaligned_data.0[3..];
-	let rhs = &unaligned_data.0[3..];
-	let dst = &mut unaligned_dst.0[3..];
+	let mut unaligned_dst = aligned_vec::AVec::<f64, aligned_vec::ConstAlign<128>>::from_iter(
+		128,
+		(0..N + 3).map(|i| if i < 3 { nan } else { data[i - 3] }),
+	);
+	let lhs = &unaligned_data[3..];
+	let rhs = &unaligned_data[3..];
+	let dst = &mut unaligned_dst[3..];
 
 	let arch = Arch::new();
 
@@ -942,21 +943,21 @@ fn aligned_sum_vertical_bench(criterion: &mut Criterion) {
 }
 
 fn aligned_sum_reduce_bench(criterion: &mut Criterion) {
-	#[repr(align(128))]
-	#[derive(Copy, Clone, Debug)]
-	struct Aligned<T>(T);
-
 	use rand::{Rng, SeedableRng};
 
 	let mut rng = rand::rngs::StdRng::seed_from_u64(0);
 
 	let nan = f64::NAN;
 	const N: usize = 32190;
-	let data = core::array::from_fn::<f64, N, _>(|_| rng.r#gen());
-	let unaligned_data = Aligned(core::array::from_fn::<f64, { N + 3 }, _>(|i| {
-		if i < 3 { nan } else { data[i - 3] }
-	}));
-	let data = &unaligned_data.0[3..];
+	let data = aligned_vec::AVec::<f64, aligned_vec::ConstAlign<128>>::from_iter(
+		128,
+		(0..N).map(|_| rng.r#gen()),
+	);
+	let unaligned_data = aligned_vec::AVec::<f64, aligned_vec::ConstAlign<128>>::from_iter(
+		128,
+		(0..N + 3).map(|i| if i < 3 { nan } else { data[i - 3] }),
+	);
+	let data = &unaligned_data[3..];
 
 	let arch = Arch::new();
 

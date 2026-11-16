@@ -84,6 +84,13 @@ __impl!(Sha3, "sha3");
 __impl!(Sm4, "sm4");
 __impl!(Asimd, "asimd");
 
+#[cfg(all(test, not(feature = "std")))]
+#[test]
+fn static_runtime_aliases_follow_compiler_features() {
+	assert_eq!(Asimd::is_available(), Neon::is_available());
+	assert_eq!(Pmull::is_available(), Aes::is_available());
+}
+
 #[derive(Debug, Clone, Copy)]
 #[repr(transparent)]
 pub struct Neon_Aes {
