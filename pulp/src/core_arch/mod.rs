@@ -141,6 +141,14 @@ macro_rules! feature_detected {
 )))]
 #[macro_export]
 macro_rules! feature_detected {
+	// Runtime detection aliases differ from rustc's static target-feature names.
+	// On AArch64 the aes compiler feature also enables polynomial multiplication.
+	("pmull") => {
+		cfg!(all(target_arch = "aarch64", target_feature = "aes"))
+	};
+	("asimd") => {
+		cfg!(all(target_arch = "aarch64", target_feature = "neon"))
+	};
 	($feature: tt) => {
 		cfg!(target_feature = $feature)
 	};
