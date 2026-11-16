@@ -76,8 +76,7 @@
 	feature(stdarch_neon_i8mm),
 	feature(stdarch_neon_sm4),
 	feature(stdarch_neon_ftts),
-	feature(stdarch_neon_fcma),
-	feature(stdarch_neon_dotprod)
+	feature(stdarch_neon_fcma)
 )]
 // 32-bit ARM NEON is still unstable in stdarch (rust-lang/rust#111800, #150246).
 // Gated on pulp `nightly` + arm so stable x86/aarch64 builds are unaffected.
